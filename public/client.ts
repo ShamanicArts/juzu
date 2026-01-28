@@ -6,11 +6,18 @@ interface HitRegion {
     w: number;
     h: number;
     cursor: string;
-    onClick: () => void;
+    onClick?: (e?: MouseEvent) => void;
+    onHover?: (isHovering: boolean) => void;
     id?: string;
 }
 
 type LayoutMode = 'chronological' | 'bookmark-centric' | 'wc-focused' | 'topological' | 'mainline';
+
+type DropTarget =
+    | { type: 'commit'; node: CommitNode }
+    | { type: 'gap'; afterNode: CommitNode }
+    | { type: 'lane'; lane: number; x: number }
+    | { type: 'bookmark'; name: string };
 
 interface CommitNode {
     changeId: string;
@@ -94,6 +101,13 @@ class GraphVisualizer {
     dragNode: CommitNode | null = null;
     dragStartX = 0;
     dragCurrentLane: number | null = null;
+
+    // Drag-Drop Operations State
+    dropTarget: DropTarget | null = null;
+    dragOperation: 'move' | 'insert' | 'branch' | null = null;
+
+    // Connection hover for insert
+    hoveredConnection: { from: string; to: string; midX: number; midY: number } | null = null;
     
     // Layout State
     maxLane = 0;
@@ -583,6 +597,90 @@ class GraphVisualizer {
         }
     }
 
+    // Detect what type of drop target the mouse is over
+    private detectDropTarget(worldX: number, worldY: number): DropTarget | null {
+        if (!this.dragNode) return null;
+
+        // 1. Check if hovering over another commit (exclude self)
+        const targetNode = this.nodes.find(n => {
+            if (n.changeId === this.dragNode!.changeId) return false;
+            const dx = n.x! - worldX;
+            const dy = n.y! - worldY;
+            return Math.sqrt(dx*dx + dy*dy) < NODE_RADIUS * 4;
+        });
+        if (targetNode) {
+            return { type: 'commit', node: targetNode };
+        }
+
+        // 2. Check if over a lane (for pin/move to lane)
+        const laneFloat = this.maxLane - ((worldX - CANVAS_PADDING) / LANE_WIDTH);
+        const lane = Math.max(0, Math.round(laneFloat));
+        if (lane <= this.maxLane + 2) {
+            return { type: 'lane', lane, x: CANVAS_PADDING + ((this.maxLane - lane) * LANE_WIDTH) };
+        }
+
+        return null;
+    }
+
+    // Execute operation based on drop target
+    private async handleDrop() {
+        if (!this.dragNode || !this.dropTarget) return;
+
+        const sourceId = this.dragNode.changeId;
+
+        switch (this.dropTarget.type) {
+            case 'commit':
+                // Move/rebase onto another commit
+                if (confirm(`Move ${sourceId.substring(0,8)} onto ${this.dropTarget.node.changeId.substring(0,8)}?`)) {
+                    await this.executeMove(sourceId, this.dropTarget.node.changeId);
+                }
+                break;
+
+            case 'lane':
+                // Pin to lane
+                this.pinNode(sourceId, this.dropTarget.lane);
+                break;
+        }
+    }
+
+    private async executeMove(sourceId: string, destId: string) {
+        try {
+            const res = await fetch('/api/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sourceId, destId })
+            });
+            if (!res.ok) {
+                const errorText = await res.text();
+                // Provide user-friendly error messages
+                if (errorText.includes('descendant')) {
+                    throw new Error('Cannot move a commit onto its own descendant. Try moving to an ancestor or unrelated commit instead.');
+                } else if (errorText.includes('ancestor')) {
+                    throw new Error('Cannot rebase onto ancestor in this way. Use a different target.');
+                } else {
+                    throw new Error(errorText);
+                }
+            }
+            this.fetchData();
+        } catch (e) {
+            alert("Move failed: " + e);
+        }
+    }
+
+    private async executeInsert(afterId: string) {
+        try {
+            const res = await fetch('/api/insert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ afterId })
+            });
+            if (!res.ok) throw new Error(await res.text());
+            this.fetchData();
+        } catch (e) {
+            alert("Insert failed: " + e);
+        }
+    }
+
     render() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.hitRegions = []; // Reset hit regions
@@ -606,17 +704,22 @@ class GraphVisualizer {
             });
         });
 
-        // Draw drag preview
-        if (this.isDraggingNode && this.dragNode && this.dragCurrentLane !== null) {
+        // Draw drag preview (always show when dragging, even without lane target)
+        if (this.isDraggingNode && this.dragNode) {
             this.drawDragPreview();
         }
 
         // Draw nodes
         this.nodes.forEach(node => this.drawNode(node));
 
+        // Draw hovered connection indicator
+        if (this.hoveredConnection) {
+            this.drawConnectionHoverIndicator();
+        }
+
         this.ctx.restore();
 
-        // Draw HUD/Overlays (not affected by zoom/pan if needed, but here we draw inline so strictly inside restore)
+        // Draw HUD/Overlays (not affected by zoom/pan)
         
         // Rebase Toast if active
         if (this.rebaseSource) {
@@ -630,6 +733,25 @@ class GraphVisualizer {
             this.ctx.fillText(`Click destination node or ESC to cancel`, 180, 45);
             this.ctx.restore();
         }
+
+        // Drag Mode Toast
+        if (this.isDraggingNode && this.dragNode) {
+            this.ctx.save();
+            this.ctx.fillStyle = 'rgba(0, 240, 255, 0.95)';
+            this.ctx.fillRect(20, 20, 380, 50);
+            this.ctx.fillStyle = '#000';
+            this.ctx.font = 'bold 16px Inter';
+            this.ctx.fillText(`✋ Dragging ${this.dragNode.changeId.substring(0,8)}`, 30, 40);
+            this.ctx.font = '12px Inter';
+            let hint = 'Drop on commit to move • Drop on lane to pin';
+            if (this.dropTarget?.type === 'commit') {
+                hint = `Will move onto ${this.dropTarget.node.changeId.substring(0,8)}`;
+            } else if (this.dropTarget?.type === 'lane') {
+                hint = `Will pin to lane ${this.dropTarget.lane}`;
+            }
+            this.ctx.fillText(hint, 30, 60);
+            this.ctx.restore();
+        }
     }
 
     getLaneColor(laneIndex: number) {
@@ -637,69 +759,149 @@ class GraphVisualizer {
     }
 
     drawConnection(node: CommitNode, parent: CommitNode, parentIndex: number) {
-        this.ctx.beginPath();
-        
-        // Z-Index / Spacing Simulation
-        // If a node has multiple parents (merge), offset the lines slightly
+        // Calculate path points for hit detection
         const OFFSET_STEP = 3;
         const yOffset = (parentIndex * OFFSET_STEP);
-
-        // Origin point (bottom of Node)
         const startX = node.x!;
-        const startY = node.y! + NODE_RADIUS + 4 + yOffset; 
+        const startY = node.y! + NODE_RADIUS + 4 + yOffset;
+        const targetX = parent.x!;
+        const targetY = parent.y! - NODE_RADIUS - 4;
 
-        this.ctx.moveTo(startX, startY);
-        
+        // Store path for hit detection
+        const path = new Path2D();
+        path.moveTo(startX, startY);
+
+        let midX = startX;
+        let midY = (startY + targetY) / 2;
+
         if (node.lane === parent.lane) {
             // Straight line down
-            // Target point (top of Parent)
-            const targetX = parent.x!;
-            const targetY = parent.y! - NODE_RADIUS - 4;
-            
-            this.ctx.lineTo(targetX, targetY);
-            this.ctx.strokeStyle = this.getLaneColor(node.lane!);
+            path.lineTo(targetX, targetY);
+            midX = (startX + targetX) / 2;
         } else {
-            // "Circuit Board" Style with Beziers
-            // Horizontal then Vertical
-            
-            const radius = 10; // Corner radius
-            
-            // Target: Top of Parent's lane
-            const targetX = parent.x!;
-            // We aim for a point just above the parent
-            // But if we have multiple lines coming into parent (not handled here, handled at source),
-            // we just aim for parent top.
-            const targetY = parent.y! - NODE_RADIUS - 4;
-            
-            // 1. Horizontal Segment
-            // We want to go from startY to targetX, but we need a curve.
-            // Move horizontal to (targetX +/- radius)
-            
+            // Circuit board style
+            const radius = 10;
             const direction = targetX > startX ? 1 : -1;
             const cornerX = targetX - (radius * direction);
-            
-            // If the horizontal distance is too small for the radius, straight line it
+
             if (Math.abs(targetX - startX) < radius * 2) {
-                 this.ctx.lineTo(targetX, startY);
-                 this.ctx.lineTo(targetX, targetY);
+                path.lineTo(targetX, startY);
+                path.lineTo(targetX, targetY);
+                midX = (startX + targetX) / 2;
             } else {
-                // Line to start of corner
-                this.ctx.lineTo(cornerX, startY);
-                
-                // Curve down
-                // Control point: (targetX, startY)
-                // End point: (targetX, startY + radius)
-                this.ctx.quadraticCurveTo(targetX, startY, targetX, startY + radius);
-                
-                // Vertical line to target
-                this.ctx.lineTo(targetX, targetY);
+                path.lineTo(cornerX, startY);
+                path.quadraticCurveTo(targetX, startY, targetX, startY + radius);
+                path.lineTo(targetX, targetY);
+                midX = (cornerX + targetX) / 2;
             }
-            
-            this.ctx.strokeStyle = this.getLaneColor(parent.lane!);
         }
-        
+
+        // Draw the connection
+        this.ctx.save();
+        this.ctx.strokeStyle = this.getLaneColor(node.lane === parent.lane ? node.lane! : parent.lane!);
         this.ctx.lineWidth = 2;
+        this.ctx.stroke(path);
+
+        // Check if this connection is hovered (from parent to child)
+        if (this.hoveredConnection?.from === parent.changeId && this.hoveredConnection?.to === node.changeId) {
+            // Highlight the line
+            this.ctx.strokeStyle = '#00f0ff';
+            this.ctx.lineWidth = 3;
+            this.ctx.stroke(path);
+        }
+
+        this.ctx.restore();
+
+        // Add invisible hit region for this connection
+        // Use a wider stroke for easier hovering
+        const hitPath = new Path2D();
+        hitPath.moveTo(startX, startY);
+        if (node.lane === parent.lane) {
+            hitPath.lineTo(targetX, targetY);
+        } else {
+            const radius = 10;
+            const direction = targetX > startX ? 1 : -1;
+            const cornerX = targetX - (radius * direction);
+            if (Math.abs(targetX - startX) < radius * 2) {
+                hitPath.lineTo(targetX, startY);
+                hitPath.lineTo(targetX, targetY);
+            } else {
+                hitPath.lineTo(cornerX, startY);
+                hitPath.quadraticCurveTo(targetX, startY, targetX, startY + radius);
+                hitPath.lineTo(targetX, targetY);
+            }
+        }
+
+        this.hitRegions.push({
+            x: Math.min(startX, targetX) - 10,
+            y: startY,
+            w: Math.abs(targetX - startX) + 20,
+            h: targetY - startY,
+            cursor: 'crosshair',
+            onClick: (e) => {
+                if (e.altKey) {
+                    // node = child (lower), parent = parent (higher)
+                    // We want to insert between parent and child
+                    this.handleInsertBetween(parent.changeId, node.changeId, midX, midY);
+                }
+            },
+            onHover: (isHovering) => {
+                if (isHovering) {
+                    // Connection goes from parent (higher) to child (lower)
+                    this.hoveredConnection = { from: parent.changeId, to: node.changeId, midX, midY };
+                } else if (this.hoveredConnection?.from === parent.changeId && this.hoveredConnection?.to === node.changeId) {
+                    this.hoveredConnection = null;
+                }
+                this.render();
+            }
+        });
+    }
+
+    drawConnectionHoverIndicator() {
+        if (!this.hoveredConnection) return;
+
+        const { midX, midY } = this.hoveredConnection;
+
+        this.ctx.save();
+
+        // Draw small plus indicator at midpoint
+        this.ctx.beginPath();
+        this.ctx.arc(midX, midY, 6, 0, Math.PI * 2);
+        this.ctx.fillStyle = '#00f0ff';
+        this.ctx.fill();
+
+        // Plus sign
+        this.ctx.beginPath();
+        this.ctx.moveTo(midX - 3, midY);
+        this.ctx.lineTo(midX + 3, midY);
+        this.ctx.moveTo(midX, midY - 3);
+        this.ctx.lineTo(midX, midY + 3);
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 1.5;
         this.ctx.stroke();
+
+        // Subtle tooltip
+        this.ctx.fillStyle = '#00f0ff';
+        this.ctx.font = '10px Inter';
+        this.ctx.fillText('Alt+click to insert', midX + 12, midY + 3);
+
+        this.ctx.restore();
+    }
+
+    async handleInsertBetween(parentId: string, childId: string, x: number, y: number) {
+        if (!confirm(`Insert new commit between ${parentId.substring(0,8)} and ${childId.substring(0,8)}?`)) return;
+
+        try {
+            const res = await fetch('/api/insert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parentId, childId })
+            });
+            if (!res.ok) throw new Error(await res.text());
+            this.fetchData();
+        } catch (e) {
+            alert("Insert failed: " + e);
+        }
     }
 
     drawLaneGuides() {
@@ -728,41 +930,130 @@ class GraphVisualizer {
     }
 
     drawDragPreview() {
-        if (!this.dragNode || this.dragCurrentLane === null) return;
-
-        const previewX = CANVAS_PADDING + ((this.maxLane - this.dragCurrentLane) * LANE_WIDTH);
+        if (!this.dragNode) return;
 
         this.ctx.save();
-        this.ctx.globalAlpha = 0.4;
-        this.ctx.beginPath();
-        this.ctx.arc(previewX, this.dragNode.y!, NODE_RADIUS * 2, 0, Math.PI * 2);
-        this.ctx.fillStyle = '#00ff9d';
-        this.ctx.fill();
-        this.ctx.strokeStyle = '#00ff9d';
-        this.ctx.lineWidth = 2;
-        this.ctx.stroke();
 
-        // Draw "Pin to L{N}" text
-        this.ctx.fillStyle = '#00ff9d';
-        this.ctx.font = 'bold 11px Inter';
-        this.ctx.fillText(`Pin to L${this.dragCurrentLane}`, previewX + 15, this.dragNode.y!);
+        // Draw ghost of dragged node at original position (semi-transparent)
+        this.ctx.globalAlpha = 0.3;
+        this.ctx.beginPath();
+        this.ctx.arc(this.dragNode.x!, this.dragNode.y!, NODE_RADIUS + 3, 0, Math.PI * 2);
+        this.ctx.fillStyle = '#1a1a1a';
+        this.ctx.fill();
+        this.ctx.strokeStyle = '#00f0ff';
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([3, 3]);
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
+
+        // Draw "DRAGGING" label at original position
+        this.ctx.fillStyle = '#00f0ff';
+        this.ctx.font = 'bold 10px JetBrains Mono';
+        this.ctx.fillText('DRAG', this.dragNode.x! - 15, this.dragNode.y! - 15);
+
+        this.ctx.globalAlpha = 1.0;
+
+        if (this.dropTarget?.type === 'commit') {
+            // Show connection preview to target commit
+            const target = this.dropTarget.node;
+
+            // Draw animated connection line
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.dragNode.x!, this.dragNode.y!);
+            this.ctx.lineTo(target.x!, target.y!);
+            this.ctx.strokeStyle = '#00ff9d';
+            this.ctx.lineWidth = 3;
+            this.ctx.setLineDash([8, 4]);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
+
+            // Strong highlight target with pulsing effect
+            this.ctx.beginPath();
+            this.ctx.arc(target.x!, target.y!, NODE_RADIUS * 4, 0, Math.PI * 2);
+            this.ctx.strokeStyle = '#00ff9d';
+            this.ctx.lineWidth = 4;
+            this.ctx.stroke();
+
+            // Fill target area
+            this.ctx.beginPath();
+            this.ctx.arc(target.x!, target.y!, NODE_RADIUS * 3, 0, Math.PI * 2);
+            this.ctx.fillStyle = 'rgba(0, 255, 157, 0.2)';
+            this.ctx.fill();
+
+            // Label with background
+            const label = `➜ Move onto ${target.changeId.substring(0,8)}`;
+            this.ctx.font = 'bold 13px Inter';
+            const metrics = this.ctx.measureText(label);
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.fillRect(target.x! + 20, target.y! - 25, metrics.width + 10, 22);
+            this.ctx.fillStyle = '#00ff9d';
+            this.ctx.fillText(label, target.x! + 25, target.y! - 10);
+        }
+        else if (this.dropTarget?.type === 'lane') {
+            // Show lane pin preview
+            const previewX = CANVAS_PADDING + ((this.maxLane - this.dropTarget.lane) * LANE_WIDTH);
+
+            // Draw lane highlight
+            this.ctx.beginPath();
+            this.ctx.moveTo(previewX, -1000);
+            this.ctx.lineTo(previewX, 10000);
+            this.ctx.strokeStyle = 'rgba(0, 255, 157, 0.5)';
+            this.ctx.lineWidth = 4;
+            this.ctx.setLineDash([8, 4]);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
+
+            // Draw ghost node in new lane
+            this.ctx.beginPath();
+            this.ctx.arc(previewX, this.dragNode.y!, NODE_RADIUS * 2.5, 0, Math.PI * 2);
+            this.ctx.fillStyle = 'rgba(0, 255, 157, 0.3)';
+            this.ctx.fill();
+            this.ctx.strokeStyle = '#00ff9d';
+            this.ctx.lineWidth = 3;
+            this.ctx.stroke();
+
+            // Label
+            const label = `📌 Pin to Lane ${this.dropTarget.lane}`;
+            this.ctx.font = 'bold 13px Inter';
+            const metrics = this.ctx.measureText(label);
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            this.ctx.fillRect(previewX + 20, this.dragNode.y! - 12, metrics.width + 10, 24);
+            this.ctx.fillStyle = '#00ff9d';
+            this.ctx.fillText(label, previewX + 25, this.dragNode.y! + 5);
+        }
+        else {
+            // No valid drop target - show hint
+            this.ctx.fillStyle = '#888';
+            this.ctx.font = '12px Inter';
+            this.ctx.fillText('Hover over commit, gap, or lane...', this.dragNode.x! + 20, this.dragNode.y! - 20);
+        }
+
         this.ctx.restore();
     }
 
     drawNode(node: CommitNode) {
         const isSelected = this.selectedNodes.has(node.changeId);
+        const isBeingDragged = this.isDraggingNode && this.dragNode?.changeId === node.changeId;
         const color = this.getLaneColor(node.lane!);
-        
+
         // Node
         this.ctx.beginPath();
         this.ctx.arc(node.x!, node.y!, NODE_RADIUS + (isSelected ? 3 : 0), 0, Math.PI * 2);
-        
-        this.ctx.fillStyle = node.isConflict ? COLORS.nodeConflict : '#1a1a1a';
+
+        if (isBeingDragged) {
+            // Dim the node being dragged (ghost effect)
+            this.ctx.fillStyle = 'rgba(26, 26, 26, 0.3)';
+            this.ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
+            this.ctx.setLineDash([3, 3]);
+        } else {
+            this.ctx.fillStyle = node.isConflict ? COLORS.nodeConflict : '#1a1a1a';
+            this.ctx.strokeStyle = isSelected ? '#fff' : color;
+            this.ctx.setLineDash([]);
+        }
         this.ctx.fill();
-        
-        this.ctx.strokeStyle = isSelected ? '#fff' : color;
         this.ctx.lineWidth = isSelected ? 3 : 2;
         this.ctx.stroke();
+        this.ctx.setLineDash([]); // Reset line dash
 
         // Pin indicator
         if (node.isPinned) {
@@ -910,6 +1201,22 @@ class GraphVisualizer {
 
                 pillX += pillWidth + 5;
             });
+        }
+    }
+
+    async handleInsertAfter(afterId: string) {
+        if (!confirm(`Create new commit after ${afterId.substring(0,8)}?`)) return;
+
+        try {
+            const res = await fetch('/api/insert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ afterId })
+            });
+            if (!res.ok) throw new Error(await res.text());
+            this.fetchData();
+        } catch (e) {
+            alert("Insert failed: " + e);
         }
     }
 
@@ -1189,7 +1496,9 @@ class GraphVisualizer {
                 const r = this.hitRegions[i];
                 if (worldX >= r.x && worldX <= r.x + r.w &&
                     worldY >= r.y && worldY <= r.y + r.h) {
-                    r.onClick();
+                    if (r.onClick) {
+                        r.onClick(e);
+                    }
                     return; // Stop propagation
                 }
             }
@@ -1273,14 +1582,12 @@ class GraphVisualizer {
 
             // Handle node dragging
             if (this.isDraggingNode && this.dragNode) {
-                // Calculate which lane the mouse is over
-                // x = CANVAS_PADDING + ((maxLane - lane) * LANE_WIDTH)
-                // Solve for lane: lane = maxLane - ((x - CANVAS_PADDING) / LANE_WIDTH)
-                const laneFloat = this.maxLane - ((worldX - CANVAS_PADDING) / LANE_WIDTH);
-                const lane = Math.max(0, Math.round(laneFloat));
-
-                if (this.dragCurrentLane !== lane) {
-                    this.dragCurrentLane = lane;
+                // Detect drop target (commit, gap, lane)
+                const target = this.detectDropTarget(worldX, worldY);
+                
+                if (JSON.stringify(target) !== JSON.stringify(this.dropTarget)) {
+                    this.dropTarget = target;
+                    this.dragCurrentLane = target?.type === 'lane' ? target.lane : null;
                     this.render(); // Re-render to show preview
                 }
                 this.canvas.style.cursor = 'grabbing';
@@ -1300,14 +1607,27 @@ class GraphVisualizer {
 
             // Hit Region Hover Check
             let cursor = 'default';
+            let hoveredHitRegion: HitRegion | null = null;
             for (const r of this.hitRegions) {
                  if (worldX >= r.x && worldX <= r.x + r.w &&
                     worldY >= r.y && worldY <= r.y + r.h) {
                     cursor = r.cursor;
+                    hoveredHitRegion = r;
                     break;
                 }
             }
             this.canvas.style.cursor = cursor;
+
+            // Handle hover state changes
+            if (hoveredHitRegion !== this.hoveredRegion) {
+                if (this.hoveredRegion?.onHover) {
+                    this.hoveredRegion.onHover(false);
+                }
+                if (hoveredHitRegion?.onHover) {
+                    hoveredHitRegion.onHover(true);
+                }
+                this.hoveredRegion = hoveredHitRegion;
+            }
 
             if (this.isDragging) {
                 this.offsetX += e.clientX - this.lastMouseX;
@@ -1319,14 +1639,16 @@ class GraphVisualizer {
         });
 
 
-        window.addEventListener('mouseup', () => {
-            if (this.isDraggingNode && this.dragNode && this.dragCurrentLane !== null) {
-                this.pinNode(this.dragNode.changeId, this.dragCurrentLane);
+        window.addEventListener('mouseup', async () => {
+            if (this.isDraggingNode && this.dragNode && this.dropTarget) {
+                await this.handleDrop();
             }
             this.isDragging = false;
             this.isDraggingNode = false;
             this.dragNode = null;
             this.dragCurrentLane = null;
+            this.dropTarget = null;
+            this.dragOperation = null;
         });
 
         this.canvas.addEventListener('wheel', (e) => {

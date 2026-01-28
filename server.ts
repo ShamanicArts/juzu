@@ -331,6 +331,59 @@ const server = Bun.serve({
             }
             return Response.json({ success: true });
         }
+
+        if (url.pathname === "/api/move") {
+            const { sourceId, destId } = body;
+            console.log("Moving", sourceId, "onto", destId);
+
+            // jj rebase -s <source> -d <dest>
+            const proc = Bun.spawn(["jj", "rebase", "-s", sourceId, "-d", destId], {
+                cwd: PROC_CWD,
+                stderr: "pipe"
+            });
+            const exitCode = await proc.exited;
+
+            if (exitCode !== 0) {
+                const stderr = await new Response(proc.stderr).text();
+                console.log("Move failed:", stderr);
+                return Response.json({ error: stderr }, { status: 400 });
+            }
+            return Response.json({ success: true });
+        }
+
+        if (url.pathname === "/api/insert") {
+            const { parentId, childId } = body;
+            console.log("Inserting new commit between", parentId, "and", childId);
+
+            // Step 1: Create new empty commit after parent
+            const newProc = Bun.spawn(["jj", "new", parentId], {
+                cwd: PROC_CWD,
+                stderr: "pipe"
+            });
+            let exitCode = await newProc.exited;
+
+            if (exitCode !== 0) {
+                const stderr = await new Response(newProc.stderr).text();
+                console.log("Insert failed (new):", stderr);
+                return Response.json({ error: stderr }, { status: 400 });
+            }
+
+            // Step 2: Rebase child and all descendants onto the new commit (@)
+            // After `jj new`, the new commit is @ (working copy), @- is the parent
+            const rebaseProc = Bun.spawn(["jj", "rebase", "-s", childId, "-d", "@"], {
+                cwd: PROC_CWD,
+                stderr: "pipe"
+            });
+            exitCode = await rebaseProc.exited;
+
+            if (exitCode !== 0) {
+                const stderr = await new Response(rebaseProc.stderr).text();
+                console.log("Insert failed (rebase):", stderr);
+                return Response.json({ error: stderr }, { status: 400 });
+            }
+
+            return Response.json({ success: true });
+        }
     }
 
     // Static Asset Serving (relative to script location)

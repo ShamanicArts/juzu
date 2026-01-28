@@ -10,7 +10,9 @@
   },
   "scripts": {
     "start": "bun run server.ts",
-    "dev": "bun run server.ts --port=3000"
+    "dev": "bun run server.ts --port=3000",
+    "build:web": "bun run packages/web/build.ts",
+    "build:tui": "bun run packages/tui/build.ts"
   },
   "engines": {
     "bun": ">=1.0.0"
