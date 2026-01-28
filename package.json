@@ -1,0 +1,28 @@
+{
+  "name": "jj-viz",
+  "version": "0.1.0",
+  "description": "High-performance Canvas visualization for Jujutsu VCS",
+  "keywords": ["jujutsu", "jj", "vcs", "git", "visualization", "canvas"],
+  "author": "",
+  "license": "MIT",
+  "bin": {
+    "jj-viz": "./server.ts"
+  },
+  "scripts": {
+    "start": "bun run server.ts",
+    "dev": "bun run server.ts --port=3000"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "files": [
+    "server.ts",
+    "public/",
+    "bun.d.ts",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}
