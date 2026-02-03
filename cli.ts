@@ -30,7 +30,7 @@ Examples:
 }
 
 if (wantsTui) {
-  await import("./tui/main.ts");
+  await import("./tui/App.tsx");
 } else {
   await import("./server.ts");
 }

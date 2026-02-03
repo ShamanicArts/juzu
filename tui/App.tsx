@@ -1,28 +1,27 @@
-#!/usr/bin/env bun
-/** @jsxImportSource solid-js */
-
-import { render } from "@opentui/solid";
-import { createSignal, createEffect, createMemo, For, onMount, onCleanup } from "solid-js";
-import { RGBA, createCliRenderer, type KeyEvent } from "@opentui/core";
-import type { CommitNode, LayoutMode } from "./types";
+import { render, useRenderer, useKeyboard } from "@opentui/solid";
+import { createSignal, createMemo, onMount } from "solid-js";
+import type { KeyEvent } from "@opentui/core";
+import { RGBA } from "@opentui/core";
+import type { CommitNode, LayoutMode, FilesCacheEntry } from "./types";
 import { fetchJJLog, fetchFilesForNodes, findJJRoot } from "./jj-api";
 import { applyLayout } from "./layout";
-import { GraphView } from "./GraphView";
-import { Sidebar } from "./Sidebar";
+import { GraphView } from "./components/GraphView";
+import { Sidebar } from "./components/Sidebar";
 
 const BG = RGBA.fromHex("#24283b");
 const PANEL_BG = RGBA.fromHex("#1a1b26");
 const CYAN = RGBA.fromHex("#00f0ff");
 const FG_DIM = RGBA.fromHex("#888888");
 
-export function App() {
+function App() {
+  const renderer = useRenderer();
   const [cwd, setCwd] = createSignal<string>("");
   const [nodes, setNodes] = createSignal<CommitNode[]>([]);
   const [mode, setMode] = createSignal<LayoutMode>("chronological");
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [scrollOffset, setScrollOffset] = createSignal(0);
   const [statusMsg, setStatusMsg] = createSignal("");
-  const [filesCache, setFilesCache] = createSignal(new Map<string, { atMs: number; files: Array<{ type: string; path: string }> }>());
+  const [filesCache, setFilesCache] = createSignal<Map<string, FilesCacheEntry>>(new Map());
   const [descExpanded, setDescExpanded] = createSignal(false);
   const [filesExpanded, setFilesExpanded] = createSignal(true);
   const [sidebarScroll, setSidebarScroll] = createSignal(0);
@@ -32,6 +31,8 @@ export function App() {
   const laidOut = createMemo(() => applyLayout(mode(), nodes()));
   const selected = createMemo(() => laidOut()[selectedIndex()]);
 
+  const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+
   onMount(async () => {
     const startDir = process.cwd();
     const repoCwd = await findJJRoot(startDir);
@@ -40,28 +41,36 @@ export function App() {
       return;
     }
     setCwd(repoCwd);
+
+    setTermSize({ w: renderer.width, h: renderer.height });
+    
+    renderer.on("resize", (w: number, h: number) => {
+      setTermSize({ w, h });
+    });
+
     await refresh();
   });
 
   const refresh = async () => {
+    const cwdVal = cwd();
+    if (!cwdVal) return;
     setStatusMsg("Loading...");
     try {
-      const newNodes = await fetchJJLog(cwd(), 500);
+      const newNodes = await fetchJJLog(cwdVal, 500);
+      console.log("Loaded nodes:", newNodes.length);
       setNodes(newNodes);
       const wcIndex = newNodes.findIndex(n => n.isWorkingCopy);
       setSelectedIndex(wcIndex >= 0 ? wcIndex : 0);
-      setStatusMsg("");
+      setStatusMsg(`nodes:${newNodes.length}`);
 
-      // Fetch files for all nodes in background
-      fetchFilesForNodes(newNodes, cwd(), (cache) => {
-        setFilesCache(cache);
+      fetchFilesForNodes(newNodes, cwdVal, (cache) => {
+        setFilesCache(new Map(cache));
       });
     } catch (e) {
       setStatusMsg(`Error: ${String(e)}`);
+      console.error("Refresh error:", e);
     }
   };
-
-  const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
   const ensureSelectedVisible = (visibleRows: number) => {
     const idx = selectedIndex();
@@ -72,17 +81,18 @@ export function App() {
     if (idx > bottom) setScrollOffset(clamp(idx - (visibleRows - 1), 0, maxTop));
   };
 
-  // Keyboard handler
-  const handleKey = (key: KeyEvent) => {
+  useKeyboard((key) => {
     const name = (key.name || key.sequence || "").toLowerCase();
 
     if (key.ctrl && key.name === "c") {
-      process.exit(0);
+      renderer.destroy();
+      return;
     }
 
     switch (name) {
       case "q":
-        process.exit(0);
+        renderer.destroy();
+        return;
       case "escape":
         setRebaseSource(null);
         break;
@@ -127,60 +137,59 @@ export function App() {
         setMode("topological");
         break;
     }
-  };
+  });
 
   const showSidebar = () => termSize().w >= 90 && termSize().h >= 16;
   const detailW = () => showSidebar() ? Math.floor(termSize().w * 0.40) : 0;
   const graphW = () => termSize().w - detailW();
 
+  const statusText = () => {
+    if (rebaseSource()) {
+      return `layout:${mode()} rebase src:${rebaseSource()?.slice(0, 8)} (select dest + b, esc cancels)`;
+    }
+    return `layout:${mode()} j/k nav x desc f files d describe b rebase r refresh q quit`;
+  };
+
   return (
-    <box width={termSize().w} height={termSize().h} backgroundColor={BG}>
-      {/* Header */}
-      <box height={2} backgroundColor={PANEL_BG}>
-        <text>jj-viz <span fg={FG_DIM}>TUI</span> {`nodes:${laidOut().length}`}</text>
-        {statusMsg() && <text x={14} fg="#ff0055">{statusMsg()}</text>}
-        <text x={2} y={1} fg={FG_DIM}>
-          {rebaseSource() 
-            ? `layout:${mode()} rebase src:${rebaseSource()?.slice(0, 8)} (select dest + b, esc cancels)`
-            : `layout:${mode()} j/k nav x desc f files d describe b rebase r refresh q quit`
-          }
-        </text>
+    <box width={termSize().w} height={termSize().h} backgroundColor={BG} flexDirection="column">
+      <box height={2} backgroundColor={PANEL_BG} flexDirection="row">
+        <box flexGrow={1}>
+          <text>jj-viz TUI  nodes:{laidOut().length}  {statusMsg()}</text>
+        </box>
+        <box flexGrow={1}>
+          <text>{statusText()}</text>
+        </box>
       </box>
 
-      {/* Main content */}
-      <box flexDirection="row" flexGrow={1}>
-        {/* Graph view */}
-        <GraphView
-          nodes={laidOut()}
-          selectedIndex={selectedIndex()}
-          scrollOffset={scrollOffset()}
-          filesCache={filesCache()}
-          width={graphW()}
-          height={termSize().h - 2}
-          onEnsureVisible={ensureSelectedVisible}
-        />
-
-        {/* Sidebar */}
-        {showSidebar() && (
-          <Sidebar
-            selected={selected()}
+      <box flexDirection="row" flexGrow={1} height={termSize().h - 2}>
+        <box width={graphW()} height={termSize().h - 2}>
+          <GraphView
+            nodes={laidOut()}
+            selectedIndex={selectedIndex()}
+            scrollOffset={scrollOffset()}
             filesCache={filesCache()}
-            descExpanded={descExpanded()}
-            filesExpanded={filesExpanded()}
-            scrollOffset={sidebarScroll()}
-            width={detailW()}
+            width={graphW()}
             height={termSize().h - 2}
+            onEnsureVisible={ensureSelectedVisible}
           />
+        </box>
+
+        {showSidebar() && (
+          <box width={detailW()} height={termSize().h - 2} backgroundColor={PANEL_BG}>
+            <Sidebar
+              selected={selected()}
+              filesCache={filesCache()}
+              descExpanded={descExpanded()}
+              filesExpanded={filesExpanded()}
+              scrollOffset={sidebarScroll()}
+              width={detailW()}
+              height={termSize().h - 2}
+            />
+          </box>
         )}
       </box>
     </box>
   );
 }
 
-// Main entry
-async function main() {
-  const renderer = await createCliRenderer({ exitOnCtrlC: false });
-  render(() => <App />, renderer.root);
-}
-
-main();
+render(() => <App />);
