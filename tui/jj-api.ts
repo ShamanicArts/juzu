@@ -126,3 +126,51 @@ export async function fetchFilesForNodes(
 
   onUpdate(cache);
 }
+
+// JJ Operations
+export async function jjNew(parentId: string, cwd: string): Promise<void> {
+  await runCmdText(["jj", "new", parentId], cwd);
+}
+
+export async function jjEdit(changeId: string, cwd: string): Promise<void> {
+  await runCmdText(["jj", "edit", changeId], cwd);
+}
+
+export async function jjDescribe(changeId: string, description: string, cwd: string): Promise<void> {
+  await runCmdText(["jj", "describe", "-r", changeId, "-m", description], cwd);
+}
+
+export async function jjAbandon(changeId: string, cwd: string): Promise<void> {
+  await runCmdText(["jj", "abandon", changeId], cwd);
+}
+
+export async function jjSquash(changeId: string, into: string | null, cwd: string): Promise<void> {
+  const args = ["jj", "squash", "--from", changeId];
+  if (into) {
+    args.push("--into", into);
+  }
+  await runCmdText(args, cwd);
+}
+
+export async function jjDuplicate(changeId: string, cwd: string): Promise<void> {
+  await runCmdText(["jj", "duplicate", changeId], cwd);
+}
+
+export async function jjRebase(sourceId: string, destinationId: string, cwd: string): Promise<void> {
+  await runCmdText(["jj", "rebase", "-s", sourceId, "-d", destinationId], cwd);
+}
+
+export async function jjInsertAfter(parentId: string, childId: string, cwd: string): Promise<void> {
+  // Step 1: Create new empty commit after parent
+  await runCmdText(["jj", "new", parentId], cwd);
+  // Step 2: Rebase child and all descendants onto the new commit (@)
+  await runCmdText(["jj", "rebase", "-s", childId, "-d", "@"], cwd);
+}
+
+export async function jjUndo(cwd: string): Promise<void> {
+  await runCmdText(["jj", "undo"], cwd);
+}
+
+export async function jjGetDiff(changeId: string, cwd: string): Promise<string> {
+  return runCmdText(["jj", "diff", "--git", "-r", changeId], cwd);
+}

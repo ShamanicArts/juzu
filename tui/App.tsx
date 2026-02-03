@@ -1,17 +1,20 @@
 import { render, useRenderer, useKeyboard } from "@opentui/solid";
-import { createSignal, createMemo, onMount } from "solid-js";
+import { createSignal, createMemo, onMount, Show } from "solid-js";
 import type { KeyEvent } from "@opentui/core";
 import { RGBA } from "@opentui/core";
 import type { CommitNode, LayoutMode, FilesCacheEntry } from "./types";
-import { fetchJJLog, fetchFilesForNodes, findJJRoot } from "./jj-api";
+import { fetchJJLog, fetchFilesForNodes, findJJRoot, jjNew, jjEdit, jjDescribe, jjAbandon, jjSquash, jjDuplicate, jjRebase, jjInsertAfter, jjUndo } from "./jj-api";
 import { applyLayout } from "./layout";
 import { GraphView } from "./components/GraphView";
 import { Sidebar } from "./components/Sidebar";
+import { HelpModal } from "./components/HelpModal";
 
 const BG = RGBA.fromHex("#24283b");
 const PANEL_BG = RGBA.fromHex("#1a1b26");
 const CYAN = RGBA.fromHex("#00f0ff");
 const FG_DIM = RGBA.fromHex("#888888");
+const GREEN = RGBA.fromHex("#00ff9d");
+const RED = RGBA.fromHex("#ff0055");
 
 function App() {
   const renderer = useRenderer();
@@ -26,6 +29,8 @@ function App() {
   const [filesExpanded, setFilesExpanded] = createSignal(true);
   const [sidebarScroll, setSidebarScroll] = createSignal(0);
   const [rebaseSource, setRebaseSource] = createSignal<string | null>(null);
+  const [showHelp, setShowHelp] = createSignal(false);
+  const [shiftPressed, setShiftPressed] = createSignal(false);
   const [termSize, setTermSize] = createSignal({ w: 80, h: 24 });
 
   const laidOut = createMemo(() => applyLayout(mode(), nodes()));
@@ -81,11 +86,181 @@ function App() {
     if (idx > bottom) setScrollOffset(clamp(idx - (visibleRows - 1), 0, maxTop));
   };
 
+  const handleNew = async () => {
+    const node = selected();
+    if (!node) return;
+    const cwdVal = cwd();
+    if (!cwdVal) return;
+    setStatusMsg("Creating new commit...");
+    try {
+      await jjNew(node.changeId, cwdVal);
+      setStatusMsg("Created!");
+      await refresh();
+    } catch (e) {
+      setStatusMsg(`Error: ${String(e)}`);
+    }
+  };
+
+  const handleEdit = async () => {
+    const node = selected();
+    if (!node) return;
+    const cwdVal = cwd();
+    if (!cwdVal) return;
+    setStatusMsg("Checking out...");
+    try {
+      await jjEdit(node.changeId, cwdVal);
+      setStatusMsg("Checked out!");
+      await refresh();
+    } catch (e) {
+      setStatusMsg(`Error: ${String(e)}`);
+    }
+  };
+
+  const handleDescribe = async () => {
+    const node = selected();
+    if (!node) return;
+    const cwdVal = cwd();
+    if (!cwdVal) return;
+    
+    // For now, use a simple prompt via status message
+    // In a real TUI, you'd want an input modal
+    setStatusMsg("Describe: press 'd' again to edit (not implemented yet)");
+  };
+
+  const handleAbandon = async () => {
+    const node = selected();
+    if (!node) return;
+    const cwdVal = cwd();
+    if (!cwdVal) return;
+    setStatusMsg("Abandoning...");
+    try {
+      await jjAbandon(node.changeId, cwdVal);
+      setStatusMsg("Abandoned!");
+      await refresh();
+    } catch (e) {
+      setStatusMsg(`Error: ${String(e)}`);
+    }
+  };
+
+  const handleSquash = async () => {
+    const node = selected();
+    if (!node) return;
+    const cwdVal = cwd();
+    if (!cwdVal) return;
+    
+    const parentId = node.parents[0];
+    if (!parentId) {
+      setStatusMsg("Cannot squash: no parent");
+      return;
+    }
+    
+    setStatusMsg("Squashing...");
+    try {
+      await jjSquash(node.changeId, parentId, cwdVal);
+      setStatusMsg("Squashed!");
+      await refresh();
+    } catch (e) {
+      setStatusMsg(`Error: ${String(e)}`);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    const node = selected();
+    if (!node) return;
+    const cwdVal = cwd();
+    if (!cwdVal) return;
+    setStatusMsg("Duplicating...");
+    try {
+      await jjDuplicate(node.changeId, cwdVal);
+      setStatusMsg("Duplicated!");
+      await refresh();
+    } catch (e) {
+      setStatusMsg(`Error: ${String(e)}`);
+    }
+  };
+
+  const handleRebase = async () => {
+    const node = selected();
+    if (!node) return;
+    const source = rebaseSource();
+    const cwdVal = cwd();
+    if (!cwdVal) return;
+
+    if (!source) {
+      setRebaseSource(node.changeId);
+      setStatusMsg(`Rebase mode: ${node.changeId.slice(0, 8)} selected, choose destination`);
+    } else if (source === node.changeId) {
+      setRebaseSource(null);
+      setStatusMsg("Rebase cancelled");
+    } else {
+      setStatusMsg(`Rebasing ${source.slice(0, 8)} onto ${node.changeId.slice(0, 8)}...`);
+      try {
+        await jjRebase(source, node.changeId, cwdVal);
+        setRebaseSource(null);
+        setStatusMsg("Rebased!");
+        await refresh();
+      } catch (e) {
+        setStatusMsg(`Error: ${String(e)}`);
+        setRebaseSource(null);
+      }
+    }
+  };
+
+  const handleInsert = async () => {
+    const node = selected();
+    if (!node) return;
+    const cwdVal = cwd();
+    if (!cwdVal) return;
+    
+    // Find child to rebase
+    const child = laidOut().find(n => n.parents.includes(node.changeId));
+    if (!child) {
+      setStatusMsg("Insert: no child found to rebase");
+      return;
+    }
+    
+    setStatusMsg("Inserting...");
+    try {
+      await jjInsertAfter(node.changeId, child.changeId, cwdVal);
+      setStatusMsg("Inserted!");
+      await refresh();
+    } catch (e) {
+      setStatusMsg(`Error: ${String(e)}`);
+    }
+  };
+
+  const handleUndo = async () => {
+    const cwdVal = cwd();
+    if (!cwdVal) return;
+    setStatusMsg("Undoing...");
+    try {
+      await jjUndo(cwdVal);
+      setStatusMsg("Undone!");
+      await refresh();
+    } catch (e) {
+      setStatusMsg(`Error: ${String(e)}`);
+    }
+  };
+
   useKeyboard((key) => {
     const name = (key.name || key.sequence || "").toLowerCase();
 
+    // Track shift key
+    if (key.shift) {
+      setShiftPressed(true);
+    } else if (name === "shift") {
+      setShiftPressed(false);
+    }
+
     if (key.ctrl && key.name === "c") {
       renderer.destroy();
+      return;
+    }
+
+    if (showHelp()) {
+      if (name === "escape" || name === "?") {
+        setShowHelp(false);
+      }
       return;
     }
 
@@ -94,7 +269,10 @@ function App() {
         renderer.destroy();
         return;
       case "escape":
-        setRebaseSource(null);
+        if (rebaseSource()) {
+          setRebaseSource(null);
+          setStatusMsg("Rebase cancelled");
+        }
         break;
       case "up":
       case "k":
@@ -121,6 +299,9 @@ function App() {
       case "x":
         setDescExpanded(v => !v);
         break;
+      case "?":
+        setShowHelp(true);
+        break;
       case "1":
         setMode("chronological");
         break;
@@ -136,6 +317,44 @@ function App() {
       case "5":
         setMode("topological");
         break;
+      case "n":
+        handleNew();
+        break;
+      case "e":
+        handleEdit();
+        break;
+      case "d":
+        if (key.shift) {
+          handleDuplicate();
+        } else {
+          handleDescribe();
+        }
+        break;
+      case "a":
+        if (key.shift) {
+          handleAbandon();
+        }
+        break;
+      case "s":
+        if (key.shift) {
+          handleSquash();
+        }
+        break;
+      case "b":
+        handleRebase();
+        break;
+      case "return":
+      case "enter":
+        if (rebaseSource()) {
+          handleRebase();
+        }
+        break;
+      case "i":
+        handleInsert();
+        break;
+      case "u":
+        handleUndo();
+        break;
     }
   });
 
@@ -145,9 +364,12 @@ function App() {
 
   const statusText = () => {
     if (rebaseSource()) {
-      return `layout:${mode()} rebase src:${rebaseSource()?.slice(0, 8)} (select dest + b, esc cancels)`;
+      return `REBASE MODE: src:${rebaseSource()?.slice(0, 8)} - select dest + Enter/b, Esc cancels`;
     }
-    return `layout:${mode()} j/k nav x desc f files d describe b rebase r refresh q quit`;
+    if (shiftPressed()) {
+      return "SHIFT MODE: A=abandon S=squash D=duplicate";
+    }
+    return `layout:${mode()} j/k nav x desc f files n new e edit d desc b rebase ? help`;
   };
 
   return (
@@ -188,6 +410,10 @@ function App() {
           </box>
         )}
       </box>
+
+      <Show when={showHelp()}>
+        <HelpModal width={termSize().w} height={termSize().h} />
+      </Show>
     </box>
   );
 }
