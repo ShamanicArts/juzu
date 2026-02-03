@@ -14,10 +14,36 @@ export function Sidebar(props: {
   const isMulti = createMemo(() => state.selectedIds.size > 1);
   const [tab, setTab] = createSignal<Tab>("details");
 
-  const files = createMemo(() => {
+  const filesState = createMemo(() => {
     const n = node();
-    if (!n) return [] as Array<{ type: string; path: string }>;
-    return state.filesCache.get(n.changeId)?.files || [];
+    if (!n) {
+      return {
+        status: "none" as const,
+        files: [] as Array<{ type: string; path: string }>,
+      };
+    }
+    const entry = state.filesCache.get(n.changeId);
+    if (!entry) {
+      return {
+        status: "loading" as const,
+        files: [] as Array<{ type: string; path: string }>,
+      };
+    }
+    return {
+      status: "ready" as const,
+      files: entry.files,
+    };
+  });
+
+  const fileCounts = createMemo(() => {
+    const files = filesState().files;
+    let a = 0, m = 0, d = 0;
+    for (const f of files) {
+      if (f.type === "A") a++;
+      else if (f.type === "D") d++;
+      else m++;
+    }
+    return { a, m, d, total: files.length };
   });
 
   const headerId = createMemo(() => {
@@ -55,10 +81,50 @@ export function Sidebar(props: {
         </div>
         <Show when={node()}>
           <div class="jjv-panelActions">
-            <button class="jjv-btn jjv-btn--ghost" onClick={() => actions.toggleHelp()}>Help</button>
+            <button class="jjv-btn jjv-btn--ghost" onClick={() => actions.toggleHelp()}>
+              {state.showHelp ? "Close" : "Help"}
+            </button>
           </div>
         </Show>
       </div>
+
+      <Show when={state.showHelp}>
+        <div class="jjv-card">
+          <div class="jjv-cardTitle">Help</div>
+          <div class="jjv-muted">Keyboard</div>
+          <div class="mono" style={{ "font-size": "12px", "line-height": "1.5" }}>
+            j/k or ArrowUp/ArrowDown  navigate
+            <br />
+            1-5            layout
+            <br />
+            r              refresh
+            <br />
+            f              inline files
+            <br />
+            n/e/d          new/edit/describe
+            <br />
+            b              rebase (select src, then dest)
+            <br />
+            i              insert after selected
+            <br />
+            u              undo
+            <br />
+            h              toggle help
+            <br />
+            Esc            cancel modes
+          </div>
+          <div class="jjv-muted" style={{ "margin-top": "10px" }}>Mouse</div>
+          <div class="mono" style={{ "font-size": "12px", "line-height": "1.5" }}>
+            Shift/Ctrl click   multi-select
+            <br />
+            Alt+drag node      move/pin
+            <br />
+            Right-click node   pin/unpin
+            <br />
+            Alt+click line     insert between
+          </div>
+        </div>
+      </Show>
 
       <Show
         when={!isMulti()}
@@ -109,6 +175,53 @@ export function Sidebar(props: {
                     )}
                   </For>
                 </div>
+
+                <div class="jjv-kv" style={{ "margin-top": "10px" }}>
+                  <div class="jjv-kvRow">
+                    <div class="jjv-k">Author</div>
+                    <div class="jjv-v">{n().author}</div>
+                  </div>
+                  <div class="jjv-kvRow">
+                    <div class="jjv-k">Time</div>
+                    <div class="jjv-v">{n().time}</div>
+                  </div>
+                </div>
+
+                <div class="jjv-desc" style={{ "margin-top": "10px" }}>
+                  {n().descriptionFull || "(no description)"}
+                </div>
+
+                <div class="jjv-cardTitle" style={{ "margin-top": "10px" }}>
+                  Changes
+                  <span class="jjv-muted">
+                    {fileCounts().total > 0 ? `  (A${fileCounts().a} M${fileCounts().m} D${fileCounts().d})` : ""}
+                  </span>
+                </div>
+                <Show
+                  when={filesState().status === "ready"}
+                  fallback={<div class="jjv-muted">(loading files...)</div>}
+                >
+                  <Show
+                    when={filesState().files.length > 0}
+                    fallback={<div class="jjv-muted">(no changes)</div>}
+                  >
+                    <div class="jjv-files">
+                      <For each={filesState().files.slice(0, 6)}>
+                        {(f) => (
+                          <div class="jjv-fileRow" style={{ "grid-template-columns": "18px 1fr" }}>
+                            <span class={`jjv-fileType jjv-fileType--${f.type} mono`}>{f.type}</span>
+                            <span class="jjv-filePath mono">
+                              {f.path.split("/").pop() || f.path}
+                            </span>
+                          </div>
+                        )}
+                      </For>
+                      <Show when={filesState().files.length > 6}>
+                        <div class="jjv-muted mono">+{filesState().files.length - 6} more</div>
+                      </Show>
+                    </div>
+                  </Show>
+                </Show>
               </div>
 
               <div class="jjv-tabs">
@@ -125,12 +238,14 @@ export function Sidebar(props: {
 
               <Show when={tab() === "details"}>
                 <div class="jjv-card">
-                  <div class="jjv-cardTitle">Description</div>
-                  <div class="jjv-desc">{n().descriptionFull || "(no description)"}</div>
+                  <div class="jjv-cardTitle">Quick</div>
                   <Show when={!state.describeMode}>
                     <div class="jjv-row" style={{ "margin-top": "10px" }}>
                       <button class="jjv-btn jjv-btn--primary" onClick={() => props.onRunMutation("describe")}>
                         Edit
+                      </button>
+                      <button class="jjv-btn" onClick={() => props.onRunMutation("rebase")}>
+                        Rebase
                       </button>
                       <button class="jjv-btn" onClick={() => props.onRunMutation("abandon")}>
                         Abandon
@@ -160,15 +275,8 @@ export function Sidebar(props: {
                     </div>
                   </Show>
 
-                  <div class="jjv-kv" style={{ "margin-top": "12px" }}>
-                    <div class="jjv-kvRow">
-                      <div class="jjv-k">Author</div>
-                      <div class="jjv-v">{n().author}</div>
-                    </div>
-                    <div class="jjv-kvRow">
-                      <div class="jjv-k">Time</div>
-                      <div class="jjv-v">{n().time}</div>
-                    </div>
+                  <div class="jjv-muted" style={{ "margin-top": "10px" }}>
+                    Tip: inline buttons on the graph show more actions; hold Shift for Abandon/Squash/Dupe.
                   </div>
                 </div>
               </Show>
@@ -196,9 +304,9 @@ export function Sidebar(props: {
 
                 <div class="jjv-card">
                   <div class="jjv-cardTitle">Files</div>
-                  <Show when={files().length > 0} fallback={<div class="jjv-muted">(no changes)</div>}>
+                  <Show when={filesState().files.length > 0} fallback={<div class="jjv-muted">(no changes)</div>}>
                     <div class="jjv-files">
-                      <For each={files()}>
+                      <For each={filesState().files}>
                         {(f) => (
                           <label class="jjv-fileRow">
                             <input

@@ -46,11 +46,8 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      background:
-        radial-gradient(900px 500px at 10% 10%, rgba(0, 240, 255, 0.06), transparent 60%),
-        radial-gradient(800px 500px at 70% 0%, rgba(255, 170, 0, 0.05), transparent 55%),
-        radial-gradient(900px 700px at 0% 100%, rgba(0, 255, 157, 0.05), transparent 60%),
-        var(--bg);
+      /* Solid base (no gradients behind the dot-board) */
+      background: var(--bg);
     }
 
     .mono {
@@ -193,7 +190,7 @@
     .jjv-inspector {
       height: 100%;
       overflow: auto;
-      padding: 12px;
+      padding: 10px;
     }
 
     .jjv-panelHeader {
@@ -210,8 +207,8 @@
       border: 1px solid rgba(65, 72, 104, 0.6);
       background: rgba(26, 27, 38, 0.55);
       border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     }
 

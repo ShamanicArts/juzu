@@ -98,12 +98,25 @@ function App() {
   });
 
   const onKeyDown = (e: KeyboardEvent) => {
+    // Help overlay
+    if (state.showHelp) {
+      if (e.key === "Escape" || e.key.toLowerCase() === "h") {
+        actions.toggleHelp();
+      }
+      return;
+    }
+
     if (state.describeMode) {
       if (e.key === "Enter") {
         void describeSubmit();
       } else if (e.key === "Escape") {
         actions.cancelDescribe();
       }
+      return;
+    }
+
+    if (e.key.toLowerCase() === "h") {
+      actions.toggleHelp();
       return;
     }
 

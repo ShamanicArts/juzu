@@ -30,7 +30,22 @@ Examples:
 }
 
 if (wantsTui) {
-  await import("./tui/App.tsx");
+  // OpenTUI Solid relies on a Bun plugin to compile TSX.
+  // That plugin must be preloaded before modules are compiled,
+  // so we run the TUI in a separate Bun process.
+  const tuiEntry = `${import.meta.dir}/src/tui/main.ts`;
+  const proc = Bun.spawn([
+    "bun",
+    "--preload",
+    "@opentui/solid/preload",
+    tuiEntry,
+  ], {
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  const code = await proc.exited;
+  process.exit(code);
 } else {
   await import("./server.ts");
 }
