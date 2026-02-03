@@ -1,14 +1,11 @@
-import { For } from "solid-js";
 import { RGBA } from "@opentui/core";
 
 const BG = RGBA.fromHex("#1a1b26");
 const BORDER = RGBA.fromHex("#00f0ff");
 const CYAN = RGBA.fromHex("#00f0ff");
 const YELLOW = RGBA.fromHex("#ffaa00");
-const GREEN = RGBA.fromHex("#00ff9d");
 const FG = RGBA.fromHex("#c0caf5");
 const DIM = RGBA.fromHex("#565f89");
-const BLACK_TRANSPARENT = RGBA.fromValues(0, 0, 0, 0.7);
 
 interface HelpModalProps {
   width: number;
@@ -16,49 +13,14 @@ interface HelpModalProps {
 }
 
 export function HelpModal(props: HelpModalProps) {
-  const helpSections = [
-    { type: "header", text: "Navigation" },
-    { type: "key", key: "j/k or ↑/↓", desc: "Navigate commits" },
-    { type: "key", key: "PgUp/PgDn", desc: "Scroll sidebar" },
-    { type: "spacer" },
-    { type: "header", text: "Layout Modes" },
-    { type: "key", key: "1", desc: "Chronological" },
-    { type: "key", key: "2", desc: "Mainline" },
-    { type: "key", key: "3", desc: "Bookmark-centric" },
-    { type: "key", key: "4", desc: "WC-focused" },
-    { type: "key", key: "5", desc: "Topological" },
-    { type: "spacer" },
-    { type: "header", text: "View Options" },
-    { type: "key", key: "x", desc: "Toggle description expand" },
-    { type: "key", key: "f", desc: "Toggle files list" },
-    { type: "key", key: "r", desc: "Refresh data" },
-    { type: "key", key: "?", desc: "Toggle this help" },
-    { type: "spacer" },
-    { type: "header", text: "Commit Operations" },
-    { type: "key", key: "n", desc: "New commit from selected" },
-    { type: "key", key: "e", desc: "Edit (checkout) selected" },
-    { type: "key", key: "d", desc: "Describe (edit message)" },
-    { type: "key", key: "b", desc: "Rebase mode (select source)" },
-    { type: "key", key: "i", desc: "Insert commit after selected" },
-    { type: "key", key: "u", desc: "Undo last operation" },
-    { type: "spacer" },
-    { type: "header", text: "Shift Operations" },
-    { type: "key", key: "Shift+A", desc: "Abandon selected" },
-    { type: "key", key: "Shift+S", desc: "Squash into parent" },
-    { type: "key", key: "Shift+D", desc: "Duplicate selected" },
-    { type: "spacer" },
-    { type: "header", text: "Rebase Mode" },
-    { type: "key", key: "Enter/b", desc: "Complete rebase (select dest)" },
-    { type: "key", key: "Esc", desc: "Cancel rebase mode" },
-    { type: "spacer" },
-    { type: "header", text: "General" },
-    { type: "key", key: "q / Ctrl+C", desc: "Quit" },
-  ];
+  const modalW = Math.min(60, props.width - 4);
+  const modalH = Math.min(28, props.height - 4);
 
   return (
     <box
-      flexGrow={1}
-      backgroundColor={BLACK_TRANSPARENT}
+      width={props.width}
+      height={props.height}
+      backgroundColor={BG}
       flexDirection="column"
     >
       <box flexGrow={1} />
@@ -67,8 +29,8 @@ export function HelpModal(props: HelpModalProps) {
         <box flexGrow={1} />
         
         <box
-          width={Math.min(60, props.width - 4)}
-          height={Math.min(28, props.height - 4)}
+          width={modalW}
+          height={modalH}
           backgroundColor={BG}
           borderStyle="single"
           borderColor={BORDER}
@@ -82,32 +44,51 @@ export function HelpModal(props: HelpModalProps) {
 
           <text fg={DIM}>──────────────────────────────────────────</text>
 
-          <For each={helpSections}>
-            {(item) => {
-              if (item.type === "spacer") {
-                return <box height={1} />;
-              }
-              if (item.type === "header") {
-                return (
-                  <box height={1}>
-                    <text fg={CYAN}>{item.text}</text>
-                  </box>
-                );
-              }
-              return (
-                <box height={1} flexDirection="row">
-                  <text fg={YELLOW}>{(item.key as string).padEnd(12)}</text>
-                  <text fg={FG}>{item.desc}</text>
-                </box>
-              );
-            }}
-          </For>
+          {/* Navigation */}
+          <box height={1}><text fg={CYAN}>Navigation</text></box>
+          <box height={1} flexDirection="row">
+            <text fg={YELLOW}>{"j/k or ↑/↓".padEnd(12)}</text>
+            <text fg={FG}>Navigate commits</text>
+          </box>
+          <box height={1} flexDirection="row">
+            <text fg={YELLOW}>{"PgUp/PgDn".padEnd(12)}</text>
+            <text fg={FG}>Scroll sidebar</text>
+          </box>
+          <box height={1} />
+
+          {/* Layout Modes */}
+          <box height={1}><text fg={CYAN}>Layout Modes</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"1".padEnd(12)}</text><text fg={FG}>Chronological</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"2".padEnd(12)}</text><text fg={FG}>Mainline</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"3".padEnd(12)}</text><text fg={FG}>Bookmark-centric</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"4".padEnd(12)}</text><text fg={FG}>WC-focused</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"5".padEnd(12)}</text><text fg={FG}>Topological</text></box>
+          <box height={1} />
+
+          {/* Operations */}
+          <box height={1}><text fg={CYAN}>Operations</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"n".padEnd(12)}</text><text fg={FG}>New commit</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"e".padEnd(12)}</text><text fg={FG}>Edit/checkout</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"d".padEnd(12)}</text><text fg={FG}>Describe</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"b".padEnd(12)}</text><text fg={FG}>Rebase</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"Ctrl+x a".padEnd(12)}</text><text fg={FG}>Abandon</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"Ctrl+x s".padEnd(12)}</text><text fg={FG}>Squash</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"Ctrl+x d".padEnd(12)}</text><text fg={FG}>Duplicate</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"u".padEnd(12)}</text><text fg={FG}>Undo</text></box>
+          <box height={1} />
+
+          {/* View */}
+          <box height={1}><text fg={CYAN}>View</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"x".padEnd(12)}</text><text fg={FG}>Toggle desc</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"f".padEnd(12)}</text><text fg={FG}>Toggle files</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"r".padEnd(12)}</text><text fg={FG}>Refresh</text></box>
+          <box height={1} flexDirection="row"><text fg={YELLOW}>{"h".padEnd(12)}</text><text fg={FG}>Help</text></box>
 
           <box flexGrow={1} />
           
           <box height={1} flexDirection="row">
             <box flexGrow={1} />
-            <text fg={DIM}>Press ? or Esc to close</text>
+            <text fg={DIM}>Press h or Esc to close</text>
             <box flexGrow={1} />
           </box>
         </box>

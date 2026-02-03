@@ -1,4 +1,4 @@
-import { For, createMemo } from "solid-js";
+import { For, createMemo, Show } from "solid-js";
 import { RGBA } from "@opentui/core";
 import type { CommitNode, FilesCacheEntry } from "../types";
 
@@ -6,6 +6,7 @@ const PANEL_BG = RGBA.fromHex("#1a1b26");
 const CYAN = RGBA.fromHex("#00f0ff");
 const GREEN = RGBA.fromHex("#00ff9d");
 const RED = RGBA.fromHex("#ff0055");
+const YELLOW = RGBA.fromHex("#ffaa00");
 const FG_DIM = RGBA.fromHex("#888888");
 const FG = RGBA.fromHex("#bbbbbb");
 
@@ -17,10 +18,43 @@ interface SidebarProps {
   scrollOffset: number;
   width: number;
   height: number;
+  showHelp?: boolean;
+  promptMode?: boolean;
+  promptValue?: string;
 }
 
 export function Sidebar(props: SidebarProps) {
   const contentLines = createMemo(() => {
+    // Show help content
+    if (props.showHelp) {
+      return [
+        { text: "Navigation", color: CYAN },
+        { text: "j/k or ↑/↓  Navigate", color: FG },
+        { text: "PgUp/PgDn   Scroll", color: FG },
+        { text: "", color: FG_DIM },
+        { text: "Layout", color: CYAN },
+        { text: "1-5         Layout modes", color: FG },
+        { text: "", color: FG_DIM },
+        { text: "Operations", color: CYAN },
+        { text: "n           New commit", color: FG },
+        { text: "e           Edit/checkout", color: FG },
+        { text: "d           Describe", color: FG },
+        { text: "b           Rebase", color: FG },
+        { text: "Ctrl+x a    Abandon", color: FG },
+        { text: "Ctrl+x s    Squash", color: FG },
+        { text: "Ctrl+x d    Duplicate", color: FG },
+        { text: "u           Undo", color: FG },
+        { text: "", color: FG_DIM },
+        { text: "View", color: CYAN },
+        { text: "x           Toggle desc", color: FG },
+        { text: "f           Toggle files", color: FG },
+        { text: "r           Refresh", color: FG },
+        { text: "h           Toggle help", color: YELLOW },
+        { text: "", color: FG_DIM },
+        { text: "Press h to close help", color: FG_DIM },
+      ];
+    }
+
     const lines: Array<{ text: string; color: RGBA }> = [];
     const selected = props.selected;
 
@@ -40,6 +74,15 @@ export function Sidebar(props: SidebarProps) {
       for (const b of selected.bookmarks) {
         lines.push({ text: `  ${b}`, color: CYAN });
       }
+      lines.push({ text: "", color: FG_DIM });
+    }
+
+    // Show prompt if in describe mode
+    if (props.promptMode) {
+      lines.push({ text: "Edit Description:", color: CYAN });
+      lines.push({ text: props.promptValue || "(empty)", color: YELLOW });
+      lines.push({ text: "", color: FG_DIM });
+      lines.push({ text: "Enter: save  Esc: cancel", color: FG_DIM });
       lines.push({ text: "", color: FG_DIM });
     }
 
@@ -97,13 +140,15 @@ export function Sidebar(props: SidebarProps) {
     };
   });
 
+  const title = () => props.showHelp ? "Help (h to close)" : "Details";
+
   return (
     <box
       width={props.width}
       height={props.height}
       backgroundColor={PANEL_BG}
     >
-      <text fg={CYAN}><strong>Details</strong></text>
+      <text fg={props.showHelp ? YELLOW : CYAN}>{title()}</text>
       <text fg={RGBA.fromHex("#444444")}>--------</text>
       <For each={visibleLines().lines}>
         {(line) => (

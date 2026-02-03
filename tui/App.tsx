@@ -30,8 +30,13 @@ function App() {
   const [sidebarScroll, setSidebarScroll] = createSignal(0);
   const [rebaseSource, setRebaseSource] = createSignal<string | null>(null);
   const [showHelp, setShowHelp] = createSignal(false);
-  const [shiftPressed, setShiftPressed] = createSignal(false);
+  const [leaderMode, setLeaderMode] = createSignal(false);
   const [termSize, setTermSize] = createSignal({ w: 80, h: 24 });
+  
+  // Prompt state
+  const [promptMode, setPromptMode] = createSignal(false);
+  const [promptValue, setPromptValue] = createSignal("");
+  const [promptCb, setPromptCb] = createSignal<((val: string) => void) | null>(null);
 
   const laidOut = createMemo(() => applyLayout(mode(), nodes()));
   const selected = createMemo(() => laidOut()[selectedIndex()]);
@@ -86,6 +91,18 @@ function App() {
     if (idx > bottom) setScrollOffset(clamp(idx - (visibleRows - 1), 0, maxTop));
   };
 
+  const startPrompt = (initial: string, onSubmit: (val: string) => void) => {
+    setPromptValue(initial);
+    setPromptCb(() => onSubmit);
+    setPromptMode(true);
+  };
+
+  const cancelPrompt = () => {
+    setPromptMode(false);
+    setPromptValue("");
+    setPromptCb(null);
+  };
+
   const handleNew = async () => {
     const node = selected();
     if (!node) return;
@@ -116,15 +133,23 @@ function App() {
     }
   };
 
-  const handleDescribe = async () => {
+  const handleDescribe = () => {
     const node = selected();
     if (!node) return;
     const cwdVal = cwd();
     if (!cwdVal) return;
     
-    // For now, use a simple prompt via status message
-    // In a real TUI, you'd want an input modal
-    setStatusMsg("Describe: press 'd' again to edit (not implemented yet)");
+    startPrompt(node.descriptionTitle || "", async (value) => {
+      setPromptMode(false);
+      setStatusMsg("Describing...");
+      try {
+        await jjDescribe(node.changeId, value, cwdVal);
+        setStatusMsg("Described!");
+        await refresh();
+      } catch (e) {
+        setStatusMsg(`Error: ${String(e)}`);
+      }
+    });
   };
 
   const handleAbandon = async () => {
@@ -212,7 +237,6 @@ function App() {
     const cwdVal = cwd();
     if (!cwdVal) return;
     
-    // Find child to rebase
     const child = laidOut().find(n => n.parents.includes(node.changeId));
     if (!child) {
       setStatusMsg("Insert: no child found to rebase");
@@ -245,23 +269,61 @@ function App() {
   useKeyboard((key) => {
     const name = (key.name || key.sequence || "").toLowerCase();
 
-    // Track shift key
-    if (key.shift) {
-      setShiftPressed(true);
-    } else if (name === "shift") {
-      setShiftPressed(false);
-    }
-
     if (key.ctrl && key.name === "c") {
       renderer.destroy();
       return;
     }
 
+    // Handle help mode
     if (showHelp()) {
-      if (name === "escape" || name === "?") {
+      if (name === "escape" || name === "h" || name === "q") {
         setShowHelp(false);
       }
       return;
+    }
+
+    // Handle prompt mode
+    if (promptMode()) {
+      if (name === "return" || name === "enter") {
+        const cb = promptCb();
+        const val = promptValue();
+        cancelPrompt();
+        if (cb) cb(val);
+        return;
+      } else if (name === "escape") {
+        cancelPrompt();
+        setStatusMsg("Cancelled");
+        return;
+      } else if (name === "backspace") {
+        setPromptValue(v => v.slice(0, -1));
+        return;
+      } else if (key.sequence && key.sequence.length === 1) {
+        setPromptValue(v => (v + key.sequence).slice(0, 200));
+        return;
+      }
+      return;
+    }
+
+    // Handle leader mode (Ctrl+X style)
+    if (leaderMode()) {
+      setLeaderMode(false);
+      switch (name) {
+        case "a":
+          handleAbandon();
+          return;
+        case "s":
+          handleSquash();
+          return;
+        case "d":
+          handleDuplicate();
+          return;
+        case "escape":
+          setStatusMsg("Cancelled");
+          return;
+        default:
+          setStatusMsg(`Unknown leader key: ${name}`);
+          return;
+      }
     }
 
     switch (name) {
@@ -299,7 +361,7 @@ function App() {
       case "x":
         setDescExpanded(v => !v);
         break;
-      case "?":
+      case "h":
         setShowHelp(true);
         break;
       case "1":
@@ -324,21 +386,7 @@ function App() {
         handleEdit();
         break;
       case "d":
-        if (key.shift) {
-          handleDuplicate();
-        } else {
-          handleDescribe();
-        }
-        break;
-      case "a":
-        if (key.shift) {
-          handleAbandon();
-        }
-        break;
-      case "s":
-        if (key.shift) {
-          handleSquash();
-        }
+        handleDescribe();
         break;
       case "b":
         handleRebase();
@@ -356,20 +404,33 @@ function App() {
         handleUndo();
         break;
     }
+
+    // Leader key: Ctrl+X
+    if (key.ctrl && name === "x") {
+      setLeaderMode(true);
+      setStatusMsg("Leader: a=abandon s=squash d=duplicate");
+    }
   });
 
   const showSidebar = () => termSize().w >= 90 && termSize().h >= 16;
   const detailW = () => showSidebar() ? Math.floor(termSize().w * 0.40) : 0;
   const graphW = () => termSize().w - detailW();
+  const mainHeight = () => termSize().h - 2;
 
   const statusText = () => {
     if (rebaseSource()) {
       return `REBASE MODE: src:${rebaseSource()?.slice(0, 8)} - select dest + Enter/b, Esc cancels`;
     }
-    if (shiftPressed()) {
-      return "SHIFT MODE: A=abandon S=squash D=duplicate";
+    if (leaderMode()) {
+      return "LEADER MODE: a=abandon s=squash d=duplicate";
     }
-    return `layout:${mode()} j/k nav x desc f files n new e edit d desc b rebase ? help`;
+    if (promptMode()) {
+      return `DESCRIBE MODE: editing description`;
+    }
+    if (showHelp()) {
+      return `HELP MODE: h to close`;
+    }
+    return `layout:${mode()} j/k nav x desc f files n new e edit d desc b rebase h help`;
   };
 
   return (
@@ -383,21 +444,21 @@ function App() {
         </box>
       </box>
 
-      <box flexDirection="row" flexGrow={1} height={termSize().h - 2}>
-        <box width={graphW()} height={termSize().h - 2}>
+      <box flexDirection="row" flexGrow={1} height={mainHeight()}>
+        <box width={graphW()} height={mainHeight()}>
           <GraphView
             nodes={laidOut()}
             selectedIndex={selectedIndex()}
             scrollOffset={scrollOffset()}
             filesCache={filesCache()}
             width={graphW()}
-            height={termSize().h - 2}
+            height={mainHeight()}
             onEnsureVisible={ensureSelectedVisible}
           />
         </box>
 
         {showSidebar() && (
-          <box width={detailW()} height={termSize().h - 2} backgroundColor={PANEL_BG}>
+          <box width={detailW()} height={mainHeight()} backgroundColor={PANEL_BG}>
             <Sidebar
               selected={selected()}
               filesCache={filesCache()}
@@ -405,15 +466,14 @@ function App() {
               filesExpanded={filesExpanded()}
               scrollOffset={sidebarScroll()}
               width={detailW()}
-              height={termSize().h - 2}
+              height={mainHeight()}
+              showHelp={showHelp()}
+              promptMode={promptMode()}
+              promptValue={promptValue()}
             />
           </box>
         )}
       </box>
-
-      <Show when={showHelp()}>
-        <HelpModal width={termSize().w} height={termSize().h} />
-      </Show>
     </box>
   );
 }
