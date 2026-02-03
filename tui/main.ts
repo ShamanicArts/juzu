@@ -516,7 +516,8 @@ async function main() {
   let rebaseSource: string | null = null;
 
   const filesCache = new Map<string, { atMs: number; files: Array<{ type: string; path: string }> }>();
-  const FILES_TTL_MS = 5000;
+  const FILES_TTL_MS = 30000;
+  let sidebarScrollOffset = 0;
 
   const prompt = {
     active: false,
@@ -568,6 +569,30 @@ async function main() {
     renderer.root.add(canvas);
   };
 
+  const fetchFilesForNodes = async (nodesToFetch: CommitNode[]) => {
+    // Fetch files for all commits in parallel
+    await Promise.all(nodesToFetch.map(async (node) => {
+      const cached = filesCache.get(node.changeId);
+      if (cached && Date.now() - cached.atMs < FILES_TTL_MS) return;
+
+      try {
+        const out = await runCmdText(["jj", "diff", "--summary", "-r", node.changeId], cwd, 10000);
+        const files = out
+          .trim()
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .map((line) => {
+            const [type, ...rest] = line.split(" ");
+            return { type, path: rest.join(" ") };
+          });
+        filesCache.set(node.changeId, { atMs: Date.now(), files });
+      } catch {
+        filesCache.set(node.changeId, { atMs: Date.now(), files: [] });
+      }
+    }));
+  };
+
   const refresh = async () => {
     if (isRefreshing) return;
     isRefreshing = true;
@@ -583,6 +608,9 @@ async function main() {
       selectedIndex = wcIndex >= 0 ? wcIndex : 0;
       scrollOffset = clamp(selectedIndex - 10, 0, Math.max(0, laidOut.length - 1));
       if (nodes.length > 0) statusMsg = "";
+
+      // Fetch files for all commits in background
+      void fetchFilesForNodes(laidOut).then(() => render());
     } catch (e) {
       statusMsg = `Error: ${String(e)}`;
       nodes = [];
@@ -627,7 +655,7 @@ async function main() {
     // Background
     fb.fillRect(0, 0, w, h, BG);
 
-    const detailW = showSidebar ? clamp(Math.floor(w * 0.33), 28, Math.max(28, w - 40)) : 0;
+    const detailW = showSidebar ? clamp(Math.floor(w * 0.40), 35, Math.max(35, w - 50)) : 0;
     const graphW = w - detailW;
     const graphH = h - headerH - footerH;
 
@@ -656,7 +684,7 @@ async function main() {
     fb.fillRect(0, headerH, graphW, graphH, BG);
 
     // Compute layout in terminal-space
-    const rowStride = 3; // 2 lines per commit + 1 spacer
+    const rowStride = 4; // Line 1: graph node, Line 2: IDs, Line 3: description, Line 4: files
     const visibleRows = Math.max(1, Math.floor((graphH - 2) / rowStride));
     ensureSelectedVisible(visibleRows);
 
@@ -706,12 +734,16 @@ async function main() {
     }
 
     // Connections (cell-drawn)
+    const selectedNode = selLocal >= 0 && selLocal < visible.length ? visible[selLocal] : null;
     for (let i = 0; i < visible.length; i++) {
       const node = visible[i];
       const lane = node.lane || 0;
       const x0 = laneXCell(lane);
       const y0 = rowYCell(i);
+      const isSelectedNode = node === selectedNode;
       const color = LANE_COLORS[lane % LANE_COLORS.length];
+      // Brighter color for selected node connections
+      const baseColor = isSelectedNode ? RGBA.fromInts(Math.min(255, color.r + 80), Math.min(255, color.g + 80), Math.min(255, color.b + 80), 255) : color;
 
       for (let pIdx = 0; pIdx < node.parents.length; pIdx++) {
         const pid = node.parents[pIdx];
@@ -721,12 +753,18 @@ async function main() {
         const pl = parent.lane || 0;
         const x1 = laneXCell(pl);
         const y1 = rowYCell(pi);
+        const isParentSelected = parent === selectedNode;
+        const isConnectionSelected = isSelectedNode || isParentSelected;
         const pc = LANE_COLORS[pl % LANE_COLORS.length];
+        const parentColor = isParentSelected ? RGBA.fromInts(Math.min(255, pc.r + 80), Math.min(255, pc.g + 80), Math.min(255, pc.b + 80), 255) : pc;
 
         if (lane === pl) {
           const yMin = Math.min(y0, y1);
           const yMax = Math.max(y0, y1);
-          for (let y = yMin + 1; y <= yMax - 1; y++) setGraphCell(x0, y, "|", pc);
+          const lineColor = isConnectionSelected ? parentColor : pc;
+          for (let y = yMin + 1; y <= yMax - 1; y++) {
+            setGraphCell(x0, y, isConnectionSelected ? "┃" : "|", lineColor);
+          }
         } else {
           const yMin = Math.min(y0, y1);
           const yMax = Math.max(y0, y1);
@@ -735,19 +773,25 @@ async function main() {
           // Vertical from node to mid
           const yStart = Math.min(y0, midY);
           const yEnd = Math.max(y0, midY);
-          for (let y = yStart + 1; y <= yEnd; y++) setGraphCell(x0, y, "|", color);
+          for (let y = yStart + 1; y <= yEnd; y++) {
+            setGraphCell(x0, y, isSelectedNode ? "┃" : "│", isSelectedNode ? baseColor : color);
+          }
 
           // Horizontal at mid
           const xMin = Math.min(x0, x1);
           const xMax = Math.max(x0, x1);
-          for (let x = xMin; x <= xMax; x++) setGraphCell(x, midY, "-", pc);
-          setGraphCell(x0, midY, "+", color);
-          setGraphCell(x1, midY, "+", pc);
+          for (let x = xMin; x <= xMax; x++) {
+            setGraphCell(x, midY, isConnectionSelected ? "━" : "─", parentColor);
+          }
+          setGraphCell(x0, midY, isConnectionSelected ? "┓" : "┐", isSelectedNode ? baseColor : color);
+          setGraphCell(x1, midY, isConnectionSelected ? "┗" : "└", parentColor);
 
           // Vertical from mid to parent
           const yStart2 = Math.min(midY, y1);
           const yEnd2 = Math.max(midY, y1);
-          for (let y = yStart2; y <= yEnd2 - 1; y++) setGraphCell(x1, y, "|", pc);
+          for (let y = yStart2; y <= yEnd2 - 1; y++) {
+            setGraphCell(x1, y, isParentSelected ? "┃" : "│", parentColor);
+          }
         }
       }
     }
@@ -782,7 +826,7 @@ async function main() {
       setGraphCell(x, y, ch, fg);
     }
 
-    // Text column (cell-drawn)
+    // Text column (cell-drawn) - 4 line stride per commit
     for (let i = 0; i < visible.length; i++) {
       const node = visible[i];
       const y = rowYCell(i);
@@ -796,72 +840,127 @@ async function main() {
 
       if (textX < graphW - 1) {
         if (node.isWorkingCopy) fb.drawText("@", Math.max(0, textX - 2), y, GREEN);
-        // Line 1: change + commit
+        
+        // Line 1: change + commit IDs
         fb.drawText(changeShort, textX, y, isSelected ? RGBA.fromHex("#ffffff") : FG_DIM);
         fb.drawText(" ", textX + 8, y, FG_DIM);
         fb.drawText(commitShort, textX + 9, y, isSelected ? RGBA.fromHex("#ffffff") : FG_DIM);
 
-        // Line 2: description under IDs
+        // Line 2: description
         fb.drawText(desc, textX, y + 1, isSelected ? RGBA.fromHex("#ffffff") : FG);
 
         if (node.bookmarks.length > 0) {
           const bm = ` (${node.bookmarks.join(",")})`;
           fb.drawText(truncate(bm, Math.max(0, graphW - (textX + desc.length) - 1)), textX + Math.min(desc.length, descMax), y + 1, laneColor);
         }
+
+        // Line 3: Files preview (show for ALL commits now that we have space)
+        const filesCached = filesCache.get(node.changeId);
+        if (filesCached && filesCached.files.length > 0) {
+          const fileMaxW = Math.max(0, graphW - textX - 2);
+          const fileTexts: string[] = [];
+          for (const f of filesCached.files.slice(0, 3)) {
+            fileTexts.push(`${f.type}:${f.path.split('/').pop() || f.path}`);
+          }
+          const fileLine = fileTexts.join(" ") + (filesCached.files.length > 3 ? ` +${filesCached.files.length - 3}` : "");
+          fb.drawText(truncate(fileLine, fileMaxW), textX, y + 2, FG_DIM);
+        } else if (filesCached) {
+          fb.drawText("(no files)", textX, y + 2, FG_DIM);
+        }
       }
     }
 
     if (showSidebar) {
-      // Details panel
+      // Details panel with scrolling
       const selected = laidOut[selectedIndex];
       const dx = graphW + 2;
-      let dy = headerH + 1;
+      const sidebarTopY = headerH + 1;
+      const sidebarContentH = graphH - 3; // Space for header "Details" line + 2 scroll indicators
 
-      fb.drawText("Details", dx, dy++, CYAN);
-      fb.drawText("--------", dx, dy++, RGBA.fromHex("#444444"));
+      // Build all content lines
+      const contentLines: Array<{ text: string; color: RGBA }> = [];
 
       if (!selected) {
-        fb.drawText("No commit selected", dx, dy++, FG_DIM);
+        contentLines.push({ text: "No commit selected", color: FG_DIM });
       } else {
-        fb.drawText(`Change: ${selected.changeId}${selected.isWorkingCopy ? " (@)" : ""}`, dx, dy++, selected.isWorkingCopy ? GREEN : CYAN);
-        fb.drawText(`Commit: ${selected.commitId}`, dx, dy++, FG_DIM);
-        fb.drawText(`Author: ${selected.author}`, dx, dy++, FG_DIM);
-        fb.drawText(`Time: ${selected.time}`, dx, dy++, FG_DIM);
-        dy++;
-        if (selected.bookmarks.length > 0) {
-          fb.drawText("Bookmarks:", dx, dy++, FG_DIM);
-          for (const b of selected.bookmarks.slice(0, 6)) fb.drawText(`- ${b}`, dx, dy++, CYAN);
-          dy++;
-        }
-        // Description directly under Change/Commit
-        fb.drawText(descExpanded ? "Description (x to collapse):" : "Description (x to expand):", dx, dy++, FG_DIM);
-        const dlines = (selected.descriptionFull || selected.descriptionTitle || "(no description)").split("\n");
-        const descLinesToShow = descExpanded ? Math.max(2, (headerH + graphH) - dy - 10) : 2;
-        for (const line of dlines.slice(0, descLinesToShow)) {
-          fb.drawText(truncate(line || "", detailW - 4), dx, dy++, FG);
-        }
-        if (!descExpanded && dlines.length > 2) {
-          fb.drawText(truncate("...", detailW - 4), dx, dy++, FG_DIM);
-        }
-        dy++;
+        contentLines.push({ text: `Change: ${selected.changeId}${selected.isWorkingCopy ? " (@)" : ""}`, color: selected.isWorkingCopy ? GREEN : CYAN });
+        contentLines.push({ text: `Commit: ${selected.commitId}`, color: FG_DIM });
+        contentLines.push({ text: `Author: ${selected.author}`, color: FG_DIM });
+        contentLines.push({ text: `Time: ${selected.time}`, color: FG_DIM });
+        contentLines.push({ text: "", color: FG_DIM }); // Spacer
 
-        // Files section
-        fb.drawText(filesExpanded ? "Files (f to collapse):" : "Files (f to expand):", dx, dy++, FG_DIM);
-        if (filesExpanded) {
-          const cached = filesCache.get(selected.changeId);
-          const fresh = cached && Date.now() - cached.atMs < FILES_TTL_MS;
-          if (!fresh) {
-            fb.drawText("(loading...)", dx, dy++, FG_DIM);
+        if (selected.bookmarks.length > 0) {
+          contentLines.push({ text: "Bookmarks:", color: FG_DIM });
+          for (const b of selected.bookmarks) {
+            contentLines.push({ text: `  ${b}`, color: CYAN });
+          }
+          contentLines.push({ text: "", color: FG_DIM });
+        }
+
+        // Description with expand/collapse
+        contentLines.push({ text: descExpanded ? "Description (x collapse):" : "Description (x expand):", color: FG_DIM });
+        const descText = selected.descriptionFull || selected.descriptionTitle || "(no description)";
+        const maxDescLines = descExpanded ? 1000 : 2;
+        let descLinesShown = 0;
+        for (const rawLine of descText.split("\n")) {
+          const line = rawLine || "";
+          if (descLinesShown >= maxDescLines) break;
+          if (line.length <= detailW - 4) {
+            contentLines.push({ text: line, color: FG });
+            descLinesShown++;
           } else {
-            const maxLines = Math.max(1, (headerH + graphH) - dy - 1);
-            for (const f of cached!.files.slice(0, maxLines)) {
-              fb.drawText(truncate(`${f.type} ${f.path}`, detailW - 4), dx, dy++, FG);
+            for (let i = 0; i < line.length && descLinesShown < maxDescLines; i += detailW - 4) {
+              contentLines.push({ text: line.slice(i, i + detailW - 4), color: FG });
+              descLinesShown++;
             }
-            if (cached!.files.length > maxLines) fb.drawText(truncate("...", detailW - 4), dx, dy++, FG_DIM);
           }
         }
+        if (!descExpanded && descText.split("\n").length > 2) {
+          contentLines.push({ text: "...", color: FG_DIM });
+        }
+        contentLines.push({ text: "", color: FG_DIM });
 
-        if (selected.isConflict) fb.drawText("! conflicts", dx, dy++, RED);
+        // Files section - always show
+        contentLines.push({ text: filesExpanded ? "Files (f collapse):" : "Files (f expand):", color: FG_DIM });
+        const cached = filesCache.get(selected.changeId);
+        if (cached && cached.files.length > 0) {
+          for (const f of cached.files) {
+            const fileColor = f.type === "A" ? GREEN : f.type === "D" ? RED : CYAN;
+            contentLines.push({ text: `${f.type} ${f.path}`, color: fileColor });
+          }
+        } else if (cached) {
+          contentLines.push({ text: "(no changes)", color: FG_DIM });
+        } else {
+          contentLines.push({ text: "(loading...)", color: FG_DIM });
+        }
+
+        if (selected.isConflict) {
+          contentLines.push({ text: "", color: FG_DIM });
+          contentLines.push({ text: "! CONFLICTS", color: RED });
+        }
+      }
+
+      // Render header
+      fb.drawText("Details", dx, sidebarTopY - 1, CYAN);
+      fb.drawText("--------", dx, sidebarTopY, RGBA.fromHex("#444444"));
+
+      // Calculate and apply scroll
+      const totalContentLines = contentLines.length;
+      const maxScroll = Math.max(0, totalContentLines - sidebarContentH);
+      sidebarScrollOffset = clamp(sidebarScrollOffset, 0, maxScroll);
+
+      // Render visible content
+      for (let i = 0; i < sidebarContentH && (sidebarScrollOffset + i) < totalContentLines; i++) {
+        const line = contentLines[sidebarScrollOffset + i];
+        fb.drawText(truncate(line.text, detailW - 2), dx, sidebarTopY + 2 + i, line.color);
+      }
+
+      // Scroll indicators (▲ ▼)
+      if (sidebarScrollOffset > 0) {
+        fb.drawText("▲", graphW + detailW - 2, sidebarTopY + 1, CYAN);
+      }
+      if (sidebarScrollOffset < maxScroll) {
+        fb.drawText("▼", graphW + detailW - 2, sidebarTopY + 1 + sidebarContentH, CYAN);
       }
     } else {
       // Footer detail strip
@@ -991,13 +1090,21 @@ async function main() {
       case "up":
       case "k":
         selectedIndex = clamp(selectedIndex - 1, 0, Math.max(0, laidOut.length - 1));
-        if (filesExpanded) void fetchFilesForSelected();
+        sidebarScrollOffset = 0;
         render();
         return;
       case "down":
       case "j":
         selectedIndex = clamp(selectedIndex + 1, 0, Math.max(0, laidOut.length - 1));
-        if (filesExpanded) void fetchFilesForSelected();
+        sidebarScrollOffset = 0;
+        render();
+        return;
+      case "pageup":
+        sidebarScrollOffset = Math.max(0, sidebarScrollOffset - 10);
+        render();
+        return;
+      case "pagedown":
+        sidebarScrollOffset += 10;
         render();
         return;
       case "r":
