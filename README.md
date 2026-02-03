@@ -42,7 +42,7 @@ Built with **Bun** and **HTML5 Canvas**, this tool provides a "Circuit Board" st
 ```bash
 # From any jj repository
 cd /path/to/your/jj-repo
-bun run /path/to/jj-viz/server.ts
+bun run /path/to/jj-viz/cli.ts
 ```
 
 ### Option 2: Global Alias
@@ -51,10 +51,10 @@ Add to your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish`:
 
 ```bash
 # Bash/Zsh
-alias jjviz='bun run /path/to/jj-viz/server.ts'
+alias jjviz='bun run /path/to/jj-viz/cli.ts'
 
 # Or if you put jj-viz in ~/tools
-alias jjviz='bun run ~/tools/jj-viz/server.ts'
+alias jjviz='bun run ~/tools/jj-viz/cli.ts'
 ```
 
 Then use from any jj repository:
@@ -72,23 +72,29 @@ cp -r jj-viz ~/tools/
 
 # Run from anywhere
 cd my-project
-bun run ~/tools/jj-viz/server.ts
+bun run ~/tools/jj-viz/cli.ts
+
+# Or TUI
+# bun run ~/tools/jj-viz/cli.ts --tui
 ```
 
 ## Usage
 
 ```bash
-# Start server (auto-detects port 3000, opens browser)
-bun run server.ts
+# Start web UI (default; auto-detects port 3000, opens browser)
+bun run cli.ts
 
 # Custom port, don't open browser
-bun run server.ts --port=8080 --no-open
+bun run cli.ts --port=8080 --no-open
+
+# Start TUI (renders the graph directly in your terminal)
+bun run cli.ts --tui
 
 # Or shorthand
-bun run server.ts -p 8080 -n
+bun run cli.ts -p 8080 -n
 
 # Show help
-bun run server.ts --help
+bun run cli.ts --help
 ```
 
 ### CLI Options
@@ -133,7 +139,7 @@ cd jj-viz
 # Install dependencies (Bun handles this automatically)
 
 # Run development server
-bun run server.ts
+bun run cli.ts
 
 # The server will:
 # 1. Auto-detect the JJ repository root (walks up from CWD)

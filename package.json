@@ -6,19 +6,22 @@
   "author": "",
   "license": "MIT",
   "bin": {
-    "jj-viz": "./server.ts"
+    "jj-viz": "./cli.ts",
+    "jjviz": "./cli.ts"
   },
   "scripts": {
-    "start": "bun run server.ts",
-    "dev": "bun run server.ts --port=3000",
-    "build:web": "bun run packages/web/build.ts",
-    "build:tui": "bun run packages/tui/build.ts"
+    "start": "bun run cli.ts",
+    "dev": "bun run cli.ts --port=3000",
+    "web": "bun run server.ts",
+    "tui": "bun run tui/main.ts"
   },
   "engines": {
     "bun": ">=1.0.0"
   },
   "files": [
+    "cli.ts",
     "server.ts",
+    "tui/",
     "public/",
     "bun.d.ts",
     "README.md"
@@ -26,5 +29,8 @@
   "repository": {
     "type": "git",
     "url": ""
+  },
+  "dependencies": {
+    "@opentui/core": "^0.1.77"
   }
 }
