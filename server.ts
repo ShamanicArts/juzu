@@ -4,6 +4,8 @@ declare const Bun: any;
 // Make this a module to allow top-level await
 export {};
 
+import solidDomPlugin from "./src/web/bun-plugin-solid-dom";
+
 // CLI Arguments
 const args = {
     port: parseInt(process.argv.find(a => a.startsWith('--port='))?.split('=')[1] || process.env.PORT || '3000'),
@@ -59,14 +61,13 @@ if (!PROC_CWD) {
 
 console.log(`📁 JJ Repository: ${PROC_CWD}`);
 
-// Script directory for serving static assets (allows running from anywhere)
+// Script directory for serving static assets
 const SCRIPT_DIR = import.meta.dir;
 
-// Removed isWorkingCopy from template - we will calculate it in Node
 const JJ_TEMPLATE = `change_id.short() ++ "§" ++ commit_id.short() ++ "§" ++ parents.map(|p| p.change_id().short()).join(",") ++ "§" ++ author.email() ++ "§" ++ author.timestamp() ++ "§" ++ bookmarks.join(",") ++ "§" ++ description.first_line() ++ "§" ++ description ++ "§" ++ empty ++ "§" ++ conflict ++ "§" ++ hidden ++ "§" ++ root ++ "§<JJ-SEP>§"`;
 
 // Git branch cache
-let gitBranchCache = new Map<string, string[]>(); // commitId -> branches[]
+let gitBranchCache = new Map<string, string[]>();
 let lastGitBranchFetch = 0;
 
 async function getWorkingCopyId(): Promise<string> {
@@ -77,35 +78,33 @@ async function getWorkingCopyId(): Promise<string> {
   return await new Response(proc.stdout).text();
 }
 
-async function getJJLog() {
+async function getJJLog(limit = 500) {
   console.log("Fetching JJ log...");
 
-  // Check if we should refresh git branch cache (every 5 seconds)
   const now = Date.now();
   if (now - lastGitBranchFetch > 5000) {
     gitBranchCache = await getGitBranches();
     lastGitBranchFetch = now;
   }
 
-  // Parallel fetch: Log + Working Copy ID + Git Branches
   const [logText, wcId] = await Promise.all([
-      (async () => {
-          const proc = Bun.spawn(["jj", "log", "--no-graph", "-r", "::", "--limit", "500", "-T", JJ_TEMPLATE], {
-            cwd: PROC_CWD,
-            stderr: "pipe",
-          });
-          return await new Response(proc.stdout).text();
-      })(),
-      getWorkingCopyId()
+    (async () => {
+      const proc = Bun.spawn(["jj", "log", "--no-graph", "-r", "::", "--limit", String(limit), "-T", JJ_TEMPLATE], {
+        cwd: PROC_CWD,
+        stderr: "pipe",
+      });
+      return await new Response(proc.stdout).text();
+    })(),
+    getWorkingCopyId()
   ]);
 
   const cleanWcId = wcId.trim();
 
   return logText.split("§<JJ-SEP>§").map(block => block.trim()).filter(Boolean).map(block => {
     const parts = block.split("§");
-    if (parts.length < 12) { // Adjusted length check
-       console.log("Skipping malformed block:", block.substring(0, 50));
-       return null;
+    if (parts.length < 12) {
+      console.log("Skipping malformed block:", block.substring(0, 50));
+      return null;
     }
 
     const changeId = parts[0];
@@ -116,7 +115,6 @@ async function getJJLog() {
     const bookmarks = parts[5];
     const descTitle = parts[6];
 
-    // Reverse index for booleans (Standard again)
     const root = parts[parts.length-1];
     const hidden = parts[parts.length-2];
     const conflict = parts[parts.length-3];
@@ -124,17 +122,16 @@ async function getJJLog() {
 
     const descFull = parts.slice(7, parts.length-4).join("§");
 
-    // Get git branches for this commit
     const shortCommitId = commitId.trim();
     const gitBranches = gitBranchCache.get(shortCommitId) || [];
 
     return {
       changeId: changeId.trim(),
       commitId: commitId.trim(),
-      parents: parents ? parents.split(",") : [],
+      parents: parents ? parents.split(",").filter((p: string) => p.trim()) : [],
       author: author.trim(),
       time: time.trim(),
-      bookmarks: bookmarks ? bookmarks.split(",").filter(b => b.trim()) : [],
+      bookmarks: bookmarks ? bookmarks.split(",").filter((b: string) => b.trim()) : [],
       gitBranches: gitBranches,
       descriptionTitle: descTitle.trim(),
       descriptionFull: descFull.trim(),
@@ -142,7 +139,7 @@ async function getJJLog() {
       isConflict: conflict.trim() === "true",
       isHidden: hidden.trim() === "true",
       isRoot: root.trim() === "true",
-      isWorkingCopy: changeId.trim() === cleanWcId // Server-side calculation
+      isWorkingCopy: changeId.trim() === cleanWcId
     };
   }).filter(Boolean);
 }
@@ -156,8 +153,6 @@ async function getDiff(changeId: string): Promise<string> {
 }
 
 async function getGitBranches(): Promise<Map<string, string[]>> {
-  // Fetch git branch info for all commits
-  // Use for-each-ref to get branch -> commit mappings
   const proc = Bun.spawn(["git", "for-each-ref", "--format=%(objectname:short) %(refname:short)", "refs/heads"], {
     cwd: PROC_CWD,
     stderr: "pipe",
@@ -166,7 +161,7 @@ async function getGitBranches(): Promise<Map<string, string[]>> {
 
   const commitBranches = new Map<string, string[]>();
 
-  output.trim().split("\n").forEach(line => {
+  output.trim().split("\n").forEach((line: string) => {
     const [commitId, branchName] = line.split(" ");
     if (commitId && branchName) {
       if (!commitBranches.has(commitId)) {
@@ -179,12 +174,17 @@ async function getGitBranches(): Promise<Map<string, string[]>> {
   return commitBranches;
 }
 
-async function getFiles(changeId: string): Promise<string> {
+async function getFiles(changeId: string): Promise<Array<{ type: string; path: string }>> {
   const proc = Bun.spawn(["jj", "diff", "--summary", "-r", changeId], {
     cwd: PROC_CWD,
     stderr: "pipe",
   });
-  return await new Response(proc.stdout).text();
+  const output = await new Response(proc.stdout).text();
+  
+  return output.trim().split("\n").filter(Boolean).map((line: string) => {
+    const [type, ...pathParts] = line.split(" ");
+    return { type, path: pathParts.join(" ") };
+  });
 }
 
 const server = Bun.serve({
@@ -192,24 +192,24 @@ const server = Bun.serve({
   async fetch(req: Request) {
     const url = new URL(req.url);
     
-    // API Endpoint
-      if (url.pathname === "/api/log") {
-        try {
-          const data = await getJJLog();
-          return new Response(JSON.stringify(data), {
-              headers: { 
-                  "Content-Type": "application/json",
-                  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-                  "Pragma": "no-cache",
-                  "Expires": "0",
-              }
-          });
-        } catch (e: unknown) {
-          console.error(e);
-          const msg = e instanceof Error ? e.message : String(e);
-          return new Response(JSON.stringify({ error: msg }), { status: 500 });
-        }
+    // API Endpoints
+    if (url.pathname === "/api/log") {
+      try {
+        const limitRaw = url.searchParams.get("limit");
+        const limit = Math.max(1, Math.min(2000, Number(limitRaw || "500") || 500));
+        const data = await getJJLog(limit);
+        return new Response(JSON.stringify(data), {
+          headers: { 
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          }
+        });
+      } catch (e: unknown) {
+        console.error(e);
+        const msg = e instanceof Error ? e.message : String(e);
+        return new Response(JSON.stringify({ error: msg }), { status: 500 });
       }
+    }
 
     if (url.pathname.startsWith("/api/diff/")) {
       const id = url.pathname.split("/").pop();
@@ -228,12 +228,7 @@ const server = Bun.serve({
       if (!id) return new Response("Missing id", { status: 400 });
       try {
         const files = await getFiles(id);
-        // Parse into JSON list { type: 'A'|'M'|'D', path: string }
-        const parsed = files.trim().split("\n").filter(Boolean).map(line => {
-          const [type, ...pathParts] = line.split(" ");
-          return { type, path: pathParts.join(" ") };
-        });
-        return Response.json(parsed);
+        return Response.json(files);
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         return new Response("Error fetching files: " + msg, { status: 500 });
@@ -242,165 +237,210 @@ const server = Bun.serve({
 
     // Mutations
     if (req.method === "POST") {
-        const body = await req.json();
+      let body: any = {};
+      try {
+        body = await req.json();
+      } catch {
+        body = {};
+      }
+      
+      switch (url.pathname) {
+        case "/api/new": {
+          const { parentId, parentIds } = body;
+          const args: string[] = ["jj", "new"];
+          if (Array.isArray(parentIds) && parentIds.length > 0) {
+            args.push(...parentIds);
+            console.log("Creating new commit from parents", parentIds);
+          } else if (parentId) {
+            args.push(parentId);
+            console.log("Creating new commit from", parentId);
+          }
+          const proc = Bun.spawn(args, { cwd: PROC_CWD });
+          await proc.exited;
+          return Response.json({ success: true });
+        }
         
-        if (url.pathname === "/api/describe") {
-            const { changeId, description } = body;
-            console.log("Describing", changeId, description);
-            const proc = Bun.spawn(["jj", "describe", "-r", changeId, "-m", description], { cwd: PROC_CWD });
-            await proc.exited;
-            return Response.json({ success: true });
-        }
-
-        if (url.pathname === "/api/rebase") {
-            const { sourceId, destinationId } = body;
-            console.log("Rebasing", sourceId, "onto", destinationId);
-            const proc = Bun.spawn(["jj", "rebase", "-s", sourceId, "-d", destinationId], { cwd: PROC_CWD });
-            const exitCode = await proc.exited;
-            if (exitCode !== 0) {
-                 const stderr = await new Response(proc.stderr).text();
-                 return Response.json({ error: stderr }, { status: 400 });
-            }
-            return Response.json({ success: true });
+        case "/api/edit": {
+          const { changeId } = body;
+          console.log("Editing revision (checkout)", changeId);
+          const proc = Bun.spawn(["jj", "edit", changeId], { cwd: PROC_CWD });
+          const exitCode = await proc.exited;
+          if (exitCode !== 0) {
+            const stderr = await new Response(proc.stderr).text();
+            return Response.json({ error: stderr }, { status: 400 });
+          }
+          return Response.json({ success: true });
         }
         
-        if (url.pathname === "/api/new") {
-             const { parentIds } = body;
-             const args = ["jj", "new"];
-             if (parentIds && Array.isArray(parentIds)) {
-                 args.push(...parentIds);
-             } else if (body.parentId) {
-                 args.push(body.parentId);
-             }
-             
-             const proc = Bun.spawn(args, { cwd: PROC_CWD });
-             await proc.exited;
-             return Response.json({ success: true });
+        case "/api/describe": {
+          const { changeId, description } = body;
+          console.log("Describing", changeId, description);
+          const proc = Bun.spawn(["jj", "describe", "-r", changeId, "-m", description], { cwd: PROC_CWD });
+          await proc.exited;
+          return Response.json({ success: true });
+        }
+        
+        case "/api/abandon": {
+          const { changeId } = body;
+          console.log("Abandoning revision", changeId);
+          const proc = Bun.spawn(["jj", "abandon", changeId], { cwd: PROC_CWD });
+          const exitCode = await proc.exited;
+          if (exitCode !== 0) {
+            const stderr = await new Response(proc.stderr).text();
+            return Response.json({ error: stderr }, { status: 400 });
+          }
+          return Response.json({ success: true });
+        }
+        
+        case "/api/squash": {
+          const { changeId, into, intoId, paths } = body;
+          const target = into || intoId;
+          console.log("Squashing", changeId, "into", target || "parent", Array.isArray(paths) ? `(${paths.length} files)` : "");
+          const args: string[] = ["jj", "squash", "--use-destination-message"]; 
+          if (target) {
+            args.push("--from", changeId, "--into", target);
+          } else {
+            // Match legacy behavior: squash the revision into its parent.
+            args.push("-r", changeId);
+          }
+          if (Array.isArray(paths) && paths.length > 0) args.push(...paths);
+          const proc = Bun.spawn(args, { cwd: PROC_CWD });
+          const exitCode = await proc.exited;
+          if (exitCode !== 0) {
+            const stderr = await new Response(proc.stderr).text();
+            return Response.json({ error: stderr }, { status: 400 });
+          }
+          return Response.json({ success: true });
         }
 
-        if (url.pathname === "/api/edit") {
-            const { changeId } = body;
-            console.log("Editing revision (checkout)", changeId);
-            // jj edit <changeId>
-            const proc = Bun.spawn(["jj", "edit", changeId], { cwd: PROC_CWD });
-            const exitCode = await proc.exited;
+        case "/api/move": {
+          const { sourceId, destinationId } = body;
+          console.log("Moving (rebase)", sourceId, "onto", destinationId);
+          const proc = Bun.spawn(["jj", "rebase", "-s", sourceId, "-d", destinationId], {
+            cwd: PROC_CWD,
+            stderr: "pipe",
+          });
+          const exitCode = await proc.exited;
+          if (exitCode !== 0) {
+            const stderr = await new Response(proc.stderr).text();
+            return Response.json({ error: stderr }, { status: 400 });
+          }
+          return Response.json({ success: true });
+        }
 
+        case "/api/insert": {
+          const { afterId, parentId, childId } = body;
+          if (afterId) {
+            console.log("Inserting new commit after", afterId);
+            const proc = Bun.spawn(["jj", "new", afterId], { cwd: PROC_CWD, stderr: "pipe" });
+            const exitCode = await proc.exited;
             if (exitCode !== 0) {
-                 const stderr = await new Response(proc.stderr).text();
-                 return Response.json({ error: stderr }, { status: 400 });
+              const stderr = await new Response(proc.stderr).text();
+              return Response.json({ error: stderr }, { status: 400 });
             }
             return Response.json({ success: true });
-        }
-
-        if (url.pathname === "/api/abandon") {
-            const { changeId } = body;
-            console.log("Abandoning revision", changeId);
-            // jj abandon <changeId>
-            const proc = Bun.spawn(["jj", "abandon", changeId], { cwd: PROC_CWD });
-            const exitCode = await proc.exited;
-
-            if (exitCode !== 0) {
-                 const stderr = await new Response(proc.stderr).text();
-                 return Response.json({ error: stderr }, { status: 400 });
-            }
-            return Response.json({ success: true });
-        }
-
-        if (url.pathname === "/api/squash") {
-            const { changeId, into, intoId, paths } = body;
-            const target = into || intoId;
-            console.log("Squashing", changeId, "into", target || "parent", paths ? `(${paths.length} files)` : "");
-
-            // jj squash: use --from for source when using --into
-            const args = ["jj", "squash", "--from", changeId];
-            if (target) {
-                args.push("--into", target);
-            }
-            // If specific paths are provided, only squash those files
-            if (paths && Array.isArray(paths) && paths.length > 0) {
-                args.push(...paths);
-            }
-
-            const proc = Bun.spawn(args, { cwd: PROC_CWD });
-            const exitCode = await proc.exited;
-
-            if (exitCode !== 0) {
-                 const stderr = await new Response(proc.stderr).text();
-                 console.log("Squash failed:", stderr);
-                 return Response.json({ error: stderr }, { status: 400 });
-            }
-            return Response.json({ success: true });
-        }
-
-        if (url.pathname === "/api/move") {
-            const { sourceId, destId } = body;
-            console.log("Moving", sourceId, "onto", destId);
-
-            // jj rebase -s <source> -d <dest>
-            const proc = Bun.spawn(["jj", "rebase", "-s", sourceId, "-d", destId], {
-                cwd: PROC_CWD,
-                stderr: "pipe"
-            });
-            const exitCode = await proc.exited;
-
-            if (exitCode !== 0) {
-                const stderr = await new Response(proc.stderr).text();
-                console.log("Move failed:", stderr);
-                return Response.json({ error: stderr }, { status: 400 });
-            }
-            return Response.json({ success: true });
-        }
-
-        if (url.pathname === "/api/insert") {
-            const { parentId, childId } = body;
+          }
+          if (parentId && childId) {
             console.log("Inserting new commit between", parentId, "and", childId);
-
-            // Step 1: Create new empty commit after parent
-            const newProc = Bun.spawn(["jj", "new", parentId], {
-                cwd: PROC_CWD,
-                stderr: "pipe"
-            });
-            let exitCode = await newProc.exited;
-
-            if (exitCode !== 0) {
-                const stderr = await new Response(newProc.stderr).text();
-                console.log("Insert failed (new):", stderr);
-                return Response.json({ error: stderr }, { status: 400 });
+            const proc1 = Bun.spawn(["jj", "new", parentId], { cwd: PROC_CWD, stderr: "pipe" });
+            const exit1 = await proc1.exited;
+            if (exit1 !== 0) {
+              const stderr = await new Response(proc1.stderr).text();
+              return Response.json({ error: stderr }, { status: 400 });
             }
-
-            // Step 2: Rebase child and all descendants onto the new commit (@)
-            // After `jj new`, the new commit is @ (working copy), @- is the parent
-            const rebaseProc = Bun.spawn(["jj", "rebase", "-s", childId, "-d", "@"], {
-                cwd: PROC_CWD,
-                stderr: "pipe"
-            });
-            exitCode = await rebaseProc.exited;
-
-            if (exitCode !== 0) {
-                const stderr = await new Response(rebaseProc.stderr).text();
-                console.log("Insert failed (rebase):", stderr);
-                return Response.json({ error: stderr }, { status: 400 });
+            const proc2 = Bun.spawn(["jj", "rebase", "-s", childId, "-d", "@"], { cwd: PROC_CWD, stderr: "pipe" });
+            const exit2 = await proc2.exited;
+            if (exit2 !== 0) {
+              const stderr = await new Response(proc2.stderr).text();
+              return Response.json({ error: stderr }, { status: 400 });
             }
-
             return Response.json({ success: true });
+          }
+          return Response.json({ error: "Missing afterId or (parentId, childId)" }, { status: 400 });
         }
+
+        case "/api/split": {
+          const { changeId, paths, message } = body;
+          if (!changeId) return Response.json({ error: "Missing changeId" }, { status: 400 });
+          if (!Array.isArray(paths) || paths.length === 0) {
+            return Response.json({ error: "Missing paths" }, { status: 400 });
+          }
+          const msg = typeof message === "string" && message.trim() ? message.trim() : "split";
+          console.log("Splitting", changeId, `(${paths.length} files)`);
+          const proc = Bun.spawn(["jj", "split", "-r", changeId, "-m", msg, ...paths], { cwd: PROC_CWD, stderr: "pipe" });
+          const exitCode = await proc.exited;
+          if (exitCode !== 0) {
+            const stderr = await new Response(proc.stderr).text();
+            return Response.json({ error: stderr }, { status: 400 });
+          }
+          return Response.json({ success: true });
+        }
+        
+        case "/api/duplicate": {
+          const { changeId } = body;
+          console.log("Duplicating", changeId);
+          const proc = Bun.spawn(["jj", "duplicate", changeId], { cwd: PROC_CWD });
+          const exitCode = await proc.exited;
+          if (exitCode !== 0) {
+            const stderr = await new Response(proc.stderr).text();
+            return Response.json({ error: stderr }, { status: 400 });
+          }
+          return Response.json({ success: true });
+        }
+        
+        case "/api/rebase": {
+          const { sourceId, destinationId } = body;
+          console.log("Rebasing", sourceId, "onto", destinationId);
+          const proc = Bun.spawn(["jj", "rebase", "-s", sourceId, "-d", destinationId], {
+            cwd: PROC_CWD,
+            stderr: "pipe"
+          });
+          const exitCode = await proc.exited;
+          if (exitCode !== 0) {
+            const stderr = await new Response(proc.stderr).text();
+            return Response.json({ error: stderr }, { status: 400 });
+          }
+          return Response.json({ success: true });
+        }
+        
+        case "/api/undo": {
+          console.log("Undoing");
+          const proc = Bun.spawn(["jj", "undo"], { cwd: PROC_CWD });
+          await proc.exited;
+          return Response.json({ success: true });
+        }
+      }
     }
 
-    // Static Asset Serving (relative to script location)
+    // Static assets
     if (url.pathname === "/") {
       return new Response(Bun.file(`${SCRIPT_DIR}/public/index.html`));
     }
-    if (url.pathname === "/style.css") {
-      return new Response(Bun.file(`${SCRIPT_DIR}/public/style.css`));
-    }
     
-    // On-the-fly TypeScript bundling
-    if (url.pathname === "/client.js") {
-      const build = await Bun.build({
-        entrypoints: [`${SCRIPT_DIR}/public/client.ts`],
-        minify: false,
-      });
-      return new Response(build.outputs[0]);
+    // Serve web app files
+    if (url.pathname === "/web/app.js" || url.pathname.startsWith("/src/")) {
+      // In development, we need to bundle the TypeScript
+      try {
+        const build = await Bun.build({
+          entrypoints: [`${SCRIPT_DIR}/src/web/App.tsx`],
+          target: "browser",
+          format: "esm",
+          plugins: [solidDomPlugin],
+        });
+        
+        if (!build.success) {
+          const errors = build.logs.map(l => l.message).join("\n");
+          console.error("Build errors:", errors);
+          return new Response(`Build error:\n${errors}`, { status: 500 });
+        }
+        
+        return new Response(build.outputs[0], {
+          headers: { "Content-Type": "application/javascript" }
+        });
+      } catch (e) {
+        console.error("Build exception:", e);
+        return new Response(`Build error: ${e}`, { status: 500 });
+      }
     }
 
     return new Response("Not Found", { status: 404 });
@@ -410,7 +450,6 @@ const server = Bun.serve({
 const url = `http://localhost:${server.port}`;
 console.log(`🚀 jj-viz running at ${url}`);
 
-// Auto-open browser unless disabled
 if (!args.noOpen) {
     const platform = process.platform;
     const openCommand = platform === 'darwin' ? 'open' :

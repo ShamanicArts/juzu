@@ -13,7 +13,9 @@
     "start": "bun run cli.ts",
     "dev": "bun run cli.ts --port=3000",
     "web": "bun run server.ts",
-    "tui": "bun run tui/main.ts"
+    "web:dev": "bun run server.ts --no-open",
+    "tui": "bun run cli.ts --tui",
+    "tui:old": "bun run tui/main.ts"
   },
   "engines": {
     "bun": ">=1.0.0"
@@ -21,7 +23,7 @@
   "files": [
     "cli.ts",
     "server.ts",
-    "tui/",
+    "src/",
     "public/",
     "bun.d.ts",
     "README.md"
@@ -31,8 +33,11 @@
     "url": ""
   },
   "dependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/preset-typescript": "^7.26.0",
     "@opentui/core": "^0.1.77",
     "@opentui/solid": "^0.1.77",
+    "babel-preset-solid": "^1.9.3",
     "solid-js": "^1.9.11"
   }
 }
