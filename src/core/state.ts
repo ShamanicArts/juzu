@@ -57,6 +57,7 @@ export interface AppState {
   leaderMode: boolean;
   describeMode: boolean;
   describeValue: string;
+  cursorPos: number;
   
   // Merge mode (TUI multi-select)
   mergeMode: boolean;
@@ -108,6 +109,7 @@ const initialState: AppState = {
   leaderMode: false,
   describeMode: false,
   describeValue: "",
+  cursorPos: 0,
   mergeMode: false,
   mergeSelectedIds: new Set(),
   statusMessage: "",
@@ -273,19 +275,24 @@ export const actions = {
   startDescribe: (initialValue: string) => {
     setState("describeMode", true);
     setState("describeValue", initialValue);
+    setState("cursorPos", initialValue.length);
   },
   
   updateDescribeValue: (value: string) => setState("describeValue", value),
   
+  setCursorPos: (pos: number) => setState("cursorPos", pos),
+  
   cancelDescribe: () => {
     setState("describeMode", false);
     setState("describeValue", "");
+    setState("cursorPos", 0);
   },
   
   submitDescribe: (): string | null => {
     const value = state.describeValue;
     setState("describeMode", false);
     setState("describeValue", "");
+    setState("cursorPos", 0);
     return value;
   },
   

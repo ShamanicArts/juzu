@@ -34,10 +34,11 @@ if (wantsTui) {
   // That plugin must be preloaded before modules are compiled,
   // so we run the TUI in a separate Bun process.
   const tuiEntry = `${import.meta.dir}/src/tui/main.ts`;
+  const preloadPath = `${import.meta.dir}/node_modules/@opentui/solid/scripts/preload.ts`;
   const proc = Bun.spawn([
     "bun",
     "--preload",
-    "@opentui/solid/preload",
+    preloadPath,
     tuiEntry,
   ], {
     stdin: "inherit",

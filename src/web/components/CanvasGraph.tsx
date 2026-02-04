@@ -25,6 +25,8 @@ export function CanvasGraph(props: {
   const [dragNodeId, setDragNodeId] = createSignal<string | null>(null);
   const [dropTarget, setDropTarget] = createSignal<DropTarget | null>(null);
   const [hoveredConn, setHoveredConn] = createSignal<{ from: string; to: string; midX: number; midY: number } | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = createSignal<string | null>(null);
+  const [shiftActive, setShiftActive] = createSignal(false);
 
   const cfg = DEFAULT_GRAPH_CONFIG;
 
@@ -225,9 +227,10 @@ export function CanvasGraph(props: {
       const desc = (node.descriptionTitle || "").slice(0, 60);
       ctx.fillText(desc, state.layoutResult.textColumnX + 80, node.y + 4);
 
-      // Inline controls (selected node only; Shift shows alternate actions)
-      if (isSelected) {
-        const showAlt = (window as any).__jjvShiftActive === true;
+      // Inline controls (selected or hovered node; Shift shows alternate actions)
+      const isHovered = hoveredNodeId() === node.changeId;
+      if (isSelected || isHovered) {
+        const showAlt = shiftActive();
         const baseX = state.layoutResult.textColumnX + 16;
         const baseY = node.y + 10;
         const items: Array<{ label: string; action: InlineBtn["action"] }> = showAlt
@@ -269,11 +272,12 @@ export function CanvasGraph(props: {
         ctx.restore();
       }
 
-      // Inline files
+      // Inline files - positioned below inline controls with proper spacing
       if (state.expandedFilesNodeId === node.changeId) {
         const cached = state.filesCache.get(node.changeId);
         if (cached && cached.files.length > 0) {
-          let y = node.y + 20;
+          // Start below inline controls (y + 10 + 18 + 12px padding)
+          let y = node.y + 40;
           const x = state.layoutResult.textColumnX + 20;
           ctx.font = '11px "JetBrains Mono", monospace';
           cached.files.forEach((f) => {
@@ -427,6 +431,18 @@ export function CanvasGraph(props: {
       setHoveredConn(null);
       render();
     }
+
+    // Hover node detection for inline controls
+    const hitNode = findNodeAt(wx, wy, state.layoutResult.nodes, cfg);
+    if (hitNode) {
+      if (hoveredNodeId() !== hitNode.changeId) {
+        setHoveredNodeId(hitNode.changeId);
+        render();
+      }
+    } else if (hoveredNodeId()) {
+      setHoveredNodeId(null);
+      render();
+    }
   };
 
   const handleMouseUp = () => {
@@ -504,6 +520,16 @@ export function CanvasGraph(props: {
     canvasRef.addEventListener("click", handleClick);
     canvasRef.addEventListener("contextmenu", handleContextMenu);
 
+    // Track shift key state for inline actions
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setShiftActive(true);
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setShiftActive(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+
     onCleanup(() => {
       resizeObserver.disconnect();
       canvasRef?.removeEventListener("mousedown", handleMouseDown);
@@ -513,6 +539,8 @@ export function CanvasGraph(props: {
       canvasRef?.removeEventListener("wheel", handleWheel);
       canvasRef?.removeEventListener("click", handleClick);
       canvasRef?.removeEventListener("contextmenu", handleContextMenu);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
     });
   });
 
@@ -527,6 +555,8 @@ export function CanvasGraph(props: {
     dragNodeId();
     dropTarget();
     hoveredConn();
+    hoveredNodeId();
+    shiftActive();
     dimensions();
     render();
   });

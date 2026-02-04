@@ -23,6 +23,7 @@ interface SidebarProps {
   showHelp?: boolean;
   promptMode?: boolean;
   promptValue?: string;
+  cursorPos?: number;
   mergeMode?: boolean;
   mergeSelectedIds?: Set<string>;
   viewMode?: ViewMode;
@@ -33,9 +34,8 @@ interface SidebarProps {
 
 export function Sidebar(props: SidebarProps) {
   const contentLines = createMemo(() => {
-    // Show help content
     if (props.showHelp) {
-      return [
+      const lines = [
         { text: "Navigation", color: CYAN },
         { text: "j/k or ↑/↓  Navigate", color: FG },
         { text: "PgUp/PgDn   Scroll", color: FG },
@@ -62,6 +62,7 @@ export function Sidebar(props: SidebarProps) {
         { text: "", color: FG_DIM },
         { text: "Press h to close help", color: FG_DIM },
       ];
+      return lines;
     }
 
     // Show op log mode content
@@ -221,10 +222,13 @@ export function Sidebar(props: SidebarProps) {
 
     // Show prompt if in describe mode
     if (props.promptMode) {
+      const text = props.promptValue || "";
+      const cursorPos = props.cursorPos ?? text.length;
+      const display = text.slice(0, cursorPos) + "_" + text.slice(cursorPos);
       lines.push({ text: "Edit Description:", color: CYAN });
-      lines.push({ text: props.promptValue || "(empty)", color: YELLOW });
+      lines.push({ text: display, color: YELLOW });
       lines.push({ text: "", color: FG_DIM });
-      lines.push({ text: "Enter: save  Esc: cancel", color: FG_DIM });
+      lines.push({ text: "Enter: save  Esc: cancel  ←/→: move cursor", color: FG_DIM });
       lines.push({ text: "", color: FG_DIM });
     }
 

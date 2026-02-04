@@ -10,6 +10,8 @@ import { GraphView } from "./components/GraphView";
 import { Sidebar } from "./components/Sidebar";
 import { OpLogView } from "./components/OpLogView";
 import { ObslogView } from "./components/ObslogView";
+import { StatusBar } from "./components/StatusBar";
+import { FooterBar } from "./components/FooterBar";
 
 const BG = RGBA.fromHex("#24283b");
 const PANEL_BG = RGBA.fromHex("#1a1b26");
@@ -172,10 +174,20 @@ function App() {
         actions.setStatusMessage("Cancelled");
         return;
       } else if (name === "backspace") {
-        actions.updateDescribeValue(state.describeValue.slice(0, -1));
+        const newValue = state.describeValue.slice(0, state.cursorPos - 1) + state.describeValue.slice(state.cursorPos);
+        actions.updateDescribeValue(newValue);
+        actions.setCursorPos(Math.max(0, state.cursorPos - 1));
+        return;
+      } else if (name === "left") {
+        actions.setCursorPos(Math.max(0, state.cursorPos - 1));
+        return;
+      } else if (name === "right") {
+        actions.setCursorPos(Math.min(state.describeValue.length, state.cursorPos + 1));
         return;
       } else if (key.sequence && key.sequence.length === 1) {
-        actions.updateDescribeValue((state.describeValue + key.sequence).slice(0, 200));
+        const newValue = state.describeValue.slice(0, state.cursorPos) + key.sequence + state.describeValue.slice(state.cursorPos);
+        actions.updateDescribeValue(newValue);
+        actions.setCursorPos(state.cursorPos + key.sequence.length);
         return;
       }
       return;
@@ -207,26 +219,40 @@ function App() {
 
     // Handle leader mode
     if (state.leaderMode) {
-      actions.setLeaderMode(false);
       switch (name) {
         case "a":
+          actions.setLeaderMode(false);
           handleAbandon();
           return;
         case "s":
+          actions.setLeaderMode(false);
           handleSquash();
           return;
         case "d":
+          actions.setLeaderMode(false);
           handleDuplicate();
           return;
         case "m":
+          actions.setLeaderMode(false);
           actions.setMergeMode(true);
           actions.setStatusMessage("Merge mode: Space=select Enter=merge Esc=cancel");
           return;
         case "escape":
+          actions.setLeaderMode(false);
           actions.setStatusMessage("Cancelled");
           return;
+        case "up":
+        case "down":
+        case "left":
+        case "right":
+        case "k":
+        case "j":
+          // Allow navigation - cancel leader mode silently and fall through
+          actions.setLeaderMode(false);
+          break;
         default:
-          actions.setStatusMessage(`Unknown leader key: ${name}`);
+          // Unknown key - just cancel leader mode silently
+          actions.setLeaderMode(false);
           return;
       }
     }
@@ -503,44 +529,13 @@ function App() {
   const showSidebar = () => state.termSize.width >= 90 && state.termSize.height >= 16;
   const detailW = () => showSidebar() ? Math.floor(state.termSize.width * 0.40) : 0;
   const graphW = () => state.termSize.width - detailW();
+  // 1 row for StatusBar + 1 row for FooterBar = 2 rows
   const mainHeight = () => state.termSize.height - 2;
-
-  const statusText = () => {
-    if (state.rebaseSourceId) {
-      return `REBASE MODE: src:${state.rebaseSourceId.slice(0, 8)} - select dest + Enter/b, Esc cancels`;
-    }
-    if (state.mergeMode) {
-      const count = state.mergeSelectedIds.size;
-      return `MERGE MODE: ${count} selected - Space=toggle Enter=merge Esc=cancel`;
-    }
-    if (state.leaderMode) {
-      return "LEADER MODE: a=abandon s=squash d=duplicate m=merge";
-    }
-    if (state.describeMode) {
-      return `DESCRIBE MODE: editing description`;
-    }
-    if (state.showHelp) {
-      return `HELP MODE: h to close`;
-    }
-    if (state.viewMode === "oplog") {
-      return "OP LOG: j/k nav R=restore g=back to log";
-    }
-    if (state.viewMode === "obslog") {
-      return "OBS LOG: j/k nav g=back to log";
-    }
-    return `layout:${state.layoutMode} j/k nav x desc f files n new e edit d desc b rebase u undo U redo o=oplog v=obslog h help`;
-  };
 
   return (
     <box width={state.termSize.width} height={state.termSize.height} backgroundColor={BG} flexDirection="column">
-      <box height={2} backgroundColor={PANEL_BG} flexDirection="row">
-        <box flexGrow={1}>
-          <text>jj-viz TUI  nodes:{state.layoutResult.nodes.length}  {state.statusMessage}</text>
-        </box>
-        <box flexGrow={1}>
-          <text>{statusText()}</text>
-        </box>
-      </box>
+      {/* Top status bar */}
+      <StatusBar />
 
       <box flexDirection="row" flexGrow={1} height={mainHeight()}>
         <box width={graphW()} height={mainHeight()}>
@@ -582,28 +577,32 @@ function App() {
 
         {showSidebar() && (
           <box width={detailW()} height={mainHeight()} backgroundColor={PANEL_BG}>
-              <Sidebar
-              selected={selectedNode()}
-              filesCache={state.filesCache}
-              descExpanded={state.descExpanded}
-              filesExpanded={state.filesExpanded}
-              scrollOffset={state.sidebarScroll}
-              width={detailW()}
-              height={mainHeight()}
-              showHelp={state.showHelp}
-              promptMode={state.describeMode}
-              promptValue={state.describeValue}
-              mergeMode={state.mergeMode}
-              mergeSelectedIds={state.mergeSelectedIds}
-                viewMode={state.viewMode}
-                opLogSelected={state.opLogEntries.find(e => e.id === state.opLogSelectedId)}
-                obslogChangeId={state.obslogChangeId}
-                obslogSelected={state.obslogEntries[state.obslogSelectedIndex] || null}
-              />
+               <Sidebar
+               selected={selectedNode()}
+               filesCache={state.filesCache}
+               descExpanded={state.descExpanded}
+               filesExpanded={state.filesExpanded}
+               scrollOffset={state.sidebarScroll}
+               width={detailW()}
+               height={mainHeight()}
+               showHelp={state.showHelp}
+               promptMode={state.describeMode}
+               promptValue={state.describeValue}
+               cursorPos={state.cursorPos}
+               mergeMode={state.mergeMode}
+               mergeSelectedIds={state.mergeSelectedIds}
+                 viewMode={state.viewMode}
+                 opLogSelected={state.opLogEntries.find(e => e.id === state.opLogSelectedId)}
+                 obslogChangeId={state.obslogChangeId}
+                 obslogSelected={state.obslogEntries[state.obslogSelectedIndex] || null}
+               />
             </box>
           )}
         </box>
-      </box>
+
+      {/* Bottom footer bar */}
+      <FooterBar />
+    </box>
   );
 }
 
