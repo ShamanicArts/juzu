@@ -8,7 +8,7 @@ export function Sidebar(props: {
   onMergeSelected: () => void;
   onExecuteOp: () => void;
   onDescribeSubmit: () => void;
-  onRunMutation: (kind: "new" | "edit" | "describe" | "rebase" | "abandon" | "duplicate" | "undo") => void;
+  onRunMutation: (kind: "new" | "edit" | "describe" | "rebase" | "abandon" | "duplicate" | "undo" | "redo") => void;
 }) {
   const node = createMemo(() => selectedNode());
   const isMulti = createMemo(() => state.selectedIds.size > 1);
@@ -69,6 +69,7 @@ export function Sidebar(props: {
       { label: "Desc", kind: "describe" },
       { label: "Rebase", kind: "rebase" },
       { label: "Undo", kind: "undo" },
+      { label: "Redo", kind: "redo" },
     ];
     return items;
   });

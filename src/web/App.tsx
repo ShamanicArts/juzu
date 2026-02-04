@@ -1,11 +1,15 @@
 import { render } from "solid-js/web";
-import { createEffect, createMemo, createSignal, onCleanup, onMount, Show } from "solid-js";
+import { createEffect, createMemo, createSignal, onCleanup, onMount, Show, Switch, Match } from "solid-js";
 import { actions, navigation, selectedNode, state } from "../core/state";
 import { setBackend } from "../core/runtime";
-import { ensureFiles, fetchDiff, opAbandon, opDescribe, opDuplicate, opEdit, opInsertAfter, opInsertBetween, opMerge, opMove, opNew, opRebase, opSquash, opSplit, opUndo, refreshLog, toggleInlineFilesForSelected } from "../core/usecases";
+import { ensureFiles, fetchDiff, opAbandon, opDescribe, opDuplicate, opEdit, opInsertAfter, opInsertBetween, opMerge, opMove, opNew, opRebase, opRedo, opRestoreOperation, opSquash, opSplit, opUndo, refreshLog, refreshOpLog, refreshObslog, toggleInlineFilesForSelected } from "../core/usecases";
 import { createWebBackend } from "./backend";
 import { CanvasGraph } from "./components/CanvasGraph";
 import { Sidebar } from "./components/Sidebar";
+import { OpLogView } from "./components/OpLogView";
+import { ObslogView } from "./components/ObslogView";
+import { OpLogSidebar } from "./components/OpLogSidebar";
+import { ObslogSidebar } from "./components/ObslogSidebar";
 
 type PersistedLayout = {
   layoutMode?: string;
@@ -97,6 +101,37 @@ function App() {
     })();
   });
 
+  const handleOpLog = async () => {
+    try {
+      actions.setViewMode("oplog");
+      await refreshOpLog(100);
+      actions.setStatusMessage("Operation log loaded");
+    } catch (e) {
+      actions.setStatusMessage(`Error: ${String(e)}`);
+    }
+  };
+
+  const handleObslog = async () => {
+    const node = selected();
+    if (!node) {
+      actions.setStatusMessage("Select a commit first");
+      return;
+    }
+    try {
+      actions.setViewMode("obslog");
+      actions.setObslogChangeId(node.changeId);
+      await refreshObslog(node.changeId, 50);
+      actions.setStatusMessage(`Obslog for ${node.changeId.slice(0, 8)} loaded`);
+    } catch (e) {
+      actions.setStatusMessage(`Error: ${String(e)}`);
+    }
+  };
+
+  const handleBackToLog = () => {
+    actions.setViewMode("log");
+    actions.setStatusMessage("Back to log view");
+  };
+
   const onKeyDown = (e: KeyboardEvent) => {
     // Help overlay
     if (state.showHelp) {
@@ -111,6 +146,91 @@ function App() {
         void describeSubmit();
       } else if (e.key === "Escape") {
         actions.cancelDescribe();
+      }
+      return;
+    }
+
+    // View-specific shortcuts
+    if (state.viewMode === "oplog") {
+      const k = e.key.toLowerCase();
+      if (k === "g" || e.key === "Escape") {
+        handleBackToLog();
+        return;
+      }
+      if (k === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigation.moveDown();
+        return;
+      }
+      if (k === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigation.moveUp();
+        return;
+      }
+      if (e.key === "PageDown" || e.key === "PageUp") {
+        e.preventDefault();
+        const entries = state.opLogEntries;
+        if (entries.length === 0) return;
+        const cur = Math.max(0, entries.findIndex((x) => x.id === state.opLogSelectedId));
+        const next = e.key === "PageDown" ? Math.min(entries.length - 1, cur + 10) : Math.max(0, cur - 10);
+        actions.selectOpLogEntry(entries[next]!.id);
+        return;
+      }
+      if (e.key === "Enter") {
+        if (!state.opLogSelectedId) return;
+        void (async () => {
+          try {
+            await opRestoreOperation(state.opLogSelectedId!);
+            await refreshOpLog(100);
+            actions.setStatusMessage("Operation restored");
+          } catch (err) {
+            actions.setStatusMessage(`Error: ${String(err)}`);
+          }
+        })();
+        return;
+      }
+      if (k === "u") {
+        void opUndo();
+        return;
+      }
+      if (k === "r") {
+        if (e.shiftKey) void opRedo();
+        else void refreshOpLog(100);
+        return;
+      }
+      return;
+    }
+
+    if (state.viewMode === "obslog") {
+      const k = e.key.toLowerCase();
+      if (k === "g" || e.key === "Escape") {
+        handleBackToLog();
+        return;
+      }
+      if (k === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        actions.setObslogSelectedIndex(state.obslogSelectedIndex + 1);
+        return;
+      }
+      if (k === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        actions.setObslogSelectedIndex(state.obslogSelectedIndex - 1);
+        return;
+      }
+      if (e.key === "PageDown") {
+        e.preventDefault();
+        actions.setObslogSelectedIndex(state.obslogSelectedIndex + 10);
+        return;
+      }
+      if (e.key === "PageUp") {
+        e.preventDefault();
+        actions.setObslogSelectedIndex(state.obslogSelectedIndex - 10);
+        return;
+      }
+      if (k === "r") {
+        if (!state.obslogChangeId) return;
+        void refreshObslog(state.obslogChangeId, 50);
+        return;
       }
       return;
     }
@@ -136,7 +256,11 @@ function App() {
         navigation.moveUp();
         break;
       case "r":
-        void refresh();
+        if (e.shiftKey) {
+          void opRedo();
+        } else {
+          void refresh();
+        }
         break;
       case "f":
         void toggleInlineFilesForSelected();
@@ -155,6 +279,12 @@ function App() {
         break;
       case "5":
         actions.setLayoutMode("topological");
+        break;
+      case "o":
+        void handleOpLog();
+        break;
+      case "v":
+        void handleObslog();
         break;
       case "b": {
         const node = selected();
@@ -272,117 +402,211 @@ function App() {
         </div>
 
         <div class="jjv-controls">
-          <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
-            const node = selected();
-            if (!node) return;
-            void opEdit(node.changeId);
-          }}>
-            Edit
-          </button>
-          <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
-            const node = selected();
-            if (!node) return;
-            void opNew(node.changeId);
-          }}>
-            New
-          </button>
-          <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
-            const node = selected();
-            if (!node) return;
-            actions.startDescribe(node.descriptionFull || node.descriptionTitle || "");
-          }}>
-            Desc
-          </button>
-          <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
-            const node = selected();
-            if (!node) return;
-            if (!state.rebaseSourceId) actions.setRebaseSource(node.changeId);
-            else void opRebase(state.rebaseSourceId, node.changeId);
-          }}>
-            Rebase
-          </button>
-          <button class="jjv-btn jjv-btn--ghost" disabled={!selected()} onClick={() => void toggleInlineFilesForSelected()}>
-            Files
-          </button>
+          <Show when={state.viewMode === "log"}>
+            <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
+              const node = selected();
+              if (!node) return;
+              void opEdit(node.changeId);
+            }}>
+              Edit
+            </button>
+            <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
+              const node = selected();
+              if (!node) return;
+              void opNew(node.changeId);
+            }}>
+              New
+            </button>
+            <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
+              const node = selected();
+              if (!node) return;
+              actions.startDescribe(node.descriptionFull || node.descriptionTitle || "");
+            }}>
+              Desc
+            </button>
+            <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
+              const node = selected();
+              if (!node) return;
+              if (!state.rebaseSourceId) actions.setRebaseSource(node.changeId);
+              else void opRebase(state.rebaseSourceId, node.changeId);
+            }}>
+              Rebase
+            </button>
+            <button class="jjv-btn jjv-btn--ghost" disabled={!selected()} onClick={() => void toggleInlineFilesForSelected()}>
+              Files
+            </button>
 
-          <button class="jjv-btn" disabled={state.isLoading} onClick={() => void refresh()}>
-            Refresh
-          </button>
+            <button class="jjv-btn" disabled={state.isLoading} onClick={() => void refresh()}>
+              Refresh
+            </button>
 
-          <select
-            class="jjv-select"
-            value={state.layoutMode}
-            onChange={(e) => actions.setLayoutMode((e.currentTarget.value as any) || "chronological")}
-          >
-            <option value="chronological">Chronological</option>
-            <option value="mainline">Mainline</option>
-            <option value="bookmark-centric">Bookmark-centric</option>
-            <option value="wc-focused">WC-focused</option>
-            <option value="topological">Topological</option>
-          </select>
+            <select
+              class="jjv-select"
+              value={state.layoutMode}
+              onChange={(e) => actions.setLayoutMode((e.currentTarget.value as any) || "chronological")}
+            >
+              <option value="chronological">Chronological</option>
+              <option value="mainline">Mainline</option>
+              <option value="bookmark-centric">Bookmark-centric</option>
+              <option value="wc-focused">WC-focused</option>
+              <option value="topological">Topological</option>
+            </select>
+          </Show>
+
+          <div class="jjv-viewTabs">
+            <button
+              class={`jjv-btn ${state.viewMode === "log" ? "jjv-btn--primary" : "jjv-btn--ghost"}`}
+              onClick={() => actions.setViewMode("log")}
+            >
+              Log
+            </button>
+            <button
+              class={`jjv-btn ${state.viewMode === "oplog" ? "jjv-btn--primary" : "jjv-btn--ghost"}`}
+              onClick={() => void handleOpLog()}
+            >
+              Op Log
+            </button>
+            <button
+              class={`jjv-btn ${state.viewMode === "obslog" ? "jjv-btn--primary" : "jjv-btn--ghost"}`}
+              disabled={!selected()}
+              onClick={() => void handleObslog()}
+            >
+              Obslog
+            </button>
+          </div>
         </div>
       </header>
 
       <main class="jjv-main">
         <section class="jjv-canvasPane">
-          <CanvasGraph
-            onMoveCommit={(sourceId, destinationId) => void opMove(sourceId, destinationId)}
-            onInsertBetween={(parentId, childId) => void opInsertBetween(parentId, childId)}
-            onInsertAfter={(afterId) => void opInsertAfter(afterId)}
-            onRebase={(sourceId, destinationId) => void opRebase(sourceId, destinationId)}
-            onToggleInlineFiles={() => void toggleInlineFilesForSelected()}
-            onInlineAction={(action) => {
-              const node = selected();
-              if (!node) return;
-              if (action === "files") {
-                void toggleInlineFilesForSelected();
-                return;
-              }
-              if (action === "rebase") {
-                if (!state.rebaseSourceId) actions.setRebaseSource(node.changeId);
-                else void opRebase(state.rebaseSourceId, node.changeId);
-                return;
-              }
-              if (action === "describe") {
-                actions.startDescribe(node.descriptionFull || node.descriptionTitle || "");
-                return;
-              }
-              if (action === "new") void opNew(node.changeId);
-              if (action === "edit") void opEdit(node.changeId);
-              if (action === "abandon") void opAbandon(node.changeId);
-              if (action === "duplicate") void opDuplicate(node.changeId);
-              if (action === "squash") void opSquash(node.changeId);
-            }}
-          />
+          <Switch>
+            <Match when={state.viewMode === "log"}>
+              <CanvasGraph
+                onMoveCommit={(sourceId, destinationId) => void opMove(sourceId, destinationId)}
+                onInsertBetween={(parentId, childId) => void opInsertBetween(parentId, childId)}
+                onInsertAfter={(afterId) => void opInsertAfter(afterId)}
+                onRebase={(sourceId, destinationId) => void opRebase(sourceId, destinationId)}
+                onToggleInlineFiles={() => void toggleInlineFilesForSelected()}
+                onInlineAction={(action) => {
+                  const node = selected();
+                  if (!node) return;
+                  if (action === "files") {
+                    void toggleInlineFilesForSelected();
+                    return;
+                  }
+                  if (action === "rebase") {
+                    if (!state.rebaseSourceId) actions.setRebaseSource(node.changeId);
+                    else void opRebase(state.rebaseSourceId, node.changeId);
+                    return;
+                  }
+                  if (action === "describe") {
+                    actions.startDescribe(node.descriptionFull || node.descriptionTitle || "");
+                    return;
+                  }
+                  if (action === "new") void opNew(node.changeId);
+                  if (action === "edit") void opEdit(node.changeId);
+                  if (action === "abandon") void opAbandon(node.changeId);
+                  if (action === "duplicate") void opDuplicate(node.changeId);
+                  if (action === "squash") void opSquash(node.changeId);
+                }}
+              />
+            </Match>
+            <Match when={state.viewMode === "oplog"}>
+              <OpLogView
+                entries={state.opLogEntries}
+                selectedId={state.opLogSelectedId}
+                onSelectEntry={(id) => actions.selectOpLogEntry(id)}
+                onUndo={() => void opUndo()}
+                onRedo={() => void opRedo()}
+                onRestore={async () => {
+                  if (!state.opLogSelectedId) return;
+                  try {
+                    await opRestoreOperation(state.opLogSelectedId);
+                    await refreshOpLog(100);
+                    actions.setStatusMessage("Operation restored");
+                  } catch (e) {
+                    actions.setStatusMessage(`Error: ${String(e)}`);
+                  }
+                }}
+                onBackToLog={handleBackToLog}
+              />
+            </Match>
+            <Match when={state.viewMode === "obslog"}>
+              <ObslogView
+                entries={state.obslogEntries}
+                changeId={state.obslogChangeId}
+                selectedIndex={state.obslogSelectedIndex}
+                onSelectIndex={(idx) => actions.setObslogSelectedIndex(idx)}
+                onBackToLog={handleBackToLog}
+              />
+            </Match>
+          </Switch>
         </section>
 
         <aside class="jjv-sidebar">
-          <Sidebar
-            diffText={diffText()}
-            onMergeSelected={() => void handleMergeSelected()}
-            onExecuteOp={() => void handleExecuteOp()}
-            onDescribeSubmit={() => void describeSubmit()}
-            onRunMutation={(kind) => {
-              const node = selected();
-              if (!node) return;
-              if (kind === "edit") void opEdit(node.changeId);
-              if (kind === "new") void opNew(node.changeId);
-              if (kind === "abandon") void opAbandon(node.changeId);
-              if (kind === "duplicate") void opDuplicate(node.changeId);
-              if (kind === "undo") void opUndo();
-              if (kind === "rebase") {
-                if (!state.rebaseSourceId) actions.setRebaseSource(node.changeId);
-                else void opRebase(state.rebaseSourceId, node.changeId);
-              }
-              if (kind === "describe") {
-                actions.startDescribe(node.descriptionFull || node.descriptionTitle || "");
-              }
-            }}
-          />
+          <Switch>
+            <Match when={state.viewMode === "log"}>
+              <Sidebar
+                diffText={diffText()}
+                onMergeSelected={() => void handleMergeSelected()}
+                onExecuteOp={() => void handleExecuteOp()}
+                onDescribeSubmit={() => void describeSubmit()}
+                onRunMutation={(kind) => {
+                  const node = selected();
+                  if (!node) return;
+                  if (kind === "edit") void opEdit(node.changeId);
+                  if (kind === "new") void opNew(node.changeId);
+                  if (kind === "abandon") void opAbandon(node.changeId);
+                  if (kind === "duplicate") void opDuplicate(node.changeId);
+                  if (kind === "undo") void opUndo();
+                  if (kind === "redo") void opRedo();
+                  if (kind === "rebase") {
+                    if (!state.rebaseSourceId) actions.setRebaseSource(node.changeId);
+                    else void opRebase(state.rebaseSourceId, node.changeId);
+                  }
+                  if (kind === "describe") {
+                    actions.startDescribe(node.descriptionFull || node.descriptionTitle || "");
+                  }
+                }}
+              />
 
-          <Show when={multiCount() > 1}>
-            <div class="jjv-toast">Multi-select: {multiCount()} commits selected</div>
-          </Show>
+              <Show when={multiCount() > 1}>
+                <div class="jjv-toast">Multi-select: {multiCount()} commits selected</div>
+              </Show>
+            </Match>
+
+            <Match when={state.viewMode === "oplog"}>
+              <OpLogSidebar
+                entries={state.opLogEntries}
+                selectedId={state.opLogSelectedId}
+                onUndo={() => void opUndo()}
+                onRedo={() => void opRedo()}
+                onRestore={async () => {
+                  if (!state.opLogSelectedId) return;
+                  try {
+                    await opRestoreOperation(state.opLogSelectedId);
+                    await refreshOpLog(100);
+                    actions.setStatusMessage("Operation restored");
+                  } catch (e) {
+                    actions.setStatusMessage(`Error: ${String(e)}`);
+                  }
+                }}
+                onRefresh={() => void refreshOpLog(100)}
+              />
+            </Match>
+
+            <Match when={state.viewMode === "obslog"}>
+              <ObslogSidebar
+                entries={state.obslogEntries}
+                changeId={state.obslogChangeId}
+                selectedIndex={state.obslogSelectedIndex}
+                onRefresh={() => {
+                  if (!state.obslogChangeId) return;
+                  void refreshObslog(state.obslogChangeId, 50);
+                }}
+              />
+            </Match>
+          </Switch>
         </aside>
       </main>
     </div>
