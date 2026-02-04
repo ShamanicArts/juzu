@@ -4,10 +4,12 @@ import type { KeyEvent } from "@opentui/core";
 import { RGBA } from "@opentui/core";
 import { state, actions, navigation, selectedNode } from "../core/state";
 import { setBackend } from "../core/runtime";
-import { initCwdFrom, opAbandon, opDescribe, opDuplicate, opEdit, opInsertBetween, opNew, opRebase, opSquash, opUndo, prefetchFiles, refreshLog } from "../core/usecases";
+import { initCwdFrom, opAbandon, opDescribe, opDuplicate, opEdit, opInsertBetween, opMerge, opNew, opRebase, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
 import { createTuiBackend } from "./backend";
 import { GraphView } from "./components/GraphView";
 import { Sidebar } from "./components/Sidebar";
+import { OpLogView } from "./components/OpLogView";
+import { ObslogView } from "./components/ObslogView";
 
 const BG = RGBA.fromHex("#24283b");
 const PANEL_BG = RGBA.fromHex("#1a1b26");
@@ -48,8 +50,28 @@ function App() {
     actions.scrollToSelected(visibleRows);
   };
 
+  const ensureOpLogVisible = (visibleRows: number) => {
+    const entries = state.opLogEntries;
+    if (entries.length === 0) return;
+    const idx = entries.findIndex((e) => e.id === state.opLogSelectedId);
+    if (idx < 0) return;
+    const offset = state.scrollOffset;
+    if (idx < offset) actions.setScrollOffset(idx);
+    else if (idx >= offset + visibleRows) actions.setScrollOffset(Math.max(0, idx - visibleRows + 1));
+  };
+
+  const ensureObslogVisible = (visibleRows: number) => {
+    const entries = state.obslogEntries;
+    if (entries.length === 0) return;
+    const idx = Math.max(0, Math.min(state.obslogSelectedIndex, entries.length - 1));
+    const offset = state.scrollOffset;
+    if (idx < offset) actions.setScrollOffset(idx);
+    else if (idx >= offset + visibleRows) actions.setScrollOffset(Math.max(0, idx - visibleRows + 1));
+  };
+
   useKeyboard((key: KeyEvent) => {
-    const name = (key.name || key.sequence || "").toLowerCase();
+    const rawName = (key.name || key.sequence || "");
+    const name = rawName.toLowerCase();
 
     if (key.ctrl && key.name === "c") {
       renderer.destroy();
@@ -60,6 +82,79 @@ function App() {
     if (state.showHelp) {
       if (name === "escape" || name === "h" || name === "q") {
         actions.setShowHelp(false);
+      }
+      return;
+    }
+
+    // Handle op log view mode
+    if (state.viewMode === "oplog") {
+      if (rawName === "R") {
+        handleOpRestore();
+        return;
+      }
+      switch (name) {
+        case "r":
+          handleOpRestore();
+          return;
+        case "g":
+        case "escape":
+        case "q":
+          handleBackToLog();
+          return;
+        case "up":
+        case "k":
+          navigation.moveUp();
+          return;
+        case "down":
+        case "j":
+          navigation.moveDown();
+          return;
+        case "pageup":
+          {
+            const entries = state.opLogEntries;
+            if (entries.length === 0) return;
+            const cur = Math.max(0, entries.findIndex((e) => e.id === state.opLogSelectedId));
+            const next = Math.max(0, cur - 10);
+            actions.selectOpLogEntry(entries[next]!.id);
+          }
+          return;
+        case "pagedown":
+          {
+            const entries = state.opLogEntries;
+            if (entries.length === 0) return;
+            const cur = Math.max(0, entries.findIndex((e) => e.id === state.opLogSelectedId));
+            const next = Math.min(entries.length - 1, cur + 10);
+            actions.selectOpLogEntry(entries[next]!.id);
+          }
+          return;
+      }
+      return;
+    }
+
+    // Handle obslog view mode
+    if (state.viewMode === "obslog") {
+      switch (name) {
+        case "g":
+          handleBackToLog();
+          return;
+        case "escape":
+        case "q":
+          handleBackToLog();
+          return;
+        case "up":
+        case "k":
+          navigation.moveUp();
+          return;
+        case "down":
+        case "j":
+          navigation.moveDown();
+          return;
+        case "pageup":
+          actions.setObslogSelectedIndex(state.obslogSelectedIndex - 10);
+          return;
+        case "pagedown":
+          actions.setObslogSelectedIndex(state.obslogSelectedIndex + 10);
+          return;
       }
       return;
     }
@@ -86,6 +181,30 @@ function App() {
       return;
     }
 
+    // Handle merge mode
+    if (state.mergeMode) {
+      switch (name) {
+        case "escape":
+          actions.setMergeMode(false);
+          actions.setStatusMessage("Merge cancelled");
+          return;
+        case "return":
+        case "enter":
+          handleMerge();
+          return;
+        case "space": {
+          const node = selectedNode();
+          if (node) {
+            actions.toggleMergeSelection(node.changeId);
+          }
+          return;
+        }
+        default:
+          // Allow navigation while in merge mode
+          break;
+      }
+    }
+
     // Handle leader mode
     if (state.leaderMode) {
       actions.setLeaderMode(false);
@@ -98,6 +217,10 @@ function App() {
           return;
         case "d":
           handleDuplicate();
+          return;
+        case "m":
+          actions.setMergeMode(true);
+          actions.setStatusMessage("Merge mode: Space=select Enter=merge Esc=cancel");
           return;
         case "escape":
           actions.setStatusMessage("Cancelled");
@@ -183,6 +306,21 @@ function App() {
       case "u":
         handleUndo();
         break;
+      case "o":
+        handleOpLog();
+        break;
+      case "v":
+        handleObslog();
+        break;
+      case "g":
+        handleBackToLog();
+        break;
+    }
+
+    // Shift+U for redo
+    if (!key.ctrl && !key.meta && rawName === "U") {
+      handleRedo();
+      return;
     }
 
     // Leader key: Ctrl+X
@@ -301,6 +439,67 @@ function App() {
     }
   };
 
+  const handleRedo = async () => {
+    try {
+      await opRedo();
+    } catch (e) {
+      actions.setStatusMessage(`Error: ${String(e)}`);
+    }
+  };
+
+  const handleMerge = async () => {
+    const parents = Array.from(state.mergeSelectedIds);
+    if (parents.length < 2) {
+      actions.setStatusMessage("Merge: select at least 2 commits");
+      return;
+    }
+    try {
+      await opMerge(parents);
+      actions.setMergeMode(false);
+    } catch (e) {
+      actions.setStatusMessage(`Error: ${String(e)}`);
+    }
+  };
+
+  const handleOpLog = async () => {
+    try {
+      actions.setViewMode("oplog");
+      await refreshOpLog(100);
+      actions.setStatusMessage("Operation log loaded");
+    } catch (e) {
+      actions.setStatusMessage(`Error: ${String(e)}`);
+    }
+  };
+
+  const handleObslog = async () => {
+    const node = selectedNode();
+    if (!node) return;
+    try {
+      actions.setViewMode("obslog");
+      actions.setObslogChangeId(node.changeId);
+      await refreshObslog(node.changeId, 50);
+      actions.setStatusMessage(`Obslog for ${node.changeId.slice(0, 8)} loaded`);
+    } catch (e) {
+      actions.setStatusMessage(`Error: ${String(e)}`);
+    }
+  };
+
+  const handleBackToLog = () => {
+    actions.setViewMode("log");
+    actions.setStatusMessage("Back to log view");
+  };
+
+  const handleOpRestore = async () => {
+    if (state.viewMode !== "oplog" || !state.opLogSelectedId) return;
+    try {
+      await opRestoreOperation(state.opLogSelectedId);
+      await refreshOpLog(100);
+      actions.setStatusMessage("Operation restored");
+    } catch (e) {
+      actions.setStatusMessage(`Error: ${String(e)}`);
+    }
+  };
+
   const showSidebar = () => state.termSize.width >= 90 && state.termSize.height >= 16;
   const detailW = () => showSidebar() ? Math.floor(state.termSize.width * 0.40) : 0;
   const graphW = () => state.termSize.width - detailW();
@@ -310,8 +509,12 @@ function App() {
     if (state.rebaseSourceId) {
       return `REBASE MODE: src:${state.rebaseSourceId.slice(0, 8)} - select dest + Enter/b, Esc cancels`;
     }
+    if (state.mergeMode) {
+      const count = state.mergeSelectedIds.size;
+      return `MERGE MODE: ${count} selected - Space=toggle Enter=merge Esc=cancel`;
+    }
     if (state.leaderMode) {
-      return "LEADER MODE: a=abandon s=squash d=duplicate";
+      return "LEADER MODE: a=abandon s=squash d=duplicate m=merge";
     }
     if (state.describeMode) {
       return `DESCRIBE MODE: editing description`;
@@ -319,7 +522,13 @@ function App() {
     if (state.showHelp) {
       return `HELP MODE: h to close`;
     }
-    return `layout:${state.layoutMode} j/k nav x desc f files n new e edit d desc b rebase h help`;
+    if (state.viewMode === "oplog") {
+      return "OP LOG: j/k nav R=restore g=back to log";
+    }
+    if (state.viewMode === "obslog") {
+      return "OBS LOG: j/k nav g=back to log";
+    }
+    return `layout:${state.layoutMode} j/k nav x desc f files n new e edit d desc b rebase u undo U redo o=oplog v=obslog h help`;
   };
 
   return (
@@ -335,20 +544,45 @@ function App() {
 
       <box flexDirection="row" flexGrow={1} height={mainHeight()}>
         <box width={graphW()} height={mainHeight()}>
-          <GraphView
-            nodes={state.layoutResult.nodes}
-            selectedId={state.selectedId}
-            scrollOffset={state.scrollOffset}
-            filesCache={state.filesCache}
-            width={graphW()}
-            height={mainHeight()}
-            onEnsureVisible={ensureSelectedVisible}
-          />
+        {state.viewMode === "log" && (
+            <GraphView
+              nodes={state.layoutResult.nodes}
+              selectedId={state.selectedId}
+              scrollOffset={state.scrollOffset}
+              filesCache={state.filesCache}
+              width={graphW()}
+              height={mainHeight()}
+              onEnsureVisible={ensureSelectedVisible}
+              mergeMode={state.mergeMode}
+              mergeSelectedIds={state.mergeSelectedIds}
+            />
+          )}
+          {state.viewMode === "oplog" && (
+            <OpLogView
+              entries={state.opLogEntries}
+              selectedId={state.opLogSelectedId}
+              scrollOffset={state.scrollOffset}
+              width={graphW()}
+              height={mainHeight()}
+              onEnsureVisible={ensureOpLogVisible}
+            />
+          )}
+          {state.viewMode === "obslog" && (
+            <ObslogView
+              entries={state.obslogEntries}
+              scrollOffset={state.scrollOffset}
+              selectedIndex={state.obslogSelectedIndex}
+              width={graphW()}
+              height={mainHeight()}
+              onEnsureVisible={ensureObslogVisible}
+              changeId={state.obslogChangeId}
+            />
+          )}
         </box>
 
         {showSidebar() && (
           <box width={detailW()} height={mainHeight()} backgroundColor={PANEL_BG}>
-            <Sidebar
+              <Sidebar
               selected={selectedNode()}
               filesCache={state.filesCache}
               descExpanded={state.descExpanded}
@@ -359,11 +593,17 @@ function App() {
               showHelp={state.showHelp}
               promptMode={state.describeMode}
               promptValue={state.describeValue}
-            />
-          </box>
-        )}
+              mergeMode={state.mergeMode}
+              mergeSelectedIds={state.mergeSelectedIds}
+                viewMode={state.viewMode}
+                opLogSelected={state.opLogEntries.find(e => e.id === state.opLogSelectedId)}
+                obslogChangeId={state.obslogChangeId}
+                obslogSelected={state.obslogEntries[state.obslogSelectedIndex] || null}
+              />
+            </box>
+          )}
+        </box>
       </box>
-    </box>
   );
 }
 

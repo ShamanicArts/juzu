@@ -24,6 +24,8 @@ interface GraphViewProps {
   width: number;
   height: number;
   onEnsureVisible: (visibleRows: number) => void;
+  mergeSelectedIds?: Set<string>;
+  mergeMode?: boolean;
 }
 
 export function GraphView(props: GraphViewProps) {
@@ -183,7 +185,10 @@ export function GraphView(props: GraphViewProps) {
 
       let ch = isSelected ? "O" : "o";
       let fg = laneColor;
-      if (node.isWorkingCopy) {
+      if (props.mergeMode && props.mergeSelectedIds?.has(node.changeId)) {
+        ch = "✓";
+        fg = GREEN;
+      } else if (node.isWorkingCopy) {
         ch = "@";
         fg = GREEN;
       } else if (node.isConflict) {

@@ -1,6 +1,6 @@
 import type { JJBackend } from "../core/backend";
 import type { CommitNode } from "../core/types";
-import { fetchJJLog, fetchFilesForNodes, findJJRoot, jjAbandon, jjDescribe, jjDuplicate, jjEdit, jjGetDiff, jjInsertAfter, jjMove, jjNew, jjRebase, jjSplit, jjSquashPaths, jjUndo, runCmdText } from "../core/jj-api";
+import { fetchJJLog, fetchFilesForNodes, findJJRoot, jjAbandon, jjDescribe, jjDuplicate, jjEdit, jjGetDiff, jjInsertAfter, jjMove, jjNew, jjRebase, jjSplit, jjSquashPaths, jjUndo, jjRedo, runCmdText, fetchOpLog, fetchObslog, jjRestoreOperation } from "../core/jj-api";
 
 export function createTuiBackend(): JJBackend {
   return {
@@ -47,6 +47,7 @@ export function createTuiBackend(): JJBackend {
     duplicate: async ({ cwd, changeId }) => jjDuplicate(changeId, cwd),
     rebase: async ({ cwd, sourceId, destinationId }) => jjRebase(sourceId, destinationId, cwd),
     undo: async ({ cwd }) => jjUndo(cwd),
+    redo: async ({ cwd }) => jjRedo(cwd),
 
     move: async ({ cwd, sourceId, destinationId }) => jjMove(sourceId, destinationId, cwd),
     insert: async ({ cwd, afterId, parentId, childId }) => {
@@ -71,5 +72,9 @@ export function createTuiBackend(): JJBackend {
       await runCmdText(args, cwd);
     },
     split: async ({ cwd, changeId, paths, message }) => jjSplit(changeId, paths, cwd, message || "split"),
+
+    opLog: async ({ cwd, limit }) => fetchOpLog(cwd, limit),
+    restoreOperation: async ({ cwd, operationId }) => jjRestoreOperation(operationId, cwd),
+    obslog: async ({ cwd, changeId, limit }) => fetchObslog(changeId, cwd, limit),
   };
 }
