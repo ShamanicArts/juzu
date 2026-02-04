@@ -28,6 +28,9 @@ export function createWebBackend(): JJBackend {
     undo: async () => {
       await api.undo();
     },
+    redo: async () => {
+      await api.redo();
+    },
 
     move: async ({ sourceId, destinationId }) => {
       await api.move({ sourceId, destinationId });
@@ -41,5 +44,11 @@ export function createWebBackend(): JJBackend {
     split: async ({ changeId, paths, message }) => {
       await api.split({ changeId, paths, message });
     },
+
+    opLog: async ({ limit }) => api.opLog(limit),
+    restoreOperation: async ({ operationId }) => {
+      await api.restoreOperation(operationId);
+    },
+    obslog: async ({ changeId, limit }) => api.obslog(changeId, limit),
   };
 }

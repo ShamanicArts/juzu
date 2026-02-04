@@ -66,6 +66,10 @@ const SCRIPT_DIR = import.meta.dir;
 
 const JJ_TEMPLATE = `change_id.short() ++ "§" ++ commit_id.short() ++ "§" ++ parents.map(|p| p.change_id().short()).join(",") ++ "§" ++ author.email() ++ "§" ++ author.timestamp() ++ "§" ++ bookmarks.join(",") ++ "§" ++ description.first_line() ++ "§" ++ description ++ "§" ++ empty ++ "§" ++ conflict ++ "§" ++ hidden ++ "§" ++ root ++ "§<JJ-SEP>§"`;
 
+const OP_LOG_TEMPLATE = `id.short() ++ "§" ++ id.short(8) ++ "§" ++ time ++ "§" ++ time.duration() ++ "§" ++ tags ++ "§" ++ description.first_line() ++ "§" ++ description ++ "§" ++ current_operation ++ "§" ++ user ++ "\n§<JJ-OP-SEP>§\n"`;
+
+const OBSLOG_TEMPLATE = `commit.change_id().short() ++ "§" ++ commit.commit_id().short() ++ "§" ++ operation.id().short() ++ "§" ++ operation.description().first_line() ++ "§" ++ operation.description() ++ "§" ++ operation.user() ++ "§" ++ operation.time().duration() ++ "§" ++ operation.tags() ++ "§" ++ commit.author().timestamp() ++ "§" ++ commit.author().email() ++ "§" ++ "§" ++ commit.description().first_line() ++ "§" ++ commit.description() ++ "§" ++ commit.empty() ++ "§" ++ commit.conflict() ++ "\n§<JJ-OBS-SEP>§\n"`;
+
 // Git branch cache
 let gitBranchCache = new Map<string, string[]>();
 let lastGitBranchFetch = 0;
@@ -409,6 +413,132 @@ const server = Bun.serve({
           await proc.exited;
           return Response.json({ success: true });
         }
+
+        case "/api/redo": {
+          console.log("Redoing");
+          const proc = Bun.spawn(["jj", "redo"], { cwd: PROC_CWD });
+          await proc.exited;
+          return Response.json({ success: true });
+        }
+
+        case "/api/oplog/restore": {
+          const { operationId } = body;
+          if (!operationId) return Response.json({ error: "Missing operationId" }, { status: 400 });
+          console.log("Restoring operation", operationId);
+          const proc = Bun.spawn(["jj", "op", "restore", operationId], { cwd: PROC_CWD, stderr: "pipe" });
+          const exitCode = await proc.exited;
+          if (exitCode !== 0) {
+            const stderr = await new Response(proc.stderr).text();
+            return Response.json({ error: stderr }, { status: 400 });
+          }
+          return Response.json({ success: true });
+        }
+      }
+    }
+
+    // GET endpoints for op log and obslog
+    if (url.pathname === "/api/oplog") {
+      try {
+        const limitRaw = url.searchParams.get("limit");
+        const limit = Math.max(1, Math.min(500, Number(limitRaw || "100") || 100));
+        
+        const proc = Bun.spawn(["jj", "op", "log", "--no-graph", "--limit", String(limit), "-T", OP_LOG_TEMPLATE], {
+          cwd: PROC_CWD,
+          stderr: "pipe",
+        });
+        const logText = await new Response(proc.stdout).text();
+        
+        const entries = logText
+          .split("§<JJ-OP-SEP>§")
+          .map((b: string) => b.trim())
+          .filter(Boolean)
+          .map((block: string) => {
+            const parts = block.split("§");
+            if (parts.length < 9) return null;
+            return {
+              id: parts[0].trim(),
+              shortId: parts[1].trim(),
+              time: parts[2].trim(),
+              duration: parts[3].trim(),
+              tags: parts[4] ? parts[4].split("\n").map((t: string) => t.trim()).filter(Boolean) : [],
+              descriptionTitle: parts[5].trim(),
+              descriptionFull: parts[6].trim(),
+              isCurrent: parts[7].trim() === "true",
+              user: parts[8].trim(),
+            };
+          })
+          .filter(Boolean);
+          
+        return Response.json(entries);
+      } catch (e: unknown) {
+        console.error(e);
+        const msg = e instanceof Error ? e.message : String(e);
+        return Response.json({ error: msg }, { status: 500 });
+      }
+    }
+
+    if (url.pathname.startsWith("/api/obslog/")) {
+      const changeId = url.pathname.split("/").pop();
+      if (!changeId) return new Response("Missing changeId", { status: 400 });
+      
+      try {
+        const limitRaw = url.searchParams.get("limit");
+        const limit = Math.max(1, Math.min(100, Number(limitRaw || "50") || 50));
+        
+        // Get working copy id for comparison
+        const wcProc = Bun.spawn(["jj", "log", "--no-graph", "-r", "@", "-T", "change_id.short()"], {
+          cwd: PROC_CWD,
+          stderr: "pipe"
+        });
+        const wcId = (await new Response(wcProc.stdout).text()).trim();
+        
+        const proc = Bun.spawn(["jj", "obslog", "--no-graph", "-r", changeId, "--limit", String(limit), "-T", OBSLOG_TEMPLATE], {
+          cwd: PROC_CWD,
+          stderr: "pipe",
+        });
+        const logText = await new Response(proc.stdout).text();
+        
+        const entries = logText
+          .split("§<JJ-OBS-SEP>§")
+          .map((b: string) => b.trim())
+          .filter(Boolean)
+          .map((block: string) => {
+            const parts = block.split("§");
+            if (parts.length < 15) return null;
+            const changeIdEntry = parts[0].trim();
+            const operationId = parts[2].trim();
+            const operationDescription = parts[3].trim();
+            const operationDescriptionFull = parts[4].trim();
+            const operationUser = parts[5].trim();
+            const operationDuration = parts[6].trim();
+            const operationTags = parts[7] ? parts[7].split("\n").map((t: string) => t.trim()).filter(Boolean) : [];
+            const descriptionFull = parts.slice(12, parts.length - 2).join("§").trim();
+            return {
+              changeId: changeIdEntry,
+              commitId: parts[1].trim(),
+              operationId,
+              operationDescription,
+              operationDescriptionFull,
+              operationUser,
+              operationDuration,
+              operationTags,
+              time: parts[8].trim(),
+              author: parts[9].trim(),
+              bookmarks: [],
+              descriptionTitle: parts[11].trim(),
+              descriptionFull,
+              isWorkingCopy: changeIdEntry === wcId,
+              isEmpty: parts[parts.length - 2].trim() === "true",
+              isConflict: parts[parts.length - 1].trim() === "true",
+            };
+          })
+          .filter(Boolean);
+          
+        return Response.json(entries);
+      } catch (e: unknown) {
+        console.error(e);
+        const msg = e instanceof Error ? e.message : String(e);
+        return Response.json({ error: msg }, { status: 500 });
       }
     }
 

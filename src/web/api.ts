@@ -1,4 +1,5 @@
 import type { CommitNode } from "../core/types";
+import type { OpLogEntry, ObslogEntry } from "../core/jj-api";
 
 async function fetchAPI<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -34,6 +35,16 @@ export const api = {
   rebase: (payload: { sourceId: string; destinationId: string }) =>
     fetchAPI<{ success: true }>("/api/rebase", { method: "POST", body: JSON.stringify(payload) }),
   undo: () => fetchAPI<{ success: true }>("/api/undo", { method: "POST", body: JSON.stringify({}) }),
+  redo: () => fetchAPI<{ success: true }>("/api/redo", { method: "POST", body: JSON.stringify({}) }),
+  
+  // Op log API
+  opLog: (limit = 100) => fetchAPI<OpLogEntry[]>(`/api/oplog?limit=${encodeURIComponent(String(limit))}`),
+  restoreOperation: (operationId: string) =>
+    fetchAPI<{ success: true }>("/api/oplog/restore", { method: "POST", body: JSON.stringify({ operationId }) }),
+  
+  // Obslog API
+  obslog: (changeId: string, limit = 50) => 
+    fetchAPI<ObslogEntry[]>(`/api/obslog/${encodeURIComponent(changeId)}?limit=${encodeURIComponent(String(limit))}`),
 
   move: (payload: { sourceId: string; destinationId: string }) =>
     fetchAPI<{ success: true }>("/api/move", { method: "POST", body: JSON.stringify(payload) }),
