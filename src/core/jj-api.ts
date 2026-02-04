@@ -205,6 +205,130 @@ export async function jjUndo(cwd: string): Promise<void> {
   await runCmdText(["jj", "undo"], cwd);
 }
 
+export async function jjRedo(cwd: string): Promise<void> {
+  await runCmdText(["jj", "redo"], cwd);
+}
+
 export async function jjGetDiff(changeId: string, cwd: string): Promise<string> {
   return runCmdText(["jj", "diff", "--git", "-r", changeId], cwd);
+}
+
+// Restore operation (jump to specific operation)
+export async function jjRestoreOperation(operationId: string, cwd: string): Promise<void> {
+  await runCmdText(["jj", "op", "restore", operationId], cwd);
+}
+
+// Op log types
+export interface OpLogEntry {
+  id: string;
+  shortId: string;
+  time: string;
+  duration: string;
+  tags: string[];
+  descriptionTitle: string;
+  descriptionFull: string;
+  isCurrent: boolean;
+  user: string;
+}
+
+const OP_LOG_TEMPLATE =
+  `id.short() ++ "§" ++ id.short(8) ++ "§" ++ time ++ "§" ++ time.duration() ++ "§" ++ tags ++ "§" ++ description.first_line() ++ "§" ++ description ++ "§" ++ current_operation ++ "§" ++ user ++ "\n§<JJ-OP-SEP>§\n"`;
+
+export async function fetchOpLog(cwd: string, limit: number): Promise<OpLogEntry[]> {
+  const logText = await runCmdText(["jj", "op", "log", "--no-graph", "--limit", String(limit), "-T", OP_LOG_TEMPLATE], cwd, 15000);
+
+  return logText
+    .split("§<JJ-OP-SEP>§")
+    .map((b) => b.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const parts = block.split("§");
+      if (parts.length < 9) return null;
+
+      return {
+        id: parts[0].trim(),
+        shortId: parts[1].trim(),
+        time: parts[2].trim(),
+        duration: parts[3].trim(),
+        tags: parts[4] ? parts[4].split("\n").map((t) => t.trim()).filter(Boolean) : [],
+        descriptionTitle: parts[5].trim(),
+        descriptionFull: parts[6].trim(),
+        isCurrent: parts[7].trim() === "true",
+        user: parts[8].trim(),
+      } satisfies OpLogEntry;
+    })
+    .filter(Boolean) as OpLogEntry[];
+}
+
+// Obslog types
+export interface ObslogEntry {
+  changeId: string;
+  commitId: string;
+  operationId: string;
+  operationDescription: string;
+  operationDescriptionFull: string;
+  operationUser: string;
+  operationDuration: string;
+  operationTags: string[];
+  time: string;
+  author: string;
+  bookmarks: string[];
+  descriptionTitle: string;
+  descriptionFull: string;
+  isWorkingCopy: boolean;
+  isEmpty: boolean;
+  isConflict: boolean;
+  isHidden: boolean;
+}
+
+// CommitEvolutionEntry provides `commit()` and `operation()`.
+// We include operation info so the UI can explain *why* a version exists.
+const OBSLOG_TEMPLATE =
+  `commit.change_id().short() ++ "§" ++ commit.commit_id().short() ++ "§" ++ operation.id().short() ++ "§" ++ operation.description().first_line() ++ "§" ++ operation.description() ++ "§" ++ operation.user() ++ "§" ++ operation.time().duration() ++ "§" ++ operation.tags() ++ "§" ++ commit.author().timestamp() ++ "§" ++ commit.author().email() ++ "§" ++ commit.hidden() ++ "§" ++ commit.description().first_line() ++ "§" ++ commit.description() ++ "§" ++ commit.empty() ++ "§" ++ commit.conflict() ++ "\n§<JJ-OBS-SEP>§\n"`;
+
+export async function fetchObslog(changeId: string, cwd: string, limit: number): Promise<ObslogEntry[]> {
+  const [logText, wcId] = await Promise.all([
+    runCmdText(["jj", "obslog", "--no-graph", "-r", changeId, "--limit", String(limit), "-T", OBSLOG_TEMPLATE], cwd, 15000),
+    getWorkingCopyId(cwd),
+  ]);
+
+  return logText
+    .split("§<JJ-OBS-SEP>§")
+    .map((b) => b.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const parts = block.split("§");
+      if (parts.length < 15) return null;
+
+      const changeIdEntry = parts[0].trim();
+      const operationId = parts[2].trim();
+      const operationDescription = parts[3].trim();
+      const operationDescriptionFull = parts[4].trim();
+      const operationUser = parts[5].trim();
+      const operationDuration = parts[6].trim();
+      const operationTags = parts[7] ? parts[7].split("\n").map((t) => t.trim()).filter(Boolean) : [];
+      const isHidden = parts[10].trim() === "true";
+      const descriptionFull = parts.slice(12, parts.length - 2).join("§").trim();
+
+      return {
+        changeId: changeIdEntry,
+        commitId: parts[1].trim(),
+        operationId,
+        operationDescription,
+        operationDescriptionFull,
+        operationUser,
+        operationDuration,
+        operationTags,
+        time: parts[8].trim(),
+        author: parts[9].trim(),
+        bookmarks: [],
+        descriptionTitle: parts[11].trim(),
+        descriptionFull,
+        isWorkingCopy: changeIdEntry === wcId,
+        isEmpty: parts[parts.length - 2].trim() === "true",
+        isConflict: parts[parts.length - 1].trim() === "true",
+        isHidden,
+      } satisfies ObslogEntry;
+    })
+    .filter(Boolean) as ObslogEntry[];
 }
