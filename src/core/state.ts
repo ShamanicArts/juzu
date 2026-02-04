@@ -1,6 +1,9 @@
 import { createStore } from "solid-js/store";
 import type { CommitNode, LayoutMode, FilesCacheEntry, ViewportState, LayoutResult } from "./types";
+import type { OpLogEntry, ObslogEntry } from "./jj-api";
 import { calculateLayout } from "./layout";
+
+export type ViewMode = "log" | "oplog" | "obslog";
 
 export interface AppState {
   // Repository
@@ -9,6 +12,18 @@ export interface AppState {
   // Data
   nodes: CommitNode[];
   filesCache: Map<string, FilesCacheEntry>;
+  
+  // View mode
+  viewMode: ViewMode;
+  
+  // Op log data
+  opLogEntries: OpLogEntry[];
+  opLogSelectedId: string | null;
+  
+  // Obslog data
+  obslogEntries: ObslogEntry[];
+  obslogChangeId: string | null;
+  obslogSelectedIndex: number;
   
   // Layout
   layoutMode: LayoutMode;
@@ -43,6 +58,10 @@ export interface AppState {
   describeMode: boolean;
   describeValue: string;
   
+  // Merge mode (TUI multi-select)
+  mergeMode: boolean;
+  mergeSelectedIds: Set<string>;
+  
   // Status
   statusMessage: string;
   isLoading: boolean;
@@ -55,6 +74,12 @@ const initialState: AppState = {
   cwd: "",
   nodes: [],
   filesCache: new Map(),
+  viewMode: "log",
+  opLogEntries: [],
+  opLogSelectedId: null,
+  obslogEntries: [],
+  obslogChangeId: null,
+  obslogSelectedIndex: 0,
   layoutMode: "chronological",
   layoutResult: {
     nodes: [],
@@ -83,6 +108,8 @@ const initialState: AppState = {
   leaderMode: false,
   describeMode: false,
   describeValue: "",
+  mergeMode: false,
+  mergeSelectedIds: new Set(),
   statusMessage: "",
   isLoading: false,
   termSize: { width: 80, height: 24 },
@@ -289,6 +316,72 @@ export const actions = {
     actions.recalculateLayout();
   },
   
+  // Merge mode actions
+  setMergeMode: (active: boolean) => {
+    setState("mergeMode", active);
+    if (!active) {
+      setState("mergeSelectedIds", new Set());
+    }
+  },
+  
+  toggleMergeSelection: (changeId: string) => {
+    const next = new Set(state.mergeSelectedIds);
+    if (next.has(changeId)) {
+      next.delete(changeId);
+    } else {
+      next.add(changeId);
+    }
+    setState("mergeSelectedIds", next);
+  },
+  
+  clearMergeSelection: () => {
+    setState("mergeSelectedIds", new Set());
+  },
+  
+  // View mode actions
+  setViewMode: (mode: ViewMode) => {
+    setState("viewMode", mode);
+    // Reset scroll when switching views
+    setState("scrollOffset", 0);
+    setState("sidebarScroll", 0);
+  },
+  
+  // Op log actions
+  setOpLogEntries: (entries: OpLogEntry[]) => {
+    setState("opLogEntries", entries);
+    // Auto-select current operation
+    const current = entries.find(e => e.isCurrent);
+    if (current) {
+      setState("opLogSelectedId", current.id);
+    } else if (entries.length > 0) {
+      setState("opLogSelectedId", entries[0].id);
+    }
+  },
+  
+  selectOpLogEntry: (id: string | null) => {
+    setState("opLogSelectedId", id);
+  },
+  
+  // Obslog actions
+  setObslogEntries: (entries: ObslogEntry[]) => {
+    setState("obslogEntries", entries);
+    // Keep selection valid
+    const maxIdx = Math.max(0, entries.length - 1);
+    setState("obslogSelectedIndex", (idx) => Math.max(0, Math.min(idx, maxIdx)));
+  },
+  
+  setObslogChangeId: (changeId: string | null) => {
+    setState("obslogChangeId", changeId);
+    setState("obslogEntries", []);
+    setState("obslogSelectedIndex", 0);
+    setState("scrollOffset", 0);
+  },
+
+  setObslogSelectedIndex: (idx: number) => {
+    const maxIdx = Math.max(0, state.obslogEntries.length - 1);
+    setState("obslogSelectedIndex", Math.max(0, Math.min(idx, maxIdx)));
+  },
+  
   reset: () => {
     setState({ ...initialState });
   },
@@ -297,6 +390,19 @@ export const actions = {
 // Keyboard navigation helpers
 export const navigation = {
   moveUp: () => {
+    if (state.viewMode === "oplog") {
+      const entries = state.opLogEntries;
+      const currentIdx = entries.findIndex(e => e.id === state.opLogSelectedId);
+      if (currentIdx > 0) {
+        actions.selectOpLogEntry(entries[currentIdx - 1]?.id || null);
+      }
+      return;
+    }
+    if (state.viewMode === "obslog") {
+      const currentIdx = state.obslogSelectedIndex;
+      if (currentIdx > 0) actions.setObslogSelectedIndex(currentIdx - 1);
+      return;
+    }
     const nodes = state.layoutResult.nodes;
     const currentIdx = selectedIndex();
     if (currentIdx > 0) {
@@ -305,6 +411,20 @@ export const navigation = {
   },
   
   moveDown: () => {
+    if (state.viewMode === "oplog") {
+      const entries = state.opLogEntries;
+      const currentIdx = entries.findIndex(e => e.id === state.opLogSelectedId);
+      if (currentIdx < entries.length - 1) {
+        actions.selectOpLogEntry(entries[currentIdx + 1]?.id || null);
+      }
+      return;
+    }
+    if (state.viewMode === "obslog") {
+      const maxIdx = Math.max(0, state.obslogEntries.length - 1);
+      const currentIdx = state.obslogSelectedIndex;
+      if (currentIdx < maxIdx) actions.setObslogSelectedIndex(currentIdx + 1);
+      return;
+    }
     const nodes = state.layoutResult.nodes;
     const currentIdx = selectedIndex();
     if (currentIdx < nodes.length - 1) {
@@ -313,6 +433,7 @@ export const navigation = {
   },
   
   moveToParent: () => {
+    if (state.viewMode !== "log") return;
     const node = selectedNode();
     if (!node || node.parents.length === 0) return;
     
@@ -325,6 +446,7 @@ export const navigation = {
   },
   
   moveToChild: () => {
+    if (state.viewMode !== "log") return;
     const node = selectedNode();
     if (!node) return;
     

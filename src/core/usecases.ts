@@ -1,6 +1,7 @@
 import { actions, state } from "./state";
 import { getBackend } from "./runtime";
 import type { FileEntry } from "./backend";
+import type { OpLogEntry, ObslogEntry } from "./jj-api";
 
 function cwdOrEmpty() {
   return state.cwd || "";
@@ -154,6 +155,11 @@ export async function opUndo() {
   await runMutation("Undoing...", () => backend.undo({ cwd: cwdOrEmpty() }));
 }
 
+export async function opRedo() {
+  const backend = getBackend();
+  await runMutation("Redoing...", () => backend.redo({ cwd: cwdOrEmpty() }));
+}
+
 export async function opMove(sourceId: string, destinationId: string) {
   const backend = getBackend();
   await runMutation("Moving...", () => backend.move({ cwd: cwdOrEmpty(), sourceId, destinationId }));
@@ -177,4 +183,25 @@ export async function opSquash(changeId: string, opts: { intoId?: string | null;
 export async function opSplit(changeId: string, paths: string[], message?: string) {
   const backend = getBackend();
   await runMutation("Splitting...", () => backend.split({ cwd: cwdOrEmpty(), changeId, paths, message }));
+}
+
+export async function opRestoreOperation(operationId: string) {
+  const backend = getBackend();
+  await runMutation("Restoring operation...", () => backend.restoreOperation({ cwd: cwdOrEmpty(), operationId }));
+}
+
+// Op log operations
+export async function refreshOpLog(limit = 100): Promise<OpLogEntry[]> {
+  const backend = getBackend();
+  const entries = await backend.opLog({ cwd: cwdOrEmpty(), limit });
+  actions.setOpLogEntries(entries);
+  return entries;
+}
+
+// Obslog operations
+export async function refreshObslog(changeId: string, limit = 50): Promise<ObslogEntry[]> {
+  const backend = getBackend();
+  const entries = await backend.obslog({ cwd: cwdOrEmpty(), changeId, limit });
+  actions.setObslogEntries(entries);
+  return entries;
 }

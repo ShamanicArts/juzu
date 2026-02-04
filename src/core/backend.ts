@@ -1,4 +1,5 @@
 import type { CommitNode } from "./types";
+import type { OpLogEntry, ObslogEntry } from "./jj-api";
 
 export type FileEntry = { type: string; path: string };
 
@@ -17,9 +18,15 @@ export interface JJBackend {
   duplicate: (args: { cwd: string; changeId: string }) => Promise<void>;
   rebase: (args: { cwd: string; sourceId: string; destinationId: string }) => Promise<void>;
   undo: (args: { cwd: string }) => Promise<void>;
+  redo: (args: { cwd: string }) => Promise<void>;
 
   move: (args: { cwd: string; sourceId: string; destinationId: string }) => Promise<void>;
   insert: (args: { cwd: string; afterId?: string; parentId?: string; childId?: string }) => Promise<void>;
   squash: (args: { cwd: string; changeId: string; intoId?: string | null; paths?: string[] }) => Promise<void>;
   split: (args: { cwd: string; changeId: string; paths: string[]; message?: string }) => Promise<void>;
+
+  // Operation log / obslog
+  opLog: (args: { cwd: string; limit: number }) => Promise<OpLogEntry[]>;
+  restoreOperation: (args: { cwd: string; operationId: string }) => Promise<void>;
+  obslog: (args: { cwd: string; changeId: string; limit: number }) => Promise<ObslogEntry[]>;
 }
