@@ -485,10 +485,13 @@ HTTP Request → server.ts (inline spawn) → jj CLI
 **Context:** Old TUI implementation, replaced by `src/tui/`
 
 **Tasks:**
-1. [ ] Verify `cli.ts` points to `src/tui/main.ts` (line 37)
-2. [ ] Delete entire `tui/` directory
-3. [ ] Remove `"tui:old"` script from `package.json`
-4. [ ] Verify `package.json` still has correct TUI script
+1. [x] Verify `cli.ts` points to `src/tui/main.ts` (line 37)
+2. [x] Delete entire `tui/` directory
+3. [x] Remove `"tui:old"` script from `package.json`
+4. [x] Verify `package.json` still has correct TUI script
+
+**Implementation Update (2026-02-05):**
+- Removed legacy `tui/` directory and dropped `tui:old` script; active TUI entry remains `src/tui/main.ts` via `cli.ts`.
 
 **Testing:**
 - [ ] Run TUI: `bun run tui`  --- USER ONLY
@@ -758,7 +761,7 @@ type AppState = TUIState | WebState;
 | 2.2 | Web Auto-Refresh | HIGH | 1 day | 🔄 |
 | 3.1 | Server Delegation | HIGH | 3-4 days | ✅ |
 | 4.1 | Remove public/client.ts | MEDIUM | 1 hr | ✅ |
-| 4.2 | Remove tui/ directory | MEDIUM | 1 hr | ⬜ |
+| 4.2 | Remove tui/ directory | MEDIUM | 1 hr | ✅ |
 | 4.3 | Remove renderers.ts | MEDIUM | 1 hr | ⬜ |
 | 4.4 | Clean dist/ | MEDIUM | 1 hr | ⬜ |
 | 4.5 | Audit bunfig.toml | MEDIUM | 2 hrs | ⬜ |
