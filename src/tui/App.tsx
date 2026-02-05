@@ -1,5 +1,5 @@
 import { useRenderer, useKeyboard } from "@opentui/solid";
-import { createEffect, onCleanup, onMount } from "solid-js";
+import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import type { KeyEvent } from "@opentui/core";
 import { RGBA } from "@opentui/core";
 import { watch } from "node:fs/promises";
@@ -22,10 +22,13 @@ function App() {
   const renderer = useRenderer();
   const watchControllers: AbortController[] = [];
   let refreshDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let pendingConfirmation: { message: string; run: () => Promise<void> | void } | null = null;
+  const [confirmPrompt, setConfirmPrompt] = createSignal<string | null>(null);
 
   const scheduleRefresh = () => {
     if (refreshDebounceTimer) clearTimeout(refreshDebounceTimer);
     refreshDebounceTimer = setTimeout(() => {
+      if (pendingConfirmation) return;
       void refresh();
     }, 500);
   };
@@ -120,12 +123,37 @@ function App() {
     else if (idx >= offset + visibleRows) actions.setScrollOffset(Math.max(0, idx - visibleRows + 1));
   };
 
+  const requestConfirmation = (message: string, run: () => Promise<void> | void) => {
+    pendingConfirmation = { message, run };
+    setConfirmPrompt(message);
+    actions.setLeaderMode(false);
+    actions.setStatusMessage(`${message} (y/n)`);
+  };
+
   useKeyboard((key: KeyEvent) => {
     const rawName = (key.name || key.sequence || "");
     const name = rawName.toLowerCase();
 
     if (key.ctrl && key.name === "c") {
       renderer.destroy();
+      return;
+    }
+
+    if (pendingConfirmation) {
+      if (name === "y" || name === "return" || name === "enter") {
+        const confirm = pendingConfirmation;
+        pendingConfirmation = null;
+        setConfirmPrompt(null);
+        void Promise.resolve(confirm.run());
+        return;
+      }
+      if (name === "n" || name === "escape") {
+        pendingConfirmation = null;
+        setConfirmPrompt(null);
+        actions.setStatusMessage("Cancelled");
+        return;
+      }
+      actions.setStatusMessage(`${pendingConfirmation.message} (y/n)`);
       return;
     }
 
@@ -270,20 +298,17 @@ function App() {
     if (state.leaderMode) {
       switch (name) {
         case "a":
-          actions.setLeaderMode(false);
-          handleAbandon();
+          requestConfirmation("Abandon selected change?", handleAbandon);
           return;
         case "s":
-          actions.setLeaderMode(false);
-          handleSquash();
+          requestConfirmation("Squash selected change?", handleSquash);
           return;
         case "d":
           actions.setLeaderMode(false);
           handleDuplicate();
           return;
         case "u":
-          actions.setLeaderMode(false);
-          handleRedo();
+          requestConfirmation("Redo last operation?", handleRedo);
           return;
         case "m":
           actions.setLeaderMode(false);
@@ -385,7 +410,7 @@ function App() {
         handleInsert();
         break;
       case "u":
-        handleUndo();
+        requestConfirmation("Undo last operation?", handleUndo);
         break;
       case "o":
         handleOpLog();
@@ -482,12 +507,18 @@ function App() {
       actions.setRebaseSource(null);
       actions.setStatusMessage("Rebase cancelled");
     } else {
-      try {
-        await opRebase(state.rebaseSourceId, node.changeId);
-      } catch (e) {
-        actions.setStatusMessage(`Error: ${String(e)}`);
-        actions.setRebaseSource(null);
-      }
+      const sourceId = state.rebaseSourceId;
+      requestConfirmation(
+        `Rebase ${sourceId.slice(0, 8)} onto ${node.changeId.slice(0, 8)}?`,
+        async () => {
+          try {
+            await opRebase(sourceId, node.changeId);
+          } catch (e) {
+            actions.setStatusMessage(`Error: ${String(e)}`);
+            actions.setRebaseSource(null);
+          }
+        }
+      );
     }
   };
 
@@ -636,12 +667,13 @@ function App() {
                width={detailW()}
                height={mainHeight()}
                showHelp={state.showHelp}
-               promptMode={state.describeMode}
-               promptValue={state.describeValue}
-               cursorPos={state.cursorPos}
-               mergeMode={state.mergeMode}
-               mergeSelectedIds={state.mergeSelectedIds}
-                 viewMode={state.viewMode}
+                promptMode={state.describeMode}
+                promptValue={state.describeValue}
+                cursorPos={state.cursorPos}
+                confirmPrompt={confirmPrompt()}
+                mergeMode={state.mergeMode}
+                mergeSelectedIds={state.mergeSelectedIds}
+                  viewMode={state.viewMode}
                  opLogSelected={state.opLogEntries.find(e => e.id === state.opLogSelectedId)}
                  obslogChangeId={state.obslogChangeId}
                  obslogSelected={state.obslogEntries[state.obslogSelectedIndex] || null}

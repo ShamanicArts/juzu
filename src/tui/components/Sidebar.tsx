@@ -24,6 +24,7 @@ interface SidebarProps {
   promptMode?: boolean;
   promptValue?: string;
   cursorPos?: number;
+  confirmPrompt?: string | null;
   mergeMode?: boolean;
   mergeSelectedIds?: Set<string>;
   viewMode?: ViewMode;
@@ -34,6 +35,17 @@ interface SidebarProps {
 
 export function Sidebar(props: SidebarProps) {
   const contentLines = createMemo(() => {
+    if (props.confirmPrompt) {
+      return [
+        { text: "CONFIRM ACTION", color: YELLOW },
+        { text: "", color: FG_DIM },
+        { text: props.confirmPrompt, color: FG },
+        { text: "", color: FG_DIM },
+        { text: "Press y to confirm", color: GREEN },
+        { text: "Press n or Esc to cancel", color: RED },
+      ];
+    }
+
     if (props.showHelp) {
       const lines = [
         { text: "Navigation", color: CYAN },
@@ -54,6 +66,7 @@ export function Sidebar(props: SidebarProps) {
         { text: "Ctrl+x u    Redo", color: FG },
         { text: "Ctrl+x m    Merge mode", color: FG },
         { text: "u           Undo", color: FG },
+        { text: "y / n       Confirm / cancel", color: FG },
         { text: "", color: FG_DIM },
         { text: "View", color: CYAN },
         { text: "x           Toggle desc", color: FG },

@@ -601,10 +601,14 @@ HTTP Request → server.ts (inline spawn) → jj CLI
 - `src/web/components/Sidebar.tsx` (or wherever action buttons are)
 
 **Tasks:**
-1. [ ] Identify all destructive operation buttons in web UI
-2. [ ] Create lightweight modal component (or use browser `confirm()` as MVP)
-3. [ ] Wrap destructive operations with confirmation
-4. [ ] Style modal to match app theme
+1. [x] Identify all destructive operation buttons in web UI
+2. [x] Implement lightweight MVP confirmations (browser `confirm()` in web)
+3. [x] Wrap destructive operations with confirmation
+4. [x] Add equivalent TUI confirmation flow (`y/n` prompt) for parity
+
+**Implementation Update (2026-02-05):**
+- Web: added confirmation prompts for `abandon`, `squash`, `rebase`, `undo`, and `redo` across keyboard/actions/sidebar paths.
+- TUI: added pending confirmation mode for destructive operations; actions now require `y` to proceed or `n`/`Esc` to cancel.
 
 **MVP Approach:**
 ```typescript
@@ -775,7 +779,7 @@ type AppState = TUIState | WebState;
 | 4.3 | Remove renderers.ts | MEDIUM | 1 hr | ✅ |
 | 4.4 | Clean dist/ | MEDIUM | 1 hr | ✅ |
 | 4.5 | Audit bunfig.toml | MEDIUM | 2 hrs | ✅ |
-| 5.1 | Confirmation Dialogs | MEDIUM | 1-2 days | ⬜ |
+| 5.1 | Confirmation Dialogs | MEDIUM | 1-2 days | ✅ |
 | 5.2 | Single-View Sidebar | MEDIUM | 1-2 days | ⬜ |
 | 6.1 | Derived State | LOW | 2-3 days | ⬜ |
 | 6.2 | Split State | LOW | 2-3 days | ⬜ |
