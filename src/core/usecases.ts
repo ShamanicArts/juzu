@@ -106,7 +106,8 @@ export async function toggleInlineFilesForSelected() {
   actions.setExpandedFilesNode(sel);
   try {
     const files = await ensureFiles(sel);
-    actions.setNodeExtraHeight(sel, files.length * 14 + 10);
+    // Reserve room for inline controls + padding + files.
+    actions.setNodeExtraHeight(sel, files.length * 14 + 34);
   } catch {
     actions.setNodeExtraHeight(sel, 0);
   }

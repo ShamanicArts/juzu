@@ -50,7 +50,8 @@ export interface GraphConfig {
 export const DEFAULT_GRAPH_CONFIG: GraphConfig = {
   nodeRadius: 5,
   laneWidth: 24,
-  ySpacing: 45,
+  // Web canvas needs room for: bookmark pills above + inline controls/files below.
+  ySpacing: 84,
   canvasPadding: 50,
   textColumnGap: 60,
   colors: {

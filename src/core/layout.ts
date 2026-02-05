@@ -3,7 +3,7 @@ import type { CommitNode, LayoutMode, LayoutResult, GraphConfig } from "./types"
 const DEFAULT_CONFIG: GraphConfig = {
   nodeRadius: 5,
   laneWidth: 24,
-  ySpacing: 45,
+  ySpacing: 84,
   canvasPadding: 50,
   textColumnGap: 60,
   colors: {
@@ -129,11 +129,26 @@ function layoutTopological(nodes: CommitNode[]) {
   });
 }
 
-function layoutMainline(nodes: CommitNode[], nodesMap: Map<string, CommitNode>) {
+function layoutMainline(
+  nodes: CommitNode[],
+  nodesMap: Map<string, CommitNode>,
+  cfg: Pick<GraphConfig, "ySpacing" | "canvasPadding">
+) {
+  // First pass: calculate Y positions (chronological order) for lane collision detection
+  const Y_SPACING = cfg.ySpacing;
+  const CANVAS_PADDING = cfg.canvasPadding;
+  let currentY = CANVAS_PADDING;
+  nodes.forEach((node) => {
+    node.y = currentY;
+    currentY += Y_SPACING + (node.extraHeight || 0);
+  });
+
+  // Find heads (nodes with no children)
   const hasChildren = new Set<string>();
   nodes.forEach((n) => n.parents.forEach((p) => hasChildren.add(p)));
   const heads = nodes.filter((n) => !hasChildren.has(n.changeId));
 
+  // Build mainline: find longest/best path from any head to root
   let bestPath: CommitNode[] = [];
   let bestScore = -1;
 
@@ -155,25 +170,155 @@ function layoutMainline(nodes: CommitNode[], nodesMap: Map<string, CommitNode>) 
     }
   }
 
+  // Mainline nodes get lane 0
   const mainlineSet = new Set(bestPath.map((n) => n.changeId));
   bestPath.forEach((n) => (n.lane = 0));
 
-  const lanes = new Map<string, number>();
-  nodes.forEach((node) => {
-    if (mainlineSet.has(node.changeId)) {
-      lanes.set(node.changeId, 0);
-      node.lane = 0;
-      return;
-    }
-    let parentLane: number | undefined;
-    for (const parentId of node.parents) {
-      if (lanes.has(parentId)) {
-        parentLane = lanes.get(parentId);
-        break;
+  // Track Y ranges occupied in each lane (lane -> array of [minY, maxY] ranges)
+  const laneRanges = new Map<number, [number, number][]>();
+  laneRanges.set(0, [[0, 999999]]); // Mainline occupies everything
+
+  // Helper to check if a lane is available at a given Y position
+  const isLaneAvailable = (lane: number, y: number, height: number = Y_SPACING): boolean => {
+    const ranges = laneRanges.get(lane);
+    if (!ranges) return true;
+
+    // Ensure minimum height for collision detection (single commits need this)
+    const effectiveHeight = Math.max(height, Y_SPACING);
+
+    // Check if this Y range overlaps with any existing range
+    for (const [minY, maxY] of ranges) {
+      // Add some padding between branches - use >= to catch edge cases
+      if (y <= maxY + Y_SPACING && y + effectiveHeight >= minY - Y_SPACING) {
+        return false; // Overlaps
       }
     }
-    node.lane = parentLane !== undefined ? parentLane + 1 : 1;
-    lanes.set(node.changeId, node.lane);
+    return true;
+  };
+
+  // Helper to occupy a lane range
+  const occupyLane = (lane: number, minY: number, maxY: number) => {
+    if (!laneRanges.has(lane)) {
+      laneRanges.set(lane, []);
+    }
+    laneRanges.get(lane)!.push([minY, maxY]);
+  };
+
+  // Group commits by "branch" (connected component off mainline)
+  const branchCommits = new Map<string, CommitNode[]>(); // root changeId -> commits in branch
+
+  // Find branch roots (commits that have a mainline parent but aren't on mainline)
+  nodes.forEach((node) => {
+    if (mainlineSet.has(node.changeId)) return;
+
+    const hasMainlineParent = node.parents.some((pid) => mainlineSet.has(pid));
+    if (hasMainlineParent) {
+      // This is a branch root
+      branchCommits.set(node.changeId, [node]);
+    }
+  });
+
+  // Grow each branch to include all descendants until they hit mainline or another branch
+  branchCommits.forEach((commits, rootId) => {
+    const branchSet = new Set<string>(commits.map((c) => c.changeId));
+
+    // Use a queue to find all descendants
+    const toProcess = [...commits];
+    while (toProcess.length > 0) {
+      const current = toProcess.shift()!;
+
+      // Find children
+      nodes.forEach((child) => {
+        if (branchSet.has(child.changeId)) return;
+        if (mainlineSet.has(child.changeId)) return;
+
+        // Child has this node as parent
+        if (child.parents.includes(current.changeId)) {
+          branchSet.add(child.changeId);
+          commits.push(child);
+          toProcess.push(child);
+        }
+      });
+    }
+
+    // Sort commits by Y position
+    commits.sort((a, b) => a.y! - b.y!);
+  });
+
+  // Assign lanes to branches, reusing lanes when vertically separated
+  // CRITICAL: Extend lane occupation to the mainline parent to prevent overlapping connections
+  branchCommits.forEach((commits, rootId) => {
+    if (commits.length === 0) return;
+
+    const minY = commits[0].y!;
+    let maxY = commits[commits.length - 1].y!;
+
+    // Find the mainline parent's Y position - need to extend occupation to there
+    // to prevent overlapping connection lines for parallel branches
+    const branchRoot = commits.find(c => c.changeId === rootId);
+    if (branchRoot) {
+      for (const parentId of branchRoot.parents) {
+        const parent = nodesMap.get(parentId);
+        if (parent && mainlineSet.has(parentId) && parent.y !== undefined) {
+          // Extend maxY to the parent's Y so connection lines don't overlap
+          maxY = Math.max(maxY, parent.y);
+          break;
+        }
+      }
+    }
+
+    // Find the nearest available lane to mainline
+    let lane = 1;
+    while (!isLaneAvailable(lane, minY, maxY - minY)) {
+      lane++;
+    }
+
+    // Assign this lane to all commits in the branch
+    commits.forEach((node) => {
+      node.lane = lane;
+    });
+
+    // Mark lane as occupied
+    occupyLane(lane, minY, maxY);
+  });
+
+  // Handle any remaining unassigned commits (merges, orphans, etc.)
+  nodes.forEach((node) => {
+    if (node.lane !== undefined) return;
+
+    // Find parent lane
+    let parentLane: number | undefined;
+    for (const parentId of node.parents) {
+      const parent = nodesMap.get(parentId);
+      if (parent && parent.lane !== undefined) {
+        parentLane = parent.lane;
+        if (!mainlineSet.has(parentId)) break;
+      }
+    }
+
+    if (parentLane !== undefined && parentLane !== 0) {
+      // Try to use parent's lane if available at this Y
+      if (isLaneAvailable(parentLane, node.y!)) {
+        node.lane = parentLane;
+        occupyLane(parentLane, node.y!, node.y! + Y_SPACING);
+      } else {
+        // Find nearest available
+        let lane = 1;
+        while (!isLaneAvailable(lane, node.y!)) {
+          lane++;
+        }
+        node.lane = lane;
+        occupyLane(lane, node.y!, node.y! + Y_SPACING);
+      }
+    } else {
+      // Orphaned - find nearest available lane
+      let lane = 1;
+      while (!isLaneAvailable(lane, node.y!)) {
+        lane++;
+      }
+      node.lane = lane;
+      occupyLane(lane, node.y!, node.y! + Y_SPACING);
+    }
   });
 }
 
@@ -205,7 +350,7 @@ export function calculateLayout(
       layoutTopological(nodesCopy);
       break;
     case "mainline":
-      layoutMainline(nodesCopy, nodesMap);
+      layoutMainline(nodesCopy, nodesMap, cfg);
       break;
   }
 
