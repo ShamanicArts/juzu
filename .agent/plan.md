@@ -554,16 +554,20 @@ HTTP Request → server.ts (inline spawn) → jj CLI
 **Context:** Contains jsx configuration that may be vestigial
 
 **Tasks:**
-1. [ ] Read current `bunfig.toml`
-2. [ ] Identify jsx configuration:
+1. [x] Read current `bunfig.toml`
+2. [x] Identify jsx configuration:
    ```toml
    jsx = "react-jsx"
    jsxImportSource = "solid-js"
    ```
-3. [ ] Check if TUI uses this config (uses Bun preload plugin)
-4. [ ] Check if web uses this config (uses custom Babel plugin)
-5. [ ] Test build without the config
-6. [ ] If both work without it, remove from `bunfig.toml`
+3. [x] Check if TUI uses this config (uses Bun preload plugin)
+4. [x] Check if web uses this config (uses custom Babel plugin)
+5. [x] Test available run paths without bunfig jsx config (`bun run server.ts --help`, `bun run cli.ts --help`)
+6. [x] Remove jsx entries from `bunfig.toml` (leave minimal comment)
+
+**Implementation Update (2026-02-05):**
+- Removed legacy jsx settings from `bunfig.toml`; runtime entry checks for server/CLI still pass.
+- Full `build:tui`/`build:web` script checks are not available in this repo (`package.json` has no such scripts).
 
 **Testing:**
 - [ ] Save copy of `bunfig.toml`
@@ -763,14 +767,14 @@ type AppState = TUIState | WebState;
 | 1.1 | TUI Redo Double-Fire | CRITICAL | 2-4 hrs | ✅ |
 | 1.2 | Server Error Handling | CRITICAL | 2-4 hrs | ✅ |
 | 1.3 | Template Deduplication | CRITICAL | 2 hrs | ✅ |
-| 2.1 | TUI Auto-Refresh | HIGH | 1 day | 🔄 |
-| 2.2 | Web Auto-Refresh | HIGH | 1 day | 🔄 |
+| 2.1 | TUI Auto-Refresh | HIGH | 1 day | ✅ |
+| 2.2 | Web Auto-Refresh | HIGH | 1 day | ✅ |
 | 3.1 | Server Delegation | HIGH | 3-4 days | ✅ |
 | 4.1 | Remove public/client.ts | MEDIUM | 1 hr | ✅ |
 | 4.2 | Remove tui/ directory | MEDIUM | 1 hr | ✅ |
 | 4.3 | Remove renderers.ts | MEDIUM | 1 hr | ✅ |
 | 4.4 | Clean dist/ | MEDIUM | 1 hr | ✅ |
-| 4.5 | Audit bunfig.toml | MEDIUM | 2 hrs | ⬜ |
+| 4.5 | Audit bunfig.toml | MEDIUM | 2 hrs | ✅ |
 | 5.1 | Confirmation Dialogs | MEDIUM | 1-2 days | ⬜ |
 | 5.2 | Single-View Sidebar | MEDIUM | 1-2 days | ⬜ |
 | 6.1 | Derived State | LOW | 2-3 days | ⬜ |
@@ -901,5 +905,5 @@ This plan is complete when:
 ---
 
 *Plan created: 2026-02-05*  
-*Last updated: 2026-02-05 (Phase 1 complete, Phase 2 implementation in progress)*  
+*Last updated: 2026-02-05 (Phases 1-4 mostly complete; Phase 5 next)*  
 *Status: Ready for implementation*
