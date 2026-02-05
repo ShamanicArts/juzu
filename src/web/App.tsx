@@ -24,6 +24,43 @@ function App() {
   const multiCount = createMemo(() => state.selectedIds.size);
 
   const persistKey = "jj-viz-layout";
+  let pollingInterval: ReturnType<typeof setInterval> | null = null;
+  let pollInFlight = false;
+  let lastNodesHash: string | null = null;
+  const onVisibilityChange = () => {
+    void pollForUpdates();
+  };
+
+  const hashNodes = (nodes: unknown) => {
+    try {
+      return JSON.stringify(nodes);
+    } catch {
+      return null;
+    }
+  };
+
+  const pollForUpdates = async () => {
+    if (document.visibilityState === "hidden") return;
+    if (pollInFlight) return;
+    pollInFlight = true;
+    try {
+      const response = await fetch("/api/log?limit=500", { cache: "no-store" });
+      if (!response.ok) return;
+      const nodes = await response.json();
+      if (!Array.isArray(nodes)) return;
+
+      const newHash = hashNodes(nodes);
+      if (newHash && newHash !== lastNodesHash) {
+        lastNodesHash = newHash;
+        actions.setNodes(nodes as any);
+        actions.setStatusMessage(`nodes:${nodes.length}`);
+      }
+    } catch {
+      // Keep polling loop resilient; regular refresh/mutations surface errors.
+    } finally {
+      pollInFlight = false;
+    }
+  };
 
   onMount(() => {
     setBackend(createWebBackend());
@@ -46,7 +83,23 @@ function App() {
       // ignore
     }
 
-    void refresh();
+    void (async () => {
+      await refresh();
+      lastNodesHash = hashNodes(state.nodes);
+    })();
+
+    pollingInterval = setInterval(() => {
+      void pollForUpdates();
+    }, 3000);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+  });
+
+  onCleanup(() => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+    }
+    document.removeEventListener("visibilitychange", onVisibilityChange);
   });
 
   createEffect(() => {
