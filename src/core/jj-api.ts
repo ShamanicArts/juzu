@@ -1,6 +1,6 @@
 import type { CommitNode, FilesCacheEntry } from "./types";
 
-const JJ_TEMPLATE =
+export const JJ_TEMPLATE =
   `change_id.short() ++ "§" ++ commit_id.short() ++ "§" ++ parents.map(|p| p.change_id().short()).join(",") ++ "§" ++ author.email() ++ "§" ++ author.timestamp() ++ "§" ++ bookmarks.join(",") ++ "§" ++ description.first_line() ++ "§" ++ description ++ "§" ++ empty ++ "§" ++ conflict ++ "§" ++ hidden ++ "§" ++ root ++ "§<JJ-SEP>§"`;
 
 /**
@@ -147,6 +147,19 @@ export async function jjNew(parentId: string, cwd: string): Promise<void> {
   await runCmdText(["jj", "new", parentId], cwd);
 }
 
+export async function jjCreateNew(
+  cwd: string,
+  opts: { parentId?: string; parentIds?: string[] } = {}
+): Promise<void> {
+  const cmd = ["jj", "new"];
+  if (Array.isArray(opts.parentIds) && opts.parentIds.length > 0) {
+    cmd.push(...opts.parentIds);
+  } else if (opts.parentId) {
+    cmd.push(opts.parentId);
+  }
+  await runCmdText(cmd, cwd);
+}
+
 export async function jjEdit(changeId: string, cwd: string): Promise<void> {
   await runCmdText(["jj", "edit", changeId], cwd);
 }
@@ -189,8 +202,12 @@ export async function jjSquashPaths(
   opts: { intoId?: string | null; paths?: string[]; message?: string },
   cwd: string
 ): Promise<void> {
-  const args: string[] = ["jj", "squash", "--from", changeId, "--use-destination-message"];
-  if (opts.intoId) args.push("--into", opts.intoId);
+  const args: string[] = ["jj", "squash", "--use-destination-message"];
+  if (opts.intoId) {
+    args.push("--from", changeId, "--into", opts.intoId);
+  } else {
+    args.push("-r", changeId);
+  }
   if (opts.message && opts.message.trim()) args.push("-m", opts.message.trim());
   if (opts.paths && opts.paths.length > 0) args.push(...opts.paths);
   await runCmdText(args, cwd);
@@ -213,6 +230,19 @@ export async function jjGetDiff(changeId: string, cwd: string): Promise<string> 
   return runCmdText(["jj", "diff", "--git", "-r", changeId], cwd);
 }
 
+export async function jjGetFiles(changeId: string, cwd: string): Promise<Array<{ type: string; path: string }>> {
+  const out = await runCmdText(["jj", "diff", "--summary", "-r", changeId], cwd);
+  return out
+    .trim()
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [type, ...rest] = line.split(" ");
+      return { type, path: rest.join(" ") };
+    });
+}
+
 // Restore operation (jump to specific operation)
 export async function jjRestoreOperation(operationId: string, cwd: string): Promise<void> {
   await runCmdText(["jj", "op", "restore", operationId], cwd);
@@ -231,7 +261,7 @@ export interface OpLogEntry {
   user: string;
 }
 
-const OP_LOG_TEMPLATE =
+export const OP_LOG_TEMPLATE =
   `id.short() ++ "§" ++ id.short(8) ++ "§" ++ time ++ "§" ++ time.duration() ++ "§" ++ tags ++ "§" ++ description.first_line() ++ "§" ++ description ++ "§" ++ current_operation ++ "§" ++ user ++ "\n§<JJ-OP-SEP>§\n"`;
 
 export async function fetchOpLog(cwd: string, limit: number): Promise<OpLogEntry[]> {
@@ -283,7 +313,7 @@ export interface ObslogEntry {
 
 // CommitEvolutionEntry provides `commit()` and `operation()`.
 // We include operation info so the UI can explain *why* a version exists.
-const OBSLOG_TEMPLATE =
+export const OBSLOG_TEMPLATE =
   `commit.change_id().short() ++ "§" ++ commit.commit_id().short() ++ "§" ++ operation.id().short() ++ "§" ++ operation.description().first_line() ++ "§" ++ operation.description() ++ "§" ++ operation.user() ++ "§" ++ operation.time().duration() ++ "§" ++ operation.tags() ++ "§" ++ commit.author().timestamp() ++ "§" ++ commit.author().email() ++ "§" ++ commit.hidden() ++ "§" ++ commit.description().first_line() ++ "§" ++ commit.description() ++ "§" ++ commit.empty() ++ "§" ++ commit.conflict() ++ "\n§<JJ-OBS-SEP>§\n"`;
 
 export async function fetchObslog(changeId: string, cwd: string, limit: number): Promise<ObslogEntry[]> {
