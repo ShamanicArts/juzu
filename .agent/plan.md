@@ -454,10 +454,13 @@ HTTP Request → server.ts (inline spawn) → jj CLI
 **Context:** Original monolithic canvas app, not loaded by `index.html` anymore
 
 **Tasks:**
-1. [ ] Verify `public/index.html` does not reference `client.ts`
-2. [ ] Verify no other file imports from `client.ts`
-3. [ ] Delete `public/client.ts`
-4. [ ] Commit with message noting it can be recovered from git history
+1. [x] Verify `public/index.html` does not reference `client.ts`
+2. [x] Verify no other file imports from `client.ts`
+3. [x] Delete `public/client.ts`
+4. [x] Record removal in JJ change description (recoverable from history)
+
+**Implementation Update (2026-02-05):**
+- Removed dead `public/client.ts` after confirming it is not referenced by `public/index.html` or imported elsewhere.
 
 **Testing:**
 - [ ] Build web: `bun run build:web`
@@ -754,7 +757,7 @@ type AppState = TUIState | WebState;
 | 2.1 | TUI Auto-Refresh | HIGH | 1 day | 🔄 |
 | 2.2 | Web Auto-Refresh | HIGH | 1 day | 🔄 |
 | 3.1 | Server Delegation | HIGH | 3-4 days | ✅ |
-| 4.1 | Remove public/client.ts | MEDIUM | 1 hr | ⬜ |
+| 4.1 | Remove public/client.ts | MEDIUM | 1 hr | ✅ |
 | 4.2 | Remove tui/ directory | MEDIUM | 1 hr | ⬜ |
 | 4.3 | Remove renderers.ts | MEDIUM | 1 hr | ⬜ |
 | 4.4 | Clean dist/ | MEDIUM | 1 hr | ⬜ |
