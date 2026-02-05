@@ -307,7 +307,7 @@ HTTP Request → server.ts (inline spawn) → jj CLI
 - [x] Server now imports and uses core helpers for most read/mutation endpoints (`/api/diff`, `/api/files`, `/api/oplog`, `/api/obslog`, `/api/new`, `/api/edit`, `/api/describe`, `/api/abandon`, `/api/squash`, `/api/move`, `/api/insert`, `/api/split`, `/api/duplicate`, `/api/rebase`, `/api/undo`, `/api/redo`, `/api/oplog/restore`).
 - [x] `findJJRoot()` duplication removed from `server.ts`; server now imports `findJJRoot` from `src/core/jj-api.ts`.
 - [x] Added missing core helpers `jjCreateNew()` and `jjGetFiles()` to support server delegation.
-- [ ] `/api/log` remains custom in server for now (includes git branch enrichment/caching not yet moved into core `fetchJJLog`).
+- [x] `/api/log` now delegates to core via `fetchJJLogWithGitBranches()`.
 
 **Tasks:**
 
@@ -750,7 +750,7 @@ type AppState = TUIState | WebState;
 | 1.3 | Template Deduplication | CRITICAL | 2 hrs | ✅ |
 | 2.1 | TUI Auto-Refresh | HIGH | 1 day | 🔄 |
 | 2.2 | Web Auto-Refresh | HIGH | 1 day | 🔄 |
-| 3.1 | Server Delegation | HIGH | 3-4 days | 🔄 |
+| 3.1 | Server Delegation | HIGH | 3-4 days | ✅ |
 | 4.1 | Remove public/client.ts | MEDIUM | 1 hr | ⬜ |
 | 4.2 | Remove tui/ directory | MEDIUM | 1 hr | ⬜ |
 | 4.3 | Remove renderers.ts | MEDIUM | 1 hr | ⬜ |

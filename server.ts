@@ -6,7 +6,7 @@ export {};
 
 import solidDomPlugin from "./src/web/bun-plugin-solid-dom";
 import {
-  JJ_TEMPLATE,
+  fetchJJLogWithGitBranches,
   fetchOpLog,
   fetchObslog,
   findJJRoot,
@@ -69,106 +69,6 @@ console.log(`📁 JJ Repository: ${PROC_CWD}`);
 // Script directory for serving static assets
 const SCRIPT_DIR = import.meta.dir;
 
-// Git branch cache
-let gitBranchCache = new Map<string, string[]>();
-let lastGitBranchFetch = 0;
-
-async function getWorkingCopyId(): Promise<string> {
-  const proc = Bun.spawn(["jj", "log", "--no-graph", "-r", "@", "-T", "change_id.short()"], {
-    cwd: PROC_CWD,
-    stderr: "pipe"
-  });
-  return await new Response(proc.stdout).text();
-}
-
-async function getJJLog(limit = 500) {
-  console.log("Fetching JJ log...");
-
-  const now = Date.now();
-  if (now - lastGitBranchFetch > 5000) {
-    gitBranchCache = await getGitBranches();
-    lastGitBranchFetch = now;
-  }
-
-  const [logText, wcId] = await Promise.all([
-    (async () => {
-      const proc = Bun.spawn(["jj", "log", "--no-graph", "-r", "::", "--limit", String(limit), "-T", JJ_TEMPLATE], {
-        cwd: PROC_CWD,
-        stderr: "pipe",
-      });
-      return await new Response(proc.stdout).text();
-    })(),
-    getWorkingCopyId()
-  ]);
-
-  const cleanWcId = wcId.trim();
-
-  return logText.split("§<JJ-SEP>§").map(block => block.trim()).filter(Boolean).map(block => {
-    const parts = block.split("§");
-    if (parts.length < 12) {
-      console.log("Skipping malformed block:", block.substring(0, 50));
-      return null;
-    }
-
-    const changeId = parts[0];
-    const commitId = parts[1];
-    const parents = parts[2];
-    const author = parts[3];
-    const time = parts[4];
-    const bookmarks = parts[5];
-    const descTitle = parts[6];
-
-    const root = parts[parts.length-1];
-    const hidden = parts[parts.length-2];
-    const conflict = parts[parts.length-3];
-    const empty = parts[parts.length-4];
-
-    const descFull = parts.slice(7, parts.length-4).join("§");
-
-    const shortCommitId = commitId.trim();
-    const gitBranches = gitBranchCache.get(shortCommitId) || [];
-
-    return {
-      changeId: changeId.trim(),
-      commitId: commitId.trim(),
-      parents: parents ? parents.split(",").filter((p: string) => p.trim()) : [],
-      author: author.trim(),
-      time: time.trim(),
-      bookmarks: bookmarks ? bookmarks.split(",").filter((b: string) => b.trim()) : [],
-      gitBranches: gitBranches,
-      descriptionTitle: descTitle.trim(),
-      descriptionFull: descFull.trim(),
-      isEmpty: empty.trim() === "true",
-      isConflict: conflict.trim() === "true",
-      isHidden: hidden.trim() === "true",
-      isRoot: root.trim() === "true",
-      isWorkingCopy: changeId.trim() === cleanWcId
-    };
-  }).filter(Boolean);
-}
-
-async function getGitBranches(): Promise<Map<string, string[]>> {
-  const proc = Bun.spawn(["git", "for-each-ref", "--format=%(objectname:short) %(refname:short)", "refs/heads"], {
-    cwd: PROC_CWD,
-    stderr: "pipe",
-  });
-  const output = await new Response(proc.stdout).text();
-
-  const commitBranches = new Map<string, string[]>();
-
-  output.trim().split("\n").forEach((line: string) => {
-    const [commitId, branchName] = line.split(" ");
-    if (commitId && branchName) {
-      if (!commitBranches.has(commitId)) {
-        commitBranches.set(commitId, [] as string[]);
-      }
-      commitBranches.get(commitId)!.push(branchName);
-    }
-  });
-
-  return commitBranches;
-}
-
 const server = Bun.serve({
   port: args.port,
   async fetch(req: Request) {
@@ -179,7 +79,7 @@ const server = Bun.serve({
       try {
         const limitRaw = url.searchParams.get("limit");
         const limit = Math.max(1, Math.min(2000, Number(limitRaw || "500") || 500));
-        const data = await getJJLog(limit);
+        const data = await fetchJJLogWithGitBranches(PROC_CWD, limit);
         return new Response(JSON.stringify(data), {
           headers: { 
             "Content-Type": "application/json",

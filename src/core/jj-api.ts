@@ -109,6 +109,48 @@ export async function fetchJJLog(cwd: string, limit: number): Promise<CommitNode
     .filter(Boolean) as CommitNode[];
 }
 
+export async function fetchGitBranches(cwd: string): Promise<Map<string, string[]>> {
+  const out = await runCmdText([
+    "git",
+    "for-each-ref",
+    "--format=%(objectname:short) %(refname:short)",
+    "refs/heads",
+  ], cwd, 10000);
+
+  const commitBranches = new Map<string, string[]>();
+  out
+    .trim()
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      const [commitId, branchName] = line.split(" ");
+      if (!commitId || !branchName) return;
+      if (!commitBranches.has(commitId)) commitBranches.set(commitId, []);
+      commitBranches.get(commitId)!.push(branchName);
+    });
+
+  return commitBranches;
+}
+
+export async function fetchJJLogWithGitBranches(cwd: string, limit: number): Promise<CommitNode[]> {
+  const [nodes, gitBranches] = await Promise.all([
+    fetchJJLog(cwd, limit),
+    fetchGitBranches(cwd),
+  ]);
+
+  return nodes.map((node) => {
+    const branches =
+      gitBranches.get(node.commitId) ||
+      gitBranches.get(node.commitId.slice(0, 7)) ||
+      [];
+    return {
+      ...node,
+      gitBranches: branches,
+    };
+  });
+}
+
 /**
  * Fetch files for nodes
  */
