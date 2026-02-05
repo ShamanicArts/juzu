@@ -531,10 +531,13 @@ HTTP Request → server.ts (inline spawn) → jj CLI
 **Context:** Build artifacts committed despite `.gitignore` listing `dist/`
 
 **Tasks:**
-1. [ ] Remove from git tracking: `git rm -r --cached dist/`
-2. [ ] Verify `.gitignore` contains `dist/`
-3. [ ] Commit the removal
-4. [ ] Optionally add to `.gitignore` if missing
+1. [x] Confirm whether `dist/` is currently tracked
+2. [x] Verify `.gitignore` contains `dist/`
+3. [x] No untrack action needed (`dist/` has no tracked entries currently)
+4. [x] Record result in plan
+
+**Implementation Update (2026-02-05):**
+- `dist/` is already ignored and currently has no tracked entries (`jj file list dist` reports no matches), so no cleanup action was required.
 
 **Testing:**
 - [ ] Run `git status`
@@ -766,7 +769,7 @@ type AppState = TUIState | WebState;
 | 4.1 | Remove public/client.ts | MEDIUM | 1 hr | ✅ |
 | 4.2 | Remove tui/ directory | MEDIUM | 1 hr | ✅ |
 | 4.3 | Remove renderers.ts | MEDIUM | 1 hr | ✅ |
-| 4.4 | Clean dist/ | MEDIUM | 1 hr | ⬜ |
+| 4.4 | Clean dist/ | MEDIUM | 1 hr | ✅ |
 | 4.5 | Audit bunfig.toml | MEDIUM | 2 hrs | ⬜ |
 | 5.1 | Confirmation Dialogs | MEDIUM | 1-2 days | ⬜ |
 | 5.2 | Single-View Sidebar | MEDIUM | 1-2 days | ⬜ |
