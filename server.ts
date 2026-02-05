@@ -69,6 +69,9 @@ console.log(`📁 JJ Repository: ${PROC_CWD}`);
 // Script directory for serving static assets
 const SCRIPT_DIR = import.meta.dir;
 
+// Architecture Note: server.ts intentionally stays a thin HTTP adapter.
+// The Backend interface is for TUI/Web frontends that need swappable runtime backends.
+// The server already is an adapter boundary, so it calls core jj-api helpers directly.
 const server = Bun.serve({
   port: args.port,
   async fetch(req: Request) {

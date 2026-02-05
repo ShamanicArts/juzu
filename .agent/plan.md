@@ -436,6 +436,9 @@ HTTP Request → server.ts (inline spawn) → jj CLI
 // so it calls jj-api.ts functions directly for simplicity.
 ```
 
+**Implementation Update (2026-02-05):**
+- [x] Added architecture note comment in `server.ts` documenting why server remains a thin HTTP adapter and does not use the frontend Backend interface.
+
 ---
 
 ## Phase 4: Dead Code Removal
