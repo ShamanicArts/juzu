@@ -1,7 +1,7 @@
 import { createEffect } from "solid-js";
 import { useRenderer } from "@opentui/solid";
 import { FrameBufferRenderable, RGBA } from "@opentui/core";
-import type { CommitNode, FilesCacheEntry } from "../../core/types";
+import type { CommitNode, FilesCacheEntry, LayoutMode } from "../../core/types";
 import { getLaneColor } from "../../core/layout";
 
 const BG = RGBA.fromHex("#24283b");
@@ -26,6 +26,7 @@ interface GraphViewProps {
   onEnsureVisible: (visibleRows: number) => void;
   mergeSelectedIds?: Set<string>;
   mergeMode?: boolean;
+  layoutMode?: LayoutMode;
 }
 
 export function GraphView(props: GraphViewProps) {
@@ -107,8 +108,53 @@ export function GraphView(props: GraphViewProps) {
     }
 
     const selectedNode = selLocal >= 0 && selLocal < visible.length ? visible[selLocal] : null;
+
+    // Mainline mode: draw a full-width "bus" ONLY at fork/merge points.
+    // - Fork point: mainline commit that has an off-mainline child.
+    // - Merge point: mainline commit that merges an off-mainline parent.
+    const busYs = new Set<number>();
+    if (props.layoutMode === "mainline" && maxLane > 0) {
+      const childrenById = new Map<string, CommitNode[]>();
+      for (const child of visible) {
+        for (const pid of child.parents) {
+          if (!indexById.has(pid)) continue;
+          const arr = childrenById.get(pid) || [];
+          arr.push(child);
+          childrenById.set(pid, arr);
+        }
+      }
+
+      for (let i = 0; i < visible.length; i++) {
+        const node = visible[i];
+        if ((node.lane || 0) !== 0) continue;
+        const y = rowYCell(i);
+
+        const kids = childrenById.get(node.changeId) || [];
+        const isForkPoint = kids.some((k) => (k.lane || 0) !== 0);
+
+        const isMergePoint =
+          node.parents.length > 1 &&
+          node.parents.some((pid) => {
+            const pi = indexById.get(pid);
+            if (pi === undefined) return false;
+            return ((visible[pi]?.lane || 0) !== 0);
+          });
+
+        if (isForkPoint || isMergePoint) busYs.add(y);
+      }
+
+      // Draw the bus across the full lane span for each join row.
+      const xTrunk = laneXCell(0);
+      const xFurthest = laneXCell(maxLane);
+      const trunkColor = LANE_COLORS[0];
+      for (const y of busYs) {
+        for (let x = Math.min(xTrunk, xFurthest); x <= Math.max(xTrunk, xFurthest); x++) {
+          setGraphCell(x, y, "─", trunkColor);
+        }
+      }
+    }
     
-    // Draw connections
+    // Draw connections (non-staggered: forks join at parent row, merges at child row)
     for (let i = 0; i < visible.length; i++) {
       const node = visible[i];
       const lane = node.lane || 0;
@@ -143,28 +189,47 @@ export function GraphView(props: GraphViewProps) {
             setGraphCell(x0, y, isConnectionSelected ? "┃" : "|", lineColor);
           }
         } else {
-          const yMin = Math.min(y0, y1);
-          const yMax = Math.max(y0, y1);
-          const midY = yMin + Math.floor((yMax - yMin) / 2);
+          const isMergeCommit = node.parents.length > 1;
+          const connectY = isMergeCommit ? y0 : y1;
 
-          const yStart = Math.min(y0, midY);
-          const yEnd = Math.max(y0, midY);
-          for (let y = yStart + 1; y <= yEnd; y++) {
-            setGraphCell(x0, y, isSelectedNode ? "┃" : "│", isSelectedNode ? baseColor : color);
+          const useBus = props.layoutMode === "mainline" && busYs.has(connectY) && ((lane === 0) || (pl === 0));
+
+          // Horizontal segment on the join row.
+          // In mainline mode, the bus provides the full-width horizontal at join points.
+          if (!useBus) {
+            const xMin = Math.min(x0, x1);
+            const xMax = Math.max(x0, x1);
+            for (let x = xMin; x <= xMax; x++) {
+              setGraphCell(x, connectY, isConnectionSelected ? "━" : "─", parentColor);
+            }
           }
 
-          const xMin = Math.min(x0, x1);
-          const xMax = Math.max(x0, x1);
-          for (let x = xMin; x <= xMax; x++) {
-            setGraphCell(x, midY, isConnectionSelected ? "━" : "─", parentColor);
-          }
-          setGraphCell(x0, midY, isConnectionSelected ? "┓" : "┐", isSelectedNode ? baseColor : color);
-          setGraphCell(x1, midY, isConnectionSelected ? "┗" : "└", parentColor);
+          if (isMergeCommit) {
+            // Merge: horizontal at child row; vertical drops down to the parent lane.
+            if (x0 < x1) {
+              setGraphCell(x0, connectY, isConnectionSelected ? "┣" : "├", isSelectedNode ? baseColor : color);
+              setGraphCell(x1, connectY, isConnectionSelected ? "┓" : "┐", parentColor);
+            } else {
+              setGraphCell(x0, connectY, isConnectionSelected ? "┫" : "┤", isSelectedNode ? baseColor : color);
+              setGraphCell(x1, connectY, isConnectionSelected ? "┏" : "┌", parentColor);
+            }
 
-          const yStart2 = Math.min(midY, y1);
-          const yEnd2 = Math.max(midY, y1);
-          for (let y = yStart2; y <= yEnd2 - 1; y++) {
-            setGraphCell(x1, y, isParentSelected ? "┃" : "│", parentColor);
+            for (let y = connectY + 1; y <= y1 - 1; y++) {
+              setGraphCell(x1, y, isParentSelected ? "┃" : "│", parentColor);
+            }
+          } else {
+            // Fork: horizontal at parent row; vertical rises up on the child's lane.
+            if (x0 < x1) {
+              setGraphCell(x1, connectY, isConnectionSelected ? "┣" : "├", parentColor);
+              setGraphCell(x0, connectY, isConnectionSelected ? "┗" : "└", isSelectedNode ? baseColor : color);
+            } else {
+              setGraphCell(x1, connectY, isConnectionSelected ? "┫" : "┤", parentColor);
+              setGraphCell(x0, connectY, isConnectionSelected ? "┛" : "┘", isSelectedNode ? baseColor : color);
+            }
+
+            for (let y = y0 + 1; y <= connectY - 1; y++) {
+              setGraphCell(x0, y, isSelectedNode ? "┃" : "│", isSelectedNode ? baseColor : color);
+            }
           }
         }
       }

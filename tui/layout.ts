@@ -99,10 +99,20 @@ function layoutTopological(nodes: CommitNode[]) {
 }
 
 function layoutMainline(nodes: CommitNode[], nodesMap: Map<string, CommitNode>) {
+  // First pass: calculate Y positions for lane collision detection
+  const Y_SPACING = 4; // TUI uses row-based spacing
+  let currentY = 0;
+  nodes.forEach((node) => {
+    (node as any).rowY = currentY;
+    currentY += Y_SPACING;
+  });
+
+  // Find heads (nodes with no children)
   const hasChildren = new Set<string>();
   nodes.forEach((n) => n.parents.forEach((p) => hasChildren.add(p)));
   const heads = nodes.filter((n) => !hasChildren.has(n.changeId));
 
+  // Build mainline: find longest/best path from any head to root
   let bestPath: CommitNode[] = [];
   let bestScore = -1;
 
@@ -124,25 +134,112 @@ function layoutMainline(nodes: CommitNode[], nodesMap: Map<string, CommitNode>) 
     }
   }
 
+  // Mainline nodes get lane 0
   const mainlineSet = new Set(bestPath.map((n) => n.changeId));
   bestPath.forEach((n) => (n.lane = 0));
 
-  const lanes = new Map<string, number>();
-  nodes.forEach((node) => {
-    if (mainlineSet.has(node.changeId)) {
-      lanes.set(node.changeId, 0);
-      node.lane = 0;
-      return;
-    }
-    let parentLane: number | undefined;
-    for (const parentId of node.parents) {
-      if (lanes.has(parentId)) {
-        parentLane = lanes.get(parentId);
-        break;
+  // Track Y ranges occupied in each lane
+  const laneRanges = new Map<number, [number, number][]>();
+  laneRanges.set(0, [[0, 999999]]); // Mainline occupies everything
+
+  const isLaneAvailable = (lane: number, y: number, height: number = Y_SPACING): boolean => {
+    const ranges = laneRanges.get(lane);
+    if (!ranges) return true;
+    // Ensure minimum height for collision detection
+    const effectiveHeight = Math.max(height, Y_SPACING);
+    for (const [minY, maxY] of ranges) {
+      // Use >= to catch edge cases with adjacent commits
+      if (y <= maxY + Y_SPACING && y + effectiveHeight >= minY - Y_SPACING) {
+        return false;
       }
     }
-    node.lane = parentLane !== undefined ? parentLane + 1 : 1;
-    lanes.set(node.changeId, node.lane);
+    return true;
+  };
+
+  const occupyLane = (lane: number, minY: number, maxY: number) => {
+    if (!laneRanges.has(lane)) {
+      laneRanges.set(lane, []);
+    }
+    laneRanges.get(lane)!.push([minY, maxY]);
+  };
+
+  // Group commits by branch
+  const branchCommits = new Map<string, CommitNode[]>();
+
+  nodes.forEach((node) => {
+    if (mainlineSet.has(node.changeId)) return;
+    const hasMainlineParent = node.parents.some((pid) => mainlineSet.has(pid));
+    if (hasMainlineParent) {
+      branchCommits.set(node.changeId, [node]);
+    }
+  });
+
+  // Grow branches
+  branchCommits.forEach((commits, rootId) => {
+    const branchSet = new Set<string>(commits.map((c) => c.changeId));
+    const toProcess = [...commits];
+    while (toProcess.length > 0) {
+      const current = toProcess.shift()!;
+      nodes.forEach((child) => {
+        if (branchSet.has(child.changeId)) return;
+        if (mainlineSet.has(child.changeId)) return;
+        if (child.parents.includes(current.changeId)) {
+          branchSet.add(child.changeId);
+          commits.push(child);
+          toProcess.push(child);
+        }
+      });
+    }
+    commits.sort((a, b) => (a as any).rowY - (b as any).rowY);
+  });
+
+  // Assign lanes with collision detection
+  branchCommits.forEach((commits, rootId) => {
+    if (commits.length === 0) return;
+    const minY = (commits[0] as any).rowY;
+    const maxY = (commits[commits.length - 1] as any).rowY;
+
+    let lane = 1;
+    while (!isLaneAvailable(lane, minY, maxY - minY)) {
+      lane++;
+    }
+
+    commits.forEach((node) => {
+      node.lane = lane;
+    });
+    occupyLane(lane, minY, maxY);
+  });
+
+  // Handle remaining unassigned nodes
+  nodes.forEach((node) => {
+    if (node.lane !== undefined) return;
+    const y = (node as any).rowY;
+
+    let parentLane: number | undefined;
+    for (const parentId of node.parents) {
+      const parent = nodesMap.get(parentId);
+      if (parent && parent.lane !== undefined) {
+        parentLane = parent.lane;
+        if (!mainlineSet.has(parentId)) break;
+      }
+    }
+
+    if (parentLane !== undefined && parentLane !== 0) {
+      if (isLaneAvailable(parentLane, y)) {
+        node.lane = parentLane;
+        occupyLane(parentLane, y, y + Y_SPACING);
+      } else {
+        let lane = 1;
+        while (!isLaneAvailable(lane, y)) lane++;
+        node.lane = lane;
+        occupyLane(lane, y, y + Y_SPACING);
+      }
+    } else {
+      let lane = 1;
+      while (!isLaneAvailable(lane, y)) lane++;
+      node.lane = lane;
+      occupyLane(lane, y, y + Y_SPACING);
+    }
   });
 }
 

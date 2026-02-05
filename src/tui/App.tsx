@@ -548,6 +548,7 @@ function App() {
               width={graphW()}
               height={mainHeight()}
               onEnsureVisible={ensureSelectedVisible}
+              layoutMode={state.layoutMode}
               mergeMode={state.mergeMode}
               mergeSelectedIds={state.mergeSelectedIds}
             />
