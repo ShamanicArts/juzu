@@ -1,7 +1,8 @@
 import { useRenderer, useKeyboard } from "@opentui/solid";
-import { createEffect, onMount } from "solid-js";
+import { createEffect, onCleanup, onMount } from "solid-js";
 import type { KeyEvent } from "@opentui/core";
 import { RGBA } from "@opentui/core";
+import { watch } from "node:fs/promises";
 import { state, actions, navigation, selectedNode } from "../core/state";
 import { setBackend } from "../core/runtime";
 import { initCwdFrom, opAbandon, opDescribe, opDuplicate, opEdit, opInsertBetween, opMerge, opNew, opRebase, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
@@ -19,6 +20,36 @@ const FG_DIM = RGBA.fromHex("#888888");
 
 function App() {
   const renderer = useRenderer();
+  const watchControllers: AbortController[] = [];
+  let refreshDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const scheduleRefresh = () => {
+    if (refreshDebounceTimer) clearTimeout(refreshDebounceTimer);
+    refreshDebounceTimer = setTimeout(() => {
+      void refresh();
+    }, 500);
+  };
+
+  const startWatch = (path: string, recursive: boolean) => {
+    const controller = new AbortController();
+    watchControllers.push(controller);
+    void (async () => {
+      try {
+        for await (const _event of watch(path, { recursive, signal: controller.signal })) {
+          scheduleRefresh();
+        }
+      } catch (e) {
+        const err = e as Error & { code?: string };
+        if (err?.name === "AbortError") return;
+        if (recursive) {
+          // Linux may not support recursive fs.watch; fallback to non-recursive watches.
+          startWatch(path, false);
+          return;
+        }
+        console.error(`Watch error for ${path}:`, e);
+      }
+    })();
+  };
 
   onMount(async () => {
     setBackend(createTuiBackend());
@@ -37,6 +68,24 @@ function App() {
     });
 
     await refresh();
+
+    const jjDir = `${repoCwd}/.jj`;
+    startWatch(jjDir, true);
+    // Fallback/extra coverage for platforms where recursive watch is not available.
+    startWatch(`${jjDir}/working_copy`, false);
+    startWatch(`${jjDir}/repo`, false);
+    startWatch(`${jjDir}/repo/store`, false);
+    startWatch(`${jjDir}/repo/store/operations`, false);
+  });
+
+  onCleanup(() => {
+    for (const controller of watchControllers) {
+      controller.abort();
+    }
+    if (refreshDebounceTimer) {
+      clearTimeout(refreshDebounceTimer);
+      refreshDebounceTimer = null;
+    }
   });
 
   const refresh = async () => {
@@ -232,6 +281,10 @@ function App() {
           actions.setLeaderMode(false);
           handleDuplicate();
           return;
+        case "u":
+          actions.setLeaderMode(false);
+          handleRedo();
+          return;
         case "m":
           actions.setLeaderMode(false);
           actions.setMergeMode(true);
@@ -288,7 +341,9 @@ function App() {
         actions.toggleFilesExpanded();
         break;
       case "x":
-        actions.toggleDescExpanded();
+        if (!key.ctrl && !key.meta) {
+          actions.toggleDescExpanded();
+        }
         break;
       case "h":
         actions.toggleHelp();
@@ -343,16 +398,10 @@ function App() {
         break;
     }
 
-    // Shift+U for redo
-    if (!key.ctrl && !key.meta && rawName === "U") {
-      handleRedo();
-      return;
-    }
-
     // Leader key: Ctrl+X
     if (key.ctrl && name === "x") {
       actions.setLeaderMode(true);
-      actions.setStatusMessage("Leader: a=abandon s=squash d=duplicate");
+      actions.setStatusMessage("Leader mode");
     }
   });
 

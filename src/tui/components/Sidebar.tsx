@@ -51,6 +51,7 @@ export function Sidebar(props: SidebarProps) {
         { text: "Ctrl+x a    Abandon", color: FG },
         { text: "Ctrl+x s    Squash", color: FG },
         { text: "Ctrl+x d    Duplicate", color: FG },
+        { text: "Ctrl+x u    Redo", color: FG },
         { text: "Ctrl+x m    Merge mode", color: FG },
         { text: "u           Undo", color: FG },
         { text: "", color: FG_DIM },

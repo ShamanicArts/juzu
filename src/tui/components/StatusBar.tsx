@@ -29,7 +29,6 @@ const KEYBINDS: Record<string, Keybind[]> = {
     { key: "d", action: "DESC" },
     { key: "b", action: "REBASE" },
     { key: "u", action: "UNDO" },
-    { key: "U", action: "REDO" },
     { key: "^x", action: "LEADER" },
     { key: "o", action: "OPLOG" },
     { key: "v", action: "OBSLOG" },
@@ -39,6 +38,7 @@ const KEYBINDS: Record<string, Keybind[]> = {
     { key: "a", action: "ABANDON" },
     { key: "s", action: "SQUASH" },
     { key: "d", action: "DUPE" },
+    { key: "u", action: "REDO" },
     { key: "m", action: "MERGE" },
     { key: "Esc", action: "CANCEL" },
   ],
@@ -110,6 +110,12 @@ export function StatusBar() {
     return ["describe", "leader", "rebase", "merge"].includes(currentMode());
   });
 
+  const showStatusMessage = createMemo(() => {
+    if (!state.statusMessage) return false;
+    if (state.statusMessage.startsWith("Error")) return true;
+    return !state.leaderMode;
+  });
+
   return (
     <box height={1} backgroundColor={COLORS.barBg} flexDirection="row">
       {/* Mode badge */}
@@ -136,7 +142,7 @@ export function StatusBar() {
       </box>
 
       {/* Status message on right */}
-      <Show when={state.statusMessage}>
+      <Show when={showStatusMessage()}>
         <box paddingRight={1}>
           <text fg={state.statusMessage?.startsWith("Error") ? COLORS.error : COLORS.muted}>
             {state.statusMessage}
