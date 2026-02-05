@@ -655,10 +655,16 @@ const handleAbandon = async (changeId: string) => {
 **Decision:** Evaluate after other fixes
 
 **Tasks (if proceeding):**
-1. [ ] Modify `src/web/components/Sidebar.tsx`
-2. [ ] Replace tabbed interface with scrollable sections
-3. [ ] Use collapsible sections for each category
-4. [ ] Ensure responsive design works
+1. [x] Modify `src/web/components/Sidebar.tsx`
+2. [x] Replace tabbed interface with scrollable sections
+3. [x] Improve diff readability by grouping output into per-file sections
+4. [x] Keep layout responsive with existing sidebar behavior
+
+**Implementation Update (2026-02-05):**
+- Replaced tabbed sidebar with a single scrollable inspector showing details, operations, files, and diff sections together.
+- Added diff grouping in the sidebar by parsing `diff --git` boundaries into per-file blocks.
+- Improved diff UX with collapsible per-file sections, colorized diff lines, and wrapped content to prevent sidebar overflow.
+- Refined diff section headers to show single-file titles with compact `+/-` change counts, and shifted sidebar/diff highlights to marble-slate tones.
 
 **Testing:**
 - [ ] Select a change with files and diff
@@ -780,7 +786,7 @@ type AppState = TUIState | WebState;
 | 4.4 | Clean dist/ | MEDIUM | 1 hr | ✅ |
 | 4.5 | Audit bunfig.toml | MEDIUM | 2 hrs | ✅ |
 | 5.1 | Confirmation Dialogs | MEDIUM | 1-2 days | ✅ |
-| 5.2 | Single-View Sidebar | MEDIUM | 1-2 days | ⬜ |
+| 5.2 | Single-View Sidebar | MEDIUM | 1-2 days | ✅ |
 | 6.1 | Derived State | LOW | 2-3 days | ⬜ |
 | 6.2 | Split State | LOW | 2-3 days | ⬜ |
 

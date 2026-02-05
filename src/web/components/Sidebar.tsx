@@ -1,7 +1,5 @@
-import { For, Show, createMemo, createSignal } from "solid-js";
+import { For, Show, createMemo } from "solid-js";
 import { actions, selectedNode, state } from "../../core/state";
-
-type Tab = "details" | "files" | "diff";
 
 export function Sidebar(props: {
   diffText: string;
@@ -12,7 +10,6 @@ export function Sidebar(props: {
 }) {
   const node = createMemo(() => selectedNode());
   const isMulti = createMemo(() => state.selectedIds.size > 1);
-  const [tab, setTab] = createSignal<Tab>("details");
 
   const filesState = createMemo(() => {
     const n = node();
@@ -73,6 +70,44 @@ export function Sidebar(props: {
     ];
     return items;
   });
+
+  const diffSections = createMemo(() => {
+    const text = (props.diffText || "").trim();
+    if (!text) return [] as Array<{ title: string; body: string; lines: string[]; added: number; removed: number }>;
+    const parts = text.split(/\ndiff --git /g);
+    const sections: Array<{ title: string; body: string; lines: string[]; added: number; removed: number }> = [];
+    for (let i = 0; i < parts.length; i++) {
+      const chunk = parts[i];
+      if (!chunk) continue;
+      const full = i === 0 ? chunk : `diff --git ${chunk}`;
+      const firstLine = full.split("\n")[0] || "diff";
+      const match = firstLine.match(/^diff --git a\/(.+) b\/(.+)$/);
+      const lines = full.split("\n");
+      let added = 0;
+      let removed = 0;
+      for (const line of lines) {
+        if (line.startsWith("+") && !line.startsWith("+++")) added++;
+        if (line.startsWith("-") && !line.startsWith("---")) removed++;
+      }
+      let title = firstLine;
+      if (match) {
+        const [, leftPath, rightPath] = match;
+        title = leftPath === rightPath ? rightPath : `${rightPath} (renamed)`;
+      }
+      sections.push({ title, body: full, lines, added, removed });
+    }
+    return sections;
+  });
+
+  const lineClass = (line: string) => {
+    if (line.startsWith("+++ ") || line.startsWith("--- ")) return "jjv-diffLine jjv-diffLine--file";
+    if (line.startsWith("+") && !line.startsWith("+++")) return "jjv-diffLine jjv-diffLine--add";
+    if (line.startsWith("-") && !line.startsWith("---")) return "jjv-diffLine jjv-diffLine--del";
+    if (line.startsWith("@@")) return "jjv-diffLine jjv-diffLine--hunk";
+    if (line.startsWith("diff --git")) return "jjv-diffLine jjv-diffLine--meta";
+    if (line.startsWith("index ")) return "jjv-diffLine jjv-diffLine--meta";
+    return "jjv-diffLine";
+  };
 
   return (
     <div class="jjv-inspector">
@@ -225,114 +260,98 @@ export function Sidebar(props: {
                 </Show>
               </div>
 
-              <div class="jjv-tabs">
-                <div class={`jjv-tab ${tab() === "details" ? "jjv-tab--active" : ""}`} onClick={() => setTab("details")}>
-                  Details
-                </div>
-                <div class={`jjv-tab ${tab() === "files" ? "jjv-tab--active" : ""}`} onClick={() => setTab("files")}>
-                  Files
-                </div>
-                <div class={`jjv-tab ${tab() === "diff" ? "jjv-tab--active" : ""}`} onClick={() => setTab("diff")}>
-                  Diff
-                </div>
+              <div class="jjv-card">
+                <div class="jjv-cardTitle">Quick Actions</div>
+                <Show when={!state.describeMode}>
+                  <div class="jjv-row jjv-row--wrap" style={{ "margin-top": "10px" }}>
+                    <button class="jjv-btn jjv-btn--primary" onClick={() => props.onRunMutation("describe")}>Edit</button>
+                    <button class="jjv-btn" onClick={() => props.onRunMutation("rebase")}>Rebase</button>
+                    <button class="jjv-btn" onClick={() => props.onRunMutation("abandon")}>Abandon</button>
+                    <button class="jjv-btn" onClick={() => props.onRunMutation("duplicate")}>Dupe</button>
+                  </div>
+                </Show>
+
+                <Show when={state.describeMode}>
+                  <div style={{ "margin-top": "10px" }}>
+                    <textarea
+                      class="jjv-textarea mono"
+                      value={state.describeValue}
+                      onInput={(e) => actions.updateDescribeValue(e.currentTarget.value)}
+                      rows={6}
+                    />
+                    <div class="jjv-row" style={{ "margin-top": "8px" }}>
+                      <button class="jjv-btn jjv-btn--primary" onClick={props.onDescribeSubmit}>Save</button>
+                      <button class="jjv-btn" onClick={() => actions.cancelDescribe()}>Cancel</button>
+                    </div>
+                  </div>
+                </Show>
               </div>
 
-              <Show when={tab() === "details"}>
-                <div class="jjv-card">
-                  <div class="jjv-cardTitle">Quick</div>
-                  <Show when={!state.describeMode}>
-                    <div class="jjv-row" style={{ "margin-top": "10px" }}>
-                      <button class="jjv-btn jjv-btn--primary" onClick={() => props.onRunMutation("describe")}>
-                        Edit
-                      </button>
-                      <button class="jjv-btn" onClick={() => props.onRunMutation("rebase")}>
-                        Rebase
-                      </button>
-                      <button class="jjv-btn" onClick={() => props.onRunMutation("abandon")}>
-                        Abandon
-                      </button>
-                      <button class="jjv-btn" onClick={() => props.onRunMutation("duplicate")}>
-                        Dupe
-                      </button>
-                    </div>
-                  </Show>
-
-                  <Show when={state.describeMode}>
-                    <div style={{ "margin-top": "10px" }}>
-                      <textarea
-                        class="jjv-textarea mono"
-                        value={state.describeValue}
-                        onInput={(e) => actions.updateDescribeValue(e.currentTarget.value)}
-                        rows={6}
-                      />
-                      <div class="jjv-row" style={{ "margin-top": "8px" }}>
-                        <button class="jjv-btn jjv-btn--primary" onClick={props.onDescribeSubmit}>
-                          Save
-                        </button>
-                        <button class="jjv-btn" onClick={() => actions.cancelDescribe()}>
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </Show>
-
-                  <div class="jjv-muted" style={{ "margin-top": "10px" }}>
-                    Tip: inline buttons on the graph show more actions; hold Shift for Abandon/Squash/Dupe.
+              <div class="jjv-card">
+                <div class="jjv-cardTitle">Operations</div>
+                <Show when={state.opMode === "none"}>
+                  <div class="jjv-row jjv-row--wrap">
+                    <button class="jjv-btn" onClick={() => actions.setOpMode("split")}>Split</button>
+                    <button class="jjv-btn" onClick={() => actions.setOpMode("squash")}>Squash</button>
+                    <button class="jjv-btn" onClick={() => actions.setOpMode("move")}>Move</button>
                   </div>
-                </div>
-              </Show>
+                </Show>
+                <Show when={state.opMode !== "none"}>
+                  <div class="jjv-muted">
+                    {state.opMode === "split" ? "Select files to split" : state.opMode === "squash" ? "Select files to squash (or none for all)" : state.opTargetId ? `Move target: ${state.opTargetId.slice(0, 8)}` : "Click a target node in graph"}
+                  </div>
+                  <div class="jjv-row" style={{ "margin-top": "8px" }}>
+                    <button class="jjv-btn jjv-btn--primary" onClick={props.onExecuteOp}>Confirm</button>
+                    <button class="jjv-btn" onClick={() => actions.resetOpMode()}>Cancel</button>
+                  </div>
+                </Show>
+              </div>
 
-              <Show when={tab() === "files"}>
-                <div class="jjv-card">
-                  <div class="jjv-cardTitle">Operations</div>
-                  <Show when={state.opMode === "none"}>
-                    <div class="jjv-row jjv-row--wrap">
-                      <button class="jjv-btn" onClick={() => actions.setOpMode("split")}>Split</button>
-                      <button class="jjv-btn" onClick={() => actions.setOpMode("squash")}>Squash</button>
-                      <button class="jjv-btn" onClick={() => actions.setOpMode("move")}>Move</button>
-                    </div>
-                  </Show>
-                  <Show when={state.opMode !== "none"}>
-                    <div class="jjv-muted">
-                      {state.opMode === "split" ? "Select files to split" : state.opMode === "squash" ? "Select files to squash (or none for all)" : state.opTargetId ? `Move target: ${state.opTargetId.slice(0, 8)}` : "Click a target node in graph"}
-                    </div>
-                    <div class="jjv-row" style={{ "margin-top": "8px" }}>
-                      <button class="jjv-btn jjv-btn--primary" onClick={props.onExecuteOp}>Confirm</button>
-                      <button class="jjv-btn" onClick={() => actions.resetOpMode()}>Cancel</button>
-                    </div>
-                  </Show>
-                </div>
+              <div class="jjv-card">
+                <div class="jjv-cardTitle">Files</div>
+                <Show when={filesState().files.length > 0} fallback={<div class="jjv-muted">(no changes)</div>}>
+                  <div class="jjv-files">
+                    <For each={filesState().files}>
+                      {(f) => (
+                        <label class="jjv-fileRow">
+                          <input
+                            type="checkbox"
+                            disabled={state.opMode === "none"}
+                            checked={state.opSelectedPaths.has(f.path)}
+                            onChange={() => actions.toggleOpFile(f.path)}
+                            style={{ opacity: state.opMode === "none" ? 0.2 : 1 }}
+                          />
+                          <span class={`jjv-fileType jjv-fileType--${f.type} mono`}>{f.type}</span>
+                          <span class="jjv-filePath mono">{f.path}</span>
+                        </label>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+              </div>
 
-                <div class="jjv-card">
-                  <div class="jjv-cardTitle">Files</div>
-                  <Show when={filesState().files.length > 0} fallback={<div class="jjv-muted">(no changes)</div>}>
-                    <div class="jjv-files">
-                      <For each={filesState().files}>
-                        {(f) => (
-                          <label class="jjv-fileRow">
-                            <input
-                              type="checkbox"
-                              disabled={state.opMode === "none"}
-                              checked={state.opSelectedPaths.has(f.path)}
-                              onChange={() => actions.toggleOpFile(f.path)}
-                              style={{ opacity: state.opMode === "none" ? 0.2 : 1 }}
-                            />
-                            <span class={`jjv-fileType jjv-fileType--${f.type} mono`}>{f.type}</span>
-                            <span class="jjv-filePath mono">{f.path}</span>
-                          </label>
-                        )}
-                      </For>
-                    </div>
-                  </Show>
-                </div>
-              </Show>
-
-              <Show when={tab() === "diff"}>
-                <div class="jjv-card">
-                  <div class="jjv-cardTitle">Diff</div>
-                  <pre class="jjv-diff mono">{props.diffText || "(loading...)"}</pre>
-                </div>
-              </Show>
+              <div class="jjv-card">
+                <div class="jjv-cardTitle">Diff by File</div>
+                <Show when={diffSections().length > 0} fallback={<pre class="jjv-diff mono">{props.diffText || "(loading...)"}</pre>}>
+                  <div class="jjv-files">
+                    <For each={diffSections()}>
+                      {(section, index) => (
+                        <details class="jjv-diffSection" open={index() === 0}>
+                          <summary class="jjv-diffSummary mono">
+                            <span>{section.title}</span>
+                            <span class="jjv-diffSummaryMeta">+{section.added} -{section.removed}</span>
+                          </summary>
+                          <pre class="jjv-diff mono">
+                            <For each={section.lines}>
+                              {(line) => <div class={lineClass(line)}>{line || " "}</div>}
+                            </For>
+                          </pre>
+                        </details>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+              </div>
             </>
           )}
         </Show>

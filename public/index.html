@@ -21,6 +21,9 @@
       --green: #00ff9d;
       --orange: #ffaa00;
       --red: #ff0055;
+      --slate: #9aa4ad;
+      --slate-soft: rgba(154, 164, 173, 0.16);
+      --slate-strong: rgba(154, 164, 173, 0.55);
     }
 
     * {
@@ -122,16 +125,25 @@
       font-size: 12px;
     }
 
-    .jjv-btn:hover { border-color: rgba(0, 240, 255, 0.7); }
+    .jjv-btn:hover {
+      border-color: var(--slate-strong);
+      background: rgba(36, 40, 59, 0.9);
+    }
     .jjv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .jjv-btn--primary {
-      border-color: rgba(0, 240, 255, 0.7);
-      background: rgba(0, 240, 255, 0.10);
+      border-color: var(--slate-strong);
+      background: var(--slate-soft);
+      color: #d7dde2;
     }
 
     .jjv-btn--ghost {
       background: rgba(26, 27, 38, 0.25);
       border-color: rgba(65, 72, 104, 0.7);
+    }
+
+    .jjv-btn:focus-visible {
+      outline: 1px solid var(--slate);
+      outline-offset: 1px;
     }
 
     .jjv-select {
@@ -299,7 +311,54 @@
       padding: 10px;
       font-size: 11px;
       line-height: 1.35;
-      white-space: pre;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .jjv-diffSection {
+      border: 1px solid rgba(65, 72, 104, 0.45);
+      border-radius: 10px;
+      background: rgba(26, 27, 38, 0.35);
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .jjv-diffSummary {
+      cursor: pointer;
+      list-style: none;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #d7dde2;
+      border-bottom: 1px solid var(--slate-strong);
+      background: var(--slate-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .jjv-diffSummaryMeta {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .jjv-diffSummary::-webkit-details-marker {
+      display: none;
+    }
+
+    .jjv-diffLine { color: var(--text); }
+    .jjv-diffLine--meta { color: var(--muted); }
+    .jjv-diffLine--file { color: var(--orange); }
+    .jjv-diffLine--hunk { color: var(--slate); }
+    .jjv-diffLine--add {
+      color: var(--green);
+      background: rgba(0, 255, 157, 0.08);
+    }
+    .jjv-diffLine--del {
+      color: var(--red);
+      background: rgba(255, 0, 85, 0.08);
     }
 
     .jjv-tabs {
