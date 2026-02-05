@@ -9,7 +9,7 @@ import solidDomPlugin from "./src/web/bun-plugin-solid-dom";
 // CLI Arguments
 const args = {
     port: parseInt(process.argv.find(a => a.startsWith('--port='))?.split('=')[1] || process.env.PORT || '3000'),
-    noOpen: process.argv.includes('--no-open') || process.argv.includes('-n'),
+    open: process.argv.includes('--open') || process.argv.includes('-o'),
     help: process.argv.includes('--help') || process.argv.includes('-h')
 };
 
@@ -22,13 +22,13 @@ Usage: bun run server.ts [options]
 
 Options:
   --port=<num>   Port to run server on (default: 3000)
-  -n, --no-open  Don't auto-open browser
+  -o, --open     Auto-open browser
   -h, --help     Show this help message
 
 Examples:
-  bun run server.ts              # Start on port 3000, auto-open browser
+  bun run server.ts              # Start on port 3000 (no auto-open)
   bun run server.ts --port=8080  # Start on port 8080
-  bun run server.ts -n           # Start without opening browser
+  bun run server.ts -o           # Start with opening browser
 `);
     process.exit(0);
 }
@@ -580,7 +580,7 @@ const server = Bun.serve({
 const url = `http://localhost:${server.port}`;
 console.log(`🚀 jj-viz running at ${url}`);
 
-if (!args.noOpen) {
+if (args.open) {
     const platform = process.platform;
     const openCommand = platform === 'darwin' ? 'open' :
                        platform === 'win32' ? 'start' : 'xdg-open';
@@ -592,5 +592,5 @@ if (!args.noOpen) {
         console.log(`🌐 Could not auto-open browser. Visit ${url} manually.`);
     }
 } else {
-    console.log(`🌐 Browser auto-open disabled. Visit ${url}`);
+    console.log(`🌐 Browser auto-open disabled. Use --open to enable. Visit ${url}`);
 }

@@ -14,7 +14,7 @@ export function CanvasGraph(props: {
   onInsertAfter: (afterId: string) => void;
   onRebase: (sourceId: string, destinationId: string) => void;
   onToggleInlineFiles: () => void;
-  onInlineAction: (action: "new" | "edit" | "describe" | "rebase" | "files" | "abandon" | "duplicate" | "squash") => void;
+  onInlineAction: (action: "new" | "edit" | "describe" | "rebase" | "files" | "abandon" | "duplicate" | "squash", nodeId: string) => void;
 }) {
   let canvasRef: HTMLCanvasElement | undefined;
   let containerRef: HTMLDivElement | undefined;
@@ -30,7 +30,7 @@ export function CanvasGraph(props: {
 
   const cfg = DEFAULT_GRAPH_CONFIG;
 
-  type InlineBtn = { x: number; y: number; w: number; h: number; action: Parameters<typeof props.onInlineAction>[0] };
+  type InlineBtn = { x: number; y: number; w: number; h: number; action: Parameters<typeof props.onInlineAction>[0]; nodeId: string };
   let inlineButtons: InlineBtn[] = [];
 
   const worldPoint = (clientX: number, clientY: number) => {
@@ -145,13 +145,35 @@ export function CanvasGraph(props: {
           const radius = 10;
           const direction = targetX > startX ? 1 : -1;
           const cornerX = targetX - radius * direction;
-          if (Math.abs(targetX - startX) < radius * 2) {
-            ctx.lineTo(targetX, startY);
-            ctx.lineTo(targetX, targetY);
+          const isMergeCommit = node.parents.length > 1;
+
+          if (isMergeCommit) {
+            // Keep the original merge join near the merge commit.
+            if (Math.abs(targetX - startX) < radius * 2) {
+              ctx.lineTo(targetX, startY);
+              ctx.lineTo(targetX, targetY);
+            } else {
+              ctx.lineTo(cornerX, startY);
+              ctx.quadraticCurveTo(targetX, startY, targetX, startY + radius);
+              ctx.lineTo(targetX, targetY);
+            }
           } else {
-            ctx.lineTo(cornerX, startY);
-            ctx.quadraticCurveTo(targetX, startY, targetX, startY + radius);
-            ctx.lineTo(targetX, targetY);
+            // Fork/branch: junction near the parent so it reads as branching from the parent,
+            // not from the first child.
+            const down = targetY >= startY;
+            let joinY = down ? targetY - radius : targetY + radius;
+            if (down && joinY < startY + radius) joinY = startY + radius;
+            if (!down && joinY > startY - radius) joinY = startY - radius;
+
+            ctx.lineTo(startX, joinY);
+            if (Math.abs(targetX - startX) < radius * 2) {
+              ctx.lineTo(targetX, joinY);
+              ctx.lineTo(targetX, targetY);
+            } else {
+              ctx.lineTo(cornerX, joinY);
+              ctx.quadraticCurveTo(targetX, joinY, targetX, joinY + (down ? radius : -radius));
+              ctx.lineTo(targetX, targetY);
+            }
           }
         }
         ctx.stroke();
@@ -204,7 +226,8 @@ export function CanvasGraph(props: {
       const allRefs = [...(node.bookmarks || []), ...(node.gitBranches || [])];
       if (allRefs.length > 0) {
         let pillX = state.layoutResult.textColumnX;
-        const pillY = node.y - 22;
+        // Keep pills clearly above the header line (avoid font ascender overlap).
+        const pillY = node.y - 36;
         (node.bookmarks || []).forEach((b) => {
           pillX += drawPill(ctx, pillX, pillY, b, "#00f0ff", "rgba(0, 240, 255, 0.15)", "#00f0ff");
         });
@@ -228,11 +251,13 @@ export function CanvasGraph(props: {
       ctx.fillText(desc, state.layoutResult.textColumnX + 80, node.y + 4);
 
       // Inline controls (selected or hovered node; Shift shows alternate actions)
+      // Position BELOW the description text (user requested: underneath, not next to)
       const isHovered = hoveredNodeId() === node.changeId;
       if (isSelected || isHovered) {
         const showAlt = shiftActive();
-        const baseX = state.layoutResult.textColumnX + 16;
-        const baseY = node.y + 10;
+        // Position buttons below the main text row
+        const baseX = state.layoutResult.textColumnX;
+        const baseY = node.y + 12; // Below the text which is at node.y + 4
         const items: Array<{ label: string; action: InlineBtn["action"] }> = showAlt
           ? [
               { label: "Abandon", action: "abandon" },
@@ -266,18 +291,19 @@ export function CanvasGraph(props: {
 
           ctx.fillStyle = "#bbbbbb";
           ctx.fillText(it.label, x + 9, y + 13);
-          inlineButtons.push({ x, y, w, h, action: it.action });
+          inlineButtons.push({ x, y, w, h, action: it.action, nodeId: node.changeId });
           x += w + 8;
         });
         ctx.restore();
       }
 
-      // Inline files - positioned below inline controls with proper spacing
+      // Inline files - positioned below inline controls (or below text if no controls)
       if (state.expandedFilesNodeId === node.changeId) {
         const cached = state.filesCache.get(node.changeId);
         if (cached && cached.files.length > 0) {
-          // Start below inline controls (y + 10 + 18 + 12px padding)
-          let y = node.y + 40;
+          // Start below inline controls (baseY + 18 + spacing) or just below text row
+          const hasControls = isSelected || isHovered;
+          let y = hasControls ? node.y + 50 : node.y + 30;
           const x = state.layoutResult.textColumnX + 20;
           ctx.font = '11px "JetBrains Mono", monospace';
           cached.files.forEach((f) => {
@@ -347,7 +373,7 @@ export function CanvasGraph(props: {
     // Inline button hit test (world coords)
     for (const b of inlineButtons) {
       if (wx >= b.x && wx <= b.x + b.w && wy >= b.y && wy <= b.y + b.h) {
-        props.onInlineAction(b.action);
+        props.onInlineAction(b.action, b.nodeId);
         return;
       }
     }
@@ -432,11 +458,15 @@ export function CanvasGraph(props: {
       render();
     }
 
-    // Hover node detection for inline controls
-    const hitNode = findNodeAt(wx, wy, state.layoutResult.nodes, cfg);
-    if (hitNode) {
-      if (hoveredNodeId() !== hitNode.changeId) {
-        setHoveredNodeId(hitNode.changeId);
+    // Hover node detection for inline controls - use Y-threshold for entire row
+    // This allows hovering over description, bookmarks, or anywhere on the row
+    const HOVER_THRESHOLD_Y = Math.min(cfg.ySpacing / 2, 38);
+    const foundNode = state.layoutResult.nodes.find((n) => 
+      n.y !== undefined && Math.abs(n.y - wy) < HOVER_THRESHOLD_Y
+    );
+    if (foundNode) {
+      if (hoveredNodeId() !== foundNode.changeId) {
+        setHoveredNodeId(foundNode.changeId);
         render();
       }
     } else if (hoveredNodeId()) {

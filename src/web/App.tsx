@@ -487,27 +487,52 @@ function App() {
                 onInsertAfter={(afterId) => void opInsertAfter(afterId)}
                 onRebase={(sourceId, destinationId) => void opRebase(sourceId, destinationId)}
                 onToggleInlineFiles={() => void toggleInlineFilesForSelected()}
-                onInlineAction={(action) => {
-                  const node = selected();
-                  if (!node) return;
+                onInlineAction={(action, nodeId) => {
                   if (action === "files") {
-                    void toggleInlineFilesForSelected();
+                    // Toggle files for the specific node whose button was clicked
+                    void (async () => {
+                      const prev = state.expandedFilesNodeId;
+                      // If clicking the same node, close it
+                      if (prev === nodeId) {
+                        actions.setExpandedFilesNode(null);
+                        actions.setNodeExtraHeight(nodeId, 0);
+                        return;
+                      }
+                      // Close previous if different
+                      if (prev) {
+                        actions.setNodeExtraHeight(prev, 0);
+                      }
+                      // Open the clicked node's files
+                      actions.setExpandedFilesNode(nodeId);
+                      try {
+                        const files = await ensureFiles(nodeId);
+                        // Reserve room for inline controls + padding + files.
+                        actions.setNodeExtraHeight(nodeId, files.length * 14 + 34);
+                      } catch (e) {
+                        actions.setStatusMessage(`Error: ${String(e)}`);
+                        actions.setNodeExtraHeight(nodeId, 0);
+                      }
+                    })();
                     return;
                   }
                   if (action === "rebase") {
-                    if (!state.rebaseSourceId) actions.setRebaseSource(node.changeId);
-                    else void opRebase(state.rebaseSourceId, node.changeId);
+                    if (!state.rebaseSourceId) actions.setRebaseSource(nodeId);
+                    else void opRebase(state.rebaseSourceId, nodeId);
                     return;
                   }
                   if (action === "describe") {
+                    const node = state.layoutResult.nodes.find(n => n.changeId === nodeId);
+                    if (!node) return;
                     actions.startDescribe(node.descriptionFull || node.descriptionTitle || "");
+                    // Select the node so describe operates on it
+                    actions.selectNode(nodeId);
                     return;
                   }
-                  if (action === "new") void opNew(node.changeId);
-                  if (action === "edit") void opEdit(node.changeId);
-                  if (action === "abandon") void opAbandon(node.changeId);
-                  if (action === "duplicate") void opDuplicate(node.changeId);
-                  if (action === "squash") void opSquash(node.changeId);
+                  if (action === "new") void opNew(nodeId);
+                  if (action === "edit") void opEdit(nodeId);
+                  if (action === "abandon") void opAbandon(nodeId);
+                  if (action === "duplicate") void opDuplicate(nodeId);
+                  if (action === "squash") void opSquash(nodeId);
                 }}
               />
             </Match>

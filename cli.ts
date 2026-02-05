@@ -17,13 +17,14 @@ Usage: jj-viz [options]
 Options:
   --tui, -t      Run in terminal UI mode (TUI)
   --port=<num>   Port for web server (default: 3000)
-  -n, --no-open  Don't auto-open browser (web mode only)
-  -h, --help     Show this help message
+  -o, --open     Auto-open browser (web mode only)
+  -h, --help     Get help with using jj-viz
 
 Examples:
-  jj-viz                    # Start web server on port 3000
+  jj-viz                    # Start web server on port 3000 (no auto-open)
   jj-viz --tui              # Start TUI mode
   jj-viz --port=8080        # Web server on custom port
+  jj-viz --open             # Start web server and open browser
   jj-viz -t                 # Short flag for TUI mode
 `);
   process.exit(0);

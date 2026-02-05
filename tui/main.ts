@@ -766,31 +766,46 @@ async function main() {
             setGraphCell(x0, y, isConnectionSelected ? "┃" : "|", lineColor);
           }
         } else {
-          const yMin = Math.min(y0, y1);
-          const yMax = Math.max(y0, y1);
-          const midY = yMin + Math.floor((yMax - yMin) / 2);
+          // Determine where to draw the horizontal connector:
+          // - Merge commits (multiple parents): draw at child's Y (merge point)
+          // - Branch commits (single parent): draw at parent's Y (fork point)
+          const isMergeCommit = node.parents.length > 1;
+          const connectY = isMergeCommit ? y0 : y1;
 
-          // Vertical from node to mid
-          const yStart = Math.min(y0, midY);
-          const yEnd = Math.max(y0, midY);
-          for (let y = yStart + 1; y <= yEnd; y++) {
-            setGraphCell(x0, y, isSelectedNode ? "┃" : "│", isSelectedNode ? baseColor : color);
-          }
-
-          // Horizontal at mid
+          // Horizontal from child's lane to parent's lane
           const xMin = Math.min(x0, x1);
           const xMax = Math.max(x0, x1);
           for (let x = xMin; x <= xMax; x++) {
-            setGraphCell(x, midY, isConnectionSelected ? "━" : "─", parentColor);
+            setGraphCell(x, connectY, isConnectionSelected ? "━" : "─", parentColor);
           }
-          setGraphCell(x0, midY, isConnectionSelected ? "┓" : "┐", isSelectedNode ? baseColor : color);
-          setGraphCell(x1, midY, isConnectionSelected ? "┗" : "└", parentColor);
 
-          // Vertical from mid to parent
-          const yStart2 = Math.min(midY, y1);
-          const yEnd2 = Math.max(midY, y1);
-          for (let y = yStart2; y <= yEnd2 - 1; y++) {
-            setGraphCell(x1, y, isParentSelected ? "┃" : "│", parentColor);
+          // Corner/junction characters
+          if (isMergeCommit) {
+            // Merge: horizontal at top, verticals go down to parents
+            if (x0 < x1) {
+              setGraphCell(x0, connectY, isConnectionSelected ? "┣" : "├", isSelectedNode ? baseColor : color);
+              setGraphCell(x1, connectY, isConnectionSelected ? "┓" : "┐", parentColor);
+            } else {
+              setGraphCell(x0, connectY, isConnectionSelected ? "┫" : "┤", isSelectedNode ? baseColor : color);
+              setGraphCell(x1, connectY, isConnectionSelected ? "┏" : "┌", parentColor);
+            }
+            // Vertical from connection down to parent
+            for (let y = connectY + 1; y <= y1 - 1; y++) {
+              setGraphCell(x1, y, isParentSelected ? "┃" : "│", parentColor);
+            }
+          } else {
+            // Fork: horizontal at bottom (parent level), verticals go up to child
+            if (x0 < x1) {
+              setGraphCell(x1, connectY, isConnectionSelected ? "┣" : "├", parentColor);
+              setGraphCell(x0, connectY, isConnectionSelected ? "┗" : "└", isSelectedNode ? baseColor : color);
+            } else {
+              setGraphCell(x1, connectY, isConnectionSelected ? "┫" : "┤", parentColor);
+              setGraphCell(x0, connectY, isConnectionSelected ? "┛" : "┘", isSelectedNode ? baseColor : color);
+            }
+            // Vertical from child down to connection point
+            for (let y = y0 + 1; y <= connectY - 1; y++) {
+              setGraphCell(x0, y, isSelectedNode ? "┃" : "│", isSelectedNode ? baseColor : color);
+            }
           }
         }
       }
