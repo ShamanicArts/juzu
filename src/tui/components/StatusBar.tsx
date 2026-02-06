@@ -2,20 +2,20 @@ import { Show, createMemo, For } from "solid-js";
 import { RGBA } from "@opentui/core";
 import { state } from "../../core/state";
 import { tuiState } from "../../core/state-tui";
+import { UI_TOKENS } from "../../core/ui-tokens";
 
-// Tokyo Night palette
 const COLORS = {
-  barBg: RGBA.fromHex("#1a1b26"),
-  segmentBg: RGBA.fromHex("#24283b"),
-  key: RGBA.fromHex("#bb9af7"),      // Purple - keybind letters
-  action: RGBA.fromHex("#c0caf5"),   // Light - action names
-  muted: RGBA.fromHex("#565f89"),    // Dim
-  rebase: RGBA.fromHex("#ff9e64"),   // Orange
-  merge: RGBA.fromHex("#9ece6a"),    // Green
-  leader: RGBA.fromHex("#bb9af7"),   // Purple
-  describe: RGBA.fromHex("#7dcfff"), // Cyan
-  error: RGBA.fromHex("#f7768e"),    // Red
-  dark: RGBA.fromHex("#1a1b26"),
+  barBg: RGBA.fromHex(UI_TOKENS.slate.panel),
+  segmentBg: RGBA.fromHex(UI_TOKENS.slate.bg2),
+  key: RGBA.fromHex(UI_TOKENS.semantic.info),
+  action: RGBA.fromHex(UI_TOKENS.slate.text),
+  muted: RGBA.fromHex(UI_TOKENS.slate.textMuted),
+  rebase: RGBA.fromHex(UI_TOKENS.semantic.warn),
+  merge: RGBA.fromHex(UI_TOKENS.semantic.success),
+  leader: RGBA.fromHex(UI_TOKENS.semantic.info),
+  describe: RGBA.fromHex(UI_TOKENS.semantic.info),
+  error: RGBA.fromHex(UI_TOKENS.semantic.error),
+  dark: RGBA.fromHex(UI_TOKENS.slate.bg0),
 };
 
 interface Keybind {
@@ -111,7 +111,7 @@ export function StatusBar(props: { width: number; height: number }) {
       case "leader": return COLORS.leader;
       case "rebase": return COLORS.rebase;
       case "merge": return COLORS.merge;
-      default: return COLORS.segmentBg;
+      default: return RGBA.fromHex(UI_TOKENS.semantic.modeLog);
     }
   });
 
@@ -121,6 +121,8 @@ export function StatusBar(props: { width: number; height: number }) {
 
   const showStatusMessage = createMemo(() => {
     if (!state.statusMessage) return false;
+    if (/^nodes:\d+$/i.test(state.statusMessage.trim())) return false;
+    if (state.statusMessage === "Loading...") return false;
     if (state.statusMessage.startsWith("Error")) return true;
     return !tuiState.leaderMode;
   });
@@ -155,10 +157,6 @@ export function StatusBar(props: { width: number; height: number }) {
     return rows;
   });
 
-  const isSpecialMode = createMemo(() => {
-    return ["describe", "revset", "leader", "rebase", "merge"].includes(currentMode());
-  });
-
   return (
     <box height={props.height} backgroundColor={COLORS.barBg} flexDirection="column">
       <For each={wrappedKeybindRows()}>
@@ -166,7 +164,7 @@ export function StatusBar(props: { width: number; height: number }) {
           <box height={1} flexDirection="row">
             <Show when={idx() === 0}>
               <box backgroundColor={modeColor()} paddingLeft={1} paddingRight={1}>
-                <text fg={isSpecialMode() ? COLORS.dark : COLORS.muted}>
+                <text fg={COLORS.dark}>
                   <strong>{modeLabel()}</strong>
                 </text>
               </box>

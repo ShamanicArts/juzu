@@ -3,14 +3,15 @@ import { RGBA } from "@opentui/core";
 import type { CommitNode, FilesCacheEntry } from "../../core/types";
 import type { OpLogEntry, ObslogEntry } from "../../core/jj-api";
 import type { ViewMode } from "../../core/state";
+import { UI_TOKENS } from "../../core/ui-tokens";
 
-const PANEL_BG = RGBA.fromHex("#1a1b26");
-const CYAN = RGBA.fromHex("#00f0ff");
-const GREEN = RGBA.fromHex("#00ff9d");
-const RED = RGBA.fromHex("#ff0055");
-const YELLOW = RGBA.fromHex("#ffaa00");
-const FG_DIM = RGBA.fromHex("#888888");
-const FG = RGBA.fromHex("#bbbbbb");
+const PANEL_BG = RGBA.fromHex(UI_TOKENS.slate.panel);
+const CYAN = RGBA.fromHex(UI_TOKENS.semantic.info);
+const GREEN = RGBA.fromHex(UI_TOKENS.semantic.success);
+const RED = RGBA.fromHex(UI_TOKENS.semantic.error);
+const YELLOW = RGBA.fromHex(UI_TOKENS.semantic.warn);
+const FG_DIM = RGBA.fromHex(UI_TOKENS.slate.textMuted);
+const FG = RGBA.fromHex(UI_TOKENS.slate.text);
 
 interface SidebarProps {
   selected: CommitNode | null;
@@ -316,7 +317,7 @@ export function Sidebar(props: SidebarProps) {
       backgroundColor={PANEL_BG}
     >
       <text fg={props.showHelp ? YELLOW : CYAN}>{title()}</text>
-      <text fg={RGBA.fromHex("#444444")}>--------</text>
+      <text fg={RGBA.fromHex(UI_TOKENS.slate.borderStrong)}>--------</text>
       <For each={visibleLines().lines}>
         {(line) => (
           <text fg={line.color}>

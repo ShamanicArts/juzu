@@ -14,10 +14,10 @@ import { OpLogView } from "./components/OpLogView";
 import { ObslogView } from "./components/ObslogView";
 import { StatusBar } from "./components/StatusBar";
 import { FooterBar } from "./components/FooterBar";
+import { UI_TOKENS } from "../core/ui-tokens";
 
-const BG = RGBA.fromHex("#24283b");
-const PANEL_BG = RGBA.fromHex("#1a1b26");
-const FG_DIM = RGBA.fromHex("#888888");
+const BG = RGBA.fromHex(UI_TOKENS.slate.bg0);
+const PANEL_BG = RGBA.fromHex(UI_TOKENS.slate.panel);
 
 function App() {
   const renderer = useRenderer();

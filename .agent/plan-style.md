@@ -3,6 +3,11 @@
 Date: 2026-02-06
 Scope: Visual/interaction styling only (no major behavior changes)
 
+## Progress
+
+- S1: complete (shared tokens, chrome baseline, separators, status-bar flicker fix without changing key order/behavior)
+- S2: in progress
+
 ## Goals
 
 - Shift from futuristic look to a utilitarian, polished "canvas cockpit" style.

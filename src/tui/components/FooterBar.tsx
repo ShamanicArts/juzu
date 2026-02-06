@@ -1,14 +1,14 @@
 import { createMemo, Show } from "solid-js";
 import { RGBA } from "@opentui/core";
 import { state } from "../../core/state";
+import { UI_TOKENS } from "../../core/ui-tokens";
 
-// Tokyo Night palette
 const COLORS = {
-  barBg: RGBA.fromHex("#1a1b26"),
-  segmentBg: RGBA.fromHex("#24283b"),
-  muted: "#565f89",
-  wc: "#9ece6a",         // Green - working copy
-  bookmark: "#7aa2f7",   // Blue
+  barBg: RGBA.fromHex(UI_TOKENS.slate.panel),
+  segmentBg: RGBA.fromHex(UI_TOKENS.slate.bg2),
+  muted: UI_TOKENS.slate.textMuted,
+  wc: UI_TOKENS.semantic.success,
+  bookmark: UI_TOKENS.semantic.info,
 };
 
 export function FooterBar() {

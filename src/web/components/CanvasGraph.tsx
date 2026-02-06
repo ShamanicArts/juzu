@@ -4,6 +4,7 @@ import { webActions, webState } from "../../core/state-web";
 import type { CommitNode } from "../../core/types";
 import { DEFAULT_GRAPH_CONFIG } from "../../core/types";
 import { findConnectionAt, findNodeAt, getLaneColor } from "../../core/layout";
+import { UI_TOKENS } from "../../core/ui-tokens";
 
 type DropTarget =
   | { type: "commit"; node: CommitNode }
@@ -82,13 +83,13 @@ export function CanvasGraph(props: {
 
     ctx.clearRect(0, 0, canvasRef.width, canvasRef.height);
     // Keep canvas mostly transparent so the dot-board (CSS) reads through.
-    // Warm base tint to match the darker brown background.
-    ctx.fillStyle = "rgba(15, 13, 11, 0.18)";
+    // Neutral slate tint keeps the dot-board visible but not dominant.
+    ctx.fillStyle = "rgba(17, 19, 24, 0.22)";
     ctx.fillRect(0, 0, canvasRef.width, canvasRef.height);
 
     const nodes = layoutResult().nodes;
     if (nodes.length === 0) {
-      ctx.fillStyle = "#888";
+      ctx.fillStyle = UI_TOKENS.slate.textMuted;
       ctx.font = '14px "JetBrains Mono", monospace';
       ctx.fillText("No commits loaded. Press 'r' to refresh.", 20, 30);
       return;
@@ -113,7 +114,7 @@ export function CanvasGraph(props: {
         ctx.moveTo(x, -1000);
         ctx.lineTo(x, 100000);
         const isLaneHover = dt?.type === "lane" && dt.lane === lane;
-        ctx.strokeStyle = isLaneHover ? "#00ff9d" : "#444";
+        ctx.strokeStyle = isLaneHover ? UI_TOKENS.semantic.success : UI_TOKENS.slate.borderSoft;
         ctx.lineWidth = isLaneHover ? 3 : 1;
         ctx.setLineDash(isLaneHover ? [] : [6, 6]);
         ctx.stroke();
@@ -194,7 +195,7 @@ export function CanvasGraph(props: {
         ctx.save();
         ctx.beginPath();
         ctx.arc(node.x, node.y, cfg.nodeRadius + 10, 0, Math.PI * 2);
-        ctx.strokeStyle = "#00ff9d";
+        ctx.strokeStyle = UI_TOKENS.semantic.success;
         ctx.lineWidth = 2;
         ctx.setLineDash([5, 5]);
         ctx.stroke();
@@ -205,8 +206,8 @@ export function CanvasGraph(props: {
       // Node circle
       ctx.beginPath();
       ctx.arc(node.x, node.y, cfg.nodeRadius + (isSelected ? 3 : 0), 0, Math.PI * 2);
-      ctx.fillStyle = node.isConflict ? "#ff0055" : "#1a1a1a";
-      ctx.strokeStyle = isSelected ? "#ffffff" : laneColor;
+      ctx.fillStyle = node.isConflict ? UI_TOKENS.semantic.error : UI_TOKENS.slate.bg0;
+      ctx.strokeStyle = isSelected ? UI_TOKENS.slate.text : laneColor;
       ctx.lineWidth = isSelected ? 3 : 2;
       ctx.fill();
       ctx.stroke();
@@ -232,26 +233,26 @@ export function CanvasGraph(props: {
         // Keep pills clearly above the header line (avoid font ascender overlap).
         const pillY = node.y - 36;
         localBookmarks.forEach((b) => {
-          pillX += drawPill(ctx, pillX, pillY, b, "#00f0ff", "rgba(0, 240, 255, 0.15)", "#00f0ff");
+          pillX += drawPill(ctx, pillX, pillY, b, UI_TOKENS.semantic.info, "rgba(127, 159, 191, 0.14)", UI_TOKENS.semantic.info);
         });
         trackedBookmarks.forEach((b) => {
-          pillX += drawPill(ctx, pillX, pillY, b, "#9ad6ff", "rgba(154, 214, 255, 0.12)", "#9ad6ff");
+          pillX += drawPill(ctx, pillX, pillY, b, UI_TOKENS.slate.text, "rgba(138, 149, 167, 0.16)", UI_TOKENS.slate.borderStrong);
         });
         (node.gitBranches || []).forEach((b) => {
-          pillX += drawPill(ctx, pillX, pillY, b, "#ffaa00", "rgba(255, 170, 0, 0.15)", "#ffaa00");
+          pillX += drawPill(ctx, pillX, pillY, b, UI_TOKENS.semantic.warn, "rgba(201, 168, 106, 0.16)", UI_TOKENS.semantic.warn);
         });
       }
 
       // Text column
-      ctx.fillStyle = isSelected ? "#fff" : "#888";
+      ctx.fillStyle = isSelected ? UI_TOKENS.slate.text : UI_TOKENS.slate.textMuted;
       ctx.font = 'bold 12px "JetBrains Mono", monospace';
       if (node.isWorkingCopy) {
-        ctx.fillStyle = "#00ff9d";
+        ctx.fillStyle = UI_TOKENS.semantic.success;
         ctx.fillText("@", layoutResult().textColumnX - 15, node.y + 4);
-        ctx.fillStyle = isSelected ? "#fff" : "#00ff9d";
+        ctx.fillStyle = isSelected ? UI_TOKENS.slate.text : UI_TOKENS.semantic.success;
       }
       ctx.fillText(node.changeId.substring(0, 8), layoutResult().textColumnX, node.y + 4);
-      ctx.fillStyle = "#bbb";
+      ctx.fillStyle = UI_TOKENS.slate.text;
       ctx.font = '12px Inter, sans-serif';
       const desc = (node.descriptionTitle || "").slice(0, 60);
       ctx.fillText(desc, layoutResult().textColumnX + 80, node.y + 4);
@@ -285,8 +286,8 @@ export function CanvasGraph(props: {
         items.forEach((it) => {
           const w = ctx.measureText(it.label).width + 18;
           const h = 18;
-          ctx.fillStyle = "rgba(26, 27, 38, 0.75)";
-          ctx.strokeStyle = "rgba(65, 72, 104, 0.9)";
+          ctx.fillStyle = "rgba(22, 27, 34, 0.78)";
+          ctx.strokeStyle = "rgba(58, 71, 89, 0.9)";
           ctx.lineWidth = 1;
           ctx.beginPath();
           // @ts-ignore - roundRect exists on modern canvases
@@ -295,7 +296,7 @@ export function CanvasGraph(props: {
           ctx.fill();
           ctx.stroke();
 
-          ctx.fillStyle = "#bbbbbb";
+          ctx.fillStyle = UI_TOKENS.slate.text;
           ctx.fillText(it.label, x + 9, y + 13);
           inlineButtons.push({ x, y, w, h, action: it.action, nodeId: node.changeId });
           x += w + 8;
@@ -313,10 +314,14 @@ export function CanvasGraph(props: {
           const x = layoutResult().textColumnX + 20;
           ctx.font = '11px "JetBrains Mono", monospace';
           cached.files.forEach((f) => {
-            const typeColor = f.type === "A" ? "#00ff9d" : f.type === "D" ? "#ff0055" : "#00aaff";
+            const typeColor = f.type === "A"
+              ? UI_TOKENS.semantic.fileAdd
+              : f.type === "D"
+                ? UI_TOKENS.semantic.fileDel
+                : UI_TOKENS.semantic.fileMod;
             ctx.fillStyle = typeColor;
             ctx.fillText(f.type, x, y);
-            ctx.fillStyle = "#aaa";
+            ctx.fillStyle = UI_TOKENS.slate.textMuted;
             ctx.fillText(f.path, x + 20, y);
             y += 14;
           });
@@ -330,17 +335,17 @@ export function CanvasGraph(props: {
       ctx.save();
       ctx.beginPath();
       ctx.arc(hc.midX, hc.midY, 6, 0, Math.PI * 2);
-      ctx.fillStyle = "#00f0ff";
+      ctx.fillStyle = UI_TOKENS.semantic.info;
       ctx.fill();
       ctx.beginPath();
       ctx.moveTo(hc.midX - 3, hc.midY);
       ctx.lineTo(hc.midX + 3, hc.midY);
       ctx.moveTo(hc.midX, hc.midY - 3);
       ctx.lineTo(hc.midX, hc.midY + 3);
-      ctx.strokeStyle = "#000";
+      ctx.strokeStyle = UI_TOKENS.slate.bg0;
       ctx.lineWidth = 1.5;
       ctx.stroke();
-      ctx.fillStyle = "#00f0ff";
+      ctx.fillStyle = UI_TOKENS.semantic.info;
       ctx.font = '10px Inter, sans-serif';
       ctx.fillText("Alt+click to insert", hc.midX + 12, hc.midY + 3);
       ctx.restore();
@@ -352,7 +357,7 @@ export function CanvasGraph(props: {
       if (dragNode && dragNode.x !== undefined && dragNode.y !== undefined) {
         ctx.save();
         ctx.globalAlpha = 1;
-        ctx.fillStyle = "rgba(0, 240, 255, 0.92)";
+        ctx.fillStyle = "rgba(127, 159, 191, 0.9)";
         ctx.fillRect(20, 20, 420, 50);
         ctx.fillStyle = "#000";
         ctx.font = 'bold 14px Inter, sans-serif';

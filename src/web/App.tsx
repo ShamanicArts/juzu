@@ -86,7 +86,6 @@ function App() {
       if (newHash && newHash !== lastNodesHash) {
         lastNodesHash = newHash;
         actions.setNodes(nodes as any);
-        actions.setStatusMessage(`nodes:${nodes.length}`);
       }
     } catch {
       // Keep polling loop resilient; regular refresh/mutations surface errors.
@@ -240,6 +239,12 @@ function App() {
   };
 
   const isError = createMemo(() => (state.statusMessage || "").toLowerCase().startsWith("error"));
+  const headerMode = createMemo(() => (state.viewMode === "log" ? "log" : state.viewMode));
+  const headerContext = createMemo(() => {
+    if (state.viewMode === "log") return state.layoutMode;
+    if (state.viewMode === "obslog") return state.obslogChangeId ? `change:${state.obslogChangeId.slice(0, 8)}` : "change:none";
+    return "operation history";
+  });
 
   createEffect(() => {
     const node = selected();
@@ -607,7 +612,8 @@ function App() {
         <div class="jjv-brand">
           <span class="jjv-title">jj-viz</span>
           <span class="jjv-sub">web</span>
-          <span class={`jjv-meta ${isError() ? "jjv-meta--error" : ""}`}>{state.statusMessage}</span>
+          <span class="jjv-chip">mode:{headerMode()}</span>
+          <span class="jjv-chip">context:{headerContext()}</span>
         </div>
 
         <div class="jjv-controls">
@@ -727,6 +733,8 @@ function App() {
               Obslog
             </button>
           </div>
+
+          <span class={`jjv-meta ${isError() ? "jjv-meta--error" : ""}`}>status:{state.statusMessage}</span>
         </div>
       </header>
 

@@ -9,21 +9,32 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      /* Dark, warm base (closer to the original dot-board contrast) */
-      --bg: #0f0d0b;
-      --panel: #14110f;
-      --panel2: rgba(20, 17, 15, 0.92);
-      --border: #221d19;
-      --border2: #3a312a;
-      --text: #e0e0e0;
-      --muted: #8a817a;
-      --cyan: #00f0ff;
-      --green: #00ff9d;
-      --orange: #ffaa00;
-      --red: #ff0055;
-      --slate: #9aa4ad;
-      --slate-soft: rgba(154, 164, 173, 0.16);
-      --slate-strong: rgba(154, 164, 173, 0.55);
+      --bg: #111318;
+      --panel: #1a2029;
+      --panel2: rgba(26, 32, 41, 0.94);
+      --surface: #161b22;
+      --surface-2: #1d2530;
+      --text: #d8dee8;
+      --muted: #8a95a7;
+      --border: #2a3442;
+      --border2: #3a4759;
+      --sep-subtle: rgba(138, 149, 167, 0.24);
+      --sep-strong: rgba(138, 149, 167, 0.42);
+      --success: #74b88c;
+      --warn: #c9a86a;
+      --error: #ce6f7c;
+      --info: #7f9fbf;
+      --file-add: #22c55e;
+      --file-mod: #f59e0b;
+      --file-del: #ef4444;
+      --slate: #9aa7b9;
+      --slate-soft: rgba(138, 149, 167, 0.18);
+      --slate-strong: rgba(138, 149, 167, 0.5);
+      /* Legacy aliases used across existing classes/components. */
+      --cyan: var(--info);
+      --green: var(--success);
+      --orange: var(--warn);
+      --red: var(--error);
     }
 
     * {
@@ -63,8 +74,8 @@
       align-items: center;
       justify-content: space-between;
       padding: 10px 14px;
-      background: linear-gradient(180deg, rgba(26, 27, 38, 0.98), rgba(26, 27, 38, 0.92));
-      border-bottom: 1px solid var(--border2);
+      background: linear-gradient(180deg, rgba(22, 27, 34, 0.98), rgba(22, 27, 34, 0.92));
+      border-bottom: 1px solid var(--sep-strong);
       backdrop-filter: blur(8px);
     }
 
@@ -75,8 +86,18 @@
       min-width: 0;
     }
 
+    .jjv-chip {
+      font-size: 11px;
+      color: var(--muted);
+      border: 1px solid var(--sep-subtle);
+      background: rgba(17, 19, 24, 0.45);
+      border-radius: 999px;
+      padding: 2px 8px;
+      text-transform: lowercase;
+    }
+
     .jjv-title {
-      color: var(--cyan);
+      color: var(--text);
       font-weight: 700;
       letter-spacing: 0.4px;
     }
@@ -92,7 +113,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 50vw;
+      max-width: 26vw;
     }
 
     .jjv-meta--error { color: var(--red); }
@@ -110,13 +131,13 @@
       gap: 4px;
       margin-left: 16px;
       padding-left: 16px;
-      border-left: 1px solid var(--border2);
+      border-left: 1px solid var(--sep-subtle);
     }
 
     .jjv-btn {
       appearance: none;
-      border: 1px solid var(--border2);
-      background: rgba(36, 40, 59, 0.65);
+      border: 1px solid var(--sep-subtle);
+      background: rgba(29, 37, 48, 0.7);
       color: var(--text);
       padding: 7px 10px;
       border-radius: 8px;
@@ -127,7 +148,7 @@
 
     .jjv-btn:hover {
       border-color: var(--slate-strong);
-      background: rgba(36, 40, 59, 0.9);
+      background: rgba(29, 37, 48, 0.95);
     }
     .jjv-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .jjv-btn--primary {
@@ -137,8 +158,8 @@
     }
 
     .jjv-btn--ghost {
-      background: rgba(26, 27, 38, 0.25);
-      border-color: rgba(65, 72, 104, 0.7);
+      background: rgba(17, 19, 24, 0.24);
+      border-color: var(--sep-subtle);
     }
 
     .jjv-btn--danger {
@@ -153,8 +174,8 @@
     }
 
     .jjv-select {
-      border: 1px solid var(--border2);
-      background: rgba(36, 40, 59, 0.65);
+      border: 1px solid var(--sep-subtle);
+      background: rgba(29, 37, 48, 0.7);
       color: var(--text);
       padding: 7px 10px;
       border-radius: 8px;
@@ -163,8 +184,8 @@
     }
 
     .jjv-input {
-      border: 1px solid var(--border2);
-      background: rgba(36, 40, 59, 0.55);
+      border: 1px solid var(--sep-subtle);
+      background: rgba(29, 37, 48, 0.55);
       color: var(--text);
       padding: 7px 10px;
       border-radius: 8px;
@@ -184,7 +205,7 @@
       flex: 1;
       min-width: 0;
       position: relative;
-      border-right: 1px solid var(--border2);
+      border-right: 1px solid var(--sep-strong);
       min-height: 0;
       overflow: hidden;
     }
@@ -204,8 +225,8 @@
       height: 100%;
       position: relative;
       background-image:
-        radial-gradient(rgba(0, 240, 255, 0.14) 1px, transparent 1px),
-        radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+        radial-gradient(rgba(127, 159, 191, 0.12) 1px, transparent 1px),
+        radial-gradient(rgba(216, 222, 232, 0.05) 1px, transparent 1px);
       background-size: 22px 22px, 44px 44px;
       background-position: 0 0, 11px 11px;
     }
@@ -225,8 +246,8 @@
       gap: 12px;
       flex-wrap: wrap;
       padding: 8px 10px;
-      background: rgba(26, 27, 38, 0.70);
-      border: 1px solid rgba(65, 72, 104, 0.7);
+      background: rgba(22, 27, 34, 0.72);
+      border: 1px solid var(--sep-subtle);
       border-radius: 10px;
       font-size: 11px;
       color: var(--muted);
@@ -248,12 +269,12 @@
       margin-bottom: 12px;
     }
 
-    .jjv-panelTitle { color: var(--cyan); font-weight: 700; }
+    .jjv-panelTitle { color: var(--text); font-weight: 700; }
     .jjv-panelActions { display: flex; gap: 8px; }
 
     .jjv-card {
-      border: 1px solid rgba(65, 72, 104, 0.6);
-      background: rgba(26, 27, 38, 0.55);
+      border: 1px solid var(--sep-subtle);
+      background: rgba(22, 27, 34, 0.6);
       border-radius: 12px;
       padding: 10px;
       margin-bottom: 10px;
@@ -274,8 +295,8 @@
       padding: 2px 8px;
       border-radius: 999px;
       font-size: 11px;
-      border: 1px solid rgba(65, 72, 104, 0.85);
-      background: rgba(26, 27, 38, 0.65);
+      border: 1px solid var(--sep-subtle);
+      background: rgba(17, 19, 24, 0.55);
       color: var(--text);
     }
     .jjv-badge--bookmark { border-color: rgba(0, 240, 255, 0.65); color: var(--cyan); }
@@ -297,21 +318,21 @@
       align-items: center;
       padding: 6px 8px;
       border-radius: 8px;
-      border: 1px solid rgba(65, 72, 104, 0.4);
-      background: rgba(26, 27, 38, 0.35);
+      border: 1px solid var(--sep-subtle);
+      background: rgba(22, 27, 34, 0.35);
     }
-    .jjv-fileRow input { accent-color: var(--cyan); }
+    .jjv-fileRow input { accent-color: var(--file-mod); }
     .jjv-fileType { font-weight: 700; font-size: 12px; }
-    .jjv-fileType--A { color: var(--green); }
-    .jjv-fileType--D { color: var(--red); }
-    .jjv-fileType--M { color: var(--cyan); }
+    .jjv-fileType--A { color: var(--file-add); }
+    .jjv-fileType--D { color: var(--file-del); }
+    .jjv-fileType--M { color: var(--file-mod); }
     .jjv-filePath { font-size: 12px; word-break: break-all; }
 
     .jjv-textarea {
       width: 100%;
       border-radius: 10px;
-      border: 1px solid rgba(65, 72, 104, 0.8);
-      background: rgba(26, 27, 38, 0.55);
+      border: 1px solid var(--sep-subtle);
+      background: rgba(22, 27, 34, 0.55);
       color: var(--text);
       padding: 10px;
       font-family: 'JetBrains Mono', monospace;
@@ -324,7 +345,7 @@
       overflow: auto;
       background: rgba(0, 0, 0, 0.25);
       border-radius: 10px;
-      border: 1px solid rgba(65, 72, 104, 0.4);
+      border: 1px solid var(--sep-subtle);
       padding: 10px;
       font-size: 11px;
       line-height: 1.35;
@@ -334,9 +355,9 @@
     }
 
     .jjv-diffSection {
-      border: 1px solid rgba(65, 72, 104, 0.45);
+      border: 1px solid var(--sep-subtle);
       border-radius: 10px;
-      background: rgba(26, 27, 38, 0.35);
+      background: rgba(22, 27, 34, 0.35);
       padding: 0;
       overflow: hidden;
     }
@@ -387,8 +408,8 @@
     .jjv-tab {
       padding: 6px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(65, 72, 104, 0.75);
-      background: rgba(26, 27, 38, 0.35);
+      border: 1px solid var(--sep-subtle);
+      background: rgba(22, 27, 34, 0.3);
       color: var(--muted);
       font-size: 12px;
       cursor: pointer;
@@ -459,6 +480,7 @@
     @media (max-width: 800px) {
       .jjv-sidebar { display: none; }
       .jjv-meta { max-width: 38vw; }
+      .jjv-chip { display: none; }
     }
 
     /* Op Log View */
