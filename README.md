@@ -103,7 +103,51 @@ bun run cli.ts --help
 |--------|-------------|
 | `--port=<num>` | Port to run server on (default: 3000) |
 | `-n, --no-open` | Don't auto-open browser |
+| `--theme=<name>` | Select theme by name (`themes/<name>.toml`) |
+| `--config=<path>` | Use explicit TOML config file |
 | `-h, --help` | Show help message |
+
+## Configuration and Themes
+
+jj-viz supports layered TOML config for both TUI and Web.
+
+Config load order (low to high priority):
+
+1. `~/.config/jj-viz/config.toml`
+2. `<repo>/.jj-viz.toml`
+3. `<repo>/.jj-viz.local.toml`
+4. `JJVIZ_CONFIG=/path/to/config.toml`
+5. `--config=/path/to/config.toml`
+
+Theme selection precedence:
+
+1. `theme.name` in config
+2. `JJVIZ_THEME=<name>`
+3. `--theme=<name>`
+
+Theme lookup paths (in order):
+
+1. `<repo>/.jj-viz/themes/<name>.toml`
+2. `~/.config/jj-viz/themes/<name>.toml`
+3. bundled `themes/<name>.toml`
+
+Bundled themes:
+
+- `slate` (default)
+- `ember`
+- `oceanic`
+- `moss`
+- `nocturne`
+
+Quick test:
+
+```bash
+bun run cli.ts --theme=slate
+bun run cli.ts --theme=ember
+bun run cli.ts --tui --theme=ember
+```
+
+See `config.example.toml` for all first-pass options.
 
 ### Keyboard Shortcuts
 
