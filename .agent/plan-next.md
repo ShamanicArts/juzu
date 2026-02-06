@@ -40,14 +40,19 @@ Implementation update (2026-02-06):
 - Added shared fixtures in `src/test-utils/fixtures/` and helpers in `src/test-utils/`.
 
 ### A.2 Core Unit Tests (First Wave)
-- `src/core/layout.ts`
-  - layout mode sanity tests (chronological/mainline/topological/wc/bookmark-centric)
-  - deterministic lane assignments for known fixtures
-  - edge cases: empty nodes, conflict nodes, many-parent merges
-- `src/core/jj-api.ts`
-  - template parser coverage for log/oplog/obslog
-  - malformed block handling
-  - git branch merge enrichment behavior
+- [x] `src/core/layout.ts`
+  - [x] layout mode sanity tests (chronological/mainline/topological/wc/bookmark-centric)
+  - [x] deterministic lane assignments for known fixtures
+  - [x] edge cases: empty nodes, conflict nodes, many-parent merges
+- [x] `src/core/jj-api.ts`
+  - [x] template parser coverage for log/oplog/obslog
+  - [x] malformed block handling
+  - [x] git branch merge enrichment behavior
+
+Implementation update (2026-02-06):
+- Added layout unit coverage in `src/core/__tests__/layout.test.ts` for mode behavior, deterministic lanes, and merge/empty edge cases.
+- Extracted and exported parser helpers in `src/core/jj-api.ts` for log/oplog/obslog parsing and branch enrichment.
+- Added parser and enrichment tests in `src/core/__tests__/jj-api.test.ts`.
 
 ### A.3 Store/Usecase Tests
 - `src/core/state.ts`

@@ -3,6 +3,43 @@ import type { CommitNode, FilesCacheEntry } from "./types";
 export const JJ_TEMPLATE =
   `change_id.short() ++ "§" ++ commit_id.short() ++ "§" ++ parents.map(|p| p.change_id().short()).join(",") ++ "§" ++ author.email() ++ "§" ++ author.timestamp() ++ "§" ++ bookmarks.join(",") ++ "§" ++ description.first_line() ++ "§" ++ description ++ "§" ++ empty ++ "§" ++ conflict ++ "§" ++ hidden ++ "§" ++ root ++ "§<JJ-SEP>§"`;
 
+export function parseJJLogText(logText: string, wcId: string): CommitNode[] {
+  return logText
+    .split("§<JJ-SEP>§")
+    .map((b) => b.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const parts = block.split("§");
+      if (parts.length < 12) return null;
+
+      const changeId = parts[0].trim();
+      const commitId = parts[1].trim();
+      const root = parts[parts.length - 1].trim();
+      const hidden = parts[parts.length - 2].trim();
+      const conflict = parts[parts.length - 3].trim();
+      const empty = parts[parts.length - 4].trim();
+      const descriptionFull = parts.slice(7, parts.length - 4).join("§").trim();
+
+      return {
+        changeId,
+        commitId,
+        parents: parts[2] ? parts[2].split(",").map((p) => p.trim()).filter(Boolean) : [],
+        author: parts[3].trim(),
+        time: parts[4].trim(),
+        bookmarks: parts[5] ? parts[5].split(",").map((b) => b.trim()).filter(Boolean) : [],
+        gitBranches: [],
+        descriptionTitle: parts[6].trim(),
+        descriptionFull,
+        isEmpty: empty === "true",
+        isConflict: conflict === "true",
+        isHidden: hidden === "true",
+        isRoot: root === "true",
+        isWorkingCopy: changeId === wcId,
+      } satisfies CommitNode;
+    })
+    .filter(Boolean) as CommitNode[];
+}
+
 /**
  * Find JJ repository root by walking up directory tree
  */
@@ -73,40 +110,7 @@ export async function fetchJJLog(cwd: string, limit: number): Promise<CommitNode
     getWorkingCopyId(cwd),
   ]);
 
-  return logText
-    .split("§<JJ-SEP>§")
-    .map((b) => b.trim())
-    .filter(Boolean)
-    .map((block) => {
-      const parts = block.split("§");
-      if (parts.length < 12) return null;
-
-      const changeId = parts[0].trim();
-      const commitId = parts[1].trim();
-      const root = parts[parts.length - 1].trim();
-      const hidden = parts[parts.length - 2].trim();
-      const conflict = parts[parts.length - 3].trim();
-      const empty = parts[parts.length - 4].trim();
-      const descriptionFull = parts.slice(7, parts.length - 4).join("§").trim();
-
-      return {
-        changeId,
-        commitId,
-        parents: parts[2] ? parts[2].split(",").map((p) => p.trim()).filter(Boolean) : [],
-        author: parts[3].trim(),
-        time: parts[4].trim(),
-        bookmarks: parts[5] ? parts[5].split(",").map((b) => b.trim()).filter(Boolean) : [],
-        gitBranches: [],
-        descriptionTitle: parts[6].trim(),
-        descriptionFull,
-        isEmpty: empty === "true",
-        isConflict: conflict === "true",
-        isHidden: hidden === "true",
-        isRoot: root === "true",
-        isWorkingCopy: changeId === wcId,
-      } satisfies CommitNode;
-    })
-    .filter(Boolean) as CommitNode[];
+  return parseJJLogText(logText, wcId);
 }
 
 export async function fetchGitBranches(cwd: string): Promise<Map<string, string[]>> {
@@ -139,6 +143,11 @@ export async function fetchJJLogWithGitBranches(cwd: string, limit: number): Pro
     fetchGitBranches(cwd),
   ]);
 
+  return enrichNodesWithGitBranches(nodes, gitBranches);
+}
+
+export function enrichNodesWithGitBranches(nodes: CommitNode[], gitBranches: Map<string, string[]>): CommitNode[] {
+  
   return nodes.map((node) => {
     const branches =
       gitBranches.get(node.commitId) ||
@@ -306,9 +315,7 @@ export interface OpLogEntry {
 export const OP_LOG_TEMPLATE =
   `id.short() ++ "§" ++ id.short(8) ++ "§" ++ time ++ "§" ++ time.duration() ++ "§" ++ tags ++ "§" ++ description.first_line() ++ "§" ++ description ++ "§" ++ current_operation ++ "§" ++ user ++ "\n§<JJ-OP-SEP>§\n"`;
 
-export async function fetchOpLog(cwd: string, limit: number): Promise<OpLogEntry[]> {
-  const logText = await runCmdText(["jj", "op", "log", "--no-graph", "--limit", String(limit), "-T", OP_LOG_TEMPLATE], cwd, 15000);
-
+export function parseOpLogText(logText: string): OpLogEntry[] {
   return logText
     .split("§<JJ-OP-SEP>§")
     .map((b) => b.trim())
@@ -330,6 +337,12 @@ export async function fetchOpLog(cwd: string, limit: number): Promise<OpLogEntry
       } satisfies OpLogEntry;
     })
     .filter(Boolean) as OpLogEntry[];
+}
+
+export async function fetchOpLog(cwd: string, limit: number): Promise<OpLogEntry[]> {
+  const logText = await runCmdText(["jj", "op", "log", "--no-graph", "--limit", String(limit), "-T", OP_LOG_TEMPLATE], cwd, 15000);
+
+  return parseOpLogText(logText);
 }
 
 // Obslog types
@@ -358,12 +371,7 @@ export interface ObslogEntry {
 export const OBSLOG_TEMPLATE =
   `commit.change_id().short() ++ "§" ++ commit.commit_id().short() ++ "§" ++ operation.id().short() ++ "§" ++ operation.description().first_line() ++ "§" ++ operation.description() ++ "§" ++ operation.user() ++ "§" ++ operation.time().duration() ++ "§" ++ operation.tags() ++ "§" ++ commit.author().timestamp() ++ "§" ++ commit.author().email() ++ "§" ++ commit.hidden() ++ "§" ++ commit.description().first_line() ++ "§" ++ commit.description() ++ "§" ++ commit.empty() ++ "§" ++ commit.conflict() ++ "\n§<JJ-OBS-SEP>§\n"`;
 
-export async function fetchObslog(changeId: string, cwd: string, limit: number): Promise<ObslogEntry[]> {
-  const [logText, wcId] = await Promise.all([
-    runCmdText(["jj", "obslog", "--no-graph", "-r", changeId, "--limit", String(limit), "-T", OBSLOG_TEMPLATE], cwd, 15000),
-    getWorkingCopyId(cwd),
-  ]);
-
+export function parseObslogText(logText: string, wcId: string): ObslogEntry[] {
   return logText
     .split("§<JJ-OBS-SEP>§")
     .map((b) => b.trim())
@@ -403,4 +411,13 @@ export async function fetchObslog(changeId: string, cwd: string, limit: number):
       } satisfies ObslogEntry;
     })
     .filter(Boolean) as ObslogEntry[];
+}
+
+export async function fetchObslog(changeId: string, cwd: string, limit: number): Promise<ObslogEntry[]> {
+  const [logText, wcId] = await Promise.all([
+    runCmdText(["jj", "obslog", "--no-graph", "-r", changeId, "--limit", String(limit), "-T", OBSLOG_TEMPLATE], cwd, 15000),
+    getWorkingCopyId(cwd),
+  ]);
+
+  return parseObslogText(logText, wcId);
 }
