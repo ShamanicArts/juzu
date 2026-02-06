@@ -255,7 +255,7 @@ function App() {
   const footerSecondaryHint = createMemo(() => {
     if (state.viewMode !== "log") return "";
     if (state.describeMode || state.rebaseSourceId) return "";
-    return "Shift/Ctrl multi · Alt+drag move/pin · Right-click pin · Alt+click insert";
+    return "Shift/Ctrl select · Alt+drag move/pin · Right-click pin · Alt+click insert";
   });
 
   createEffect(() => {

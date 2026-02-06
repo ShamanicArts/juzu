@@ -145,7 +145,7 @@ export function StatusBar(props: { width: number; height: number }) {
     if (props.width < 110) return "";
     switch (currentMode()) {
       case "leader":
-        return "prefix: a/s/d/u/m/f/p/b/x";
+        return "Ctrl+X prefix: a/s/d/u/m/f/p/b/x";
       case "rebase":
         return "select destination and confirm";
       case "merge":
