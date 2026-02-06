@@ -8,7 +8,7 @@ import clipboardy from "clipboardy";
 import { state, actions, navigation, selectedNode, layoutResult } from "../core/state";
 import { tuiActions, tuiState } from "../core/state-tui";
 import { setBackend } from "../core/runtime";
-import { ensureDiff, initCwdFrom, opAbandon, opBookmarkDelete, opBookmarkSet, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertBetween, opMerge, opNew, opRebase, opRestore, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
+import { ensureDiff, ensureFiles, initCwdFrom, opAbandon, opBookmarkDelete, opBookmarkSet, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertBetween, opMerge, opNew, opRebase, opRestore, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
 import { createTuiBackend } from "./backend";
 import { GraphView } from "./components/GraphView";
 import { Sidebar } from "./components/Sidebar";
@@ -24,6 +24,16 @@ import { resolveAndApplyRuntimeConfig } from "../core/config-loader";
 const BG = () => RGBA.fromHex(UI_TOKENS.slate.bg0);
 const PANEL_BG = () => RGBA.fromHex(UI_TOKENS.slate.panel);
 const RUNTIME = getRuntimeConfig();
+const TUI_LOG_LIMIT = readPositiveIntEnv("JJVIZ_TUI_LOG_LIMIT", 80);
+const TUI_REFRESH_DEBOUNCE_MS = readPositiveIntEnv("JJVIZ_TUI_REFRESH_DEBOUNCE_MS", 700);
+const TUI_PREFETCH_RADIUS = readPositiveIntEnv("JJVIZ_TUI_PREFETCH_RADIUS", 4);
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 function extractThemeNameFromToml(raw: string): string | null {
   const lines = raw.split(/\r?\n/);
@@ -301,26 +311,21 @@ function App() {
     refreshDebounceTimer = setTimeout(() => {
       if (pendingConfirmation) return;
       void refresh();
-    }, 500);
+    }, TUI_REFRESH_DEBOUNCE_MS);
   };
 
-  const startWatch = (path: string, recursive: boolean) => {
+  const startWatch = (path: string) => {
     const controller = new AbortController();
     watchControllers.push(controller);
     void (async () => {
       try {
-        for await (const _event of watch(path, { recursive, signal: controller.signal })) {
+        for await (const _event of watch(path, { recursive: false, signal: controller.signal })) {
           scheduleRefresh();
         }
       } catch (e) {
         const err = e as Error & { code?: string };
         if (err?.name === "AbortError") return;
-        if (recursive) {
-          // Linux may not support recursive fs.watch; fallback to non-recursive watches.
-          startWatch(path, false);
-          return;
-        }
-        console.error(`Watch error for ${path}:`, e);
+        if (err?.code !== "ENOENT") console.error(`Watch error for ${path}:`, e);
       }
     })();
   };
@@ -351,12 +356,10 @@ function App() {
     await discoverThemes(repoCwd);
 
     const jjDir = `${repoCwd}/.jj`;
-    startWatch(jjDir, true);
-    // Fallback/extra coverage for platforms where recursive watch is not available.
-    startWatch(`${jjDir}/working_copy`, false);
-    startWatch(`${jjDir}/repo`, false);
-    startWatch(`${jjDir}/repo/store`, false);
-    startWatch(`${jjDir}/repo/store/operations`, false);
+    startWatch(`${jjDir}/working_copy`);
+    startWatch(`${jjDir}/repo`);
+    startWatch(`${jjDir}/repo/store`);
+    startWatch(`${jjDir}/repo/store/operations`);
   });
 
   onCleanup(() => {
@@ -367,6 +370,15 @@ function App() {
       clearTimeout(refreshDebounceTimer);
       refreshDebounceTimer = null;
     }
+  });
+
+  createEffect(() => {
+    const node = selectedNode();
+    if (!node) return;
+    if (state.viewMode !== "log") return;
+    void ensureFiles(node.changeId).catch(() => {
+      // Best-effort cache hydration for selected node details.
+    });
   });
 
   createEffect(() => {
@@ -384,10 +396,20 @@ function App() {
     tuiActions.setDiffFileIndex(0);
   });
 
+  const collectNearbyChangeIds = () => {
+    const nodes = layoutResult().nodes;
+    if (nodes.length === 0) return [] as string[];
+    const selected = state.selectedId;
+    const selectedIdx = Math.max(0, nodes.findIndex((n) => n.changeId === selected));
+    const start = Math.max(0, selectedIdx - TUI_PREFETCH_RADIUS);
+    const end = Math.min(nodes.length, selectedIdx + TUI_PREFETCH_RADIUS + 1);
+    return nodes.slice(start, end).map((n) => n.changeId);
+  };
+
   const refresh = async () => {
     try {
-      await refreshLog(500);
-      void prefetchFiles(layoutResult().nodes.map((n) => n.changeId));
+      await refreshLog(TUI_LOG_LIMIT);
+      void prefetchFiles(collectNearbyChangeIds());
     } catch (e) {
       console.error("Refresh error:", e);
     }
@@ -1169,9 +1191,9 @@ function App() {
   const fullDiffPayload = () => {
     const entry = selectedDiffEntry();
     if (!entry) return { diff: "", title: "Diff" };
-    if (entry.files.length === 0) return { diff: entry.diff, title: "Diff (single patch)" };
+    if (entry.files.length === 0) return { diff: "", title: "Diff" };
     const preview = sidebarDiffPreview();
-    if (!preview) return { diff: entry.diff, title: "Diff" };
+    if (!preview) return { diff: entry.files[0]?.diff || "", title: "Diff" };
     return {
       diff: preview.diff,
       title: `File ${preview.index + 1}/${preview.total}: ${preview.path}   [ / ] next/prev   Ctrl+d back`,
@@ -1187,6 +1209,8 @@ function App() {
   };
   const detailW = () => !useVerticalLayout() && showSidebar() ? Math.floor(tuiState.termSize.width * 0.40) : 0;
   const graphW = () => tuiState.termSize.width - detailW();
+  // Buffer between diff content and sidebar in horizontal layout
+  const DIFF_SIDEBAR_BUFFER = 2;
   const sidebarH = () => useVerticalLayout() && showSidebar() ? Math.floor(mainHeight() * RUNTIME.tui.stackedSidebarRatio) : 0;
   const graphH = () => mainHeight() - sidebarH();
   const statusBarHeight = () => {
@@ -1260,7 +1284,7 @@ function App() {
           )}
           {state.viewMode === "diff" && (
             <DiffView
-              width={useVerticalLayout() ? tuiState.termSize.width : graphW()}
+              width={useVerticalLayout() ? tuiState.termSize.width : Math.max(1, graphW() - DIFF_SIDEBAR_BUFFER)}
               height={graphH()}
               diff={fullDiffPayload().diff}
               title={fullDiffPayload().title}
