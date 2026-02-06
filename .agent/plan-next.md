@@ -167,9 +167,15 @@ Implementation update (2026-02-06):
 ## Optional Phase D - Server-Sent Events (Post-Stabilization)
 
 Only after A/B/C are stable.
-- Server watches `.jj/` and broadcasts SSE updates.
-- Web subscribes and refreshes on event instead of polling.
-- Keep polling fallback for resilience.
+- [x] Server watches `.jj/` and broadcasts SSE updates.
+- [x] Web subscribes and refreshes on event instead of polling.
+- [x] Keep polling fallback for resilience.
+
+Implementation update (2026-02-06):
+- Added `/api/events` SSE endpoint with ready/heartbeat/repo-updated events and connection registry.
+- Added debounced `.jj` watch broadcasting for repository change bursts.
+- Added web EventSource subscription with bounded reconnect and automatic polling fallback.
+- Added SSE integration coverage in `server/__tests__/api.integration.test.ts`.
 
 ---
 

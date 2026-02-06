@@ -156,6 +156,7 @@ function startRepoWatch(path: string, recursive: boolean) {
     } catch (e) {
       const err = e as Error & { code?: string };
       if (err.name === "AbortError") return;
+      if (err.code === "ENOENT") return;
       if (recursive) {
         startRepoWatch(path, false);
         return;

@@ -86,6 +86,28 @@ async function expectJson(response: Response): Promise<any> {
   }
 }
 
+async function waitForSseEvent(reader: ReadableStreamDefaultReader<Uint8Array>, eventName: string, timeoutMs = 8000): Promise<string> {
+  const decoder = new TextDecoder();
+  const deadline = Date.now() + timeoutMs;
+  let buffered = "";
+
+  while (Date.now() < deadline) {
+    const remaining = Math.max(1, deadline - Date.now());
+    const next = Promise.race([
+      reader.read(),
+      Bun.sleep(remaining).then(() => ({ done: true as const, value: undefined })),
+    ]);
+    const chunk = await next;
+    if (chunk.done) break;
+    buffered += decoder.decode(chunk.value, { stream: true });
+    if (buffered.includes(`event: ${eventName}`)) {
+      return buffered;
+    }
+  }
+
+  throw new Error(`timed out waiting for SSE event ${eventName}`);
+}
+
 describe("server API integration smoke", () => {
   let repo: TempJJRepo;
   let server: StartedServer;
@@ -151,6 +173,24 @@ describe("server API integration smoke", () => {
     expect(appResp.status).toBe(200);
     const js = await appResp.text();
     expect(js.length).toBeGreaterThan(1000);
+  });
+
+  test("SSE endpoint streams ready and repo-updated events", async () => {
+    const eventsResp = await fetch(`${server.baseUrl}/api/events`, {
+      headers: { Accept: "text/event-stream" },
+    });
+    expect(eventsResp.status).toBe(200);
+    expect(eventsResp.headers.get("content-type")?.includes("text/event-stream")).toBe(true);
+    expect(eventsResp.body).toBeTruthy();
+
+    const reader = eventsResp.body!.getReader();
+    await waitForSseEvent(reader, "ready", 5000);
+
+    await repo.run(["jj", "new"]);
+    const payload = await waitForSseEvent(reader, "repo-updated", 8000);
+    expect(payload.includes("event: repo-updated")).toBe(true);
+
+    await reader.cancel();
   });
 
   test("POST mutation endpoints return expected contract shape", async () => {
