@@ -1,10 +1,12 @@
 import { render } from "solid-js/web";
-import { createEffect, createMemo, createSignal, onCleanup, onMount, Show, Switch, Match } from "solid-js";
+import { createEffect, createMemo, createSignal, onCleanup, onMount, Show, Switch, Match, For } from "solid-js";
 import { actions, navigation, selectedNode, state, layoutResult } from "../core/state";
 import { webActions, webState } from "../core/state-web";
 import { setBackend } from "../core/runtime";
+import { applyRuntimeConfig } from "../core/runtime-config";
 import { ensureFiles, fetchDiff, opAbandon, opBookmarkDelete, opBookmarkRename, opBookmarkSet, opBookmarkTrack, opBookmarkUntrack, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertAfter, opInsertBetween, opMerge, opMove, opNew, opRebase, opRedo, opRestore, opRestoreOperation, opSquash, opSplit, opUndo, refreshLog, refreshOpLog, refreshObslog } from "../core/usecases";
 import { createWebBackend } from "./backend";
+import { api } from "./api";
 import { CanvasGraph } from "./components/CanvasGraph";
 import { Sidebar } from "./components/Sidebar";
 import { OpLogView } from "./components/OpLogView";
@@ -12,6 +14,8 @@ import { ObslogView } from "./components/ObslogView";
 import { OpLogSidebar } from "./components/OpLogSidebar";
 import { ObslogSidebar } from "./components/ObslogSidebar";
 import { ConfirmModal } from "./components/ConfirmModal";
+import { getRuntimeConfig } from "../core/runtime-config";
+import { UI_TOKENS } from "../core/ui-tokens";
 
 type PersistedLayout = {
   layoutMode?: string;
@@ -29,15 +33,93 @@ type ConfirmRequest = {
   run: () => void;
 };
 
+type ThemeData = {
+  slate?: Record<string, string>;
+  semantic?: Record<string, string>;
+  graph?: Record<string, unknown>;
+};
+
+function applyThemeToCSS(theme: ThemeData) {
+  const root = document.documentElement;
+  const slate = theme.slate || {};
+  const semantic = theme.semantic || {};
+  const graph = theme.graph || {};
+
+  // Slate colors
+  if (slate.bg0) {
+    root.style.setProperty("--bg", slate.bg0);
+    root.style.setProperty("--bg-color", slate.bg0);
+  }
+  if (slate.bg1) {
+    root.style.setProperty("--panel", slate.bg1);
+    root.style.setProperty("--panel-bg", slate.bg1);
+  }
+  if (slate.bg2) root.style.setProperty("--bg2", slate.bg2);
+  if (slate.panel) root.style.setProperty("--surface", slate.panel);
+  if (slate.panelElevated) root.style.setProperty("--panel-elevated", slate.panelElevated);
+  if (slate.text) {
+    root.style.setProperty("--text", slate.text);
+    root.style.setProperty("--text-primary", slate.text);
+  }
+  if (slate.textMuted) {
+    root.style.setProperty("--muted", slate.textMuted);
+    root.style.setProperty("--text-secondary", slate.textMuted);
+  }
+  if (slate.borderSoft) {
+    root.style.setProperty("--border", slate.borderSoft);
+    root.style.setProperty("--border-soft", slate.borderSoft);
+  }
+  if (slate.borderStrong) {
+    root.style.setProperty("--border2", slate.borderStrong);
+    root.style.setProperty("--border-strong", slate.borderStrong);
+  }
+
+  // Semantic colors
+  if (semantic.success) root.style.setProperty("--success", semantic.success);
+  if (semantic.warn) root.style.setProperty("--warn", semantic.warn);
+  if (semantic.error) root.style.setProperty("--error", semantic.error);
+  if (semantic.info) root.style.setProperty("--info", semantic.info);
+  if (semantic.fileAdd) root.style.setProperty("--file-add", semantic.fileAdd);
+  if (semantic.fileMod) root.style.setProperty("--file-mod", semantic.fileMod);
+  if (semantic.fileDel) root.style.setProperty("--file-del", semantic.fileDel);
+
+  // Graph colors
+  if (graph.node) root.style.setProperty("--node-bg", graph.node as string);
+  if (graph.nodeSelected) root.style.setProperty("--node-selected", graph.nodeSelected as string);
+  if (graph.nodeConflict) root.style.setProperty("--conflict", graph.nodeConflict as string);
+  if (graph.nodeBorder) root.style.setProperty("--node-border", graph.nodeBorder as string);
+  if (graph.text) root.style.setProperty("--graph-text", graph.text as string);
+
+  // Lane colors - apply each lane as CSS variable
+  if (graph.lanes && Array.isArray(graph.lanes)) {
+    graph.lanes.forEach((color, idx) => {
+      root.style.setProperty(`--lane-${idx}`, color as string);
+    });
+  }
+
+  // Legacy aliases
+  if (semantic.info) root.style.setProperty("--cyan", semantic.info);
+  if (semantic.success) root.style.setProperty("--green", semantic.success);
+  if (semantic.warn) root.style.setProperty("--orange", semantic.warn);
+  if (semantic.error) root.style.setProperty("--red", semantic.error);
+}
+
 function App() {
   const [diffText, setDiffText] = createSignal<string>("");
   const [pendingConfirm, setPendingConfirm] = createSignal<ConfirmRequest | null>(null);
   const [revsetDraft, setRevsetDraft] = createSignal("");
+  const [themeOptions, setThemeOptions] = createSignal<string[]>([]);
+  const [themePickerOpen, setThemePickerOpen] = createSignal(false);
+  const [themeSelectedIndex, setThemeSelectedIndex] = createSignal(0);
+  const [currentTheme, setCurrentTheme] = createSignal("slate");
+  const [themeVersion, setThemeVersion] = createSignal(0);
 
   const selected = createMemo(() => selectedNode());
   const multiCount = createMemo(() => state.selectedIds.size);
 
   const persistKey = "jj-viz-layout";
+  const themePersistKey = "jj-viz-theme";
+  const pollIntervalMs = getRuntimeConfig().web.pollIntervalMs;
   let pollingInterval: ReturnType<typeof setInterval> | null = null;
   let sse: EventSource | null = null;
   let sseReconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -59,7 +141,7 @@ function App() {
     if (pollingInterval) return;
     pollingInterval = setInterval(() => {
       void pollForUpdates();
-    }, 3000);
+    }, pollIntervalMs);
   };
 
   const hashNodes = (nodes: unknown) => {
@@ -183,6 +265,31 @@ function App() {
       } catch {
         // ignore
       }
+
+      // Load available themes
+      try {
+        const { themes } = await api.themes();
+        setThemeOptions(themes);
+      } catch {
+        // ignore
+      }
+
+      // Load and apply saved theme or server-configured theme
+      try {
+        const savedTheme = localStorage.getItem(themePersistKey);
+        const serverConfig = await fetch("/api/config").then(r => r.ok ? r.json() : null);
+        const themeToLoad = savedTheme || serverConfig?.theme?.name || "slate";
+
+        if (themeToLoad) {
+          const themeData = await api.theme(themeToLoad);
+          applyThemeToCSS(themeData as ThemeData);
+          setCurrentTheme(themeToLoad);
+          applyRuntimeConfig({ theme: { name: themeToLoad }, uiTokens: themeData });
+        }
+      } catch {
+        // ignore - fallback to default theme
+      }
+
       await refresh();
       lastNodesHash = hashNodes(state.nodes);
       setRevsetDraft(state.revsetQuery || "");
@@ -256,11 +363,23 @@ function App() {
     return "operation history";
   });
 
-  // Mode badge colors (TUI-inspired)
+  // Mode badge colors (theme-aware, matching TUI behavior)
   const modeBadgeColor = createMemo(() => {
-    if (state.describeMode) return "#7f9fbf"; // info
-    if (state.rebaseSourceId) return "#c9a86a"; // warn
-    return "#6f89ad"; // modeLog
+    themeVersion(); // Depend on theme version to re-render when theme changes
+    const semantic = UI_TOKENS.semantic;
+    // Modal states first (they override view modes)
+    if (state.describeMode) return semantic.info;
+    if (state.rebaseSourceId) return semantic.warn;
+    // View modes - could expand these to use different semantic colors per theme
+    if (state.viewMode === "oplog") return semantic.info;
+    if (state.viewMode === "obslog") return semantic.success;
+    return semantic.modeLog; // default log mode
+  });
+
+  // Set footer accent color based on mode
+  createEffect(() => {
+    const color = modeBadgeColor();
+    document.documentElement.style.setProperty('--footer-accent', color);
   });
 
   const modeLabel = createMemo(() => {
@@ -291,7 +410,7 @@ function App() {
     if (state.viewMode === "obslog") return "j/k move · PgUp/PgDn jump · r refresh · g/Esc back";
     if (state.describeMode) return "Enter save description · Esc cancel · h help";
     if (state.rebaseSourceId) return `rebase source:${state.rebaseSourceId.slice(0, 8)} · select destination · b rebase · Esc cancel`;
-    return "j/k move · 1-5 layout · / revset · h help";
+    return "j/k move · 1-5 layout · t theme · / revset · h help";
   });
   const footerSecondaryHint = createMemo(() => {
     if (state.viewMode !== "log") return "";
@@ -375,6 +494,31 @@ function App() {
         void describeSubmit();
       } else if (e.key === "Escape") {
         actions.cancelDescribe();
+      }
+      return;
+    }
+
+    // Theme picker mode
+    if (themePickerOpen()) {
+      switch (e.key) {
+        case "Escape":
+        case "q":
+          closeThemePicker();
+          return;
+        case "ArrowDown":
+        case "j":
+          e.preventDefault();
+          selectNextTheme();
+          return;
+        case "ArrowUp":
+        case "k":
+          e.preventDefault();
+          selectPrevTheme();
+          return;
+        case "Enter":
+          // Theme already applied on selection, just close picker
+          closeThemePicker();
+          return;
       }
       return;
     }
@@ -527,6 +671,9 @@ function App() {
       case "v":
         void handleObslog();
         break;
+      case "t":
+        openThemePicker();
+        break;
       case "b": {
         const node = selected();
         if (!node) break;
@@ -662,6 +809,76 @@ function App() {
     window.removeEventListener("keyup", onWinKeyUp);
   });
 
+  // Theme picker functions
+  const applyTheme = async (themeName: string) => {
+    try {
+      const themeData = await api.theme(themeName);
+      // Apply to CSS first for instant visual feedback
+      applyThemeToCSS(themeData as ThemeData);
+      // Then update runtime config (which updates UI_TOKENS for canvas)
+      applyRuntimeConfig({ theme: { name: themeName }, uiTokens: themeData });
+      setCurrentTheme(themeName);
+      setThemeVersion(v => v + 1); // Bump version to trigger canvas re-render
+      localStorage.setItem(themePersistKey, themeName);
+      actions.setStatusMessage(`Theme -> ${themeName}`);
+    } catch (e) {
+      actions.setStatusMessage(`Error loading theme: ${String(e)}`);
+    }
+  };
+
+  const openThemePicker = () => {
+    const opts = themeOptions();
+    if (opts.length === 0) {
+      actions.setStatusMessage("No themes available");
+      return;
+    }
+    const currentIdx = opts.indexOf(currentTheme());
+    const startIdx = currentIdx >= 0 ? currentIdx : 0;
+    setThemeSelectedIndex(startIdx);
+    setThemePickerOpen(true);
+    actions.setStatusMessage("Theme picker: j/k or arrows to navigate · Enter/Esc to close");
+    // Scroll current theme into view
+    setTimeout(() => {
+      const el = document.querySelector(`[data-theme-index="${startIdx}"]`);
+      el?.scrollIntoView({ block: 'center', behavior: 'instant' });
+    }, 50);
+  };
+
+  const closeThemePicker = () => {
+    setThemePickerOpen(false);
+    actions.setStatusMessage("Theme picker closed");
+  };
+
+  const selectNextTheme = () => {
+    const opts = themeOptions();
+    const currentIdx = themeSelectedIndex();
+    const newIdx = (currentIdx + 1) % opts.length;
+    setThemeSelectedIndex(newIdx);
+    // Apply theme immediately on selection
+    const theme = opts[newIdx];
+    if (theme) void applyTheme(theme);
+    // Scroll into view
+    setTimeout(() => {
+      const el = document.querySelector(`[data-theme-index="${newIdx}"]`);
+      el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }, 0);
+  };
+
+  const selectPrevTheme = () => {
+    const opts = themeOptions();
+    const currentIdx = themeSelectedIndex();
+    const newIdx = (currentIdx - 1 + opts.length) % opts.length;
+    setThemeSelectedIndex(newIdx);
+    // Apply theme immediately on selection
+    const theme = opts[newIdx];
+    if (theme) void applyTheme(theme);
+    // Scroll into view
+    setTimeout(() => {
+      const el = document.querySelector(`[data-theme-index="${newIdx}"]`);
+      el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }, 0);
+  };
+
   return (
     <div class="jjv-root">
       <header class="jjv-header">
@@ -718,6 +935,13 @@ function App() {
                 title="Lock: wheel/arrow scroll selected commit; drag pan disabled"
               >
                 {webState.navigationLock ? "Lock:On" : "Lock:Off"}
+              </button>
+              <button
+                class="jjv-btn jjv-btn--ghost"
+                onClick={openThemePicker}
+                title="Change theme (t)"
+              >
+                Theme
               </button>
             </Show>
 
@@ -841,6 +1065,7 @@ function App() {
                     }, "Squash");
                   }
                 }}
+                themeVersion={themeVersion()}
               />
             </Match>
             <Match when={state.viewMode === "oplog"}>
@@ -886,68 +1111,100 @@ function App() {
         <aside class="jjv-sidebar">
           <Switch>
             <Match when={state.viewMode === "log"}>
-              <Sidebar
-                diffText={diffText()}
-                onMergeSelected={() => void handleMergeSelected()}
-                onExecuteOp={() => void handleExecuteOp()}
-                onDescribeSubmit={() => void describeSubmit()}
-                onRestore={(paths) => {
-                  const node = selected();
-                  if (!node) return;
-                  maybeRunDestructive("Restore selected paths?", () => {
-                    void opRestore(node.changeId, paths);
-                  }, "Restore");
-                }}
-                onBookmarkSet={(name) => {
-                  const node = selected();
-                  if (!node) return;
-                  void opBookmarkSet(name, node.changeId);
-                }}
-                onBookmarkDelete={(name) => {
-                  maybeRunDestructive(`Delete bookmark ${name}?`, () => {
-                    void opBookmarkDelete(name);
-                  }, "Delete");
-                }}
-                onBookmarkRename={(oldName, newName) => {
-                  void opBookmarkRename(oldName, newName);
-                }}
-                onBookmarkTrack={(remoteBookmark) => {
-                  void opBookmarkTrack(remoteBookmark);
-                }}
-                onBookmarkUntrack={(remoteBookmark) => {
-                  maybeRunDestructive(`Untrack ${remoteBookmark}?`, () => {
-                    void opBookmarkUntrack(remoteBookmark);
-                  }, "Untrack");
-                }}
-                onRunMutation={(kind) => {
-                  const node = selected();
-                  if (!node) return;
-                  if (kind === "edit") void opEdit(node.changeId);
-                  if (kind === "new") void opNew(node.changeId);
-                  if (kind === "abandon") {
-                    maybeRunDestructive(bookmarkAwareMessage(`Abandon ${node.changeId.slice(0, 8)}?`), () => {
-                      void opAbandon(node.changeId);
-                    }, "Abandon");
-                  }
-                  if (kind === "duplicate") void opDuplicate(node.changeId);
-                  if (kind === "rebase") {
-                    if (!state.rebaseSourceId) {
-                      actions.setRebaseSource(node.changeId);
-                    } else {
-                      const sourceId = state.rebaseSourceId;
-                      maybeRunDestructive(`Rebase ${sourceId.slice(0, 8)} onto ${node.changeId.slice(0, 8)}?`, () => {
-                        void opRebase(sourceId, node.changeId);
-                      }, "Rebase");
+              <Show when={!themePickerOpen()} fallback={
+                <div class="jjv-themePicker-sidebar">
+                  <div class="jjv-themePicker-header">
+                    <h3>Select Theme</h3>
+                    <button class="jjv-btn jjv-btn--ghost" onClick={closeThemePicker}>×</button>
+                  </div>
+                  <div class="jjv-themePicker-list">
+                    <For each={themeOptions()}>
+                      {(theme, idx) => (
+                        <div
+                          data-theme-index={idx()}
+                          class="jjv-themePicker-item"
+                          classList={{ 'jjv-themePicker-item--selected': idx() === themeSelectedIndex() }}
+                          onMouseEnter={() => {
+                            setThemeSelectedIndex(idx());
+                            void applyTheme(theme);
+                          }}
+                          onClick={() => {
+                            closeThemePicker();
+                          }}
+                        >
+                          <span class="jjv-themePicker-name">{theme}</span>
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                  <div class="jjv-themePicker-footer">
+                    <span>j/k or arrows to navigate · Enter or click to close · Esc to close</span>
+                  </div>
+                </div>
+              }>
+                <Sidebar
+                  diffText={diffText()}
+                  onMergeSelected={() => void handleMergeSelected()}
+                  onExecuteOp={() => void handleExecuteOp()}
+                  onDescribeSubmit={() => void describeSubmit()}
+                  onRestore={(paths) => {
+                    const node = selected();
+                    if (!node) return;
+                    maybeRunDestructive("Restore selected paths?", () => {
+                      void opRestore(node.changeId, paths);
+                    }, "Restore");
+                  }}
+                  onBookmarkSet={(name) => {
+                    const node = selected();
+                    if (!node) return;
+                    void opBookmarkSet(name, node.changeId);
+                  }}
+                  onBookmarkDelete={(name) => {
+                    maybeRunDestructive(`Delete bookmark ${name}?`, () => {
+                      void opBookmarkDelete(name);
+                    }, "Delete");
+                  }}
+                  onBookmarkRename={(oldName, newName) => {
+                    void opBookmarkRename(oldName, newName);
+                  }}
+                  onBookmarkTrack={(remoteBookmark) => {
+                    void opBookmarkTrack(remoteBookmark);
+                  }}
+                  onBookmarkUntrack={(remoteBookmark) => {
+                    maybeRunDestructive(`Untrack ${remoteBookmark}?`, () => {
+                      void opBookmarkUntrack(remoteBookmark);
+                    }, "Untrack");
+                  }}
+                  onRunMutation={(kind) => {
+                    const node = selected();
+                    if (!node) return;
+                    if (kind === "edit") void opEdit(node.changeId);
+                    if (kind === "new") void opNew(node.changeId);
+                    if (kind === "abandon") {
+                      maybeRunDestructive(bookmarkAwareMessage(`Abandon ${node.changeId.slice(0, 8)}?`), () => {
+                        void opAbandon(node.changeId);
+                      }, "Abandon");
                     }
-                  }
-                  if (kind === "describe") {
-                    actions.startDescribe(node.descriptionFull || node.descriptionTitle || "");
-                  }
-                }}
-              />
+                    if (kind === "duplicate") void opDuplicate(node.changeId);
+                    if (kind === "rebase") {
+                      if (!state.rebaseSourceId) {
+                        actions.setRebaseSource(node.changeId);
+                      } else {
+                        const sourceId = state.rebaseSourceId;
+                        maybeRunDestructive(`Rebase ${sourceId.slice(0, 8)} onto ${node.changeId.slice(0, 8)}?`, () => {
+                          void opRebase(sourceId, node.changeId);
+                        }, "Rebase");
+                      }
+                    }
+                    if (kind === "describe") {
+                      actions.startDescribe(node.descriptionFull || node.descriptionTitle || "");
+                    }
+                  }}
+                />
 
-              <Show when={multiCount() > 1}>
-                <div class="jjv-toast">Multi-select: {multiCount()} commits selected</div>
+                <Show when={multiCount() > 1}>
+                  <div class="jjv-toast">Multi-select: {multiCount()} commits selected</div>
+                </Show>
               </Show>
             </Match>
 
@@ -1012,7 +1269,7 @@ function App() {
         </div>
 
         <div class="jjv-footerRight">
-          <span class="jjv-footerMeta">{state.layoutMode}</span>
+          <span class="jjv-footerMeta">{state.nodes.length} nodes · {state.layoutMode}</span>
           <span class={`jjv-footerStatus ${isError() ? "jjv-footerStatus--error" : ""}`}>
             {state.statusMessage || "ready"}
           </span>

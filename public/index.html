@@ -188,6 +188,17 @@
       font-size: 11px;
       color: var(--muted);
       min-width: 0;
+      position: relative;
+    }
+
+    .jjv-footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--footer-accent, var(--slate)) 0%, transparent 100%);
     }
 
     .jjv-footerLeft {
@@ -249,6 +260,17 @@
       padding: 1px 6px;
       border: 1px solid var(--sep-subtle);
       border-radius: 4px;
+    }
+
+    .jjv-footerMode {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--bg);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .jjv-footerPill {
@@ -466,15 +488,15 @@
       padding: 2px 8px;
       border-radius: 999px;
       font-size: 11px;
-      border: 1px solid var(--sep-subtle);
-      background: rgba(17, 19, 24, 0.55);
+      border: 1px solid var(--border);
+      background: var(--surface);
       color: var(--text);
     }
-    .jjv-badge--bookmark { border-color: rgba(0, 240, 255, 0.65); color: var(--cyan); }
-    .jjv-badge--branch { border-color: rgba(255, 170, 0, 0.65); color: var(--orange); }
-    .jjv-badge--conflict { border-color: rgba(255, 0, 85, 0.75); color: var(--red); }
-    .jjv-badge--empty { border-color: rgba(136, 136, 136, 0.75); color: var(--muted); }
-    .jjv-badge--wc { border-color: rgba(0, 255, 157, 0.7); color: var(--green); }
+    .jjv-badge--bookmark { border-color: var(--info); color: var(--info); background: color-mix(in srgb, var(--info) 10%, transparent); }
+    .jjv-badge--branch { border-color: var(--warn); color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+    .jjv-badge--conflict { border-color: var(--error); color: var(--error); background: color-mix(in srgb, var(--error) 10%, transparent); }
+    .jjv-badge--empty { border-color: var(--border2); color: var(--muted); background: var(--surface); }
+    .jjv-badge--wc { border-color: var(--success); color: var(--success); background: color-mix(in srgb, var(--success) 10%, transparent); }
 
     .jjv-kv { margin-top: 10px; display: grid; gap: 6px; }
     .jjv-kvRow { display: grid; grid-template-columns: 80px 1fr; gap: 10px; }
@@ -774,8 +796,8 @@
     }
 
     .jjv-oplog-item--selected {
-      border-color: var(--cyan);
-      background: rgba(0, 240, 255, 0.08);
+      border-color: var(--info);
+      background: color-mix(in srgb, var(--info) 8%, var(--surface));
     }
 
     .jjv-oplog-item__main {
@@ -840,7 +862,7 @@
     .jjv-oplog-detail h4 {
       font-size: 14px;
       margin-bottom: 12px;
-      color: var(--cyan);
+      color: var(--info);
     }
 
     .jjv-oplog-detail div {
@@ -906,8 +928,8 @@
     }
 
     .jjv-obslog-item--current {
-      border-color: var(--cyan);
-      background: rgba(0, 240, 255, 0.08);
+      border-color: var(--info);
+      background: color-mix(in srgb, var(--info) 8%, var(--surface));
     }
 
     .jjv-obslog-item__main {
@@ -1031,6 +1053,95 @@
       flex: 1;
       min-height: 0;
       overflow-y: auto;
+    }
+
+    /* Theme Picker - Sidebar version */
+    .jjv-themePicker-sidebar {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--panel);
+    }
+
+    .jjv-themePicker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--surface);
+    }
+
+    .jjv-themePicker-header h3 {
+      margin: 0;
+      font-size: 16px;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .jjv-themePicker-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 8px 0;
+    }
+
+    .jjv-themePicker-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--text);
+      transition: all 0.15s ease;
+      border-left: 3px solid transparent;
+    }
+
+    .jjv-themePicker-item:hover {
+      background: var(--surface-2);
+      border-left-color: var(--info);
+    }
+
+    .jjv-themePicker-item--selected {
+      background: color-mix(in srgb, var(--info) 15%, var(--surface-2));
+      color: var(--info);
+      border-left-color: var(--info);
+      border-left-width: 4px;
+      font-weight: 600;
+    }
+
+    .jjv-themePicker-item--selected .jjv-themePicker-name {
+      color: var(--text);
+    }
+
+    .jjv-themePicker-item--current {
+      font-weight: 600;
+    }
+
+    .jjv-themePicker-item--current .jjv-themePicker-name {
+      color: var(--text);
+    }
+
+    .jjv-themePicker-current {
+      font-size: 10px;
+      color: var(--success);
+      font-style: normal;
+      background: rgba(116, 184, 140, 0.15);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(116, 184, 140, 0.3);
+    }
+
+    .jjv-themePicker-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      flex-shrink: 0;
+      background: var(--surface);
     }
   </style>
 </head>

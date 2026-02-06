@@ -76,4 +76,8 @@ export const api = {
   gitFetch: () => fetchAPI<{ success: true }>("/api/git/fetch", { method: "POST", body: JSON.stringify({}) }),
   gitPush: (payload: { bookmark?: string }) =>
     fetchAPI<{ success: true }>("/api/git/push", { method: "POST", body: JSON.stringify(payload) }),
+
+  // Theme API
+  themes: () => fetchAPI<{ themes: string[] }>("/api/themes"),
+  theme: (name: string) => fetchAPI<Record<string, unknown>>(`/api/theme/${encodeURIComponent(name)}`),
 };

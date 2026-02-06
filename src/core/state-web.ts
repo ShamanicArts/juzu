@@ -1,5 +1,6 @@
 import { createStore } from "solid-js/store";
 import type { ViewportState } from "./types";
+import { getRuntimeConfig } from "./runtime-config";
 
 export interface WebState {
   viewport: ViewportState;
@@ -21,7 +22,7 @@ const initialWebState: WebState = {
   },
   sidebarScroll: 0,
   showHelp: false,
-  navigationLock: false,
+  navigationLock: getRuntimeConfig().web.navigationLockDefault,
   focusSelectedTick: 0,
   expandedFilesNodeId: null,
   opMode: "none",

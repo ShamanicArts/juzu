@@ -5,7 +5,10 @@ declare const Bun: any;
 export {};
 
 import solidDomPlugin from "./src/web/bun-plugin-solid-dom";
-import { watch } from "node:fs/promises";
+import { watch, readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { resolveAndApplyRuntimeConfig } from "./src/core/config-loader";
+import { getRuntimeConfig } from "./src/core/runtime-config";
 import {
   fetchJJLogWithGitBranches,
   fetchOpLog,
@@ -40,7 +43,8 @@ import {
 const args = {
     port: parseInt(process.argv.find(a => a.startsWith('--port='))?.split('=')[1] || process.env.PORT || '3000'),
     open: process.argv.includes('--open') || process.argv.includes('-o'),
-    help: process.argv.includes('--help') || process.argv.includes('-h')
+    help: process.argv.includes('--help') || process.argv.includes('-h'),
+    theme: process.argv.find(a => a.startsWith('--theme='))?.split('=')[1] || process.env.JJVIZ_THEME || null,
 };
 
 // Show help
@@ -53,6 +57,8 @@ Usage: bun run server.ts [options]
 Options:
   --port=<num>   Port to run server on (default: 3000)
   -o, --open     Auto-open browser
+  --theme=<name> Theme name (themes/<name>.toml)
+  --config=<path> Explicit config TOML file
   -h, --help     Show this help message
 
 Examples:
@@ -77,6 +83,13 @@ console.log(`📁 JJ Repository: ${PROC_CWD}`);
 
 // Script directory for serving static assets
 const SCRIPT_DIR = import.meta.dir;
+
+const resolvedConfig = await resolveAndApplyRuntimeConfig({
+  argv: process.argv.slice(2),
+  repoRoot: PROC_CWD,
+  appDir: SCRIPT_DIR,
+});
+console.log(`🎨 Theme: ${resolvedConfig.theme.name}`);
 
 type SseEventPayload = {
   type: string;
@@ -212,6 +225,15 @@ const server = Bun.serve({
     if (url.pathname === "/api/repo") {
       return new Response(JSON.stringify({ cwd: PROC_CWD }), {
         headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (url.pathname === "/api/config") {
+      return new Response(JSON.stringify(getRuntimeConfig()), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
       });
     }
 
@@ -516,6 +538,66 @@ const server = Bun.serve({
       }
     }
 
+    // Theme API endpoints
+    if (url.pathname === "/api/themes") {
+      try {
+        const xdg = process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
+        const themeDirs = [
+          join(SCRIPT_DIR, "themes"),
+          ...(xdg ? [join(xdg, "jj-viz", "themes")] : []),
+          ...(PROC_CWD ? [join(PROC_CWD, ".jj-viz", "themes")] : []),
+        ];
+        
+        const themeNames = new Set<string>();
+        for (const dir of themeDirs) {
+          try {
+            const files = await readdir(dir);
+            for (const file of files) {
+              if (file.endsWith(".toml")) {
+                themeNames.add(file.slice(0, -5));
+              }
+            }
+          } catch {
+            // Directory doesn't exist, skip
+          }
+        }
+        
+        return Response.json({ themes: Array.from(themeNames).sort() });
+      } catch (e: unknown) {
+        console.error(e);
+        return Response.json({ themes: [] });
+      }
+    }
+
+    if (url.pathname.startsWith("/api/theme/")) {
+      const themeName = url.pathname.split("/").pop();
+      if (!themeName) return new Response("Missing theme name", { status: 400 });
+      
+      try {
+        const xdg = process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
+        const themePaths = [
+          ...(PROC_CWD ? [join(PROC_CWD, ".jj-viz", "themes", `${themeName}.toml`)] : []),
+          ...(xdg ? [join(xdg, "jj-viz", "themes", `${themeName}.toml`)] : []),
+          join(SCRIPT_DIR, "themes", `${themeName}.toml`),
+        ];
+        
+        for (const path of themePaths) {
+          try {
+            const content = await readFile(path, "utf8");
+            const parsed = Bun.TOML.parse(content);
+            return Response.json(parsed);
+          } catch {
+            // File doesn't exist or can't be read, try next
+          }
+        }
+        
+        return Response.json({ error: "Theme not found" }, { status: 404 });
+      } catch (e: unknown) {
+        console.error(e);
+        return Response.json({ error: "Error loading theme" }, { status: 500 });
+      }
+    }
+
     // Static assets
     if (url.pathname === "/") {
       return new Response(Bun.file(`${SCRIPT_DIR}/public/index.html`));
@@ -526,7 +608,7 @@ const server = Bun.serve({
       // In development, we need to bundle the TypeScript
       try {
         const build = await Bun.build({
-          entrypoints: [`${SCRIPT_DIR}/src/web/App.tsx`],
+          entrypoints: [`${SCRIPT_DIR}/src/web/main.ts`],
           target: "browser",
           format: "esm",
           plugins: [solidDomPlugin],
