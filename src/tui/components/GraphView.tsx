@@ -3,18 +3,18 @@ import { useRenderer } from "@opentui/solid";
 import { FrameBufferRenderable, RGBA } from "@opentui/core";
 import type { CommitNode, FilesCacheEntry, LayoutMode } from "../../core/types";
 import { getLaneColor } from "../../core/layout";
+import { UI_TOKENS } from "../../core/ui-tokens";
 
-const BG = RGBA.fromHex("#24283b");
+const BG = RGBA.fromHex(UI_TOKENS.slate.bg0);
 const SEL_BG = RGBA.fromInts(60, 70, 100, 180);
-const FG_DIM = RGBA.fromHex("#888888");
-const FG = RGBA.fromHex("#bbbbbb");
-const GREEN = RGBA.fromHex("#00ff9d");
-const RED = RGBA.fromHex("#ff0055");
+const SEL_BG_SOFT = RGBA.fromInts(60, 70, 100, 110);
+const FG_DIM = RGBA.fromHex(UI_TOKENS.slate.textMuted);
+const FG = RGBA.fromHex(UI_TOKENS.slate.text);
+const GREEN = RGBA.fromHex(UI_TOKENS.semantic.fileAdd);
+const RED = RGBA.fromHex(UI_TOKENS.semantic.fileDel);
+const MAINLINE = RGBA.fromHex(UI_TOKENS.slate.text);
 
-const LANE_COLORS = [
-  "#00f0ff", "#ff0055", "#00ff9d", "#ffaa00",
-  "#aa00ff", "#00aaff", "#ffff00", "#ff00aa"
-].map((h) => RGBA.fromHex(h));
+const LANE_COLORS = UI_TOKENS.graph.lanes.map((h) => RGBA.fromHex(h));
 
 interface GraphViewProps {
   nodes: CommitNode[];
@@ -41,6 +41,21 @@ export function GraphView(props: GraphViewProps) {
     return s.length > maxLen - 3 ? s.slice(0, maxLen - 3) + "..." : s;
   };
 
+  const dim = (c: RGBA, alpha = 170) => RGBA.fromInts(c.r, c.g, c.b, alpha);
+
+  const computeMainline = (nodes: CommitNode[]) => {
+    const map = new Map(nodes.map((n) => [n.changeId, n] as const));
+    const ids = new Set<string>();
+    let cursor: CommitNode | undefined = nodes.find((n) => n.isWorkingCopy) || nodes[0];
+    while (cursor && !ids.has(cursor.changeId)) {
+      ids.add(cursor.changeId);
+      const nextParent = cursor.parents[0];
+      if (!nextParent) break;
+      cursor = map.get(nextParent);
+    }
+    return ids;
+  };
+
   const draw = () => {
     if (!canvas) return;
 
@@ -60,6 +75,7 @@ export function GraphView(props: GraphViewProps) {
 
     const start = props.scrollOffset;
     const visible = props.nodes.slice(start, start + visibleRows);
+    const mainlineIds = computeMainline(props.nodes);
     
     // Find selected index in visible range
     const selLocal = visible.findIndex(n => n.changeId === props.selectedId);
@@ -89,8 +105,9 @@ export function GraphView(props: GraphViewProps) {
     const bgAtAbsY = (absY: number) => {
       if (selLocal >= 0 && selLocal < visible.length) {
         const rowTop = rowYCell(selLocal);
-        if (absY === rowTop) return SEL_BG;
-        if (absY === rowTop + 1) return RGBA.fromInts(60, 70, 100, 90);
+        if (absY >= rowTop && absY <= rowTop + 2) {
+          return absY === rowTop ? SEL_BG : SEL_BG_SOFT;
+        }
       }
       return BG;
     };
@@ -104,7 +121,7 @@ export function GraphView(props: GraphViewProps) {
     if (selLocal >= 0 && selLocal < visible.length) {
       const y = rowYCell(selLocal);
       fb.fillRect(0, y, w, 1, SEL_BG);
-      fb.fillRect(0, y + 1, w, 1, RGBA.fromInts(60, 70, 100, 90));
+      fb.fillRect(0, y + 1, w, 2, SEL_BG_SOFT);
     }
 
     const selectedNode = selLocal >= 0 && selLocal < visible.length ? visible[selLocal] : null;
@@ -175,6 +192,7 @@ export function GraphView(props: GraphViewProps) {
       const y0 = rowYCell(i);
       const isSelectedNode = node === selectedNode;
       const color = LANE_COLORS[lane % LANE_COLORS.length];
+      const isMainlineNode = mainlineIds.has(node.changeId);
       const baseColor = isSelectedNode
         ? RGBA.fromInts(Math.min(255, color.r + 80), Math.min(255, color.g + 80), Math.min(255, color.b + 80), 255)
         : color;
@@ -189,17 +207,23 @@ export function GraphView(props: GraphViewProps) {
         const y1 = rowYCell(pi);
         const isParentSelected = parent === selectedNode;
         const isConnectionSelected = isSelectedNode || isParentSelected;
+        const isMainlineEdge = pIdx === 0 && isMainlineNode && mainlineIds.has(parent.changeId);
         const pc = LANE_COLORS[pl % LANE_COLORS.length];
         const parentColor = isParentSelected
           ? RGBA.fromInts(Math.min(255, pc.r + 80), Math.min(255, pc.g + 80), Math.min(255, pc.b + 80), 255)
           : pc;
+        const edgeColor = isConnectionSelected
+          ? parentColor
+          : isMainlineEdge
+            ? MAINLINE
+            : dim(parentColor, 170);
 
         if (lane === pl) {
           const yMin = Math.min(y0, y1);
           const yMax = Math.max(y0, y1);
-          const lineColor = isConnectionSelected ? parentColor : pc;
+          const lineColor = edgeColor;
           for (let y = yMin + 1; y <= yMax - 1; y++) {
-            setGraphCell(x0, y, isConnectionSelected ? "┃" : "|", lineColor);
+            setGraphCell(x0, y, isConnectionSelected || isMainlineEdge ? "┃" : "│", lineColor);
           }
         } else {
           const isMergeCommit = node.parents.length > 1;
@@ -220,35 +244,35 @@ export function GraphView(props: GraphViewProps) {
             const xMin = Math.min(x0, x1);
             const xMax = Math.max(x0, x1);
             for (let x = xMin; x <= xMax; x++) {
-              setGraphCell(x, connectY, isConnectionSelected ? "━" : "─", parentColor);
+              setGraphCell(x, connectY, isConnectionSelected || isMainlineEdge ? "━" : "─", edgeColor);
             }
           }
 
           if (isMergeCommit) {
             // Merge: horizontal at child row; vertical drops down to the parent lane.
             if (x0 < x1) {
-              setGraphCell(x0, connectY, isConnectionSelected ? "┣" : "├", isSelectedNode ? baseColor : color);
-              setGraphCell(x1, connectY, isConnectionSelected ? "┓" : "┐", parentColor);
+              setGraphCell(x0, connectY, isConnectionSelected ? "┣" : "├", isSelectedNode ? baseColor : edgeColor);
+              setGraphCell(x1, connectY, isConnectionSelected ? "┓" : "┐", edgeColor);
             } else {
-              setGraphCell(x0, connectY, isConnectionSelected ? "┫" : "┤", isSelectedNode ? baseColor : color);
-              setGraphCell(x1, connectY, isConnectionSelected ? "┏" : "┌", parentColor);
+              setGraphCell(x0, connectY, isConnectionSelected ? "┫" : "┤", isSelectedNode ? baseColor : edgeColor);
+              setGraphCell(x1, connectY, isConnectionSelected ? "┏" : "┌", edgeColor);
             }
 
             for (let y = connectY + 1; y <= y1 - 1; y++) {
-              setGraphCell(x1, y, isParentSelected ? "┃" : "│", parentColor);
+              setGraphCell(x1, y, isParentSelected || isMainlineEdge ? "┃" : "│", edgeColor);
             }
           } else {
             // Fork: horizontal at parent row; vertical rises up on the child's lane.
             if (x0 < x1) {
-              setGraphCell(x1, connectY, isConnectionSelected ? "┣" : "├", parentColor);
-              setGraphCell(x0, connectY, isConnectionSelected ? "┗" : "└", isSelectedNode ? baseColor : color);
+              setGraphCell(x1, connectY, isConnectionSelected ? "┣" : "├", edgeColor);
+              setGraphCell(x0, connectY, isConnectionSelected ? "┗" : "└", isSelectedNode ? baseColor : edgeColor);
             } else {
-              setGraphCell(x1, connectY, isConnectionSelected ? "┫" : "┤", parentColor);
-              setGraphCell(x0, connectY, isConnectionSelected ? "┛" : "┘", isSelectedNode ? baseColor : color);
+              setGraphCell(x1, connectY, isConnectionSelected ? "┫" : "┤", edgeColor);
+              setGraphCell(x0, connectY, isConnectionSelected ? "┛" : "┘", isSelectedNode ? baseColor : edgeColor);
             }
 
             for (let y = y0 + 1; y <= connectY - 1; y++) {
-              setGraphCell(x0, y, isSelectedNode ? "┃" : "│", isSelectedNode ? baseColor : color);
+              setGraphCell(x0, y, isSelectedNode || isMainlineEdge ? "┃" : "│", isSelectedNode ? baseColor : edgeColor);
             }
           }
         }
@@ -263,13 +287,15 @@ export function GraphView(props: GraphViewProps) {
       const y = rowYCell(i);
       const laneColor = LANE_COLORS[lane % LANE_COLORS.length];
       const isSelected = i === selLocal;
+      const isMainline = mainlineIds.has(node.changeId);
 
       if (textX > x + 2) {
-        for (let cx = x + 1; cx < Math.min(textX - 1, w); cx++) setGraphCell(cx, y, ".", laneColor);
+        const dottedColor = isSelected ? laneColor : isMainline ? MAINLINE : dim(laneColor, 140);
+        for (let cx = x + 1; cx < Math.min(textX - 1, w); cx++) setGraphCell(cx, y, "·", dottedColor);
       }
 
       let ch = isSelected ? "O" : "o";
-      let fg = laneColor;
+      let fg = isMainline ? MAINLINE : laneColor;
       if (props.mergeMode && props.mergeSelectedIds?.has(node.changeId)) {
         ch = "✓";
         fg = GREEN;
@@ -291,6 +317,7 @@ export function GraphView(props: GraphViewProps) {
       const node = visible[i];
       const y = rowYCell(i);
       const isSelected = i === selLocal;
+      const isMainline = mainlineIds.has(node.changeId);
       const lane = node.lane || 0;
       const laneColor = LANE_COLORS[lane % LANE_COLORS.length];
       const changeShort = node.changeId.slice(0, 8);
@@ -303,7 +330,7 @@ export function GraphView(props: GraphViewProps) {
         fb.drawText(changeShort, textX, y, isSelected ? RGBA.fromHex("#ffffff") : FG_DIM);
         fb.drawText(" ", textX + 8, y, FG_DIM);
         fb.drawText(commitShort, textX + 9, y, isSelected ? RGBA.fromHex("#ffffff") : FG_DIM);
-        fb.drawText(desc, textX, y + 1, isSelected ? RGBA.fromHex("#ffffff") : FG);
+        fb.drawText(desc, textX, y + 1, isSelected ? RGBA.fromHex("#ffffff") : isMainline ? FG : FG_DIM);
 
         if (node.bookmarks.length > 0) {
           const bm = ` (${node.bookmarks.join(",")})`;
