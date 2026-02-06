@@ -3,7 +3,7 @@ import { createEffect, createMemo, createSignal, onCleanup, onMount, Show, Switc
 import { actions, navigation, selectedNode, state, layoutResult } from "../core/state";
 import { webActions, webState } from "../core/state-web";
 import { setBackend } from "../core/runtime";
-import { ensureFiles, fetchDiff, opAbandon, opDescribe, opDuplicate, opEdit, opInsertAfter, opInsertBetween, opMerge, opMove, opNew, opRebase, opRedo, opRestoreOperation, opSquash, opSplit, opUndo, refreshLog, refreshOpLog, refreshObslog } from "../core/usecases";
+import { ensureFiles, fetchDiff, opAbandon, opBookmarkDelete, opBookmarkRename, opBookmarkSet, opBookmarkTrack, opBookmarkUntrack, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertAfter, opInsertBetween, opMerge, opMove, opNew, opRebase, opRedo, opRestore, opRestoreOperation, opSquash, opSplit, opUndo, refreshLog, refreshOpLog, refreshObslog } from "../core/usecases";
 import { createWebBackend } from "./backend";
 import { CanvasGraph } from "./components/CanvasGraph";
 import { Sidebar } from "./components/Sidebar";
@@ -17,6 +17,7 @@ type PersistedLayout = {
   layoutMode?: string;
   pinned?: Array<[string, number]>;
   viewport?: { offsetX: number; offsetY: number; scale: number };
+  revset?: string;
 };
 
 type ConfirmRequest = {
@@ -31,6 +32,7 @@ type ConfirmRequest = {
 function App() {
   const [diffText, setDiffText] = createSignal<string>("");
   const [pendingConfirm, setPendingConfirm] = createSignal<ConfirmRequest | null>(null);
+  const [revsetDraft, setRevsetDraft] = createSignal("");
 
   const selected = createMemo(() => selectedNode());
   const multiCount = createMemo(() => state.selectedIds.size);
@@ -73,7 +75,9 @@ function App() {
     if (pollInFlight) return;
     pollInFlight = true;
     try {
-      const response = await fetch("/api/log?limit=500", { cache: "no-store" });
+      const q = new URLSearchParams({ limit: "500" });
+      if (state.revsetQuery && state.revsetQuery.trim()) q.set("revset", state.revsetQuery.trim());
+      const response = await fetch(`/api/log?${q.toString()}`, { cache: "no-store" });
       if (!response.ok) return;
       const nodes = await response.json();
       if (!Array.isArray(nodes)) return;
@@ -161,6 +165,9 @@ function App() {
         if (parsed.viewport) {
           webActions.setViewport(parsed.viewport);
         }
+        if (typeof parsed.revset === "string") {
+          actions.setRevsetQuery(parsed.revset);
+        }
       }
     } catch {
       // ignore
@@ -169,6 +176,7 @@ function App() {
     void (async () => {
       await refresh();
       lastNodesHash = hashNodes(state.nodes);
+      setRevsetDraft(state.revsetQuery || "");
     })();
 
     ensurePollingLoop();
@@ -196,6 +204,7 @@ function App() {
         layoutMode: state.layoutMode,
         pinned: Array.from(state.pinnedNodes.entries()),
         viewport: webState.viewport,
+        revset: state.revsetQuery,
       };
       localStorage.setItem(persistKey, JSON.stringify(payload));
     } catch {
@@ -220,6 +229,14 @@ function App() {
       destructive: true,
       run,
     });
+  };
+
+  const bookmarkAwareMessage = (base: string) => {
+    const n = selected();
+    if (!n) return base;
+    const local = (n.bookmarks || []).filter((b) => !b.includes("@"));
+    if (local.length === 0) return base;
+    return `${base}\nBookmarks on this change: ${local.join(", ")}`;
   };
 
   const isError = createMemo(() => (state.statusMessage || "").toLowerCase().startsWith("error"));
@@ -595,6 +612,30 @@ function App() {
 
         <div class="jjv-controls">
           <Show when={state.viewMode === "log"}>
+            <div class="jjv-row jjv-row--wrap">
+              <input
+                class="jjv-input mono"
+                placeholder="revset (e.g. ::@, @::, bookmarks())"
+                value={revsetDraft()}
+                onInput={(e) => setRevsetDraft(e.currentTarget.value)}
+              />
+              <button class="jjv-btn jjv-btn--ghost" onClick={() => {
+                actions.setRevsetQuery(revsetDraft().trim());
+                void refresh();
+              }}>Apply</button>
+              <button class="jjv-btn jjv-btn--ghost" onClick={() => {
+                setRevsetDraft("");
+                actions.setRevsetQuery("");
+                void refresh();
+              }}>Clear</button>
+            </div>
+            <div class="jjv-row jjv-row--wrap">
+              <button class="jjv-btn jjv-btn--ghost" onClick={() => void opGitFetch()}>Fetch</button>
+              <button class="jjv-btn jjv-btn--ghost" onClick={() => void opGitPush()}>Push</button>
+            </div>
+          </Show>
+
+          <Show when={state.viewMode === "log"}>
             <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
               const node = selected();
               if (!node) return;
@@ -739,7 +780,7 @@ function App() {
                   if (action === "new") void opNew(nodeId);
                   if (action === "edit") void opEdit(nodeId);
                   if (action === "abandon") {
-                    maybeRunDestructive(`Abandon ${nodeId.slice(0, 8)}?`, () => {
+                    maybeRunDestructive(bookmarkAwareMessage(`Abandon ${nodeId.slice(0, 8)}?`), () => {
                       void opAbandon(nodeId);
                     }, "Abandon");
                   }
@@ -800,13 +841,41 @@ function App() {
                 onMergeSelected={() => void handleMergeSelected()}
                 onExecuteOp={() => void handleExecuteOp()}
                 onDescribeSubmit={() => void describeSubmit()}
+                onRestore={(paths) => {
+                  const node = selected();
+                  if (!node) return;
+                  maybeRunDestructive("Restore selected paths?", () => {
+                    void opRestore(node.changeId, paths);
+                  }, "Restore");
+                }}
+                onBookmarkSet={(name) => {
+                  const node = selected();
+                  if (!node) return;
+                  void opBookmarkSet(name, node.changeId);
+                }}
+                onBookmarkDelete={(name) => {
+                  maybeRunDestructive(`Delete bookmark ${name}?`, () => {
+                    void opBookmarkDelete(name);
+                  }, "Delete");
+                }}
+                onBookmarkRename={(oldName, newName) => {
+                  void opBookmarkRename(oldName, newName);
+                }}
+                onBookmarkTrack={(remoteBookmark) => {
+                  void opBookmarkTrack(remoteBookmark);
+                }}
+                onBookmarkUntrack={(remoteBookmark) => {
+                  maybeRunDestructive(`Untrack ${remoteBookmark}?`, () => {
+                    void opBookmarkUntrack(remoteBookmark);
+                  }, "Untrack");
+                }}
                 onRunMutation={(kind) => {
                   const node = selected();
                   if (!node) return;
                   if (kind === "edit") void opEdit(node.changeId);
                   if (kind === "new") void opNew(node.changeId);
                   if (kind === "abandon") {
-                    maybeRunDestructive(`Abandon ${node.changeId.slice(0, 8)}?`, () => {
+                    maybeRunDestructive(bookmarkAwareMessage(`Abandon ${node.changeId.slice(0, 8)}?`), () => {
                       void opAbandon(node.changeId);
                     }, "Abandon");
                   }

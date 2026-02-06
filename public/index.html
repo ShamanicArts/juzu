@@ -162,6 +162,17 @@
       font-size: 12px;
     }
 
+    .jjv-input {
+      border: 1px solid var(--border2);
+      background: rgba(36, 40, 59, 0.55);
+      color: var(--text);
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      min-width: 140px;
+    }
+
     .jjv-main {
       flex: 1;
       min-height: 0;
@@ -281,7 +292,7 @@
     .jjv-files { display: grid; gap: 6px; }
     .jjv-fileRow {
       display: grid;
-      grid-template-columns: 18px 18px 1fr;
+      grid-template-columns: 18px 18px 1fr auto;
       gap: 8px;
       align-items: center;
       padding: 6px 8px;

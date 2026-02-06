@@ -1,4 +1,4 @@
-import { For, Show, createMemo } from "solid-js";
+import { For, Show, createMemo, createSignal } from "solid-js";
 import { actions, selectedNode, state } from "../../core/state";
 import { webActions, webState } from "../../core/state-web";
 
@@ -7,10 +7,19 @@ export function Sidebar(props: {
   onMergeSelected: () => void;
   onExecuteOp: () => void;
   onDescribeSubmit: () => void;
+  onRestore: (paths?: string[]) => void;
+  onBookmarkSet: (name: string) => void;
+  onBookmarkDelete: (name: string) => void;
+  onBookmarkRename: (oldName: string, newName: string) => void;
+  onBookmarkTrack: (remoteBookmark: string) => void;
+  onBookmarkUntrack: (remoteBookmark: string) => void;
   onRunMutation: (kind: "new" | "edit" | "describe" | "rebase" | "abandon" | "duplicate" | "undo" | "redo") => void;
 }) {
   const node = createMemo(() => selectedNode());
   const isMulti = createMemo(() => state.selectedIds.size > 1);
+  const [bookmarkName, setBookmarkName] = createSignal("");
+  const [trackName, setTrackName] = createSignal("");
+  const [renameDrafts, setRenameDrafts] = createSignal<Record<string, string>>({});
 
   const filesState = createMemo(() => {
     const n = node();
@@ -57,6 +66,9 @@ export function Sidebar(props: {
     if (kind === "empty") return "jjv-badge jjv-badge--empty";
     return "jjv-badge jjv-badge--wc";
   };
+
+  const localBookmarks = createMemo(() => (node()?.bookmarks || []).filter((b) => !b.includes("@")));
+  const trackedBookmarks = createMemo(() => (node()?.bookmarks || []).filter((b) => b.includes("@")));
 
   const actionPills = createMemo(() => {
     const n = node();
@@ -262,6 +274,80 @@ export function Sidebar(props: {
               </div>
 
               <div class="jjv-card">
+                <div class="jjv-cardTitle">Bookmarks</div>
+                <div class="jjv-row jjv-row--wrap" style={{ "margin-top": "8px" }}>
+                  <input
+                    class="jjv-input mono"
+                    placeholder="bookmark name"
+                    value={bookmarkName()}
+                    onInput={(e) => setBookmarkName(e.currentTarget.value)}
+                  />
+                  <button class="jjv-btn" onClick={() => {
+                    const name = bookmarkName().trim();
+                    if (!name) return;
+                    props.onBookmarkSet(name);
+                    setBookmarkName("");
+                  }}>Set @selected</button>
+                </div>
+                <div class="jjv-muted" style={{ "margin-top": "8px" }}>Local</div>
+                <Show when={localBookmarks().length > 0} fallback={<div class="jjv-muted">(none)</div>}>
+                  <div class="jjv-files">
+                    <For each={localBookmarks()}>
+                      {(name) => (
+                        <div class="jjv-row jjv-row--wrap" style={{ "justify-content": "space-between" }}>
+                          <span class={`${badge("bookmark")} mono`}>{name}</span>
+                          <div class="jjv-row jjv-row--wrap">
+                            <input
+                              class="jjv-input mono"
+                              style={{ width: "110px" }}
+                              placeholder="rename"
+                              value={renameDrafts()[name] || ""}
+                              onInput={(e) => setRenameDrafts({ ...renameDrafts(), [name]: e.currentTarget.value })}
+                            />
+                            <button class="jjv-btn jjv-btn--ghost" onClick={() => {
+                              const next = (renameDrafts()[name] || "").trim();
+                              if (!next) return;
+                              props.onBookmarkRename(name, next);
+                              setRenameDrafts({ ...renameDrafts(), [name]: "" });
+                            }}>Rename</button>
+                            <button class="jjv-btn jjv-btn--ghost" onClick={() => props.onBookmarkDelete(name)}>Delete</button>
+                          </div>
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+
+                <div class="jjv-muted" style={{ "margin-top": "8px" }}>Tracked remotes</div>
+                <Show when={trackedBookmarks().length > 0} fallback={<div class="jjv-muted">(none)</div>}>
+                  <div class="jjv-files">
+                    <For each={trackedBookmarks()}>
+                      {(name) => (
+                        <div class="jjv-row jjv-row--wrap" style={{ "justify-content": "space-between" }}>
+                          <span class={`${badge("branch")} mono`}>{name}</span>
+                          <button class="jjv-btn jjv-btn--ghost" onClick={() => props.onBookmarkUntrack(name)}>Untrack</button>
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+                <div class="jjv-row jjv-row--wrap" style={{ "margin-top": "8px" }}>
+                  <input
+                    class="jjv-input mono"
+                    placeholder="bookmark@remote"
+                    value={trackName()}
+                    onInput={(e) => setTrackName(e.currentTarget.value)}
+                  />
+                  <button class="jjv-btn" onClick={() => {
+                    const remote = trackName().trim();
+                    if (!remote) return;
+                    props.onBookmarkTrack(remote);
+                    setTrackName("");
+                  }}>Track</button>
+                </div>
+              </div>
+
+              <div class="jjv-card">
                 <div class="jjv-cardTitle">Quick Actions</div>
                 <Show when={!state.describeMode}>
                   <div class="jjv-row jjv-row--wrap" style={{ "margin-top": "10px" }}>
@@ -310,6 +396,9 @@ export function Sidebar(props: {
 
               <div class="jjv-card">
                 <div class="jjv-cardTitle">Files</div>
+                <div class="jjv-row" style={{ "margin-bottom": "8px" }}>
+                  <button class="jjv-btn jjv-btn--ghost" onClick={() => props.onRestore()}>Restore all in selected</button>
+                </div>
                 <Show when={filesState().files.length > 0} fallback={<div class="jjv-muted">(no changes)</div>}>
                   <div class="jjv-files">
                     <For each={filesState().files}>
@@ -324,6 +413,7 @@ export function Sidebar(props: {
                           />
                           <span class={`jjv-fileType jjv-fileType--${f.type} mono`}>{f.type}</span>
                           <span class="jjv-filePath mono">{f.path}</span>
+                          <button class="jjv-btn jjv-btn--ghost" type="button" onClick={() => props.onRestore([f.path])}>Restore</button>
                         </label>
                       )}
                     </For>
