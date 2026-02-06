@@ -55,13 +55,19 @@ Implementation update (2026-02-06):
 - Added parser and enrichment tests in `src/core/__tests__/jj-api.test.ts`.
 
 ### A.3 Store/Usecase Tests
-- `src/core/state.ts`
-  - derived `layoutResult` recomputation behavior
-  - selection navigation behavior
-  - operation mode state transitions
-- `src/core/usecases.ts`
-  - mutation wrappers trigger refresh and status updates
-  - error paths set failure state correctly
+- [x] `src/core/state.ts`
+  - [x] source-state updates for layout mode and node selection
+  - [x] selection navigation behavior (oplog/obslog)
+  - [x] operation mode state transitions
+- [x] `src/core/usecases.ts`
+  - [x] mutation wrappers trigger refresh and status updates
+  - [x] error paths set failure state correctly
+  - [x] file cache behavior in `ensureFiles`
+
+Implementation update (2026-02-06):
+- Added `src/core/__tests__/state.test.ts` covering selection/navigation and op-mode transitions.
+- Added `src/core/__tests__/usecases.test.ts` with backend-mocked mutation success/failure assertions.
+- Verified refresh/error loading state behavior and file-cache short-circuiting.
 
 ### A.4 Server API Integration Tests (Minimal but real)
 - Start server in test mode against temp repo.
