@@ -209,6 +209,12 @@ const server = Bun.serve({
       }
     }
 
+    if (url.pathname === "/api/repo") {
+      return new Response(JSON.stringify({ cwd: PROC_CWD }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     if (url.pathname === "/api/events") {
       return createSseResponse(req);
     }

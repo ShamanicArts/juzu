@@ -173,6 +173,16 @@ function App() {
     }
 
     void (async () => {
+      // Fetch repo info (cwd)
+      try {
+        const resp = await fetch("/api/repo");
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.cwd) actions.setCwd(data.cwd);
+        }
+      } catch {
+        // ignore
+      }
       await refresh();
       lastNodesHash = hashNodes(state.nodes);
       setRevsetDraft(state.revsetQuery || "");
@@ -276,8 +286,6 @@ function App() {
     const more = wc.bookmarks.length > 1 ? `+${wc.bookmarks.length - 1}` : "";
     return `${first}${more}`;
   });
-
-  const nodeCount = createMemo(() => state.nodes.length);
   const footerPrimaryHint = createMemo(() => {
     if (state.viewMode === "oplog") return "j/k move · PgUp/PgDn jump · Enter restore · g/Esc back";
     if (state.viewMode === "obslog") return "j/k move · PgUp/PgDn jump · r refresh · g/Esc back";
@@ -656,7 +664,6 @@ function App() {
       <header class="jjv-header">
         <div class="jjv-headerMain">
           <div class="jjv-brand">
-            <span class="jjv-title">jj-viz</span>
             <span
               class="jjv-modeBadge"
               style={{ "background-color": modeBadgeColor() }}
@@ -979,7 +986,9 @@ function App() {
 
       <footer class="jjv-footer">
         <div class="jjv-footerLeft">
-          <span class="jjv-footerSegment">{state.cwd || "unknown"}</span>
+          <Show when={state.cwd}>
+            <span class="jjv-footerSegment jjv-footerPath">{state.cwd}</span>
+          </Show>
           <Show when={currentBookmark()}>
             <span class="jjv-footerBookmark">{currentBookmark()}</span>
           </Show>
@@ -990,14 +999,10 @@ function App() {
 
         <div class="jjv-footerCenter">
           <span class="jjv-footerHints">{footerPrimaryHint()}</span>
-          <Show when={footerSecondaryHint().length > 0}>
-            <span class="jjv-footerHints jjv-footerHints--advanced">{footerSecondaryHint()}</span>
-          </Show>
         </div>
 
         <div class="jjv-footerRight">
           <span class="jjv-footerMeta">{state.layoutMode}</span>
-          <span class="jjv-footerSegment">{nodeCount()} nodes</span>
           <span class={`jjv-footerStatus ${isError() ? "jjv-footerStatus--error" : ""}`}>
             {state.statusMessage || "ready"}
           </span>
