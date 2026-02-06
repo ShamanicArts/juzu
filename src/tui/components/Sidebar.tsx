@@ -91,7 +91,7 @@ export function Sidebar(props: SidebarProps) {
     if (props.viewMode === "oplog" && props.opLogSelected) {
       const lines: Array<{ text: string; color: RGBA }> = [];
       const entry = props.opLogSelected;
-      lines.push({ text: "OPERATION LOG", color: YELLOW });
+      lines.push({ text: "OP LOG", color: YELLOW });
       lines.push({ text: "", color: FG_DIM });
       lines.push({ text: `ID: ${entry.id}`, color: CYAN });
       lines.push({ text: `Time: ${entry.time.slice(0, 19)}`, color: FG });
@@ -126,7 +126,7 @@ export function Sidebar(props: SidebarProps) {
         }
       }
       lines.push({ text: "", color: FG_DIM });
-      lines.push({ text: "R: restore to this op", color: FG });
+      lines.push({ text: "r/Enter: restore selected op", color: FG });
       lines.push({ text: "g: back to log", color: FG });
       return lines;
     }
@@ -135,7 +135,7 @@ export function Sidebar(props: SidebarProps) {
     if (props.viewMode === "obslog" && props.obslogChangeId) {
       const lines: Array<{ text: string; color: RGBA }> = [];
       const entry = props.obslogSelected || null;
-      lines.push({ text: "OBSERVATION LOG", color: YELLOW });
+      lines.push({ text: "OBS LOG", color: YELLOW });
       lines.push({ text: "", color: FG_DIM });
       lines.push({ text: `Change: ${props.obslogChangeId.slice(0, 12)}`, color: CYAN });
 

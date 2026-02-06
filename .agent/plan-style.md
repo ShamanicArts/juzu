@@ -9,8 +9,8 @@ Scope: Visual/interaction styling only (no major behavior changes)
 - S2: complete (top bar kept structurally stable with right-rail view switching, collapsible sidebar sections, bottom status bar with contextual hints, 720p responsiveness fixes)
 - S3: complete (redo delivered: no aggressive visual shifts; graph palette/texture exposed as tweakable tokens)
 - S4: complete (adaptive modal status rows, concise hints, and sidebar detail summarization)
-- S5: complete (mainline vs branch rendering clarity and selection context cleanup)
-- S6: in progress (cross-surface copy and terminology consistency pass)
+- S5: complete (verified: selector highlight now applies only to selected commit text; removed confusing adjacent-row text highlight while preserving branch color readability)
+- S6: complete (copy/terminology parity and readability sanity pass completed; follow-up web↔TUI visual alignment go-over recommended)
 
 ## Goals
 

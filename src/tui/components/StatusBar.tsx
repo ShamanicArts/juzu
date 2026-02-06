@@ -55,7 +55,7 @@ const KEYBINDS: Record<string, Keybind[]> = {
   ],
   merge: [
     { key: "Space", action: "SELECT" },
-    { key: "m", action: "CONFIRM" },
+    { key: "Enter", action: "CONFIRM" },
     { key: "Esc", action: "CANCEL" },
   ],
   describe: [
@@ -157,7 +157,7 @@ export function StatusBar(props: { width: number; height: number }) {
       case "oplog":
         return "r restores selected operation";
       case "obslog":
-        return "inspection history view";
+        return "change observation history";
       default:
         return "";
     }
