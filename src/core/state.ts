@@ -1,3 +1,4 @@
+import { createMemo } from "solid-js";
 import { createStore } from "solid-js/store";
 import type { CommitNode, LayoutMode, FilesCacheEntry, ViewportState, LayoutResult } from "./types";
 import type { OpLogEntry, ObslogEntry } from "./jj-api";
@@ -27,7 +28,6 @@ export interface AppState {
   
   // Layout
   layoutMode: LayoutMode;
-  layoutResult: LayoutResult;
   pinnedNodes: Map<string, number>; // changeId -> lane
   
   // Selection
@@ -82,12 +82,6 @@ const initialState: AppState = {
   obslogChangeId: null,
   obslogSelectedIndex: 0,
   layoutMode: "chronological",
-  layoutResult: {
-    nodes: [],
-    maxLane: 0,
-    textColumnX: 0,
-    totalHeight: 0,
-  },
   pinnedNodes: new Map(),
   selectedId: null,
   selectedIds: new Set(),
@@ -120,15 +114,32 @@ const initialState: AppState = {
 // Create the store
 export const [state, setState] = createStore<AppState>(initialState);
 
+export const layoutResult = createMemo<LayoutResult>(() => {
+  const base = calculateLayout(state.layoutMode, state.nodes);
+  if (state.pinnedNodes.size === 0) return base;
+
+  const withPins = base.nodes.map((node) => {
+    const pinnedLane = state.pinnedNodes.get(node.changeId);
+    if (pinnedLane === undefined) return node;
+    return {
+      ...node,
+      lane: pinnedLane,
+      isPinned: true,
+    };
+  });
+
+  return calculateLayout(state.layoutMode, withPins);
+});
+
 // Computed getters
 export const selectedNode = () => {
   if (!state.selectedId) return null;
-  return state.layoutResult.nodes.find((n) => n.changeId === state.selectedId) || null;
+  return layoutResult().nodes.find((n) => n.changeId === state.selectedId) || null;
 };
 
 export const selectedIndex = () => {
   if (!state.selectedId) return 0;
-  return state.layoutResult.nodes.findIndex((n) => n.changeId === state.selectedId);
+  return layoutResult().nodes.findIndex((n) => n.changeId === state.selectedId);
 };
 
 // Actions
@@ -137,11 +148,7 @@ export const actions = {
   
   setNodes: (nodes: CommitNode[]) => {
     setState((prev) => ({ ...prev, nodes }));
-    
-    // Calculate layout with new nodes
-    const result = calculateLayout(state.layoutMode, nodes);
-    setState((prev) => ({ ...prev, layoutResult: result }));
-    
+
     // Auto-select working copy if nothing selected
     if (!state.selectedId && nodes.length > 0) {
       const wc = nodes.find((n) => n.isWorkingCopy);
@@ -149,25 +156,8 @@ export const actions = {
     }
   },
   
-  recalculateLayout: () => {
-    const result = calculateLayout(state.layoutMode, state.nodes);
-    
-    // Apply pinned nodes
-    result.nodes.forEach((node) => {
-      if (state.pinnedNodes.has(node.changeId)) {
-        node.lane = state.pinnedNodes.get(node.changeId)!;
-        node.isPinned = true;
-      }
-    });
-    
-    // Recalculate with pinned positions
-    const finalResult = calculateLayout(state.layoutMode, result.nodes);
-    setState((prev) => ({ ...prev, layoutResult: finalResult }));
-  },
-  
   setLayoutMode: (mode: LayoutMode) => {
     setState("layoutMode", mode);
-    actions.recalculateLayout();
   },
   
   selectNode: (changeId: string | null) => {
@@ -233,7 +223,6 @@ export const actions = {
       "extraHeight",
       Math.max(0, extraHeight)
     );
-    actions.recalculateLayout();
   },
   
   setScrollOffset: (offset: number) => {
@@ -308,19 +297,16 @@ export const actions = {
     const newPinned = new Map(state.pinnedNodes);
     newPinned.set(changeId, lane);
     setState("pinnedNodes", newPinned);
-    actions.recalculateLayout();
   },
   
   unpinNode: (changeId: string) => {
     const newPinned = new Map(state.pinnedNodes);
     newPinned.delete(changeId);
     setState("pinnedNodes", newPinned);
-    actions.recalculateLayout();
   },
 
   setPinnedNodes: (pinned: Map<string, number>) => {
     setState("pinnedNodes", new Map(pinned));
-    actions.recalculateLayout();
   },
   
   // Merge mode actions
@@ -410,7 +396,7 @@ export const navigation = {
       if (currentIdx > 0) actions.setObslogSelectedIndex(currentIdx - 1);
       return;
     }
-    const nodes = state.layoutResult.nodes;
+    const nodes = layoutResult().nodes;
     const currentIdx = selectedIndex();
     if (currentIdx > 0) {
       actions.selectNode(nodes[currentIdx - 1]?.changeId || null);
@@ -432,7 +418,7 @@ export const navigation = {
       if (currentIdx < maxIdx) actions.setObslogSelectedIndex(currentIdx + 1);
       return;
     }
-    const nodes = state.layoutResult.nodes;
+    const nodes = layoutResult().nodes;
     const currentIdx = selectedIndex();
     if (currentIdx < nodes.length - 1) {
       actions.selectNode(nodes[currentIdx + 1]?.changeId || null);
@@ -446,7 +432,7 @@ export const navigation = {
     
     // Find first parent
     const parentId = node.parents[0];
-    const parent = state.layoutResult.nodes.find((n) => n.changeId === parentId);
+    const parent = layoutResult().nodes.find((n) => n.changeId === parentId);
     if (parent) {
       actions.selectNode(parent.changeId);
     }
@@ -458,7 +444,7 @@ export const navigation = {
     if (!node) return;
     
     // Find first child (node that has current as parent)
-    const child = state.layoutResult.nodes.find((n) => n.parents.includes(node.changeId));
+    const child = layoutResult().nodes.find((n) => n.parents.includes(node.changeId));
     if (child) {
       actions.selectNode(child.changeId);
     }

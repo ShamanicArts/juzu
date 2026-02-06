@@ -1,5 +1,5 @@
 import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
-import { actions, state } from "../../core/state";
+import { actions, state, layoutResult } from "../../core/state";
 import type { CommitNode } from "../../core/types";
 import { DEFAULT_GRAPH_CONFIG } from "../../core/types";
 import { findConnectionAt, findNodeAt, getLaneColor } from "../../core/layout";
@@ -45,14 +45,14 @@ export function CanvasGraph(props: {
   };
 
   const detectDropTarget = (wx: number, wy: number, sourceId: string): DropTarget | null => {
-    const nodes = state.layoutResult.nodes;
+    const nodes = layoutResult().nodes;
 
     const targetNode = findNodeAt(wx, wy, nodes, cfg);
     if (targetNode && targetNode.changeId !== sourceId) {
       return { type: "commit", node: targetNode };
     }
 
-    const maxLane = state.layoutResult.maxLane;
+    const maxLane = layoutResult().maxLane;
     const laneFloat = maxLane - ((wx - cfg.canvasPadding) / cfg.laneWidth);
     const lane = Math.max(0, Math.round(laneFloat));
     return { type: "lane", lane };
@@ -85,7 +85,7 @@ export function CanvasGraph(props: {
     ctx.fillStyle = "rgba(15, 13, 11, 0.18)";
     ctx.fillRect(0, 0, canvasRef.width, canvasRef.height);
 
-    const nodes = state.layoutResult.nodes;
+    const nodes = layoutResult().nodes;
     if (nodes.length === 0) {
       ctx.fillStyle = "#888";
       ctx.font = '14px "JetBrains Mono", monospace';
@@ -102,7 +102,7 @@ export function CanvasGraph(props: {
     // Lane guides during drag
     const draggingId = dragNodeId();
     if (draggingId) {
-      const maxLane = state.layoutResult.maxLane;
+      const maxLane = layoutResult().maxLane;
       const dt = dropTarget();
       ctx.save();
       ctx.globalAlpha = 0.25;
@@ -211,11 +211,11 @@ export function CanvasGraph(props: {
       ctx.stroke();
 
       // Connector to text column
-      if (state.layoutResult.textColumnX) {
+      if (layoutResult().textColumnX) {
         ctx.beginPath();
         ctx.setLineDash([2, 4]);
         ctx.moveTo(node.x + cfg.nodeRadius + 2, node.y);
-        ctx.lineTo(state.layoutResult.textColumnX - 10, node.y);
+        ctx.lineTo(layoutResult().textColumnX - 10, node.y);
         ctx.strokeStyle = laneColor;
         ctx.lineWidth = 1;
         ctx.stroke();
@@ -225,7 +225,7 @@ export function CanvasGraph(props: {
       // Pills (bookmarks/branches)
       const allRefs = [...(node.bookmarks || []), ...(node.gitBranches || [])];
       if (allRefs.length > 0) {
-        let pillX = state.layoutResult.textColumnX;
+        let pillX = layoutResult().textColumnX;
         // Keep pills clearly above the header line (avoid font ascender overlap).
         const pillY = node.y - 36;
         (node.bookmarks || []).forEach((b) => {
@@ -241,14 +241,14 @@ export function CanvasGraph(props: {
       ctx.font = 'bold 12px "JetBrains Mono", monospace';
       if (node.isWorkingCopy) {
         ctx.fillStyle = "#00ff9d";
-        ctx.fillText("@", state.layoutResult.textColumnX - 15, node.y + 4);
+        ctx.fillText("@", layoutResult().textColumnX - 15, node.y + 4);
         ctx.fillStyle = isSelected ? "#fff" : "#00ff9d";
       }
-      ctx.fillText(node.changeId.substring(0, 8), state.layoutResult.textColumnX, node.y + 4);
+      ctx.fillText(node.changeId.substring(0, 8), layoutResult().textColumnX, node.y + 4);
       ctx.fillStyle = "#bbb";
       ctx.font = '12px Inter, sans-serif';
       const desc = (node.descriptionTitle || "").slice(0, 60);
-      ctx.fillText(desc, state.layoutResult.textColumnX + 80, node.y + 4);
+      ctx.fillText(desc, layoutResult().textColumnX + 80, node.y + 4);
 
       // Inline controls (selected or hovered node; Shift shows alternate actions)
       // Position BELOW the description text (user requested: underneath, not next to)
@@ -256,7 +256,7 @@ export function CanvasGraph(props: {
       if (isSelected || isHovered) {
         const showAlt = shiftActive();
         // Position buttons below the main text row
-        const baseX = state.layoutResult.textColumnX;
+        const baseX = layoutResult().textColumnX;
         const baseY = node.y + 12; // Below the text which is at node.y + 4
         const items: Array<{ label: string; action: InlineBtn["action"] }> = showAlt
           ? [
@@ -304,7 +304,7 @@ export function CanvasGraph(props: {
           // Start below inline controls (baseY + 18 + spacing) or just below text row
           const hasControls = isSelected || isHovered;
           let y = hasControls ? node.y + 50 : node.y + 30;
-          const x = state.layoutResult.textColumnX + 20;
+          const x = layoutResult().textColumnX + 20;
           ctx.font = '11px "JetBrains Mono", monospace';
           cached.files.forEach((f) => {
             const typeColor = f.type === "A" ? "#00ff9d" : f.type === "D" ? "#ff0055" : "#00aaff";
@@ -377,7 +377,7 @@ export function CanvasGraph(props: {
         return;
       }
     }
-    const nodes = state.layoutResult.nodes;
+    const nodes = layoutResult().nodes;
 
     const hitNode = findNodeAt(wx, wy, nodes, cfg);
     if (hitNode) {
@@ -440,7 +440,7 @@ export function CanvasGraph(props: {
     }
 
     // Hover connection
-    const conn = findConnectionAt(wx, wy, state.layoutResult.nodes, cfg);
+    const conn = findConnectionAt(wx, wy, layoutResult().nodes, cfg);
     if (conn) {
       const startX = conn.to.x!;
       const startY = conn.to.y! + cfg.nodeRadius + 4;
@@ -461,7 +461,7 @@ export function CanvasGraph(props: {
     // Hover node detection for inline controls - use Y-threshold for entire row
     // This allows hovering over description, bookmarks, or anywhere on the row
     const HOVER_THRESHOLD_Y = Math.min(cfg.ySpacing / 2, 38);
-    const foundNode = state.layoutResult.nodes.find((n) => 
+    const foundNode = layoutResult().nodes.find((n) => 
       n.y !== undefined && Math.abs(n.y - wy) < HOVER_THRESHOLD_Y
     );
     if (foundNode) {
@@ -522,7 +522,7 @@ export function CanvasGraph(props: {
   const handleContextMenu = (e: MouseEvent) => {
     e.preventDefault();
     const { x: wx, y: wy } = worldPoint(e.clientX, e.clientY);
-    const hitNode = findNodeAt(wx, wy, state.layoutResult.nodes, cfg);
+    const hitNode = findNodeAt(wx, wy, layoutResult().nodes, cfg);
     if (!hitNode) return;
     if (state.pinnedNodes.has(hitNode.changeId)) {
       actions.unpinNode(hitNode.changeId);
@@ -576,7 +576,7 @@ export function CanvasGraph(props: {
 
   createEffect(() => {
     // Dependencies
-    state.layoutResult.nodes;
+    layoutResult().nodes;
     state.selectedIds;
     state.viewport;
     state.layoutMode;

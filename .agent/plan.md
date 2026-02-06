@@ -714,11 +714,16 @@ const layoutResult = createMemo(() =>
 - Components using `state.layoutResult` - Use derived memo instead
 
 **Tasks:**
-1. [ ] Identify all places that read `state.layoutResult`
-2. [ ] Create `createMemo` for layout calculation
-3. [ ] Remove `layoutResult` from store state
-4. [ ] Update all consumers to use memo
-5. [ ] Remove `recalculateLayout()` calls scattered in actions
+1. [x] Identify all places that read `state.layoutResult`
+2. [x] Create `createMemo` for layout calculation
+3. [x] Remove `layoutResult` from store state
+4. [x] Update all consumers to use memo
+5. [x] Remove `recalculateLayout()` calls scattered in actions
+
+**Implementation Update (2026-02-05):**
+- Added derived `layoutResult` memo in `src/core/state.ts` based on `nodes`, `layoutMode`, and `pinnedNodes`.
+- Removed persisted `layoutResult` from `AppState` and removed imperative recalculation calls.
+- Updated TUI/web consumers to use `layoutResult()` instead of `state.layoutResult`.
 
 **Testing:**
 - [ ] Start TUI and web  -- you already know this, but this is a user action 
@@ -787,7 +792,7 @@ type AppState = TUIState | WebState;
 | 4.5 | Audit bunfig.toml | MEDIUM | 2 hrs | ✅ |
 | 5.1 | Confirmation Dialogs | MEDIUM | 1-2 days | ✅ |
 | 5.2 | Single-View Sidebar | MEDIUM | 1-2 days | ✅ |
-| 6.1 | Derived State | LOW | 2-3 days | ⬜ |
+| 6.1 | Derived State | LOW | 2-3 days | ✅ |
 | 6.2 | Split State | LOW | 2-3 days | ⬜ |
 
 **Legend:**

@@ -1,6 +1,6 @@
 import { render } from "solid-js/web";
 import { createEffect, createMemo, createSignal, onCleanup, onMount, Show, Switch, Match } from "solid-js";
-import { actions, navigation, selectedNode, state } from "../core/state";
+import { actions, navigation, selectedNode, state, layoutResult } from "../core/state";
 import { setBackend } from "../core/runtime";
 import { ensureFiles, fetchDiff, opAbandon, opDescribe, opDuplicate, opEdit, opInsertAfter, opInsertBetween, opMerge, opMove, opNew, opRebase, opRedo, opRestoreOperation, opSquash, opSplit, opUndo, refreshLog, refreshOpLog, refreshObslog, toggleInlineFilesForSelected } from "../core/usecases";
 import { createWebBackend } from "./backend";
@@ -613,7 +613,7 @@ function App() {
                     return;
                   }
                   if (action === "describe") {
-                    const node = state.layoutResult.nodes.find(n => n.changeId === nodeId);
+                    const node = layoutResult().nodes.find(n => n.changeId === nodeId);
                     if (!node) return;
                     actions.startDescribe(node.descriptionFull || node.descriptionTitle || "");
                     // Select the node so describe operates on it

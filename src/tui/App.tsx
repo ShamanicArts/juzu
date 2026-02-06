@@ -3,7 +3,7 @@ import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import type { KeyEvent } from "@opentui/core";
 import { RGBA } from "@opentui/core";
 import { watch } from "node:fs/promises";
-import { state, actions, navigation, selectedNode } from "../core/state";
+import { state, actions, navigation, selectedNode, layoutResult } from "../core/state";
 import { setBackend } from "../core/runtime";
 import { initCwdFrom, opAbandon, opDescribe, opDuplicate, opEdit, opInsertBetween, opMerge, opNew, opRebase, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
 import { createTuiBackend } from "./backend";
@@ -94,7 +94,7 @@ function App() {
   const refresh = async () => {
     try {
       await refreshLog(500);
-      void prefetchFiles(state.layoutResult.nodes.map((n) => n.changeId));
+      void prefetchFiles(layoutResult().nodes.map((n) => n.changeId));
     } catch (e) {
       console.error("Refresh error:", e);
     }
@@ -525,7 +525,7 @@ function App() {
   const handleInsert = async () => {
     const node = selectedNode();
     if (!node) return;
-    const child = state.layoutResult.nodes.find((n) => n.parents.includes(node.changeId));
+    const child = layoutResult().nodes.find((n) => n.parents.includes(node.changeId));
     if (!child) {
       actions.setStatusMessage("Insert: no child found to rebase");
       return;
@@ -621,7 +621,7 @@ function App() {
         <box width={graphW()} height={mainHeight()}>
         {state.viewMode === "log" && (
             <GraphView
-              nodes={state.layoutResult.nodes}
+              nodes={layoutResult().nodes}
               selectedId={state.selectedId}
               scrollOffset={state.scrollOffset}
               filesCache={state.filesCache}
