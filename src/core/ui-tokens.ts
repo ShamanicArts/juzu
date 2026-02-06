@@ -26,6 +26,7 @@ export const DEFAULT_UI_TOKENS = {
     nodeConflict: "#ff0055",
     text: "#888",
     textDesc: "#bbb",
+    textMuted: "#6a7685",
     nodeBorder: "#666",
     lanes: [
       "#00f0ff",
@@ -38,6 +39,12 @@ export const DEFAULT_UI_TOKENS = {
       "#ff00aa",
     ],
     canvasTint: "rgba(17, 19, 24, 0.22)",
+    commitId: "#5a6a7a",
+    bookmark: "#c9a86a",
+    bookmarkSelected: "#e8c884",
+    fileAdd: "#74b88c",
+    fileMod: "#c9a86a",
+    fileDel: "#ce6f7c",
   },
   spacing: {
     xs: 4,

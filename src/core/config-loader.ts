@@ -49,6 +49,12 @@ function clampConfig(config: JjVizRuntimeConfig): JjVizRuntimeConfig {
   out.tui.sidebarBreakpointWidth = Math.max(60, Math.min(220, out.tui.sidebarBreakpointWidth || DEFAULT_RUNTIME_CONFIG.tui.sidebarBreakpointWidth));
   out.tui.sidebarMinHeight = Math.max(8, Math.min(80, out.tui.sidebarMinHeight || DEFAULT_RUNTIME_CONFIG.tui.sidebarMinHeight));
   out.tui.stackedSidebarRatio = Math.max(0.2, Math.min(0.8, out.tui.stackedSidebarRatio || DEFAULT_RUNTIME_CONFIG.tui.stackedSidebarRatio));
+  out.tui.prefetchDiffInLog = typeof out.tui.prefetchDiffInLog === "boolean"
+    ? out.tui.prefetchDiffInLog
+    : DEFAULT_RUNTIME_CONFIG.tui.prefetchDiffInLog;
+  out.tui.clearDiffCacheWhenNotInDiff = typeof out.tui.clearDiffCacheWhenNotInDiff === "boolean"
+    ? out.tui.clearDiffCacheWhenNotInDiff
+    : DEFAULT_RUNTIME_CONFIG.tui.clearDiffCacheWhenNotInDiff;
   out.graph.nodeRadius = Math.max(2, Math.min(20, out.graph.nodeRadius || DEFAULT_RUNTIME_CONFIG.graph.nodeRadius));
   out.graph.laneWidth = Math.max(8, Math.min(80, out.graph.laneWidth || DEFAULT_RUNTIME_CONFIG.graph.laneWidth));
   out.graph.ySpacing = Math.max(24, Math.min(220, out.graph.ySpacing || DEFAULT_RUNTIME_CONFIG.graph.ySpacing));

@@ -8,6 +8,31 @@ const BG = () => RGBA.fromHex(UI_TOKENS.slate.bg0);
 const FG = () => RGBA.fromHex(UI_TOKENS.slate.text);
 const GREEN = () => RGBA.fromHex(UI_TOKENS.semantic.success);
 const RED = () => RGBA.fromHex(UI_TOKENS.semantic.error);
+const YELLOW = () => RGBA.fromHex(UI_TOKENS.semantic.warn);
+const CYAN = () => RGBA.fromHex(UI_TOKENS.semantic.info);
+
+// Graph text colors with theme fallbacks - hex strings
+const graphColorsHex = {
+  commitId: () => (UI_TOKENS as any).graph?.commitId ?? UI_TOKENS.slate.textMuted,
+  bookmark: () => (UI_TOKENS as any).graph?.bookmark ?? UI_TOKENS.semantic.warn,
+  bookmarkSelected: () => (UI_TOKENS as any).graph?.bookmarkSelected ?? "#e8c884",
+  fileAdd: () => (UI_TOKENS as any).graph?.fileAdd ?? UI_TOKENS.semantic.success,
+  fileMod: () => (UI_TOKENS as any).graph?.fileMod ?? UI_TOKENS.semantic.warn,
+  fileDel: () => (UI_TOKENS as any).graph?.fileDel ?? UI_TOKENS.semantic.error,
+  textMuted: () => (UI_TOKENS as any).graph?.textMuted ?? UI_TOKENS.slate.textMuted,
+  fg: () => UI_TOKENS.slate.text,
+};
+
+// Helper to brighten a hex color for selected items
+const brighten = (hexColor: string, add: number = 60) => {
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+  const newR = Math.min(255, r + add).toString(16).padStart(2, "0");
+  const newG = Math.min(255, g + add).toString(16).padStart(2, "0");
+  const newB = Math.min(255, b + add).toString(16).padStart(2, "0");
+  return RGBA.fromHex(`#${newR}${newG}${newB}`);
+};
 
 // Toggle: false = highlight lines (white), true = highlight node circle (white)
 const HIGHLIGHT_NODE_CIRCLE = true;
@@ -131,7 +156,7 @@ export function GraphView(props: GraphViewProps) {
       width: props.width,
       height: props.height,
       respectAlpha: true,
-      live: true,
+      live: false,
       getLines: () => graphLines,
     });
 
@@ -437,33 +462,72 @@ export function GraphView(props: GraphViewProps) {
           // Selected non-WC: ...>
           fb.drawText(">", Math.max(0, textX - 2), y, WHITE);
         }
+        
+        // Change ID - line 1 (top line gets full white when selected)
         fb.drawText(changeShort, textX, y, isSelected ? WHITE : laneColor);
         fb.drawText(" ", textX + 8, y, laneColor);
-        fb.drawText(commitShort, textX + 9, y, isSelected ? WHITE : laneColor);
-        fb.drawText(desc, textX, y + 1, isSelected ? WHITE : FG());
+        
+        // Commit ID - line 1 (top line gets full white when selected)
+        fb.drawText(commitShort, textX + 9, y, isSelected ? WHITE : RGBA.fromHex(graphColorsHex.commitId()));
+        
+        // Description - line 2 (brighter version when selected, not full white)
+        const descColor = isSelected ? brighten(graphColorsHex.fg()) : RGBA.fromHex(graphColorsHex.fg());
+        fb.drawText(desc, textX, y + 1, descColor);
 
+        // Bookmarks - line 2 (brighter bookmark color when selected)
         if (node.bookmarks.length > 0) {
           const bm = ` (${node.bookmarks.join(",")})`;
-          fb.drawText(truncate(bm, Math.max(0, w - (textX + desc.length) - 1)), textX + Math.min(desc.length, descMax), y + 1, laneColor);
+          const bmColor = isSelected ? brighten(graphColorsHex.bookmark()) : RGBA.fromHex(graphColorsHex.bookmark());
+          fb.drawText(truncate(bm, Math.max(0, w - (textX + desc.length) - 1)), textX + Math.min(desc.length, descMax), y + 1, bmColor);
         }
 
+        // Files - line 3 (brighter per-type colors when selected)
         const filesCached = props.filesCache.get(node.changeId);
         if (filesCached && filesCached.files.length > 0) {
           const fileMaxW = Math.max(0, w - textX - 2);
-          const fileTexts: string[] = [];
-          for (const f of filesCached.files.slice(0, 3)) {
-            fileTexts.push(`${f.type}:${f.path.split("/").pop() || f.path}`);
+          let currentX = textX;
+          const filesToShow = filesCached.files.slice(0, 3);
+          
+          for (let fi = 0; fi < filesToShow.length; fi++) {
+            const f = filesToShow[fi]!;
+            const fileName = f.path.split("/").pop() || f.path;
+            const fileText = `${f.type}:${fileName}`;
+            const isLast = fi === filesToShow.length - 1;
+            
+            // Color code by file change type, with brightening for selected
+            let fileColor;
+            if (f.type === "A") fileColor = isSelected ? brighten(graphColorsHex.fileAdd()) : RGBA.fromHex(graphColorsHex.fileAdd());
+            else if (f.type === "D") fileColor = isSelected ? brighten(graphColorsHex.fileDel()) : RGBA.fromHex(graphColorsHex.fileDel());
+            else fileColor = isSelected ? brighten(graphColorsHex.fileMod()) : RGBA.fromHex(graphColorsHex.fileMod());
+            
+            fb.drawText(fileText, currentX, y + 2, fileColor);
+            currentX += fileText.length;
+            
+            if (!isLast) {
+              const sepColor = isSelected ? brighten(graphColorsHex.fg(), 40) : RGBA.fromHex(graphColorsHex.fg());
+              fb.drawText(" ", currentX, y + 2, sepColor);
+              currentX += 1;
+            }
           }
-          const fileLine = fileTexts.join(" ") + (filesCached.files.length > 3 ? ` +${filesCached.files.length - 3}` : "");
-          fb.drawText(truncate(fileLine, fileMaxW), textX, y + 2, isSelected ? WHITE : FG());
+          
+          if (filesCached.files.length > 3) {
+            const moreText = ` +${filesCached.files.length - 3}`;
+            const moreColor = isSelected ? brighten(graphColorsHex.textMuted(), 40) : RGBA.fromHex(graphColorsHex.textMuted());
+            fb.drawText(moreText, currentX, y + 2, moreColor);
+          }
         } else if (filesCached) {
-          fb.drawText("(no files)", textX, y + 2, isSelected ? WHITE : FG());
+          const noFilesColor = isSelected ? brighten(graphColorsHex.textMuted(), 40) : RGBA.fromHex(graphColorsHex.textMuted());
+          fb.drawText("(no files)", textX, y + 2, noFilesColor);
         }
       }
     }
 
-    const raw = Buffer.from(canvas.frameBuffer.getRealCharBytes(true)).toString("utf8");
-    graphLines = raw.split("\n").slice(0, h).map((line) => line.slice(0, w));
+    if (canvas.hasSelection()) {
+      const raw = Buffer.from(canvas.frameBuffer.getRealCharBytes(true)).toString("utf8");
+      graphLines = raw.split("\n").slice(0, h).map((line) => line.slice(0, w));
+    } else if (graphLines.length > 0) {
+      graphLines = [];
+    }
 
     canvas.requestRender?.();
   };

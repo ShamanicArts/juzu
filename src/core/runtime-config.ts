@@ -20,6 +20,8 @@ export interface JjVizRuntimeConfig {
     sidebarBreakpointWidth: number;
     sidebarMinHeight: number;
     stackedSidebarRatio: number;
+    prefetchDiffInLog: boolean;
+    clearDiffCacheWhenNotInDiff: boolean;
   };
 }
 
@@ -47,6 +49,8 @@ export const DEFAULT_RUNTIME_CONFIG: JjVizRuntimeConfig = {
     sidebarBreakpointWidth: 90,
     sidebarMinHeight: 16,
     stackedSidebarRatio: 0.5,
+    prefetchDiffInLog: true,
+    clearDiffCacheWhenNotInDiff: false,
   },
 };
 

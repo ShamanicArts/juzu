@@ -8,7 +8,7 @@ import clipboardy from "clipboardy";
 import { state, actions, navigation, selectedNode, layoutResult } from "../core/state";
 import { tuiActions, tuiState } from "../core/state-tui";
 import { setBackend } from "../core/runtime";
-import { ensureDiff, ensureFiles, initCwdFrom, opAbandon, opBookmarkDelete, opBookmarkSet, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertBetween, opMerge, opNew, opRebase, opRestore, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
+import { ensureDiff, ensureFiles, initCwdFrom, opAbandon, opBookmarkDelete, opBookmarkSet, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertBetween, opMerge, opNew, opRebase, opRestore, opSquash, opUndo, opRedo, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
 import { createTuiBackend } from "./backend";
 import { GraphView } from "./components/GraphView";
 import { Sidebar } from "./components/Sidebar";
@@ -26,7 +26,7 @@ const PANEL_BG = () => RGBA.fromHex(UI_TOKENS.slate.panel);
 const RUNTIME = getRuntimeConfig();
 const TUI_LOG_LIMIT = readPositiveIntEnv("JJVIZ_TUI_LOG_LIMIT", 80);
 const TUI_REFRESH_DEBOUNCE_MS = readPositiveIntEnv("JJVIZ_TUI_REFRESH_DEBOUNCE_MS", 700);
-const TUI_PREFETCH_RADIUS = readPositiveIntEnv("JJVIZ_TUI_PREFETCH_RADIUS", 4);
+const TUI_PREFETCH_DIFF_IN_LOG = RUNTIME.tui.prefetchDiffInLog;
 
 function readPositiveIntEnv(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -385,6 +385,7 @@ function App() {
     const node = selectedNode();
     const mode = state.viewMode;
     if (!node) return;
+    if (mode === "log" && !TUI_PREFETCH_DIFF_IN_LOG) return;
     if (mode !== "log" && mode !== "diff") return;
     void ensureDiff(node.changeId).catch(() => {
       // Best-effort prefetch for sidebar/full diff rendering.
@@ -396,20 +397,9 @@ function App() {
     tuiActions.setDiffFileIndex(0);
   });
 
-  const collectNearbyChangeIds = () => {
-    const nodes = layoutResult().nodes;
-    if (nodes.length === 0) return [] as string[];
-    const selected = state.selectedId;
-    const selectedIdx = Math.max(0, nodes.findIndex((n) => n.changeId === selected));
-    const start = Math.max(0, selectedIdx - TUI_PREFETCH_RADIUS);
-    const end = Math.min(nodes.length, selectedIdx + TUI_PREFETCH_RADIUS + 1);
-    return nodes.slice(start, end).map((n) => n.changeId);
-  };
-
   const refresh = async () => {
     try {
       await refreshLog(TUI_LOG_LIMIT);
-      void prefetchFiles(collectNearbyChangeIds());
     } catch (e) {
       console.error("Refresh error:", e);
     }
