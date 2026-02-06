@@ -8,6 +8,9 @@ const FG = RGBA.fromHex("#bbbbbb");
 const GREEN = RGBA.fromHex("#00ff9d");
 const RED = RGBA.fromHex("#ff0055");
 
+// Toggle: false = highlight lines (white), true = highlight node circle (white)
+const HIGHLIGHT_NODE_CIRCLE = true;
+
 const LANE_COLORS = [
   "#00f0ff", "#ff0055", "#00ff9d", "#ffaa00",
   "#aa00ff", "#00aaff", "#ffff00", "#ff00aa"
@@ -160,7 +163,8 @@ export function GraphView(props: GraphViewProps) {
       const y0 = rowYCell(i);
       const isSelectedNode = node === selectedNode;
       const color = LANE_COLORS[lane % LANE_COLORS.length];
-      const baseColor = isSelectedNode
+      // When HIGHLIGHT_NODE_CIRCLE is true, don't brighten colors for selected nodes
+      const baseColor = (isSelectedNode && !HIGHLIGHT_NODE_CIRCLE)
         ? RGBA.fromInts(Math.min(255, color.r + 80), Math.min(255, color.g + 80), Math.min(255, color.b + 80), 255)
         : color;
 
@@ -175,14 +179,16 @@ export function GraphView(props: GraphViewProps) {
         const isParentSelected = parent === selectedNode;
         const isConnectionSelected = isSelectedNode || isParentSelected;
         const pc = LANE_COLORS[pl % LANE_COLORS.length];
-        const parentColor = isParentSelected
+        // When HIGHLIGHT_NODE_CIRCLE is true, don't brighten colors for selected nodes
+        const parentColor = (isParentSelected && !HIGHLIGHT_NODE_CIRCLE)
           ? RGBA.fromInts(Math.min(255, pc.r + 80), Math.min(255, pc.g + 80), Math.min(255, pc.b + 80), 255)
           : pc;
 
         if (lane === pl) {
           const yMin = Math.min(y0, y1);
           const yMax = Math.max(y0, y1);
-          const lineColor = isConnectionSelected ? WHITE : pc;
+          // When HIGHLIGHT_NODE_CIRCLE is true, don't highlight lines in white
+          const lineColor = (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : pc;
           for (let y = yMin + 1; y <= yMax - 1; y++) {
             setGraphCell(x0, y, "│", lineColor);
           }
@@ -205,35 +211,35 @@ export function GraphView(props: GraphViewProps) {
             const xMin = Math.min(x0, x1);
             const xMax = Math.max(x0, x1);
             for (let x = xMin; x <= xMax; x++) {
-              setGraphCell(x, connectY, "─", isConnectionSelected ? WHITE : parentColor);
+              setGraphCell(x, connectY, "─", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
             }
           }
 
           if (isMergeCommit) {
             // Merge: horizontal at child row; vertical drops down to the parent lane.
             if (x0 < x1) {
-              setGraphCell(x0, connectY, "├", isConnectionSelected ? WHITE : (isSelectedNode ? baseColor : color));
-              setGraphCell(x1, connectY, "┐", isConnectionSelected ? WHITE : parentColor);
+              setGraphCell(x0, connectY, "├", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
+              setGraphCell(x1, connectY, "┐", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
             } else {
-              setGraphCell(x0, connectY, "┤", isConnectionSelected ? WHITE : (isSelectedNode ? baseColor : color));
-              setGraphCell(x1, connectY, "┌", isConnectionSelected ? WHITE : parentColor);
+              setGraphCell(x0, connectY, "┤", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
+              setGraphCell(x1, connectY, "┌", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
             }
 
             for (let y = connectY + 1; y <= y1 - 1; y++) {
-              setGraphCell(x1, y, "│", isConnectionSelected ? WHITE : parentColor);
+              setGraphCell(x1, y, "│", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
             }
           } else {
             // Fork: horizontal at parent row; vertical rises up on the child's lane.
             if (x0 < x1) {
-              setGraphCell(x1, connectY, "├", isConnectionSelected ? WHITE : parentColor);
-              setGraphCell(x0, connectY, "└", isConnectionSelected ? WHITE : (isSelectedNode ? baseColor : color));
+              setGraphCell(x1, connectY, "├", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
+              setGraphCell(x0, connectY, "└", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
             } else {
-              setGraphCell(x1, connectY, "┤", isConnectionSelected ? WHITE : parentColor);
-              setGraphCell(x0, connectY, "┘", isConnectionSelected ? WHITE : (isSelectedNode ? baseColor : color));
+              setGraphCell(x1, connectY, "┤", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
+              setGraphCell(x0, connectY, "┘", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
             }
 
             for (let y = y0 + 1; y <= connectY - 1; y++) {
-              setGraphCell(x0, y, "│", isConnectionSelected ? WHITE : (isSelectedNode ? baseColor : color));
+              setGraphCell(x0, y, "│", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
             }
           }
         }
@@ -268,6 +274,10 @@ export function GraphView(props: GraphViewProps) {
         ch = isSelected ? "0" : "o";
         fg = laneColor;
       }
+      // When HIGHLIGHT_NODE_CIRCLE is true, highlight the selected node circle in white
+      if (HIGHLIGHT_NODE_CIRCLE && isSelected && !node.isWorkingCopy && !node.isConflict) {
+        fg = WHITE;
+      }
       setGraphCell(x, y, ch, fg);
     }
 
@@ -284,8 +294,18 @@ export function GraphView(props: GraphViewProps) {
       const desc = truncate(node.descriptionTitle || "(no description)", descMax);
 
       if (textX < w - 1) {
-        if (isSelected) fb.drawText(">", Math.max(0, textX - 3), y, WHITE);
-        if (node.isWorkingCopy) fb.drawText("@", Math.max(0, textX - 2), y, GREEN);
+        // Indicator column: @ stays left, > moves right when selected
+        if (node.isWorkingCopy && isSelected) {
+          // Selected WC: ...@>
+          fb.drawText("@", Math.max(0, textX - 3), y, GREEN);
+          fb.drawText(">", Math.max(0, textX - 2), y, WHITE);
+        } else if (node.isWorkingCopy) {
+          // Non-selected WC: ...@
+          fb.drawText("@", Math.max(0, textX - 2), y, GREEN);
+        } else if (isSelected) {
+          // Selected non-WC: ...>
+          fb.drawText(">", Math.max(0, textX - 2), y, WHITE);
+        }
         fb.drawText(changeShort, textX, y, isSelected ? WHITE : laneColor);
         fb.drawText(" ", textX + 8, y, laneColor);
         fb.drawText(commitShort, textX + 9, y, isSelected ? WHITE : laneColor);

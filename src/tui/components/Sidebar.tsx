@@ -317,6 +317,13 @@ export function Sidebar(props: SidebarProps) {
   });
 
   const title = () => props.showHelp ? "Help (h to close)" : "Details";
+  const scrollIndicator = () => {
+    const v = visibleLines();
+    if (v.canScrollUp && v.canScrollDown) return "↑ PgUp/PgDn ↓";
+    if (v.canScrollUp) return "↑ PgUp (more above)";
+    if (v.canScrollDown) return "PgDn ↓ (more below)";
+    return "";
+  };
 
   return (
     <box
@@ -333,6 +340,10 @@ export function Sidebar(props: SidebarProps) {
           </text>
         )}
       </For>
+      <Show when={scrollIndicator()}>
+        <box flexGrow={1} />
+        <text fg={FG_DIM}>{scrollIndicator()}</text>
+      </Show>
     </box>
   );
 }
