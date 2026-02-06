@@ -1,5 +1,5 @@
 import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
-import { actions, state, layoutResult } from "../../core/state";
+import { actions, state, layoutResult, navigation } from "../../core/state";
 import { webActions, webState } from "../../core/state-web";
 import type { CommitNode } from "../../core/types";
 import { DEFAULT_GRAPH_CONFIG } from "../../core/types";
@@ -31,6 +31,42 @@ export function CanvasGraph(props: {
   const [shiftActive, setShiftActive] = createSignal(false);
 
   const cfg = DEFAULT_GRAPH_CONFIG;
+
+  const focusNodeInView = (node: CommitNode, mode: "anchor" | "contain") => {
+    const scale = webState.viewport.scale;
+    const nx = (node.x || 0) * scale + webState.viewport.offsetX;
+    const ny = (node.y || 0) * scale + webState.viewport.offsetY;
+
+    if (mode === "anchor") {
+      // Keep selected commit in a useful reading position (not dead center).
+      const targetScreenX = Math.round(dimensions().width * 0.28);
+      const targetScreenY = Math.round(dimensions().height * 0.40);
+      const targetOffsetX = Math.round(webState.viewport.offsetX + (targetScreenX - nx));
+      const targetOffsetY = Math.round(webState.viewport.offsetY + (targetScreenY - ny));
+      webActions.setViewport({ offsetX: targetOffsetX, offsetY: targetOffsetY });
+      return;
+    }
+
+    // Contain mode: only nudge when selected commit leaves a safe box.
+    const minX = Math.round(dimensions().width * 0.16);
+    const maxX = Math.round(dimensions().width * 0.46);
+    const minY = Math.round(dimensions().height * 0.16);
+    const maxY = Math.round(dimensions().height * 0.80);
+
+    let dx = 0;
+    let dy = 0;
+    if (nx < minX) dx = minX - nx;
+    else if (nx > maxX) dx = maxX - nx;
+    if (ny < minY) dy = minY - ny;
+    else if (ny > maxY) dy = maxY - ny;
+
+    if (dx !== 0 || dy !== 0) {
+      webActions.setViewport({
+        offsetX: Math.round(webState.viewport.offsetX + dx),
+        offsetY: Math.round(webState.viewport.offsetY + dy),
+      });
+    }
+  };
 
   type InlineBtn = { x: number; y: number; w: number; h: number; action: Parameters<typeof props.onInlineAction>[0]; nodeId: string };
   let inlineButtons: InlineBtn[] = [];
@@ -423,7 +459,8 @@ export function CanvasGraph(props: {
       return;
     }
 
-    // Start panning
+    // Start panning (disabled in lock mode)
+    if (webState.navigationLock) return;
     setIsPanning(true);
     setDragStart({ x: e.clientX, y: e.clientY });
   };
@@ -508,6 +545,17 @@ export function CanvasGraph(props: {
   const handleWheel = (e: WheelEvent) => {
     e.preventDefault();
     if (!canvasRef) return;
+
+    if (webState.navigationLock) {
+      const steps = Math.max(1, Math.min(6, Math.round(Math.abs(e.deltaY) / 48)));
+      for (let i = 0; i < steps; i++) {
+        if (e.deltaY > 0) navigation.moveDown();
+        else navigation.moveUp();
+      }
+      webActions.requestFocusSelected();
+      return;
+    }
+
     const rect = canvasRef.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -604,9 +652,39 @@ export function CanvasGraph(props: {
     render();
   });
 
+  // In lock mode, keep selected commit in a stable reading anchor.
+  createEffect(() => {
+    if (!webState.navigationLock) return;
+    const selectedId = state.selectedId;
+    if (!selectedId) return;
+    dimensions();
+    layoutResult().nodes;
+    webState.viewport.scale;
+    const node = layoutResult().nodes.find((n) => n.changeId === selectedId && n.x !== undefined && n.y !== undefined);
+    if (!node) return;
+    focusNodeInView(node, "anchor");
+  });
+
+  let lastFocusTick = -1;
+  // One-shot focus request (used by keyboard navigation even when unlocked).
+  createEffect(() => {
+    const tick = webState.focusSelectedTick;
+    if (tick === lastFocusTick) return;
+    lastFocusTick = tick;
+    const selectedId = state.selectedId;
+    if (!selectedId) return;
+    const node = layoutResult().nodes.find((n) => n.changeId === selectedId && n.x !== undefined && n.y !== undefined);
+    if (!node) return;
+    focusNodeInView(node, "contain");
+  });
+
   return (
     <div ref={(el) => (containerRef = el)} class="jjv-canvasWrap">
-      <canvas ref={(el) => (canvasRef = el)} class="jjv-canvas" />
+      <canvas
+        ref={(el) => (canvasRef = el)}
+        class="jjv-canvas"
+        style={{ cursor: webState.navigationLock ? "default" : isPanning() ? "grabbing" : "grab" }}
+      />
     </div>
   );
 }

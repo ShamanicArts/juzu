@@ -296,6 +296,7 @@ function App() {
   const footerSecondaryHint = createMemo(() => {
     if (state.viewMode !== "log") return "";
     if (state.describeMode || state.rebaseSourceId) return "";
+    if (webState.navigationLock) return "lock:on · wheel/arrow scroll selection · drag pan disabled";
     return "Shift/Ctrl select · Alt+drag move/pin · Right-click pin · Alt+click insert";
   });
 
@@ -485,11 +486,13 @@ function App() {
       case "arrowdown":
         webActions.resetOpMode();
         navigation.moveDown();
+        webActions.requestFocusSelected();
         break;
       case "k":
       case "arrowup":
         webActions.resetOpMode();
         navigation.moveUp();
+        webActions.requestFocusSelected();
         break;
       case "r":
         if (e.shiftKey) {
@@ -709,6 +712,13 @@ function App() {
 
               <button class="jjv-btn jjv-btn--ghost" onClick={() => void opGitFetch()}>Fetch</button>
               <button class="jjv-btn jjv-btn--ghost" onClick={() => void opGitPush()}>Push</button>
+              <button
+                class={`jjv-btn ${webState.navigationLock ? "jjv-btn--primary" : "jjv-btn--ghost"}`}
+                onClick={() => webActions.toggleNavigationLock()}
+                title="Lock: wheel/arrow scroll selected commit; drag pan disabled"
+              >
+                {webState.navigationLock ? "Lock:On" : "Lock:Off"}
+              </button>
             </Show>
 
             <button class="jjv-btn" disabled={state.isLoading} onClick={() => void refresh()}>

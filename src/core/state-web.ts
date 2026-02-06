@@ -5,6 +5,8 @@ export interface WebState {
   viewport: ViewportState;
   sidebarScroll: number;
   showHelp: boolean;
+  navigationLock: boolean;
+  focusSelectedTick: number;
   expandedFilesNodeId: string | null;
   opMode: "none" | "split" | "squash" | "move";
   opSelectedPaths: Set<string>;
@@ -19,6 +21,8 @@ const initialWebState: WebState = {
   },
   sidebarScroll: 0,
   showHelp: false,
+  navigationLock: false,
+  focusSelectedTick: 0,
   expandedFilesNodeId: null,
   opMode: "none",
   opSelectedPaths: new Set(),
@@ -61,6 +65,10 @@ export const webActions = {
 
   setShowHelp: (show: boolean) => setWebState("showHelp", show),
   toggleHelp: () => setWebState("showHelp", (v) => !v),
+
+  setNavigationLock: (locked: boolean) => setWebState("navigationLock", locked),
+  toggleNavigationLock: () => setWebState("navigationLock", (v) => !v),
+  requestFocusSelected: () => setWebState("focusSelectedTick", (n) => n + 1),
 
   reset: () => {
     setWebState({ ...initialWebState });
