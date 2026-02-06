@@ -245,6 +245,39 @@ function App() {
     if (state.viewMode === "obslog") return state.obslogChangeId ? `change:${state.obslogChangeId.slice(0, 8)}` : "change:none";
     return "operation history";
   });
+
+  // Mode badge colors (TUI-inspired)
+  const modeBadgeColor = createMemo(() => {
+    if (state.describeMode) return "#7f9fbf"; // info
+    if (state.rebaseSourceId) return "#c9a86a"; // warn
+    return "#6f89ad"; // modeLog
+  });
+
+  const modeLabel = createMemo(() => {
+    if (state.describeMode) return "DESCRIBE";
+    if (state.rebaseSourceId) return "REBASE";
+    return state.viewMode === "log" ? "LOG" : state.viewMode.toUpperCase();
+  });
+
+  // Working copy info (TUI FooterBar parity)
+  const workingCopy = createMemo(() => {
+    return state.nodes.find(n => n.isWorkingCopy);
+  });
+
+  const wcChangeId = createMemo(() => {
+    const wc = workingCopy();
+    return wc ? `@${wc.changeId.slice(0, 8)}` : "";
+  });
+
+  const currentBookmark = createMemo(() => {
+    const wc = workingCopy();
+    if (!wc?.bookmarks?.length) return "";
+    const first = wc.bookmarks[0];
+    const more = wc.bookmarks.length > 1 ? `+${wc.bookmarks.length - 1}` : "";
+    return `${first}${more}`;
+  });
+
+  const nodeCount = createMemo(() => state.nodes.length);
   const footerPrimaryHint = createMemo(() => {
     if (state.viewMode === "oplog") return "j/k move · PgUp/PgDn jump · Enter restore · g/Esc back";
     if (state.viewMode === "obslog") return "j/k move · PgUp/PgDn jump · r refresh · g/Esc back";
@@ -624,9 +657,15 @@ function App() {
         <div class="jjv-headerMain">
           <div class="jjv-brand">
             <span class="jjv-title">jj-viz</span>
-            <span class="jjv-sub">web</span>
-            <span class="jjv-chip">mode:{headerMode()}</span>
-            <span class="jjv-chip">context:{headerContext()}</span>
+            <span
+              class="jjv-modeBadge"
+              style={{ "background-color": modeBadgeColor() }}
+            >
+              {modeLabel()}
+            </span>
+            <Show when={state.rebaseSourceId}>
+              <span class="jjv-rebaseSource">source:{state.rebaseSourceId?.slice(0, 8)}</span>
+            </Show>
           </div>
 
           <div class="jjv-controls">
@@ -939,13 +978,30 @@ function App() {
       </main>
 
       <footer class="jjv-footer">
-        <span class="jjv-footerPill">mode:{headerMode()}</span>
-        <span class="jjv-footerPill">context:{headerContext()}</span>
-        <span class="jjv-footerHints">{footerPrimaryHint()}</span>
-        <Show when={footerSecondaryHint().length > 0}>
-          <span class="jjv-footerHints jjv-footerHints--advanced">{footerSecondaryHint()}</span>
-        </Show>
-        <span class={`jjv-footerStatus ${isError() ? "jjv-footerStatus--error" : ""}`}>status:{state.statusMessage}</span>
+        <div class="jjv-footerLeft">
+          <span class="jjv-footerSegment">{state.cwd || "unknown"}</span>
+          <Show when={currentBookmark()}>
+            <span class="jjv-footerBookmark">{currentBookmark()}</span>
+          </Show>
+          <Show when={wcChangeId()}>
+            <span class="jjv-footerWc">{wcChangeId()}</span>
+          </Show>
+        </div>
+
+        <div class="jjv-footerCenter">
+          <span class="jjv-footerHints">{footerPrimaryHint()}</span>
+          <Show when={footerSecondaryHint().length > 0}>
+            <span class="jjv-footerHints jjv-footerHints--advanced">{footerSecondaryHint()}</span>
+          </Show>
+        </div>
+
+        <div class="jjv-footerRight">
+          <span class="jjv-footerMeta">{state.layoutMode}</span>
+          <span class="jjv-footerSegment">{nodeCount()} nodes</span>
+          <span class={`jjv-footerStatus ${isError() ? "jjv-footerStatus--error" : ""}`}>
+            {state.statusMessage || "ready"}
+          </span>
+        </div>
       </footer>
 
       <ConfirmModal
