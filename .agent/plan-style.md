@@ -8,6 +8,7 @@ Scope: Visual/interaction styling only (no major behavior changes)
 - S1: complete (shared tokens, chrome baseline, separators, status-bar flicker fix without changing key order/behavior)
 - S2: complete (top bar kept structurally stable with right-rail view switching, collapsible sidebar sections, bottom status bar with contextual hints, 720p responsiveness fixes)
 - S3: in progress (redo: no aggressive visual shifts; graph palette/texture now exposed as tweakable tokens)
+- S4: in progress (adaptive modal status rows, concise hints, and sidebar detail summarization)
 
 ## Goals
 

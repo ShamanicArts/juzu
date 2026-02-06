@@ -701,13 +701,33 @@ function App() {
   const showSidebar = () => tuiState.termSize.width >= 90 && tuiState.termSize.height >= 16;
   const detailW = () => showSidebar() ? Math.floor(tuiState.termSize.width * 0.40) : 0;
   const graphW = () => tuiState.termSize.width - detailW();
+  const hasStatusRow = () => {
+    const msg = (state.statusMessage || "").trim();
+    if (!msg) return false;
+    if (/^nodes:\d+$/i.test(msg)) return false;
+    if (msg === "Loading...") return false;
+    if (msg.startsWith("Error")) return true;
+    return !tuiState.leaderMode;
+  };
+  const isModalMode = () =>
+    tuiState.revsetMode ||
+    state.describeMode ||
+    tuiState.leaderMode ||
+    !!state.rebaseSourceId ||
+    tuiState.mergeMode ||
+    state.viewMode !== "log";
   const statusBarHeight = () => {
     const w = tuiState.termSize.width;
     const h = tuiState.termSize.height;
     if (h < 14) return 1;
-    if (w < 90) return 3;
-    if (w < 130) return 2;
-    return 1;
+
+    let rows = w < 90 ? 2 : 1;
+    if (isModalMode()) rows += 1;
+    if (hasStatusRow()) rows += 1;
+    if (w < 70) rows += 1;
+
+    const maxAllowed = Math.max(1, h - 8);
+    return Math.max(1, Math.min(rows, Math.min(4, maxAllowed)));
   };
   // status bar + footer row
   const mainHeight = () => Math.max(1, tuiState.termSize.height - statusBarHeight() - 1);

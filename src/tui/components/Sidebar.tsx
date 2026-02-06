@@ -236,8 +236,12 @@ export function Sidebar(props: SidebarProps) {
 
     if (selected.bookmarks.length > 0) {
       lines.push({ text: "Bookmarks:", color: FG_DIM });
-      for (const b of selected.bookmarks) {
+      const maxBookmarks = 4;
+      for (const b of selected.bookmarks.slice(0, maxBookmarks)) {
         lines.push({ text: `  ${b}`, color: CYAN });
+      }
+      if (selected.bookmarks.length > maxBookmarks) {
+        lines.push({ text: `  ... +${selected.bookmarks.length - maxBookmarks} more`, color: FG_DIM });
       }
       lines.push({ text: "", color: FG_DIM });
     }
@@ -276,12 +280,16 @@ export function Sidebar(props: SidebarProps) {
     }
     lines.push({ text: "", color: FG_DIM });
 
-    lines.push({ text: props.filesExpanded ? "Files:" : "Files (f expand):", color: FG_DIM });
+    lines.push({ text: props.filesExpanded ? "Files (f collapse):" : "Files (f expand):", color: FG_DIM });
     const cached = props.filesCache.get(selected.changeId);
     if (cached && cached.files.length > 0) {
-      for (const f of cached.files) {
+      const filesToShow = props.filesExpanded ? cached.files : cached.files.slice(0, 8);
+      for (const f of filesToShow) {
         const fileColor = f.type === "A" ? GREEN : f.type === "D" ? RED : CYAN;
         lines.push({ text: `${f.type} ${f.path}`, color: fileColor });
+      }
+      if (!props.filesExpanded && cached.files.length > filesToShow.length) {
+        lines.push({ text: `... +${cached.files.length - filesToShow.length} more`, color: FG_DIM });
       }
     } else if (cached) {
       lines.push({ text: "(no changes)", color: FG_DIM });

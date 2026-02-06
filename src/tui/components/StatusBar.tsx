@@ -119,6 +119,50 @@ export function StatusBar(props: { width: number; height: number }) {
     return KEYBINDS[currentMode()] || KEYBINDS.normal;
   });
 
+  const compactActions = createMemo(() => props.width < 92);
+
+  const actionLabel = (action: string) => {
+    if (!compactActions()) return action;
+    const map: Record<string, string> = {
+      REBASE: "RB",
+      LEADER: "LDR",
+      RESTORE: "RST",
+      DESCRIBE: "DESC",
+      ABANDON: "ABND",
+      CONFIRM: "OK",
+      CANCEL: "ESC",
+      SELECT: "SEL",
+      APPLY: "SET",
+      OBSLOG: "OBS",
+      REDO: "RDO",
+      FETCH: "FCH",
+      PUSH: "PSH",
+    };
+    return map[action] || action;
+  };
+
+  const modeHint = createMemo(() => {
+    if (props.width < 110) return "";
+    switch (currentMode()) {
+      case "leader":
+        return "prefix: a/s/d/u/m/f/p/b/x";
+      case "rebase":
+        return "select destination and confirm";
+      case "merge":
+        return "space selects commits, m confirms";
+      case "describe":
+        return "editing description";
+      case "revset":
+        return "type query, Enter applies";
+      case "oplog":
+        return "r restores selected operation";
+      case "obslog":
+        return "inspection history view";
+      default:
+        return "";
+    }
+  });
+
   const showStatusMessage = createMemo(() => {
     if (!state.statusMessage) return false;
     if (/^nodes:\d+$/i.test(state.statusMessage.trim())) return false;
@@ -133,7 +177,7 @@ export function StatusBar(props: { width: number; height: number }) {
     const firstRowWidth = Math.max(20, props.width - 16);
     const otherRowWidth = Math.max(20, props.width - 2);
 
-    const segmentWidth = (kb: Keybind) => kb.key.length + 1 + kb.action.length + 2;
+    const segmentWidth = (kb: Keybind) => kb.key.length + 1 + actionLabel(kb.action).length + 2;
 
     let current: Keybind[] = [];
     let used = 0;
@@ -168,13 +212,18 @@ export function StatusBar(props: { width: number; height: number }) {
                   <strong>{modeLabel()}</strong>
                 </text>
               </box>
+              <Show when={modeHint().length > 0}>
+                <box paddingLeft={1}>
+                  <text fg={COLORS.muted}>{modeHint()}</text>
+                </box>
+              </Show>
             </Show>
             <box paddingLeft={idx() === 0 ? 2 : 1} flexDirection="row">
               <For each={row}>
                 {(kb) => (
                   <box flexDirection="row">
                     <text fg={COLORS.key}>{kb.key}</text>
-                    <text fg={COLORS.action}> {kb.action}  </text>
+                    <text fg={COLORS.action}> {actionLabel(kb.action)}  </text>
                   </box>
                 )}
               </For>
