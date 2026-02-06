@@ -139,6 +139,14 @@ describe("server API integration smoke", () => {
     expect(Array.isArray(body)).toBe(true);
   });
 
+  test("GET /api/log supports revset filtering", async () => {
+    const resp = await fetch(`${server.baseUrl}/api/log?limit=10&revset=${encodeURIComponent("@")}`);
+    expect(resp.status).toBe(200);
+    const body = await expectJson(resp);
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
+  });
+
   test("GET /api/files/:id and /api/diff/:id return data", async () => {
     const filesResp = await fetch(`${server.baseUrl}/api/files/${selectedChangeId}`);
     expect(filesResp.status).toBe(200);
@@ -242,5 +250,76 @@ describe("server API integration smoke", () => {
     if (redoBody.success === false) {
       expect(typeof redoBody.error).toBe("string");
     }
+  });
+
+  test("POST bookmark and restore endpoints", async () => {
+    const setResp = await fetch(`${server.baseUrl}/api/bookmark/set`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "it-bookmark", revision: selectedChangeId }),
+    });
+    expect(setResp.status).toBe(200);
+
+    const renameResp = await fetch(`${server.baseUrl}/api/bookmark/rename`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ oldName: "it-bookmark", newName: "it-bookmark-renamed" }),
+    });
+    expect(renameResp.status).toBe(200);
+
+    const restoreResp = await fetch(`${server.baseUrl}/api/restore`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ changeId: selectedChangeId }),
+    });
+    const restoreBody = await expectJson(restoreResp);
+    expect([200, 400]).toContain(restoreResp.status);
+    if (restoreResp.status === 200) expect(restoreBody.success).toBe(true);
+    else expect(typeof restoreBody.error).toBe("string");
+
+    const deleteResp = await fetch(`${server.baseUrl}/api/bookmark/delete`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "it-bookmark-renamed" }),
+    });
+    expect(deleteResp.status).toBe(200);
+  });
+
+  test("POST track/untrack and fetch/push return contract", async () => {
+    const trackResp = await fetch(`${server.baseUrl}/api/bookmark/track`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ remoteBookmark: "main@origin" }),
+    });
+    const trackBody = await expectJson(trackResp);
+    expect([200, 400]).toContain(trackResp.status);
+    if (trackResp.status !== 200) expect(typeof trackBody.error).toBe("string");
+
+    const untrackResp = await fetch(`${server.baseUrl}/api/bookmark/untrack`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ remoteBookmark: "main@origin" }),
+    });
+    const untrackBody = await expectJson(untrackResp);
+    expect([200, 400]).toContain(untrackResp.status);
+    if (untrackResp.status !== 200) expect(typeof untrackBody.error).toBe("string");
+
+    const fetchResp = await fetch(`${server.baseUrl}/api/git/fetch`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const fetchBody = await expectJson(fetchResp);
+    expect([200, 400]).toContain(fetchResp.status);
+    if (fetchResp.status !== 200) expect(typeof fetchBody.error).toBe("string");
+
+    const pushResp = await fetch(`${server.baseUrl}/api/git/push`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const pushBody = await expectJson(pushResp);
+    expect([200, 400]).toContain(pushResp.status);
+    if (pushResp.status !== 200) expect(typeof pushBody.error).toBe("string");
   });
 });
