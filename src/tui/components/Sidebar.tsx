@@ -4,6 +4,7 @@ import type { CommitNode, FilesCacheEntry } from "../../core/types";
 import type { OpLogEntry, ObslogEntry } from "../../core/jj-api";
 import type { ViewMode } from "../../core/state";
 import { UI_TOKENS } from "../../core/ui-tokens";
+import { getRuntimeConfig } from "../../core/runtime-config";
 
 const PANEL_BG = RGBA.fromHex(UI_TOKENS.slate.panel);
 const CYAN = RGBA.fromHex(UI_TOKENS.semantic.info);
@@ -29,6 +30,11 @@ interface SidebarProps {
   confirmPrompt?: string | null;
   mergeMode?: boolean;
   mergeSelectedIds?: Set<string>;
+  themeVersion?: number;
+  themePickerMode?: boolean;
+  themeOptions?: string[];
+  themeSelectedIndex?: number;
+  currentTheme?: string;
   viewMode?: ViewMode;
   opLogSelected?: OpLogEntry | null;
   obslogChangeId?: string | null;
@@ -37,6 +43,15 @@ interface SidebarProps {
 
 export function Sidebar(props: SidebarProps) {
   const contentLines = createMemo(() => {
+    props.themeVersion;
+    const PANEL_BG = RGBA.fromHex(UI_TOKENS.slate.panel);
+    const CYAN = RGBA.fromHex(UI_TOKENS.semantic.info);
+    const GREEN = RGBA.fromHex(UI_TOKENS.semantic.success);
+    const RED = RGBA.fromHex(UI_TOKENS.semantic.error);
+    const YELLOW = RGBA.fromHex(UI_TOKENS.semantic.warn);
+    const FG_DIM = RGBA.fromHex(UI_TOKENS.slate.textMuted);
+    const FG = RGBA.fromHex(UI_TOKENS.slate.text);
+
     if (props.confirmPrompt) {
       return [
         { text: "CONFIRM ACTION", color: YELLOW },
@@ -68,6 +83,7 @@ export function Sidebar(props: SidebarProps) {
         { text: "Ctrl+X s    Squash", color: FG },
         { text: "Ctrl+X d    Duplicate", color: FG },
         { text: "Ctrl+X u    Redo", color: FG },
+        { text: "Ctrl+X t    Theme picker", color: FG },
         { text: "Ctrl+X m    Merge mode", color: FG },
         { text: "Ctrl+X f    Fetch", color: FG },
         { text: "Ctrl+X p    Push", color: FG },
@@ -84,6 +100,30 @@ export function Sidebar(props: SidebarProps) {
         { text: "", color: FG_DIM },
         { text: "Press h to close help", color: FG_DIM },
       ];
+      return lines;
+    }
+
+    if (props.themePickerMode) {
+      const lines: Array<{ text: string; color: RGBA }> = [];
+      const opts = props.themeOptions || [];
+      const idx = Math.max(0, Math.min(props.themeSelectedIndex || 0, Math.max(0, opts.length - 1)));
+      lines.push({ text: "THEME SELECTOR", color: CYAN });
+      lines.push({ text: "", color: FG_DIM });
+      if (opts.length === 0) {
+        lines.push({ text: "No themes found", color: FG_DIM });
+      } else {
+        for (let i = 0; i < opts.length; i++) {
+          const theme = opts[i]!;
+          const cursor = i === idx ? ">" : " ";
+          const current = theme === (props.currentTheme || "") ? " *" : "";
+          const color = i === idx ? GREEN : FG;
+          lines.push({ text: `${cursor} ${theme}${current}`, color });
+        }
+      }
+      lines.push({ text: "", color: FG_DIM });
+      lines.push({ text: "j/k or ↑/↓: select", color: FG_DIM });
+      lines.push({ text: "Enter: apply", color: FG_DIM });
+      lines.push({ text: "Esc: cancel", color: FG_DIM });
       return lines;
     }
 
@@ -302,10 +342,18 @@ export function Sidebar(props: SidebarProps) {
       lines.push({ text: "! CONFLICTS", color: RED });
     }
 
+    const themeName = getRuntimeConfig().theme.name;
+    const themeSelector = themeName === "ember"
+      ? "Themes: slate [ember]  (Ctrl+X t)"
+      : "Themes: [slate] ember  (Ctrl+X t)";
+    lines.push({ text: "", color: FG_DIM });
+    lines.push({ text: themeSelector, color: FG_DIM });
+
     return lines;
   });
 
   const visibleLines = createMemo(() => {
+    props.themeVersion;
     const all = contentLines();
     const maxScroll = Math.max(0, all.length - props.height + 3);
     const offset = Math.max(0, Math.min(props.scrollOffset, maxScroll));
@@ -329,9 +377,9 @@ export function Sidebar(props: SidebarProps) {
     <box
       width={props.width}
       height={props.height}
-      backgroundColor={PANEL_BG}
+      backgroundColor={RGBA.fromHex(UI_TOKENS.slate.panel)}
     >
-      <text fg={props.showHelp ? YELLOW : CYAN}>{title()}</text>
+      <text fg={props.showHelp ? RGBA.fromHex(UI_TOKENS.semantic.warn) : RGBA.fromHex(UI_TOKENS.semantic.info)}>{title()}</text>
       <text fg={RGBA.fromHex(UI_TOKENS.slate.borderStrong)}>--------</text>
       <For each={visibleLines().lines}>
         {(line) => (

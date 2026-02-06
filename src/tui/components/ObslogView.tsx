@@ -2,16 +2,9 @@ import { createEffect } from "solid-js";
 import { useRenderer } from "@opentui/solid";
 import { FrameBufferRenderable, RGBA } from "@opentui/core";
 import type { ObslogEntry } from "../../core/jj-api";
+import { UI_TOKENS } from "../../core/ui-tokens";
 
-const BG = RGBA.fromHex("#24283b");
 const SEL_BG = RGBA.fromInts(60, 70, 100, 180);
-const FG_DIM = RGBA.fromHex("#888888");
-const FG = RGBA.fromHex("#bbbbbb");
-const GREEN = RGBA.fromHex("#00ff9d");
-const RED = RGBA.fromHex("#ff0055");
-const CYAN = RGBA.fromHex("#00f0ff");
-const YELLOW = RGBA.fromHex("#ffaa00");
-const ORANGE = RGBA.fromHex("#ff8800");
 
 interface ObslogViewProps {
   entries: ObslogEntry[];
@@ -21,6 +14,7 @@ interface ObslogViewProps {
   height: number;
   onEnsureVisible: (visibleRows: number) => void;
   changeId: string | null;
+  themeVersion?: number;
 }
 
 export function ObslogView(props: ObslogViewProps) {
@@ -56,6 +50,15 @@ export function ObslogView(props: ObslogViewProps) {
 
   const draw = () => {
     if (!canvas) return;
+
+    const BG = RGBA.fromHex(UI_TOKENS.slate.bg0);
+    const FG_DIM = RGBA.fromHex(UI_TOKENS.slate.textMuted);
+    const FG = RGBA.fromHex(UI_TOKENS.slate.text);
+    const GREEN = RGBA.fromHex(UI_TOKENS.semantic.success);
+    const RED = RGBA.fromHex(UI_TOKENS.semantic.error);
+    const CYAN = RGBA.fromHex(UI_TOKENS.semantic.info);
+    const YELLOW = RGBA.fromHex(UI_TOKENS.semantic.warn);
+    const ORANGE = RGBA.fromHex(UI_TOKENS.graph.lanes[3] || UI_TOKENS.semantic.warn);
 
     const fb = canvas.frameBuffer;
     const w = props.width;
@@ -203,6 +206,7 @@ export function ObslogView(props: ObslogViewProps) {
     props.selectedIndex;
     props.width;
     props.height;
+    props.themeVersion;
     props.changeId;
 
     if (canvas && parentBox) {
@@ -212,5 +216,5 @@ export function ObslogView(props: ObslogViewProps) {
     }
   });
 
-  return <box ref={setupCanvas} width={props.width} height={props.height} backgroundColor={BG} />;
+  return <box ref={setupCanvas} width={props.width} height={props.height} backgroundColor={RGBA.fromHex(UI_TOKENS.slate.bg0)} />;
 }

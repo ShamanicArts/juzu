@@ -1,4 +1,4 @@
-export const UI_TOKENS = {
+export const DEFAULT_UI_TOKENS = {
   slate: {
     bg0: "#111318",
     bg1: "#161b22",
@@ -56,4 +56,35 @@ export const UI_TOKENS = {
   },
 } as const;
 
-export type UiTokens = typeof UI_TOKENS;
+export type UiTokens = typeof DEFAULT_UI_TOKENS;
+
+let activeTokens: UiTokens = JSON.parse(JSON.stringify(DEFAULT_UI_TOKENS));
+
+export let UI_TOKENS: UiTokens = activeTokens;
+
+function mergeObject(base: any, patch: any): any {
+  if (!patch || typeof patch !== "object" || Array.isArray(patch)) return patch ?? base;
+  const out: any = Array.isArray(base) ? [...base] : { ...base };
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined) continue;
+    const prev = (out as any)[k];
+    if (Array.isArray(v)) {
+      (out as any)[k] = [...v];
+    } else if (v && typeof v === "object" && prev && typeof prev === "object" && !Array.isArray(prev)) {
+      (out as any)[k] = mergeObject(prev, v);
+    } else {
+      (out as any)[k] = v;
+    }
+  }
+  return out;
+}
+
+export function setUiTokens(next: Partial<UiTokens>) {
+  activeTokens = mergeObject(DEFAULT_UI_TOKENS, next);
+  UI_TOKENS = activeTokens;
+}
+
+export function resetUiTokens() {
+  activeTokens = JSON.parse(JSON.stringify(DEFAULT_UI_TOKENS));
+  UI_TOKENS = activeTokens;
+}

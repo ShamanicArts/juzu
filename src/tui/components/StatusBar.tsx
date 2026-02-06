@@ -5,17 +5,17 @@ import { tuiState } from "../../core/state-tui";
 import { UI_TOKENS } from "../../core/ui-tokens";
 
 const COLORS = {
-  barBg: RGBA.fromHex(UI_TOKENS.slate.panel),
-  segmentBg: RGBA.fromHex(UI_TOKENS.slate.bg2),
-  key: RGBA.fromHex(UI_TOKENS.semantic.info),
-  action: RGBA.fromHex(UI_TOKENS.slate.text),
-  muted: RGBA.fromHex(UI_TOKENS.slate.textMuted),
-  rebase: RGBA.fromHex(UI_TOKENS.semantic.warn),
-  merge: RGBA.fromHex(UI_TOKENS.semantic.success),
-  leader: RGBA.fromHex(UI_TOKENS.semantic.info),
-  describe: RGBA.fromHex(UI_TOKENS.semantic.info),
-  error: RGBA.fromHex(UI_TOKENS.semantic.error),
-  dark: RGBA.fromHex(UI_TOKENS.slate.bg0),
+  barBg: () => RGBA.fromHex(UI_TOKENS.slate.panel),
+  segmentBg: () => RGBA.fromHex(UI_TOKENS.slate.bg2),
+  key: () => RGBA.fromHex(UI_TOKENS.semantic.info),
+  action: () => RGBA.fromHex(UI_TOKENS.slate.text),
+  muted: () => RGBA.fromHex(UI_TOKENS.slate.textMuted),
+  rebase: () => RGBA.fromHex(UI_TOKENS.semantic.warn),
+  merge: () => RGBA.fromHex(UI_TOKENS.semantic.success),
+  leader: () => RGBA.fromHex(UI_TOKENS.semantic.info),
+  describe: () => RGBA.fromHex(UI_TOKENS.semantic.info),
+  error: () => RGBA.fromHex(UI_TOKENS.semantic.error),
+  dark: () => RGBA.fromHex(UI_TOKENS.slate.bg0),
 };
 
 interface Keybind {
@@ -41,6 +41,7 @@ const KEYBINDS: Record<string, Keybind[]> = {
     { key: "s", action: "SQUASH" },
     { key: "d", action: "DUPE" },
     { key: "u", action: "REDO" },
+    { key: "t", action: "THEME" },
     { key: "m", action: "MERGE" },
     { key: "f", action: "FETCH" },
     { key: "p", action: "PUSH" },
@@ -77,7 +78,7 @@ const KEYBINDS: Record<string, Keybind[]> = {
   ],
 };
 
-export function StatusBar(props: { width: number; height: number }) {
+export function StatusBar(props: { width: number; height: number; themeVersion?: number }) {
   const currentMode = createMemo(() => {
     if (tuiState.revsetMode) return "revset";
     if (state.describeMode) return "describe";
@@ -103,14 +104,25 @@ export function StatusBar(props: { width: number; height: number }) {
     }
   });
 
+  // Theme-aware color accessors
+  const themeBarBg = createMemo(() => { props.themeVersion; return COLORS.barBg(); });
+  const themeDark = createMemo(() => { props.themeVersion; return COLORS.dark(); });
+  const themeMuted = createMemo(() => { props.themeVersion; return COLORS.muted(); });
+  const themeKey = createMemo(() => { props.themeVersion; return COLORS.key(); });
+  const themeAction = createMemo(() => { props.themeVersion; return COLORS.action(); });
+  const themeError = createMemo(() => { props.themeVersion; return COLORS.error(); });
+
   const modeColor = createMemo(() => {
+    props.themeVersion; // Depend on theme version to re-render when theme changes
     const mode = currentMode();
     switch (mode) {
-      case "describe": return COLORS.describe;
-      case "revset": return COLORS.describe;
-      case "leader": return COLORS.leader;
-      case "rebase": return COLORS.rebase;
-      case "merge": return COLORS.merge;
+      case "describe": return COLORS.describe();
+      case "revset": return COLORS.describe();
+      case "leader": return COLORS.leader();
+      case "rebase": return COLORS.rebase();
+      case "merge": return COLORS.merge();
+      case "oplog": return RGBA.fromHex(UI_TOKENS.semantic.info);
+      case "obslog": return RGBA.fromHex(UI_TOKENS.semantic.success);
       default: return RGBA.fromHex(UI_TOKENS.semantic.modeLog);
     }
   });
@@ -135,6 +147,7 @@ export function StatusBar(props: { width: number; height: number }) {
       APPLY: "SET",
       OBSLOG: "OBS",
       REDO: "RDO",
+      THEME: "THM",
       FETCH: "FCH",
       PUSH: "PSH",
     };
@@ -202,19 +215,19 @@ export function StatusBar(props: { width: number; height: number }) {
   });
 
   return (
-    <box height={props.height} backgroundColor={COLORS.barBg} flexDirection="column">
+    <box height={props.height} backgroundColor={themeBarBg()} flexDirection="column">
       <For each={wrappedKeybindRows()}>
         {(row, idx) => (
           <box height={1} flexDirection="row">
             <Show when={idx() === 0}>
               <box backgroundColor={modeColor()} paddingLeft={1} paddingRight={1}>
-                <text fg={COLORS.dark}>
+                <text fg={themeDark()}>
                   <strong>{modeLabel()}</strong>
                 </text>
               </box>
               <Show when={modeHint().length > 0}>
                 <box paddingLeft={1}>
-                  <text fg={COLORS.muted}>{modeHint()}</text>
+                  <text fg={themeMuted()}>{modeHint()}</text>
                 </box>
               </Show>
             </Show>
@@ -222,8 +235,8 @@ export function StatusBar(props: { width: number; height: number }) {
               <For each={row}>
                 {(kb) => (
                   <box flexDirection="row">
-                    <text fg={COLORS.key}>{kb.key}</text>
-                    <text fg={COLORS.action}> {actionLabel(kb.action)}  </text>
+                    <text fg={themeKey()}>{kb.key}</text>
+                    <text fg={themeAction()}> {actionLabel(kb.action)}  </text>
                   </box>
                 )}
               </For>
@@ -234,7 +247,7 @@ export function StatusBar(props: { width: number; height: number }) {
 
       <Show when={showStatusMessage()}>
         <box height={1} paddingLeft={1}>
-          <text fg={state.statusMessage?.startsWith("Error") ? COLORS.error : COLORS.muted}>
+          <text fg={state.statusMessage?.startsWith("Error") ? themeError() : themeMuted()}>
             {state.statusMessage}
           </text>
         </box>

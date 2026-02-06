@@ -2,19 +2,17 @@ import { createEffect } from "solid-js";
 import { useRenderer } from "@opentui/solid";
 import { FrameBufferRenderable, RGBA } from "@opentui/core";
 import type { CommitNode, FilesCacheEntry, LayoutMode } from "../../core/types";
+import { UI_TOKENS } from "../../core/ui-tokens";
 
-const BG = RGBA.fromHex("#24283b");
-const FG = RGBA.fromHex("#bbbbbb");
-const GREEN = RGBA.fromHex("#00ff9d");
-const RED = RGBA.fromHex("#ff0055");
+const BG = () => RGBA.fromHex(UI_TOKENS.slate.bg0);
+const FG = () => RGBA.fromHex(UI_TOKENS.slate.text);
+const GREEN = () => RGBA.fromHex(UI_TOKENS.semantic.success);
+const RED = () => RGBA.fromHex(UI_TOKENS.semantic.error);
 
 // Toggle: false = highlight lines (white), true = highlight node circle (white)
 const HIGHLIGHT_NODE_CIRCLE = true;
 
-const LANE_COLORS = [
-  "#00f0ff", "#ff0055", "#00ff9d", "#ffaa00",
-  "#aa00ff", "#00aaff", "#ffff00", "#ff00aa"
-].map((h) => RGBA.fromHex(h));
+const laneColors = () => UI_TOKENS.graph.lanes.map((h) => RGBA.fromHex(h));
 
 interface GraphViewProps {
   nodes: CommitNode[];
@@ -27,6 +25,7 @@ interface GraphViewProps {
   mergeSelectedIds?: Set<string>;
   mergeMode?: boolean;
   layoutMode?: LayoutMode;
+  themeVersion?: number;
 }
 
 export function GraphView(props: GraphViewProps) {
@@ -52,7 +51,7 @@ export function GraphView(props: GraphViewProps) {
 
     if (w <= 0 || h <= 0) return;
 
-    fb.fillRect(0, 0, w, h, BG);
+    fb.fillRect(0, 0, w, h, BG());
 
     const rowStride = 4;
     const visibleRows = Math.max(1, Math.floor((graphH - 2) / rowStride));
@@ -86,7 +85,9 @@ export function GraphView(props: GraphViewProps) {
     const rowYCell = (i: number) => headerH + 1 + i * rowStride;
     const laneXCell = (lane: number) => leftPad + (maxLane - lane) * laneWidth;
 
-    const bgAtAbsY = (_absY: number) => BG;
+    const bgAtAbsY = (_absY: number) => BG();
+
+    const LANE_COLORS = laneColors();
 
     const setGraphCell = (x: number, absY: number, ch: string, fg: RGBA) => {
       if (x < 0 || x >= w) return;
@@ -263,13 +264,13 @@ export function GraphView(props: GraphViewProps) {
       let fg = laneColor;
       if (props.mergeMode && props.mergeSelectedIds?.has(node.changeId)) {
         ch = "✓";
-        fg = GREEN;
+        fg = GREEN();
       } else if (node.isWorkingCopy) {
         ch = "@";
-        fg = GREEN;
+        fg = GREEN();
       } else if (node.isConflict) {
         ch = "!";
-        fg = RED;
+        fg = RED();
       } else if (node.isEmpty) {
         ch = isSelected ? "0" : "o";
         fg = laneColor;
@@ -297,11 +298,11 @@ export function GraphView(props: GraphViewProps) {
         // Indicator column: @ stays left, > moves right when selected
         if (node.isWorkingCopy && isSelected) {
           // Selected WC: ...@>
-          fb.drawText("@", Math.max(0, textX - 3), y, GREEN);
+          fb.drawText("@", Math.max(0, textX - 3), y, GREEN());
           fb.drawText(">", Math.max(0, textX - 2), y, WHITE);
         } else if (node.isWorkingCopy) {
           // Non-selected WC: ...@
-          fb.drawText("@", Math.max(0, textX - 2), y, GREEN);
+          fb.drawText("@", Math.max(0, textX - 2), y, GREEN());
         } else if (isSelected) {
           // Selected non-WC: ...>
           fb.drawText(">", Math.max(0, textX - 2), y, WHITE);
@@ -309,7 +310,7 @@ export function GraphView(props: GraphViewProps) {
         fb.drawText(changeShort, textX, y, isSelected ? WHITE : laneColor);
         fb.drawText(" ", textX + 8, y, laneColor);
         fb.drawText(commitShort, textX + 9, y, isSelected ? WHITE : laneColor);
-        fb.drawText(desc, textX, y + 1, isSelected ? WHITE : FG);
+        fb.drawText(desc, textX, y + 1, isSelected ? WHITE : FG());
 
         if (node.bookmarks.length > 0) {
           const bm = ` (${node.bookmarks.join(",")})`;
@@ -324,9 +325,9 @@ export function GraphView(props: GraphViewProps) {
             fileTexts.push(`${f.type}:${f.path.split("/").pop() || f.path}`);
           }
           const fileLine = fileTexts.join(" ") + (filesCached.files.length > 3 ? ` +${filesCached.files.length - 3}` : "");
-          fb.drawText(truncate(fileLine, fileMaxW), textX, y + 2, isSelected ? WHITE : FG);
+          fb.drawText(truncate(fileLine, fileMaxW), textX, y + 2, isSelected ? WHITE : FG());
         } else if (filesCached) {
-          fb.drawText("(no files)", textX, y + 2, isSelected ? WHITE : FG);
+          fb.drawText("(no files)", textX, y + 2, isSelected ? WHITE : FG());
         }
       }
     }
@@ -366,6 +367,7 @@ export function GraphView(props: GraphViewProps) {
     props.filesCache;
     props.width;
     props.height;
+    props.themeVersion;
     
     if (canvas && parentBox) {
       (canvas as any).width = props.width;
@@ -374,5 +376,5 @@ export function GraphView(props: GraphViewProps) {
     }
   });
 
-  return <box ref={setupCanvas} width={props.width} height={props.height} backgroundColor={BG} />;
+  return <box ref={setupCanvas} width={props.width} height={props.height} backgroundColor={BG()} />;
 }

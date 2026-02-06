@@ -1,12 +1,13 @@
 import type { CommitNode, LayoutMode, LayoutResult, GraphConfig } from "./types";
 import { UI_TOKENS } from "./ui-tokens";
+import { getRuntimeConfig } from "./runtime-config";
 
 const DEFAULT_CONFIG: GraphConfig = {
-  nodeRadius: 5,
-  laneWidth: 24,
-  ySpacing: 84,
-  canvasPadding: 50,
-  textColumnGap: 60,
+  nodeRadius: getRuntimeConfig().graph.nodeRadius,
+  laneWidth: getRuntimeConfig().graph.laneWidth,
+  ySpacing: getRuntimeConfig().graph.ySpacing,
+  canvasPadding: getRuntimeConfig().graph.canvasPadding,
+  textColumnGap: getRuntimeConfig().graph.textColumnGap,
   colors: {
     node: UI_TOKENS.graph.node,
     nodeSelected: UI_TOKENS.graph.nodeSelected,
@@ -368,11 +369,12 @@ export function calculateLayout(
 }
 
 /**
- * Get lane color based on index
+ * Get lane color based on index - uses current UI_TOKENS for live theme updates
  */
 export function getLaneColor(index: number, config: Partial<GraphConfig> = {}): string {
-  const cfg = { ...DEFAULT_CONFIG, ...config };
-  return cfg.colors.lanes[index % cfg.colors.lanes.length];
+  // Always use current UI_TOKENS lanes so theme changes apply immediately
+  const lanes = UI_TOKENS.graph.lanes;
+  return lanes[index % lanes.length];
 }
 
 /**

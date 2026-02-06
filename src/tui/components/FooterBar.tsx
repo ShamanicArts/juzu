@@ -3,15 +3,14 @@ import { RGBA } from "@opentui/core";
 import { state } from "../../core/state";
 import { UI_TOKENS } from "../../core/ui-tokens";
 
-const COLORS = {
-  barBg: RGBA.fromHex(UI_TOKENS.slate.panel),
-  segmentBg: RGBA.fromHex(UI_TOKENS.slate.bg2),
-  muted: UI_TOKENS.slate.textMuted,
-  wc: UI_TOKENS.semantic.success,
-  bookmark: UI_TOKENS.semantic.info,
-};
+export function FooterBar(props: { themeVersion?: number }) {
+  // Theme-aware color accessors
+  const barBg = createMemo(() => { props.themeVersion; return RGBA.fromHex(UI_TOKENS.slate.panel); });
+  const segmentBg = createMemo(() => { props.themeVersion; return RGBA.fromHex(UI_TOKENS.slate.bg2); });
+  const muted = createMemo(() => { props.themeVersion; return UI_TOKENS.slate.textMuted; });
+  const wc = createMemo(() => { props.themeVersion; return UI_TOKENS.semantic.success; });
+  const bookmark = createMemo(() => { props.themeVersion; return UI_TOKENS.semantic.info; });
 
-export function FooterBar() {
   // Get working copy info
   const workingCopy = createMemo(() => {
     const nodes = state.nodes || [];
@@ -22,14 +21,12 @@ export function FooterBar() {
   const wcChangeId = createMemo(() => {
     const wc = workingCopy();
     if (!wc) return "";
-    // Show short change ID with @ prefix
     return `@${wc.changeId?.slice(0, 8) || ""}`;
   });
 
   const currentBookmark = createMemo(() => {
     const wc = workingCopy();
     if (!wc?.bookmarks?.length) return "";
-    // Show first bookmark, indicate if there are more
     const first = wc.bookmarks[0];
     const more = wc.bookmarks.length > 1 ? `+${wc.bookmarks.length - 1}` : "";
     return `${first}${more}`;
@@ -43,7 +40,6 @@ export function FooterBar() {
     return state.layoutMode || "chronological";
   });
 
-  // Get repo path - try to shorten it
   const repoPath = createMemo(() => {
     const cwd = state.cwd || process.cwd();
     const home = process.env.HOME || "";
@@ -54,23 +50,23 @@ export function FooterBar() {
   });
 
   return (
-    <box height={1} backgroundColor={COLORS.barBg} flexDirection="row">
+    <box height={1} backgroundColor={barBg()} flexDirection="row">
       {/* Repo path */}
-      <box backgroundColor={COLORS.segmentBg} paddingLeft={1} paddingRight={1}>
-        <text fg={COLORS.muted}>{repoPath()}</text>
+      <box backgroundColor={segmentBg()} paddingLeft={1} paddingRight={1}>
+        <text fg={muted()}>{repoPath()}</text>
       </box>
 
       {/* Current bookmark if any */}
       <Show when={currentBookmark()}>
         <box paddingLeft={1} paddingRight={1}>
-          <text fg={COLORS.bookmark}>{currentBookmark()}</text>
+          <text fg={bookmark()}>{currentBookmark()}</text>
         </box>
       </Show>
 
       {/* Working copy change ID */}
       <Show when={wcChangeId()}>
         <box paddingLeft={1}>
-          <text fg={COLORS.wc}>{wcChangeId()}</text>
+          <text fg={wc()}>{wcChangeId()}</text>
         </box>
       </Show>
 
@@ -79,12 +75,12 @@ export function FooterBar() {
 
       {/* Layout mode */}
       <box paddingRight={1}>
-        <text fg={COLORS.muted}>{layoutMode()}</text>
+        <text fg={muted()}>{layoutMode()}</text>
       </box>
 
       {/* Node count */}
-      <box backgroundColor={COLORS.segmentBg} paddingLeft={1} paddingRight={1}>
-        <text fg={COLORS.muted}>{nodeCount()} nodes</text>
+      <box backgroundColor={segmentBg()} paddingLeft={1} paddingRight={1}>
+        <text fg={muted()}>{nodeCount()} nodes</text>
       </box>
     </box>
   );

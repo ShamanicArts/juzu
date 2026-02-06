@@ -2,15 +2,9 @@ import { createEffect } from "solid-js";
 import { useRenderer } from "@opentui/solid";
 import { FrameBufferRenderable, RGBA } from "@opentui/core";
 import type { OpLogEntry } from "../../core/jj-api";
+import { UI_TOKENS } from "../../core/ui-tokens";
 
-const BG = RGBA.fromHex("#24283b");
 const SEL_BG = RGBA.fromInts(60, 70, 100, 180);
-const FG_DIM = RGBA.fromHex("#888888");
-const FG = RGBA.fromHex("#bbbbbb");
-const GREEN = RGBA.fromHex("#00ff9d");
-const YELLOW = RGBA.fromHex("#ffaa00");
-const CYAN = RGBA.fromHex("#00f0ff");
-const ORANGE = RGBA.fromHex("#ff8800");
 
 interface OpLogViewProps {
   entries: OpLogEntry[];
@@ -19,6 +13,7 @@ interface OpLogViewProps {
   width: number;
   height: number;
   onEnsureVisible: (visibleRows: number) => void;
+  themeVersion?: number;
 }
 
 export function OpLogView(props: OpLogViewProps) {
@@ -59,6 +54,14 @@ export function OpLogView(props: OpLogViewProps) {
 
   const draw = () => {
     if (!canvas) return;
+
+    const BG = RGBA.fromHex(UI_TOKENS.slate.bg0);
+    const FG_DIM = RGBA.fromHex(UI_TOKENS.slate.textMuted);
+    const FG = RGBA.fromHex(UI_TOKENS.slate.text);
+    const GREEN = RGBA.fromHex(UI_TOKENS.semantic.success);
+    const YELLOW = RGBA.fromHex(UI_TOKENS.semantic.warn);
+    const CYAN = RGBA.fromHex(UI_TOKENS.semantic.info);
+    const ORANGE = RGBA.fromHex(UI_TOKENS.graph.lanes[3] || UI_TOKENS.semantic.warn);
 
     const fb = canvas.frameBuffer;
     const w = props.width;
@@ -181,6 +184,7 @@ export function OpLogView(props: OpLogViewProps) {
     props.scrollOffset;
     props.width;
     props.height;
+    props.themeVersion;
 
     if (canvas && parentBox) {
       (canvas as any).width = props.width;
@@ -189,5 +193,5 @@ export function OpLogView(props: OpLogViewProps) {
     }
   });
 
-  return <box ref={setupCanvas} width={props.width} height={props.height} backgroundColor={BG} />;
+  return <box ref={setupCanvas} width={props.width} height={props.height} backgroundColor={RGBA.fromHex(UI_TOKENS.slate.bg0)} />;
 }
