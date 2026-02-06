@@ -1,4 +1,5 @@
 import type { CommitNode, LayoutMode, LayoutResult, GraphConfig } from "./types";
+import { UI_TOKENS } from "./ui-tokens";
 
 const DEFAULT_CONFIG: GraphConfig = {
   nodeRadius: 5,
@@ -7,22 +8,13 @@ const DEFAULT_CONFIG: GraphConfig = {
   canvasPadding: 50,
   textColumnGap: 60,
   colors: {
-    node: "#444",
-    nodeSelected: "#ffffff",
-    nodeConflict: "#ff0055",
-    text: "#888",
-    textDesc: "#bbb",
-    nodeBorder: "#666",
-    lanes: [
-      "#00f0ff",
-      "#ff0055",
-      "#00ff9d",
-      "#ffaa00",
-      "#aa00ff",
-      "#00aaff",
-      "#ffff00",
-      "#ff00aa",
-    ],
+    node: UI_TOKENS.graph.node,
+    nodeSelected: UI_TOKENS.graph.nodeSelected,
+    nodeConflict: UI_TOKENS.graph.nodeConflict,
+    text: UI_TOKENS.graph.text,
+    textDesc: UI_TOKENS.graph.textDesc,
+    nodeBorder: UI_TOKENS.graph.nodeBorder,
+    lanes: [...UI_TOKENS.graph.lanes],
   },
 };
 

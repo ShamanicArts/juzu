@@ -84,7 +84,7 @@ export function CanvasGraph(props: {
     ctx.clearRect(0, 0, canvasRef.width, canvasRef.height);
     // Keep canvas mostly transparent so the dot-board (CSS) reads through.
     // Neutral slate tint keeps the dot-board visible but not dominant.
-    ctx.fillStyle = "rgba(17, 19, 24, 0.22)";
+    ctx.fillStyle = UI_TOKENS.graph.canvasTint;
     ctx.fillRect(0, 0, canvasRef.width, canvasRef.height);
 
     const nodes = layoutResult().nodes;

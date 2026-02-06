@@ -30,6 +30,8 @@
       --slate: #9aa7b9;
       --slate-soft: rgba(138, 149, 167, 0.18);
       --slate-strong: rgba(138, 149, 167, 0.5);
+      --graph-dot-major: rgba(127, 159, 191, 0.12);
+      --graph-dot-minor: rgba(216, 222, 232, 0.05);
       /* Legacy aliases used across existing classes/components. */
       --cyan: var(--info);
       --green: var(--success);
@@ -290,8 +292,8 @@
       height: 100%;
       position: relative;
       background-image:
-        radial-gradient(rgba(127, 159, 191, 0.12) 1px, transparent 1px),
-        radial-gradient(rgba(216, 222, 232, 0.05) 1px, transparent 1px);
+        radial-gradient(var(--graph-dot-major) 1px, transparent 1px),
+        radial-gradient(var(--graph-dot-minor) 1px, transparent 1px);
       background-size: 22px 22px, 44px 44px;
       background-position: 0 0, 11px 11px;
     }
