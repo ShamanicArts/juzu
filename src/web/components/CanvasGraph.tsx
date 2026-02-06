@@ -607,12 +607,6 @@ export function CanvasGraph(props: {
   return (
     <div ref={(el) => (containerRef = el)} class="jjv-canvasWrap">
       <canvas ref={(el) => (canvasRef = el)} class="jjv-canvas" />
-      <div class="jjv-hint">
-        <span>Shift/Ctrl click: multi-select</span>
-        <span>Alt+drag node: move/pin</span>
-        <span>Right-click node: pin/unpin</span>
-        <span>Alt+click connection: insert</span>
-      </div>
     </div>
   );
 }

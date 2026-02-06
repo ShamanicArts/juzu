@@ -193,7 +193,9 @@ export function Sidebar(props: {
         <Show when={node()} fallback={<div class="jjv-muted">No commit selected</div>}>
           {(n) => (
             <>
-              <div class="jjv-card">
+              <details class="jjv-section" open>
+                <summary class="jjv-sectionSummary">Essentials</summary>
+                <div class="jjv-card">
                 <div class="jjv-row jjv-row--wrap" style={{ "justify-content": "space-between" }}>
                   <div class="mono" style={{ "font-weight": "700" }}>{n().changeId}</div>
                   <div class="mono jjv-muted">{n().commitId.slice(0, 12)}</div>
@@ -270,9 +272,12 @@ export function Sidebar(props: {
                     </div>
                   </Show>
                 </Show>
-              </div>
+                </div>
+              </details>
 
-              <div class="jjv-card">
+              <details class="jjv-section" open>
+                <summary class="jjv-sectionSummary">Bookmarks / Sync</summary>
+                <div class="jjv-card">
                 <div class="jjv-cardTitle">Bookmarks</div>
                 <div class="jjv-row jjv-row--wrap" style={{ "margin-top": "8px" }}>
                   <input
@@ -344,9 +349,12 @@ export function Sidebar(props: {
                     setTrackName("");
                   }}>Track</button>
                 </div>
-              </div>
+                </div>
+              </details>
 
-              <div class="jjv-card">
+              <details class="jjv-section" open>
+                <summary class="jjv-sectionSummary">Actions</summary>
+                <div class="jjv-card">
                 <div class="jjv-cardTitle">Quick Actions</div>
                 <Show when={!state.describeMode}>
                   <div class="jjv-row jjv-row--wrap" style={{ "margin-top": "10px" }}>
@@ -371,9 +379,12 @@ export function Sidebar(props: {
                     </div>
                   </div>
                 </Show>
-              </div>
+                </div>
+              </details>
 
-              <div class="jjv-card">
+              <details class="jjv-section" open>
+                <summary class="jjv-sectionSummary">Operations</summary>
+                <div class="jjv-card">
                 <div class="jjv-cardTitle">Operations</div>
                 <Show when={webState.opMode === "none"}>
                   <div class="jjv-row jjv-row--wrap">
@@ -391,9 +402,12 @@ export function Sidebar(props: {
                     <button class="jjv-btn" onClick={() => webActions.resetOpMode()}>Cancel</button>
                   </div>
                 </Show>
-              </div>
+                </div>
+              </details>
 
-              <div class="jjv-card">
+              <details class="jjv-section" open>
+                <summary class="jjv-sectionSummary">Files / Restore</summary>
+                <div class="jjv-card">
                 <div class="jjv-cardTitle">Files</div>
                 <div class="jjv-row" style={{ "margin-bottom": "8px" }}>
                   <button class="jjv-btn jjv-btn--ghost" onClick={() => props.onRestore()}>Restore all in selected</button>
@@ -418,9 +432,12 @@ export function Sidebar(props: {
                     </For>
                   </div>
                 </Show>
-              </div>
+                </div>
+              </details>
 
-              <div class="jjv-card">
+              <details class="jjv-section">
+                <summary class="jjv-sectionSummary">Diff Details</summary>
+                <div class="jjv-card">
                 <div class="jjv-cardTitle">Diff by File</div>
                 <Show when={diffSections().length > 0} fallback={<pre class="jjv-diff mono">{props.diffText || "(loading...)"}</pre>}>
                   <div class="jjv-files">
@@ -441,7 +458,8 @@ export function Sidebar(props: {
                     </For>
                   </div>
                 </Show>
-              </div>
+                </div>
+              </details>
             </>
           )}
         </Show>

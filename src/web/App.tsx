@@ -245,6 +245,18 @@ function App() {
     if (state.viewMode === "obslog") return state.obslogChangeId ? `change:${state.obslogChangeId.slice(0, 8)}` : "change:none";
     return "operation history";
   });
+  const footerPrimaryHint = createMemo(() => {
+    if (state.viewMode === "oplog") return "j/k move · PgUp/PgDn jump · Enter restore · g/Esc back";
+    if (state.viewMode === "obslog") return "j/k move · PgUp/PgDn jump · r refresh · g/Esc back";
+    if (state.describeMode) return "Enter save description · Esc cancel · h help";
+    if (state.rebaseSourceId) return `rebase source:${state.rebaseSourceId.slice(0, 8)} · select destination · b rebase · Esc cancel`;
+    return "j/k move · 1-5 layout · / revset · h help";
+  });
+  const footerSecondaryHint = createMemo(() => {
+    if (state.viewMode !== "log") return "";
+    if (state.describeMode || state.rebaseSourceId) return "";
+    return "Shift/Ctrl multi · Alt+drag move/pin · Right-click pin · Alt+click insert";
+  });
 
   createEffect(() => {
     const node = selected();
@@ -609,77 +621,49 @@ function App() {
   return (
     <div class="jjv-root">
       <header class="jjv-header">
-        <div class="jjv-brand">
-          <span class="jjv-title">jj-viz</span>
-          <span class="jjv-sub">web</span>
-          <span class="jjv-chip">mode:{headerMode()}</span>
-          <span class="jjv-chip">context:{headerContext()}</span>
-        </div>
+        <div class="jjv-headerMain">
+          <div class="jjv-brand">
+            <span class="jjv-title">jj-viz</span>
+            <span class="jjv-sub">web</span>
+            <span class="jjv-chip">mode:{headerMode()}</span>
+            <span class="jjv-chip">context:{headerContext()}</span>
+          </div>
 
-        <div class="jjv-controls">
-          <Show when={state.viewMode === "log"}>
-            <div class="jjv-row jjv-row--wrap">
-              <input
-                class="jjv-input mono"
-                placeholder="revset (e.g. ::@, @::, bookmarks())"
-                value={revsetDraft()}
-                onInput={(e) => setRevsetDraft(e.currentTarget.value)}
-              />
-              <button class="jjv-btn jjv-btn--ghost" onClick={() => {
-                actions.setRevsetQuery(revsetDraft().trim());
-                void refresh();
-              }}>Apply</button>
-              <button class="jjv-btn jjv-btn--ghost" onClick={() => {
-                setRevsetDraft("");
-                actions.setRevsetQuery("");
-                void refresh();
-              }}>Clear</button>
-            </div>
-            <div class="jjv-row jjv-row--wrap">
+          <div class="jjv-controls">
+            <Show when={state.viewMode === "log"}>
+              <select
+                class="jjv-select"
+                value={state.layoutMode}
+                onChange={(e) => actions.setLayoutMode((e.currentTarget.value as any) || "chronological")}
+              >
+                <option value="chronological">Chronological</option>
+                <option value="mainline">Mainline</option>
+                <option value="bookmark-centric">Bookmark-centric</option>
+                <option value="wc-focused">WC-focused</option>
+                <option value="topological">Topological</option>
+              </select>
+
+              <div class="jjv-row jjv-row--wrap">
+                <input
+                  class="jjv-input mono"
+                  placeholder="revset (e.g. ::@, @::, bookmarks())"
+                  value={revsetDraft()}
+                  onInput={(e) => setRevsetDraft(e.currentTarget.value)}
+                />
+                <button class="jjv-btn jjv-btn--ghost" onClick={() => {
+                  actions.setRevsetQuery(revsetDraft().trim());
+                  void refresh();
+                }}>Apply</button>
+                <button class="jjv-btn jjv-btn--ghost" onClick={() => {
+                  setRevsetDraft("");
+                  actions.setRevsetQuery("");
+                  void refresh();
+                }}>Clear</button>
+              </div>
+
               <button class="jjv-btn jjv-btn--ghost" onClick={() => void opGitFetch()}>Fetch</button>
               <button class="jjv-btn jjv-btn--ghost" onClick={() => void opGitPush()}>Push</button>
-            </div>
-          </Show>
-
-          <Show when={state.viewMode === "log"}>
-            <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
-              const node = selected();
-              if (!node) return;
-              void opEdit(node.changeId);
-            }}>
-              Edit
-            </button>
-            <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
-              const node = selected();
-              if (!node) return;
-              void opNew(node.changeId);
-            }}>
-              New
-            </button>
-            <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
-              const node = selected();
-              if (!node) return;
-              actions.startDescribe(node.descriptionFull || node.descriptionTitle || "");
-            }}>
-              Desc
-            </button>
-            <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading || !selected()} onClick={() => {
-              const node = selected();
-              if (!node) return;
-              if (!state.rebaseSourceId) {
-                actions.setRebaseSource(node.changeId);
-                } else {
-                  const sourceId = state.rebaseSourceId;
-                  maybeRunDestructive(`Rebase ${sourceId.slice(0, 8)} onto ${node.changeId.slice(0, 8)}?`, () => {
-                    void opRebase(sourceId, node.changeId);
-                  }, "Rebase");
-                }
-              }}>
-                Rebase
-            </button>
-            <button class="jjv-btn jjv-btn--ghost" disabled={!selected()} onClick={() => void toggleInlineFilesForSelected()}>
-              Files
-            </button>
+            </Show>
 
             <button class="jjv-btn" disabled={state.isLoading} onClick={() => void refresh()}>
               Refresh
@@ -698,20 +682,10 @@ function App() {
             }}>
               Redo
             </button>
+          </div>
+        </div>
 
-            <select
-              class="jjv-select"
-              value={state.layoutMode}
-              onChange={(e) => actions.setLayoutMode((e.currentTarget.value as any) || "chronological")}
-            >
-              <option value="chronological">Chronological</option>
-              <option value="mainline">Mainline</option>
-              <option value="bookmark-centric">Bookmark-centric</option>
-              <option value="wc-focused">WC-focused</option>
-              <option value="topological">Topological</option>
-            </select>
-          </Show>
-
+        <div class="jjv-headerRail">
           <div class="jjv-viewTabs">
             <button
               class={`jjv-btn ${state.viewMode === "log" ? "jjv-btn--primary" : "jjv-btn--ghost"}`}
@@ -733,8 +707,6 @@ function App() {
               Obslog
             </button>
           </div>
-
-          <span class={`jjv-meta ${isError() ? "jjv-meta--error" : ""}`}>status:{state.statusMessage}</span>
         </div>
       </header>
 
@@ -965,6 +937,16 @@ function App() {
           </Switch>
         </aside>
       </main>
+
+      <footer class="jjv-footer">
+        <span class="jjv-footerPill">mode:{headerMode()}</span>
+        <span class="jjv-footerPill">context:{headerContext()}</span>
+        <span class="jjv-footerHints">{footerPrimaryHint()}</span>
+        <Show when={footerSecondaryHint().length > 0}>
+          <span class="jjv-footerHints jjv-footerHints--advanced">{footerSecondaryHint()}</span>
+        </Show>
+        <span class={`jjv-footerStatus ${isError() ? "jjv-footerStatus--error" : ""}`}>status:{state.statusMessage}</span>
+      </footer>
 
       <ConfirmModal
         open={!!pendingConfirm()}

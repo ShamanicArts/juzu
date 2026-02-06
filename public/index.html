@@ -69,14 +69,33 @@
     }
 
     .jjv-header {
-      height: 54px;
+      min-height: 58px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
       padding: 10px 14px;
       background: linear-gradient(180deg, rgba(22, 27, 34, 0.98), rgba(22, 27, 34, 0.92));
       border-bottom: 1px solid var(--sep-strong);
       backdrop-filter: blur(8px);
+    }
+
+    .jjv-headerMain {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+      padding-right: 12px;
+    }
+
+    .jjv-headerRail {
+      width: 340px;
+      min-width: 340px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      border-left: 1px solid var(--sep-subtle);
+      padding-left: 12px;
     }
 
     .jjv-brand {
@@ -124,14 +143,60 @@
       align-items: center;
       flex: 1;
       justify-content: flex-end;
+      min-width: 0;
     }
 
     .jjv-viewTabs {
       display: flex;
       gap: 4px;
-      margin-left: 16px;
-      padding-left: 16px;
-      border-left: 1px solid var(--sep-subtle);
+      flex-shrink: 0;
+    }
+
+    .jjv-footer {
+      height: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      border-top: 1px solid var(--sep-strong);
+      background: rgba(17, 19, 24, 0.9);
+      font-size: 11px;
+      color: var(--muted);
+      min-width: 0;
+    }
+
+    .jjv-footerPill {
+      border: 1px solid var(--sep-subtle);
+      border-radius: 999px;
+      padding: 2px 8px;
+      white-space: nowrap;
+    }
+
+    .jjv-footerHints {
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .jjv-footerHints--advanced {
+      opacity: 0.85;
+      flex: 0 1 auto;
+    }
+
+    .jjv-footerStatus {
+      margin-left: auto;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 42vw;
+    }
+
+    .jjv-footerStatus--error {
+      color: var(--error);
     }
 
     .jjv-btn {
@@ -238,23 +303,6 @@
       background: transparent;
     }
 
-    .jjv-hint {
-      position: absolute;
-      left: 12px;
-      bottom: 12px;
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      padding: 8px 10px;
-      background: rgba(22, 27, 34, 0.72);
-      border: 1px solid var(--sep-subtle);
-      border-radius: 10px;
-      font-size: 11px;
-      color: var(--muted);
-      user-select: none;
-      backdrop-filter: blur(8px);
-    }
-
     .jjv-inspector {
       height: 100%;
       overflow-y: auto;
@@ -279,6 +327,39 @@
       padding: 10px;
       margin-bottom: 10px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .jjv-section {
+      border: 1px solid var(--sep-subtle);
+      border-radius: 10px;
+      background: rgba(17, 19, 24, 0.35);
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+
+    .jjv-sectionSummary {
+      cursor: pointer;
+      list-style: none;
+      font-size: 11px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 7px 10px;
+      background: rgba(17, 19, 24, 0.55);
+      border-bottom: 1px solid var(--sep-subtle);
+      user-select: none;
+    }
+
+    .jjv-sectionSummary::-webkit-details-marker {
+      display: none;
+    }
+
+    .jjv-section > .jjv-card {
+      border: 0;
+      border-radius: 0;
+      margin-bottom: 0;
+      box-shadow: none;
+      background: transparent;
     }
 
     .jjv-cardTitle { color: var(--muted); font-size: 12px; margin-bottom: 10px; letter-spacing: 0.3px; }
@@ -477,10 +558,80 @@
       gap: 8px;
     }
 
+    @media (max-width: 1360px), (max-height: 720px) {
+      .jjv-chip { display: none; }
+
+      .jjv-header {
+        min-height: 52px;
+        padding: 8px 10px;
+      }
+
+      .jjv-headerMain {
+        gap: 8px;
+        padding-right: 8px;
+      }
+
+      .jjv-headerRail {
+        width: 300px;
+        min-width: 300px;
+        padding-left: 8px;
+      }
+
+      .jjv-controls {
+        justify-content: flex-start;
+        gap: 6px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: thin;
+      }
+
+      .jjv-controls .jjv-row {
+        flex-wrap: nowrap;
+      }
+
+      .jjv-controls .jjv-input {
+        min-width: 170px;
+        width: 220px;
+      }
+
+      .jjv-btn,
+      .jjv-select,
+      .jjv-input {
+        font-size: 11px;
+        padding: 6px 8px;
+      }
+
+      .jjv-footerHints--advanced { display: none; }
+    }
+
+    @media (max-width: 1600px) {
+      .jjv-footerHints--advanced {
+        display: none;
+      }
+    }
+
     @media (max-width: 800px) {
       .jjv-sidebar { display: none; }
       .jjv-meta { max-width: 38vw; }
       .jjv-chip { display: none; }
+      .jjv-header {
+        display: block;
+        padding-bottom: 8px;
+      }
+      .jjv-headerMain {
+        padding-right: 0;
+        margin-bottom: 8px;
+      }
+      .jjv-headerRail {
+        width: auto;
+        min-width: 0;
+        border-left: 0;
+        padding: 0;
+      }
+      .jjv-viewTabs {
+        flex-wrap: wrap;
+      }
+      .jjv-footerHints--advanced { display: none; }
     }
 
     /* Op Log View */
