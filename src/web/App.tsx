@@ -37,10 +37,27 @@ function App() {
 
   const persistKey = "jj-viz-layout";
   let pollingInterval: ReturnType<typeof setInterval> | null = null;
+  let sse: EventSource | null = null;
+  let sseReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let sseBackoffMs = 1000;
+  let sseConnected = false;
   let pollInFlight = false;
   let lastNodesHash: string | null = null;
   const onVisibilityChange = () => {
     void pollForUpdates();
+  };
+
+  const stopPollingLoop = () => {
+    if (!pollingInterval) return;
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  };
+
+  const ensurePollingLoop = () => {
+    if (pollingInterval) return;
+    pollingInterval = setInterval(() => {
+      void pollForUpdates();
+    }, 3000);
   };
 
   const hashNodes = (nodes: unknown) => {
@@ -74,6 +91,60 @@ function App() {
     }
   };
 
+  const scheduleSseReconnect = () => {
+    if (sseReconnectTimer) return;
+    sseReconnectTimer = setTimeout(() => {
+      sseReconnectTimer = null;
+      connectSse();
+    }, sseBackoffMs);
+    sseBackoffMs = Math.min(15_000, sseBackoffMs * 2);
+  };
+
+  const handleRepoEvent = () => {
+    void pollForUpdates();
+  };
+
+  const connectSse = () => {
+    if (typeof window === "undefined") return;
+    if (!("EventSource" in window)) {
+      ensurePollingLoop();
+      return;
+    }
+
+    if (sse) {
+      sse.close();
+      sse = null;
+    }
+
+    sseConnected = false;
+
+    const client = new EventSource("/api/events");
+    sse = client;
+
+    client.addEventListener("open", () => {
+      sseConnected = true;
+      sseBackoffMs = 1000;
+      stopPollingLoop();
+    });
+
+    client.addEventListener("repo-updated", handleRepoEvent as EventListener);
+    client.addEventListener("ready", handleRepoEvent as EventListener);
+
+    client.onerror = () => {
+      if (!sseConnected) {
+        ensurePollingLoop();
+      } else {
+        sseConnected = false;
+        ensurePollingLoop();
+      }
+      if (sse) {
+        sse.close();
+        sse = null;
+      }
+      scheduleSseReconnect();
+    };
+  };
+
   onMount(() => {
     setBackend(createWebBackend());
     // Restore layout state for the web UI (best-effort)
@@ -100,16 +171,20 @@ function App() {
       lastNodesHash = hashNodes(state.nodes);
     })();
 
-    pollingInterval = setInterval(() => {
-      void pollForUpdates();
-    }, 3000);
+    ensurePollingLoop();
+    connectSse();
     document.addEventListener("visibilitychange", onVisibilityChange);
   });
 
   onCleanup(() => {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      pollingInterval = null;
+    stopPollingLoop();
+    if (sseReconnectTimer) {
+      clearTimeout(sseReconnectTimer);
+      sseReconnectTimer = null;
+    }
+    if (sse) {
+      sse.close();
+      sse = null;
     }
     document.removeEventListener("visibilitychange", onVisibilityChange);
   });
