@@ -33,6 +33,28 @@ export function GraphView(props: GraphViewProps) {
   let canvas: FrameBufferRenderable | undefined;
   let parentBox: any = undefined;
 
+  const viewBg = () => {
+    props.themeVersion;
+    return BG();
+  };
+
+  const tryCreateCanvas = () => {
+    if (!parentBox || canvas) return;
+    if (props.width <= 0 || props.height <= 0) return;
+
+    canvas = new FrameBufferRenderable(renderer, {
+      id: "graph-canvas",
+      width: props.width,
+      height: props.height,
+      respectAlpha: true,
+      live: true,
+    });
+
+    canvas.frameBuffer.fillRect(0, 0, props.width, props.height, BG());
+    draw();
+    parentBox.add(canvas);
+  };
+
   const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
   const truncate = (s: string, maxLen: number) => {
     if (maxLen <= 0) return "";
@@ -59,6 +81,7 @@ export function GraphView(props: GraphViewProps) {
 
     const start = props.scrollOffset;
     const visible = props.nodes.slice(start, start + visibleRows);
+    const end = start + visible.length;
     
     // Find selected index in visible range
     const selLocal = visible.findIndex(n => n.changeId === props.selectedId);
@@ -79,10 +102,13 @@ export function GraphView(props: GraphViewProps) {
     const lanesW = (maxLane + 1) * laneWidth;
     const textX = leftPad + lanesW + textGap;
 
-    const indexById = new Map<string, number>();
-    visible.forEach((n, i) => indexById.set(n.changeId, i));
+    // Global index so we can render connections that span beyond the visible window.
+    // This fixes missing lane/edge segments when one endpoint is off-screen.
+    const indexByIdAll = new Map<string, number>();
+    props.nodes.forEach((n, i) => indexByIdAll.set(n.changeId, i));
 
     const rowYCell = (i: number) => headerH + 1 + i * rowStride;
+    const rowYAbs = (globalIndex: number) => headerH + 1 + (globalIndex - start) * rowStride;
     const laneXCell = (lane: number) => leftPad + (maxLane - lane) * laneWidth;
 
     const bgAtAbsY = (_absY: number) => BG();
@@ -96,6 +122,7 @@ export function GraphView(props: GraphViewProps) {
     };
 
     const selectedNode = selLocal >= 0 && selLocal < visible.length ? visible[selLocal] : null;
+    const selectedId = props.selectedId;
     const WHITE = RGBA.fromHex("#ffffff");
 
     // Mainline mode: draw a horizontal "bus" only as far as needed.
@@ -105,13 +132,14 @@ export function GraphView(props: GraphViewProps) {
     // busByY maps a join-row Y -> [minX, maxX] span to draw.
     const busByY = new Map<number, { minX: number; maxX: number }>();
     if (props.layoutMode === "mainline" && maxLane > 0) {
+      // Build child lists from the full graph so fork/merge points can render
+      // even when the connected commit is off-screen.
       const childrenById = new Map<string, CommitNode[]>();
-      for (const child of visible) {
+      for (const child of props.nodes) {
         for (const pid of child.parents) {
-          if (!indexById.has(pid)) continue;
-          const arr = childrenById.get(pid) || [];
-          arr.push(child);
-          childrenById.set(pid, arr);
+          const arr = childrenById.get(pid);
+          if (arr) arr.push(child);
+          else childrenById.set(pid, [child]);
         }
       }
 
@@ -132,9 +160,9 @@ export function GraphView(props: GraphViewProps) {
         // Merge point: mainline node with an off-mainline parent
         if (node.parents.length > 1) {
           for (const pid of node.parents) {
-            const pi = indexById.get(pid);
+            const pi = indexByIdAll.get(pid);
             if (pi === undefined) continue;
-            const pl = visible[pi]?.lane || 0;
+            const pl = props.nodes[pi]?.lane || 0;
             if (pl !== 0) connectedLanes.push(pl);
           }
         }
@@ -156,13 +184,33 @@ export function GraphView(props: GraphViewProps) {
       }
     }
     
-    // Draw connections (non-staggered: forks join at parent row, merges at child row)
-    for (let i = 0; i < visible.length; i++) {
-      const node = visible[i];
+    // Draw connections (non-staggered: forks join at parent row, merges at child row).
+    // Important: render edge segments that intersect the visible window even if
+    // either endpoint commit is off-screen, so long vertical lanes stay visible.
+    const viewTop = headerH;
+    const viewBottom = headerH + graphH - 1;
+
+    const drawVert = (x: number, yA: number, yB: number, ch: string, fg: RGBA) => {
+      const yMin = Math.min(yA, yB);
+      const yMax = Math.max(yA, yB);
+      const from = Math.max(yMin, viewTop);
+      const to = Math.min(yMax, viewBottom);
+      for (let y = from; y <= to; y++) setGraphCell(x, y, ch, fg);
+    };
+
+    const drawHorz = (xA: number, xB: number, y: number, ch: string, fg: RGBA) => {
+      if (y < viewTop || y > viewBottom) return;
+      const xMin = Math.min(xA, xB);
+      const xMax = Math.max(xA, xB);
+      for (let x = xMin; x <= xMax; x++) setGraphCell(x, y, ch, fg);
+    };
+
+    for (let childIdx = 0; childIdx < props.nodes.length; childIdx++) {
+      const node = props.nodes[childIdx];
       const lane = node.lane || 0;
       const x0 = laneXCell(lane);
-      const y0 = rowYCell(i);
-      const isSelectedNode = node === selectedNode;
+      const y0 = rowYAbs(childIdx);
+      const isSelectedNode = !!selectedId && node.changeId === selectedId;
       const color = LANE_COLORS[lane % LANE_COLORS.length];
       // When HIGHLIGHT_NODE_CIRCLE is true, don't brighten colors for selected nodes
       const baseColor = (isSelectedNode && !HIGHLIGHT_NODE_CIRCLE)
@@ -171,13 +219,18 @@ export function GraphView(props: GraphViewProps) {
 
       for (let pIdx = 0; pIdx < node.parents.length; pIdx++) {
         const pid = node.parents[pIdx];
-        const pi = indexById.get(pid);
+        const pi = indexByIdAll.get(pid);
         if (pi === undefined) continue;
-        const parent = visible[pi];
+        const parent = props.nodes[pi];
+        if (!parent) continue;
+        const y1 = rowYAbs(pi);
+
+        // Skip edges that don't touch the visible window at all.
+        if (Math.max(y0, y1) < viewTop || Math.min(y0, y1) > viewBottom) continue;
+
         const pl = parent.lane || 0;
         const x1 = laneXCell(pl);
-        const y1 = rowYCell(pi);
-        const isParentSelected = parent === selectedNode;
+        const isParentSelected = !!selectedId && parent.changeId === selectedId;
         const isConnectionSelected = isSelectedNode || isParentSelected;
         const pc = LANE_COLORS[pl % LANE_COLORS.length];
         // When HIGHLIGHT_NODE_CIRCLE is true, don't brighten colors for selected nodes
@@ -186,13 +239,9 @@ export function GraphView(props: GraphViewProps) {
           : pc;
 
         if (lane === pl) {
-          const yMin = Math.min(y0, y1);
-          const yMax = Math.max(y0, y1);
           // When HIGHLIGHT_NODE_CIRCLE is true, don't highlight lines in white
           const lineColor = (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : pc;
-          for (let y = yMin + 1; y <= yMax - 1; y++) {
-            setGraphCell(x0, y, "│", lineColor);
-          }
+          drawVert(x0, y0 + 1, y1 - 1, "│", lineColor);
         } else {
           const isMergeCommit = node.parents.length > 1;
           const connectY = isMergeCommit ? y0 : y1;
@@ -209,39 +258,35 @@ export function GraphView(props: GraphViewProps) {
           // Horizontal segment on the join row.
           // In mainline mode, the bus provides the full-width horizontal at join points.
           if (!useBus) {
-            const xMin = Math.min(x0, x1);
-            const xMax = Math.max(x0, x1);
-            for (let x = xMin; x <= xMax; x++) {
-              setGraphCell(x, connectY, "─", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
-            }
+            drawHorz(x0, x1, connectY, "─", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
           }
 
           if (isMergeCommit) {
             // Merge: horizontal at child row; vertical drops down to the parent lane.
-            if (x0 < x1) {
-              setGraphCell(x0, connectY, "├", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
-              setGraphCell(x1, connectY, "┐", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
-            } else {
-              setGraphCell(x0, connectY, "┤", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
-              setGraphCell(x1, connectY, "┌", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
+            if (connectY >= viewTop && connectY <= viewBottom) {
+              if (x0 < x1) {
+                setGraphCell(x0, connectY, "├", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
+                setGraphCell(x1, connectY, "┐", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
+              } else {
+                setGraphCell(x0, connectY, "┤", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
+                setGraphCell(x1, connectY, "┌", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
+              }
             }
 
-            for (let y = connectY + 1; y <= y1 - 1; y++) {
-              setGraphCell(x1, y, "│", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
-            }
+            drawVert(x1, connectY + 1, y1 - 1, "│", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
           } else {
             // Fork: horizontal at parent row; vertical rises up on the child's lane.
-            if (x0 < x1) {
-              setGraphCell(x1, connectY, "├", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
-              setGraphCell(x0, connectY, "└", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
-            } else {
-              setGraphCell(x1, connectY, "┤", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
-              setGraphCell(x0, connectY, "┘", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
+            if (connectY >= viewTop && connectY <= viewBottom) {
+              if (x0 < x1) {
+                setGraphCell(x1, connectY, "├", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
+                setGraphCell(x0, connectY, "└", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
+              } else {
+                setGraphCell(x1, connectY, "┤", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : parentColor);
+                setGraphCell(x0, connectY, "┘", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
+              }
             }
 
-            for (let y = y0 + 1; y <= connectY - 1; y++) {
-              setGraphCell(x0, y, "│", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
-            }
+            drawVert(x0, y0 + 1, connectY - 1, "│", (isConnectionSelected && !HIGHLIGHT_NODE_CIRCLE) ? WHITE : (isSelectedNode ? baseColor : color));
           }
         }
       }
@@ -347,16 +392,7 @@ export function GraphView(props: GraphViewProps) {
       }
     }
     
-    canvas = new FrameBufferRenderable(renderer, {
-      id: "graph-canvas",
-      width: props.width,
-      height: props.height,
-      respectAlpha: true,
-      live: true,
-    });
-    
-    parentBox.add(canvas);
-    draw();
+    tryCreateCanvas();
   };
 
   createEffect(() => {
@@ -368,13 +404,24 @@ export function GraphView(props: GraphViewProps) {
     props.width;
     props.height;
     props.themeVersion;
+
+    if (!canvas && parentBox) {
+      tryCreateCanvas();
+    }
     
     if (canvas && parentBox) {
-      (canvas as any).width = props.width;
-      (canvas as any).height = props.height;
+      const nextW = props.width;
+      const nextH = props.height;
+      const currentW = (canvas as any).width as number;
+      const currentH = (canvas as any).height as number;
+      if (currentW !== nextW) (canvas as any).width = nextW;
+      if (currentH !== nextH) (canvas as any).height = nextH;
+      if (nextW > 0 && nextH > 0) {
+        canvas.frameBuffer.fillRect(0, 0, nextW, nextH, BG());
+      }
       draw();
     }
   });
 
-  return <box ref={setupCanvas} width={props.width} height={props.height} backgroundColor={BG()} />;
+  return <box ref={setupCanvas} width={props.width} height={props.height} backgroundColor={viewBg()} />;
 }

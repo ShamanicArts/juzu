@@ -210,8 +210,12 @@ export function ObslogView(props: ObslogViewProps) {
     props.changeId;
 
     if (canvas && parentBox) {
-      (canvas as any).width = props.width;
-      (canvas as any).height = props.height;
+      const nextW = props.width;
+      const nextH = props.height;
+      const currentW = (canvas as any).width as number;
+      const currentH = (canvas as any).height as number;
+      if (currentW !== nextW) (canvas as any).width = nextW;
+      if (currentH !== nextH) (canvas as any).height = nextH;
       draw();
     }
   });

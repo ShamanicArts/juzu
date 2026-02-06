@@ -131,9 +131,15 @@ function App() {
 
     const fallbackW = (process.stdout.columns ?? 80) as number;
     const fallbackH = (process.stdout.rows ?? 24) as number;
-    tuiActions.setTermSize(renderer.width || fallbackW, renderer.height || fallbackH);
+    const initialW = renderer.width || fallbackW;
+    const initialH = renderer.height || fallbackH;
+    if (tuiState.termSize.width !== initialW || tuiState.termSize.height !== initialH) {
+      tuiActions.setTermSize(initialW, initialH);
+    }
     renderer.on("resize", (w: number, h: number) => {
-      tuiActions.setTermSize(w, h);
+      if (tuiState.termSize.width !== w || tuiState.termSize.height !== h) {
+        tuiActions.setTermSize(w, h);
+      }
     });
 
     await refresh();
@@ -835,33 +841,22 @@ function App() {
   // Layout: horizontal (side-by-side) when wide enough, vertical (stacked) when narrow
   const useVerticalLayout = () => tuiState.termSize.width < RUNTIME.tui.sidebarBreakpointWidth;
   const showSidebar = () => tuiState.termSize.height >= RUNTIME.tui.sidebarMinHeight;
+  const graphPaneBg = () => {
+    tuiState.themeVersion;
+    return BG();
+  };
   const detailW = () => !useVerticalLayout() && showSidebar() ? Math.floor(tuiState.termSize.width * 0.40) : 0;
   const graphW = () => tuiState.termSize.width - detailW();
   const sidebarH = () => useVerticalLayout() && showSidebar() ? Math.floor(mainHeight() * RUNTIME.tui.stackedSidebarRatio) : 0;
   const graphH = () => mainHeight() - sidebarH();
-  const hasStatusRow = () => {
-    const msg = (state.statusMessage || "").trim();
-    if (!msg) return false;
-    if (/^nodes:\d+$/i.test(msg)) return false;
-    if (msg === "Loading...") return false;
-    if (msg.startsWith("Error")) return true;
-    return !tuiState.leaderMode;
-  };
-  const isModalMode = () =>
-    tuiState.revsetMode ||
-    state.describeMode ||
-    tuiState.leaderMode ||
-    !!state.rebaseSourceId ||
-    tuiState.mergeMode ||
-    state.viewMode !== "log";
   const statusBarHeight = () => {
     const w = tuiState.termSize.width;
     const h = tuiState.termSize.height;
     if (h < 14) return 1;
 
-    let rows = w < 90 ? 2 : 1;
-    if (isModalMode()) rows += 1;
-    if (hasStatusRow()) rows += 1;
+    // Keep status bar height stable so graph area does not resize when
+    // mode/status rows appear (leader mode, theme messages, etc).
+    let rows = w < 90 ? 4 : 3;
     if (w < 70) rows += 1;
 
     const maxAllowed = Math.max(1, h - 8);
@@ -876,7 +871,7 @@ function App() {
       <StatusBar width={tuiState.termSize.width} height={statusBarHeight()} themeVersion={tuiState.themeVersion} />
 
       <box flexDirection={useVerticalLayout() ? "column" : "row"} flexGrow={1} height={mainHeight()}>
-        <box width={useVerticalLayout() ? tuiState.termSize.width : graphW()} height={graphH()}>
+        <box width={useVerticalLayout() ? tuiState.termSize.width : graphW()} height={graphH()} backgroundColor={graphPaneBg()}>
         {state.viewMode === "log" && (
             <GraphView
               nodes={layoutResult().nodes}

@@ -19,7 +19,10 @@ export interface TuiState {
 }
 
 const initialTuiState: TuiState = {
-  termSize: { width: 80, height: 24 },
+  termSize: {
+    width: process.stdout.columns || 80,
+    height: process.stdout.rows || 24,
+  },
   scrollOffset: 0,
   sidebarScroll: 0,
   showHelp: false,
