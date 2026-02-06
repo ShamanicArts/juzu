@@ -4,7 +4,7 @@ import { webActions, webState } from "../../core/state-web";
 import type { CommitNode } from "../../core/types";
 import { DEFAULT_GRAPH_CONFIG } from "../../core/types";
 import { findConnectionAt, findNodeAt, getLaneColor } from "../../core/layout";
-import { UI_TOKENS } from "../../core/ui-tokens";
+import { UI_TOKENS, setUiTokens } from "../../core/ui-tokens";
 
 type DropTarget =
   | { type: "commit"; node: CommitNode }
@@ -17,6 +17,7 @@ export function CanvasGraph(props: {
   onRebase: (sourceId: string, destinationId: string) => void;
   onToggleInlineFiles: () => void;
   onInlineAction: (action: "new" | "edit" | "describe" | "rebase" | "files" | "abandon" | "duplicate" | "squash", nodeId: string) => void;
+  themeVersion?: number;
 }) {
   let canvasRef: HTMLCanvasElement | undefined;
   let containerRef: HTMLDivElement | undefined;
@@ -649,6 +650,7 @@ export function CanvasGraph(props: {
     hoveredNodeId();
     shiftActive();
     dimensions();
+    props.themeVersion; // Re-render when theme changes
     render();
   });
 
