@@ -10,6 +10,7 @@ import { OpLogView } from "./components/OpLogView";
 import { ObslogView } from "./components/ObslogView";
 import { OpLogSidebar } from "./components/OpLogSidebar";
 import { ObslogSidebar } from "./components/ObslogSidebar";
+import { ConfirmModal } from "./components/ConfirmModal";
 
 type PersistedLayout = {
   layoutMode?: string;
@@ -17,8 +18,18 @@ type PersistedLayout = {
   viewport?: { offsetX: number; offsetY: number; scale: number };
 };
 
+type ConfirmRequest = {
+  title: string;
+  body: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  destructive: boolean;
+  run: () => void;
+};
+
 function App() {
   const [diffText, setDiffText] = createSignal<string>("");
+  const [pendingConfirm, setPendingConfirm] = createSignal<ConfirmRequest | null>(null);
 
   const selected = createMemo(() => selectedNode());
   const multiCount = createMemo(() => state.selectedIds.size);
@@ -124,14 +135,15 @@ function App() {
     }
   };
 
-  const confirmDestructive = (message: string) => {
-    if (typeof window === "undefined") return true;
-    return window.confirm(`${message}\n\nThis changes repository history.`);
-  };
-
-  const maybeRunDestructive = (message: string, run: () => void) => {
-    if (!confirmDestructive(message)) return;
-    run();
+  const maybeRunDestructive = (title: string, run: () => void, confirmLabel = "Confirm") => {
+    setPendingConfirm({
+      title,
+      body: "Review and confirm to continue.",
+      confirmLabel,
+      cancelLabel: "Cancel",
+      destructive: true,
+      run,
+    });
   };
 
   const isError = createMemo(() => (state.statusMessage || "").toLowerCase().startsWith("error"));
@@ -196,6 +208,8 @@ function App() {
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
+    if (pendingConfirm()) return;
+
     // Help overlay
     if (state.showHelp) {
       if (e.key === "Escape" || e.key.toLowerCase() === "h") {
@@ -255,14 +269,14 @@ function App() {
       if (k === "u") {
         maybeRunDestructive("Undo last operation?", () => {
           void opUndo();
-        });
+        }, "Undo");
         return;
       }
       if (k === "r") {
         if (e.shiftKey) {
           maybeRunDestructive("Redo last operation?", () => {
             void opRedo();
-          });
+          }, "Redo");
         }
         else void refreshOpLog(100);
         return;
@@ -328,7 +342,7 @@ function App() {
         if (e.shiftKey) {
           maybeRunDestructive("Redo last operation?", () => {
             void opRedo();
-          });
+          }, "Redo");
         } else {
           void refresh();
         }
@@ -367,7 +381,7 @@ function App() {
           const sourceId = state.rebaseSourceId;
           maybeRunDestructive(`Rebase ${sourceId.slice(0, 8)} onto ${node.changeId.slice(0, 8)}?`, () => {
             void opRebase(sourceId, node.changeId);
-          });
+          }, "Rebase");
         }
         break;
       }
@@ -392,7 +406,7 @@ function App() {
       case "u":
         maybeRunDestructive("Undo last operation?", () => {
           void opUndo();
-        });
+        }, "Undo");
         break;
       case "i": {
         const node = selected();
@@ -505,14 +519,14 @@ function App() {
               if (!node) return;
               if (!state.rebaseSourceId) {
                 actions.setRebaseSource(node.changeId);
-              } else {
-                const sourceId = state.rebaseSourceId;
-                maybeRunDestructive(`Rebase ${sourceId.slice(0, 8)} onto ${node.changeId.slice(0, 8)}?`, () => {
-                  void opRebase(sourceId, node.changeId);
-                });
-              }
-            }}>
-              Rebase
+                } else {
+                  const sourceId = state.rebaseSourceId;
+                  maybeRunDestructive(`Rebase ${sourceId.slice(0, 8)} onto ${node.changeId.slice(0, 8)}?`, () => {
+                    void opRebase(sourceId, node.changeId);
+                  }, "Rebase");
+                }
+              }}>
+                Rebase
             </button>
             <button class="jjv-btn jjv-btn--ghost" disabled={!selected()} onClick={() => void toggleInlineFilesForSelected()}>
               Files
@@ -570,7 +584,7 @@ function App() {
                 onRebase={(sourceId, destinationId) => {
                   maybeRunDestructive(`Rebase ${sourceId.slice(0, 8)} onto ${destinationId.slice(0, 8)}?`, () => {
                     void opRebase(sourceId, destinationId);
-                  });
+                  }, "Rebase");
                 }}
                 onToggleInlineFiles={() => void toggleInlineFilesForSelected()}
                 onInlineAction={(action, nodeId) => {
@@ -608,7 +622,7 @@ function App() {
                       const sourceId = state.rebaseSourceId;
                       maybeRunDestructive(`Rebase ${sourceId.slice(0, 8)} onto ${nodeId.slice(0, 8)}?`, () => {
                         void opRebase(sourceId, nodeId);
-                      });
+                      }, "Rebase");
                     }
                     return;
                   }
@@ -625,13 +639,13 @@ function App() {
                   if (action === "abandon") {
                     maybeRunDestructive(`Abandon ${nodeId.slice(0, 8)}?`, () => {
                       void opAbandon(nodeId);
-                    });
+                    }, "Abandon");
                   }
                   if (action === "duplicate") void opDuplicate(nodeId);
                   if (action === "squash") {
                     maybeRunDestructive(`Squash ${nodeId.slice(0, 8)} into parent?`, () => {
                       void opSquash(nodeId);
-                    });
+                    }, "Squash");
                   }
                 }}
               />
@@ -644,12 +658,12 @@ function App() {
                 onUndo={() => {
                   maybeRunDestructive("Undo last operation?", () => {
                     void opUndo();
-                  });
+                  }, "Undo");
                 }}
                 onRedo={() => {
                   maybeRunDestructive("Redo last operation?", () => {
                     void opRedo();
-                  });
+                  }, "Redo");
                 }}
                 onRestore={async () => {
                   if (!state.opLogSelectedId) return;
@@ -692,18 +706,18 @@ function App() {
                   if (kind === "abandon") {
                     maybeRunDestructive(`Abandon ${node.changeId.slice(0, 8)}?`, () => {
                       void opAbandon(node.changeId);
-                    });
+                    }, "Abandon");
                   }
                   if (kind === "duplicate") void opDuplicate(node.changeId);
                   if (kind === "undo") {
                     maybeRunDestructive("Undo last operation?", () => {
                       void opUndo();
-                    });
+                    }, "Undo");
                   }
                   if (kind === "redo") {
                     maybeRunDestructive("Redo last operation?", () => {
                       void opRedo();
-                    });
+                    }, "Redo");
                   }
                   if (kind === "rebase") {
                     if (!state.rebaseSourceId) {
@@ -712,7 +726,7 @@ function App() {
                       const sourceId = state.rebaseSourceId;
                       maybeRunDestructive(`Rebase ${sourceId.slice(0, 8)} onto ${node.changeId.slice(0, 8)}?`, () => {
                         void opRebase(sourceId, node.changeId);
-                      });
+                      }, "Rebase");
                     }
                   }
                   if (kind === "describe") {
@@ -733,12 +747,12 @@ function App() {
                 onUndo={() => {
                   maybeRunDestructive("Undo last operation?", () => {
                     void opUndo();
-                  });
+                  }, "Undo");
                 }}
                 onRedo={() => {
                   maybeRunDestructive("Redo last operation?", () => {
                     void opRedo();
-                  });
+                  }, "Redo");
                 }}
                 onRestore={async () => {
                   if (!state.opLogSelectedId) return;
@@ -768,6 +782,22 @@ function App() {
           </Switch>
         </aside>
       </main>
+
+      <ConfirmModal
+        open={!!pendingConfirm()}
+        title={pendingConfirm()?.title || ""}
+        body={pendingConfirm()?.body || ""}
+        confirmLabel={pendingConfirm()?.confirmLabel || "Confirm"}
+        cancelLabel={pendingConfirm()?.cancelLabel || "Cancel"}
+        destructive={pendingConfirm()?.destructive || false}
+        onCancel={() => setPendingConfirm(null)}
+        onConfirm={() => {
+          const request = pendingConfirm();
+          if (!request) return;
+          setPendingConfirm(null);
+          request.run();
+        }}
+      />
     </div>
   );
 }
