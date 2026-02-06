@@ -149,6 +149,20 @@ bun run cli.ts --tui --theme=ember
 
 See `config.example.toml` for all first-pass options.
 
+Diff colors are theme-driven. You can optionally override diff rendering colors via:
+
+```toml
+[uiTokens.diff]
+addedBg = "#1f3a2a"
+removedBg = "#47252b"
+addedContentBg = "#2a5b3d"
+removedContentBg = "#69333a"
+addedSignColor = "#50fa7b"
+removedSignColor = "#ff5555"
+contextBg = "#111318"
+contextContentBg = "#111318"
+```
+
 ### Keyboard Shortcuts
 
 | Key | Action |

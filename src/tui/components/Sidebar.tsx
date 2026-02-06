@@ -5,6 +5,7 @@ import type { OpLogEntry, ObslogEntry } from "../../core/jj-api";
 import type { ViewMode } from "../../core/state";
 import { UI_TOKENS } from "../../core/ui-tokens";
 import { getRuntimeConfig } from "../../core/runtime-config";
+import { mixHex } from "../../core/color-utils";
 
 const PANEL_BG = RGBA.fromHex(UI_TOKENS.slate.panel);
 const CYAN = RGBA.fromHex(UI_TOKENS.semantic.info);
@@ -39,6 +40,12 @@ interface SidebarProps {
   opLogSelected?: OpLogEntry | null;
   obslogChangeId?: string | null;
   obslogSelected?: ObslogEntry | null;
+  diffPreview?: {
+    path: string;
+    diff: string;
+    index: number;
+    total: number;
+  } | null;
 }
 
 export function Sidebar(props: SidebarProps) {
@@ -57,6 +64,50 @@ export function Sidebar(props: SidebarProps) {
   const scrollFg = createMemo(() => {
     props.themeVersion;
     return RGBA.fromHex(UI_TOKENS.slate.textMuted);
+  });
+  const diffHeaderFg = createMemo(() => {
+    props.themeVersion;
+    return RGBA.fromHex(UI_TOKENS.semantic.success);
+  });
+  const diffColors = createMemo(() => {
+    props.themeVersion;
+    const diffTheme = ((UI_TOKENS as unknown as { diff?: Record<string, string> }).diff) || {};
+    return {
+      lineNumberFg: UI_TOKENS.slate.textMuted,
+      lineNumberBg: UI_TOKENS.slate.bg1,
+      contextBg: diffTheme.contextBg || UI_TOKENS.slate.panel,
+      contextContentBg: diffTheme.contextContentBg || UI_TOKENS.slate.panel,
+      addedBg: diffTheme.addedBg || mixHex(UI_TOKENS.slate.panel, UI_TOKENS.semantic.fileAdd, 0.48),
+      removedBg: diffTheme.removedBg || mixHex(UI_TOKENS.slate.panel, UI_TOKENS.semantic.fileDel, 0.48),
+      addedContentBg: diffTheme.addedContentBg || mixHex(UI_TOKENS.slate.panel, UI_TOKENS.semantic.fileAdd, 0.48),
+      removedContentBg: diffTheme.removedContentBg || mixHex(UI_TOKENS.slate.panel, UI_TOKENS.semantic.fileDel, 0.48),
+      addedSignColor: diffTheme.addedSignColor || UI_TOKENS.semantic.fileAdd,
+      removedSignColor: diffTheme.removedSignColor || UI_TOKENS.semantic.fileDel,
+      addedLineNumberBg: UI_TOKENS.slate.bg1,
+      removedLineNumberBg: UI_TOKENS.slate.bg1,
+      fg: UI_TOKENS.slate.text,
+    };
+  });
+
+  const showInlineDiff = createMemo(() => {
+    if (!props.diffPreview) return false;
+    if (props.viewMode && props.viewMode !== "log") return false;
+    if (props.confirmPrompt) return false;
+    if (props.showHelp) return false;
+    if (props.themePickerMode) return false;
+    if (props.promptMode) return false;
+    if (props.mergeMode) return false;
+    return true;
+  });
+
+  const diffBodyHeight = createMemo(() => {
+    if (!showInlineDiff()) return 0;
+    return Math.max(6, Math.floor(props.height * 0.35));
+  });
+
+  const detailRows = createMemo(() => {
+    const reserved = 2 + 1 + (showInlineDiff() ? 2 + diffBodyHeight() : 0);
+    return Math.max(1, props.height - reserved);
   });
 
   const contentLines = createMemo(() => {
@@ -94,6 +145,7 @@ export function Sidebar(props: SidebarProps) {
         { text: "e           Edit/checkout", color: FG },
         { text: "d           Describe", color: FG },
         { text: "b           Rebase", color: FG },
+        { text: "Ctrl+d      Full diff view", color: FG },
         { text: "/           Revset filter", color: FG },
         { text: "z           Restore selected", color: FG },
         { text: "Ctrl+X a    Abandon", color: FG },
@@ -112,6 +164,7 @@ export function Sidebar(props: SidebarProps) {
         { text: "View", color: CYAN },
         { text: "x           Toggle desc", color: FG },
         { text: "f           Toggle files", color: FG },
+        { text: "[ / ]       Cycle file diff", color: FG },
         { text: "r           Refresh", color: FG },
         { text: "h           Toggle help", color: YELLOW },
         { text: "", color: FG_DIM },
@@ -372,10 +425,10 @@ export function Sidebar(props: SidebarProps) {
   const visibleLines = createMemo(() => {
     props.themeVersion;
     const all = contentLines();
-    const maxScroll = Math.max(0, all.length - props.height + 3);
+    const maxScroll = Math.max(0, all.length - detailRows());
     const offset = Math.max(0, Math.min(props.scrollOffset, maxScroll));
     return {
-      lines: all.slice(offset, offset + props.height - 2),
+      lines: all.slice(offset, offset + detailRows()),
       canScrollUp: offset > 0,
       canScrollDown: offset < maxScroll,
     };
@@ -405,9 +458,34 @@ export function Sidebar(props: SidebarProps) {
           </text>
         )}
       </For>
-      <Show when={scrollIndicator()}>
-        <box flexGrow={1} />
-        <text fg={scrollFg()}>{scrollIndicator()}</text>
+      <text fg={scrollFg()}>{scrollIndicator() || " "}</text>
+
+      <Show when={showInlineDiff()}>
+        <text fg={diffHeaderFg()}>{`Diff ${props.diffPreview!.index + 1}/${props.diffPreview!.total}: ${props.diffPreview!.path}`}</text>
+        <text fg={scrollFg()}>[ / ] switch file, Ctrl+d full diff</text>
+        <box height={diffBodyHeight()}>
+          <diff
+            width={props.width}
+            height={diffBodyHeight()}
+            diff={props.diffPreview!.diff}
+            view="unified"
+            showLineNumbers={true}
+            lineNumberFg={diffColors().lineNumberFg}
+            lineNumberBg={diffColors().lineNumberBg}
+            contextBg={diffColors().contextBg}
+            addedBg={diffColors().addedBg}
+            removedBg={diffColors().removedBg}
+            addedContentBg={diffColors().addedContentBg}
+            removedContentBg={diffColors().removedContentBg}
+            contextContentBg={diffColors().contextContentBg}
+            addedSignColor={diffColors().addedSignColor}
+            removedSignColor={diffColors().removedSignColor}
+            addedLineNumberBg={diffColors().addedLineNumberBg}
+            removedLineNumberBg={diffColors().removedLineNumberBg}
+            fg={diffColors().fg}
+            wrapMode="char"
+          />
+        </box>
       </Show>
     </box>
   );

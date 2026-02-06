@@ -2,6 +2,7 @@ import { actions, state } from "./state";
 import { getBackend } from "./runtime";
 import type { FileEntry } from "./backend";
 import type { OpLogEntry, ObslogEntry } from "./jj-api";
+import { splitDiffByFile } from "./diff";
 
 function cwdOrEmpty() {
   return state.cwd || "";
@@ -86,6 +87,19 @@ export async function ensureFiles(changeId: string, maxAgeMs = 30_000): Promise<
 export async function fetchDiff(changeId: string): Promise<string> {
   const backend = getBackend();
   return backend.diff({ cwd: cwdOrEmpty(), changeId });
+}
+
+export async function ensureDiff(changeId: string, maxAgeMs = 30_000): Promise<string> {
+  const cached = state.diffCache.get(changeId);
+  if (cached && Date.now() - cached.atMs < maxAgeMs) return cached.diff;
+
+  const backend = getBackend();
+  const diff = await backend.diff({ cwd: cwdOrEmpty(), changeId });
+  const files = splitDiffByFile(diff);
+  const next = new Map(state.diffCache);
+  next.set(changeId, { atMs: Date.now(), diff, files });
+  actions.setDiffCache(next);
+  return diff;
 }
 
 export async function opNew(parentId: string) {

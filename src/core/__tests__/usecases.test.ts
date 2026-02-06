@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { setBackend } from "../runtime";
 import { actions, state } from "../state";
 import {
+  ensureDiff,
   ensureFiles,
   opEdit,
   refreshLog,
@@ -140,5 +141,22 @@ describe("usecases mutation wrappers", () => {
     expect(first.length).toBe(1);
     expect(second.length).toBe(1);
     expect(calls.files).toBe(1);
+  });
+
+  test("ensureDiff caches parsed file diffs", async () => {
+    const { backend } = makeBackend({
+      diff: async () => "diff --git a/src/app.ts b/src/app.ts\n@@ -1 +1 @@\n-old\n+new",
+    });
+    setBackend(backend);
+
+    const first = await ensureDiff("wc1", 60_000);
+    const second = await ensureDiff("wc1", 60_000);
+
+    expect(first).toContain("diff --git");
+    expect(second).toContain("diff --git");
+    const cached = state.diffCache.get("wc1");
+    expect(!!cached).toBe(true);
+    expect((cached?.files.length || 0) > 0).toBe(true);
+    expect(cached?.files[0]?.path).toBe("src/app.ts");
   });
 });

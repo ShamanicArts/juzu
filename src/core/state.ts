@@ -4,12 +4,19 @@ import type { CommitNode, FilesCacheEntry, LayoutMode, LayoutResult } from "./ty
 import type { OpLogEntry, ObslogEntry } from "./jj-api";
 import { calculateLayout } from "./layout";
 
-export type ViewMode = "log" | "oplog" | "obslog";
+export type DiffCacheEntry = {
+  atMs: number;
+  diff: string;
+  files: Array<{ path: string; diff: string }>;
+};
+
+export type ViewMode = "log" | "oplog" | "obslog" | "diff";
 
 export interface SharedState {
   cwd: string;
   nodes: CommitNode[];
   filesCache: Map<string, FilesCacheEntry>;
+  diffCache: Map<string, DiffCacheEntry>;
   revsetQuery: string;
 
   viewMode: ViewMode;
@@ -40,6 +47,7 @@ const initialState: SharedState = {
   cwd: "",
   nodes: [],
   filesCache: new Map(),
+  diffCache: new Map(),
   revsetQuery: "",
 
   viewMode: "log",
@@ -127,6 +135,7 @@ export const actions = {
   },
 
   setFilesCache: (cache: Map<string, FilesCacheEntry>) => setState("filesCache", cache),
+  setDiffCache: (cache: Map<string, DiffCacheEntry>) => setState("diffCache", cache),
   setRevsetQuery: (revset: string) => setState("revsetQuery", revset),
 
   setNodeExtraHeight: (changeId: string, extraHeight: number) => {

@@ -16,6 +16,7 @@ export interface TuiState {
   themePickerMode: boolean;
   themePickerIndex: number;
   themeVersion: number;
+  diffFileIndex: number;
 }
 
 const initialTuiState: TuiState = {
@@ -37,6 +38,7 @@ const initialTuiState: TuiState = {
   themePickerMode: false,
   themePickerIndex: 0,
   themeVersion: 0,
+  diffFileIndex: 0,
 };
 
 export const [tuiState, setTuiState] = createStore<TuiState>(initialTuiState);
@@ -101,6 +103,7 @@ export const tuiActions = {
   stopThemePicker: () => setTuiState("themePickerMode", false),
   setThemePickerIndex: (idx: number) => setTuiState("themePickerIndex", Math.max(0, idx)),
   bumpThemeVersion: () => setTuiState("themeVersion", (n) => n + 1),
+  setDiffFileIndex: (idx: number) => setTuiState("diffFileIndex", Math.max(0, idx)),
 
   reset: () => {
     setTuiState({ ...initialTuiState });

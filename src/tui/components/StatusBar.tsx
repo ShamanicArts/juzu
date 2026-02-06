@@ -33,6 +33,8 @@ const KEYBINDS: Record<string, Keybind[]> = {
     { key: "^x", action: "LEADER" },
     { key: "o", action: "OPLOG" },
     { key: "v", action: "OBSLOG" },
+    { key: "^d", action: "DIFF" },
+    { key: "[ ]", action: "FILE DIFF" },
     { key: "/", action: "REVSET" },
     { key: "h", action: "HELP" },
   ],
@@ -76,6 +78,13 @@ const KEYBINDS: Record<string, Keybind[]> = {
     { key: "g", action: "LOG" },
     { key: "h", action: "HELP" },
   ],
+  diff: [
+    { key: "j/k", action: "NAV" },
+    { key: "[ ]", action: "FILE" },
+    { key: "^d", action: "LOG" },
+    { key: "g", action: "LOG" },
+    { key: "h", action: "HELP" },
+  ],
 };
 
 export function StatusBar(props: { width: number; height: number; themeVersion?: number }) {
@@ -87,6 +96,7 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
     if (tuiState.mergeMode) return "merge";
     if (state.viewMode === "oplog") return "oplog";
     if (state.viewMode === "obslog") return "obslog";
+    if (state.viewMode === "diff") return "diff";
     return "normal";
   });
 
@@ -100,6 +110,7 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
       case "merge": return "MERGE";
       case "oplog": return "OPLOG";
       case "obslog": return "OBSLOG";
+      case "diff": return "DIFF";
       default: return "LOG";
     }
   });
@@ -171,6 +182,8 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
         return "r restores selected operation";
       case "obslog":
         return "change observation history";
+      case "diff":
+        return "full diff viewer";
       default:
         return "";
     }
