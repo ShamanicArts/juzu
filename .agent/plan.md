@@ -773,6 +773,10 @@ type AppState = TUIState | WebState;
 // See Phase 6.2 in .agent/plan.md
 ```
 
+**Implementation Update (2026-02-05):**
+- [x] Added Phase 6.2 TODO note in `src/core/state.ts` to capture the planned TUI/web state split.
+- [x] Kept this as deferred architecture follow-up (no runtime behavior change).
+
 ---
 
 ## Summary Table
@@ -793,7 +797,7 @@ type AppState = TUIState | WebState;
 | 5.1 | Confirmation Dialogs | MEDIUM | 1-2 days | ✅ |
 | 5.2 | Single-View Sidebar | MEDIUM | 1-2 days | ✅ |
 | 6.1 | Derived State | LOW | 2-3 days | ✅ |
-| 6.2 | Split State | LOW | 2-3 days | ⬜ |
+| 6.2 | Split State | LOW | 2-3 days | ⏸️ |
 
 **Legend:**
 - ⬜ Not Started

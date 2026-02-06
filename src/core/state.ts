@@ -7,6 +7,8 @@ import { calculateLayout } from "./layout";
 export type ViewMode = "log" | "oplog" | "obslog";
 
 export interface AppState {
+  // TODO: Consider splitting frontend-specific state (Phase 6.2 in .agent/plan.md).
+  // TUI-only and web-only UI fields currently share one store for simplicity.
   // Repository
   cwd: string;
   
