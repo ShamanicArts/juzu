@@ -4,6 +4,7 @@ import type { KeyEvent } from "@opentui/core";
 import { RGBA } from "@opentui/core";
 import { watch } from "node:fs/promises";
 import { state, actions, navigation, selectedNode, layoutResult } from "../core/state";
+import { tuiActions, tuiState } from "../core/state-tui";
 import { setBackend } from "../core/runtime";
 import { initCwdFrom, opAbandon, opDescribe, opDuplicate, opEdit, opInsertBetween, opMerge, opNew, opRebase, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
 import { createTuiBackend } from "./backend";
@@ -65,9 +66,9 @@ function App() {
 
     const fallbackW = (process.stdout.columns ?? 80) as number;
     const fallbackH = (process.stdout.rows ?? 24) as number;
-    actions.setTermSize(renderer.width || fallbackW, renderer.height || fallbackH);
+    tuiActions.setTermSize(renderer.width || fallbackW, renderer.height || fallbackH);
     renderer.on("resize", (w: number, h: number) => {
-      actions.setTermSize(w, h);
+      tuiActions.setTermSize(w, h);
     });
 
     await refresh();
@@ -101,7 +102,10 @@ function App() {
   };
 
   const ensureSelectedVisible = (visibleRows: number) => {
-    actions.scrollToSelected(visibleRows);
+    const idx = Math.max(0, layoutResult().nodes.findIndex((n) => n.changeId === state.selectedId));
+    const offset = tuiState.scrollOffset;
+    if (idx < offset) tuiActions.setScrollOffset(idx);
+    else if (idx >= offset + visibleRows) tuiActions.setScrollOffset(Math.max(0, idx - visibleRows + 1));
   };
 
   const ensureOpLogVisible = (visibleRows: number) => {
@@ -109,24 +113,24 @@ function App() {
     if (entries.length === 0) return;
     const idx = entries.findIndex((e) => e.id === state.opLogSelectedId);
     if (idx < 0) return;
-    const offset = state.scrollOffset;
-    if (idx < offset) actions.setScrollOffset(idx);
-    else if (idx >= offset + visibleRows) actions.setScrollOffset(Math.max(0, idx - visibleRows + 1));
+    const offset = tuiState.scrollOffset;
+    if (idx < offset) tuiActions.setScrollOffset(idx);
+    else if (idx >= offset + visibleRows) tuiActions.setScrollOffset(Math.max(0, idx - visibleRows + 1));
   };
 
   const ensureObslogVisible = (visibleRows: number) => {
     const entries = state.obslogEntries;
     if (entries.length === 0) return;
     const idx = Math.max(0, Math.min(state.obslogSelectedIndex, entries.length - 1));
-    const offset = state.scrollOffset;
-    if (idx < offset) actions.setScrollOffset(idx);
-    else if (idx >= offset + visibleRows) actions.setScrollOffset(Math.max(0, idx - visibleRows + 1));
+    const offset = tuiState.scrollOffset;
+    if (idx < offset) tuiActions.setScrollOffset(idx);
+    else if (idx >= offset + visibleRows) tuiActions.setScrollOffset(Math.max(0, idx - visibleRows + 1));
   };
 
   const requestConfirmation = (message: string, run: () => Promise<void> | void) => {
     pendingConfirmation = { message, run };
     setConfirmPrompt(message);
-    actions.setLeaderMode(false);
+    tuiActions.setLeaderMode(false);
     actions.setStatusMessage(`${message} (y/n)`);
   };
 
@@ -158,9 +162,9 @@ function App() {
     }
 
     // Handle help mode
-    if (state.showHelp) {
+    if (tuiState.showHelp) {
       if (name === "escape" || name === "h" || name === "q") {
-        actions.setShowHelp(false);
+        tuiActions.setShowHelp(false);
       }
       return;
     }
@@ -242,39 +246,41 @@ function App() {
     if (state.describeMode) {
       if (name === "return" || name === "enter") {
         const value = actions.submitDescribe();
+        tuiActions.setCursorPos(0);
         if (value !== null) {
           handleDescribeSubmit(value);
         }
         return;
       } else if (name === "escape") {
         actions.cancelDescribe();
+        tuiActions.setCursorPos(0);
         actions.setStatusMessage("Cancelled");
         return;
       } else if (name === "backspace") {
-        const newValue = state.describeValue.slice(0, state.cursorPos - 1) + state.describeValue.slice(state.cursorPos);
+        const newValue = state.describeValue.slice(0, tuiState.cursorPos - 1) + state.describeValue.slice(tuiState.cursorPos);
         actions.updateDescribeValue(newValue);
-        actions.setCursorPos(Math.max(0, state.cursorPos - 1));
+        tuiActions.setCursorPos(Math.max(0, tuiState.cursorPos - 1));
         return;
       } else if (name === "left") {
-        actions.setCursorPos(Math.max(0, state.cursorPos - 1));
+        tuiActions.setCursorPos(Math.max(0, tuiState.cursorPos - 1));
         return;
       } else if (name === "right") {
-        actions.setCursorPos(Math.min(state.describeValue.length, state.cursorPos + 1));
+        tuiActions.setCursorPos(Math.min(state.describeValue.length, tuiState.cursorPos + 1));
         return;
       } else if (key.sequence && key.sequence.length === 1) {
-        const newValue = state.describeValue.slice(0, state.cursorPos) + key.sequence + state.describeValue.slice(state.cursorPos);
+        const newValue = state.describeValue.slice(0, tuiState.cursorPos) + key.sequence + state.describeValue.slice(tuiState.cursorPos);
         actions.updateDescribeValue(newValue);
-        actions.setCursorPos(state.cursorPos + key.sequence.length);
+        tuiActions.setCursorPos(tuiState.cursorPos + key.sequence.length);
         return;
       }
       return;
     }
 
     // Handle merge mode
-    if (state.mergeMode) {
+    if (tuiState.mergeMode) {
       switch (name) {
         case "escape":
-          actions.setMergeMode(false);
+          tuiActions.setMergeMode(false);
           actions.setStatusMessage("Merge cancelled");
           return;
         case "return":
@@ -284,7 +290,7 @@ function App() {
         case "space": {
           const node = selectedNode();
           if (node) {
-            actions.toggleMergeSelection(node.changeId);
+            tuiActions.toggleMergeSelection(node.changeId);
           }
           return;
         }
@@ -295,7 +301,7 @@ function App() {
     }
 
     // Handle leader mode
-    if (state.leaderMode) {
+    if (tuiState.leaderMode) {
       switch (name) {
         case "a":
           requestConfirmation("Abandon selected change?", handleAbandon);
@@ -304,19 +310,19 @@ function App() {
           requestConfirmation("Squash selected change?", handleSquash);
           return;
         case "d":
-          actions.setLeaderMode(false);
+          tuiActions.setLeaderMode(false);
           handleDuplicate();
           return;
         case "u":
           requestConfirmation("Redo last operation?", handleRedo);
           return;
         case "m":
-          actions.setLeaderMode(false);
-          actions.setMergeMode(true);
+          tuiActions.setLeaderMode(false);
+          tuiActions.setMergeMode(true);
           actions.setStatusMessage("Merge mode: Space=select Enter=merge Esc=cancel");
           return;
         case "escape":
-          actions.setLeaderMode(false);
+          tuiActions.setLeaderMode(false);
           actions.setStatusMessage("Cancelled");
           return;
         case "up":
@@ -326,11 +332,11 @@ function App() {
         case "k":
         case "j":
           // Allow navigation - cancel leader mode silently and fall through
-          actions.setLeaderMode(false);
+          tuiActions.setLeaderMode(false);
           break;
         default:
           // Unknown key - just cancel leader mode silently
-          actions.setLeaderMode(false);
+          tuiActions.setLeaderMode(false);
           return;
       }
     }
@@ -354,24 +360,24 @@ function App() {
         navigation.moveDown();
         break;
       case "pageup":
-        actions.setSidebarScroll(state.sidebarScroll - 10);
+        tuiActions.setSidebarScroll(tuiState.sidebarScroll - 10);
         break;
       case "pagedown":
-        actions.setSidebarScroll(state.sidebarScroll + 10);
+        tuiActions.setSidebarScroll(tuiState.sidebarScroll + 10);
         break;
       case "r":
         refresh();
         break;
       case "f":
-        actions.toggleFilesExpanded();
+        tuiActions.toggleFilesExpanded();
         break;
       case "x":
         if (!key.ctrl && !key.meta) {
-          actions.toggleDescExpanded();
+          tuiActions.toggleDescExpanded();
         }
         break;
       case "h":
-        actions.toggleHelp();
+        tuiActions.toggleHelp();
         break;
       case "1":
         actions.setLayoutMode("chronological");
@@ -425,7 +431,7 @@ function App() {
 
     // Leader key: Ctrl+X
     if (key.ctrl && name === "x") {
-      actions.setLeaderMode(true);
+      tuiActions.setLeaderMode(true);
       actions.setStatusMessage("Leader mode");
     }
   });
@@ -453,7 +459,9 @@ function App() {
   const handleDescribe = () => {
     const node = selectedNode();
     if (!node) return;
-    actions.startDescribe(node.descriptionTitle || "");
+    const initial = node.descriptionTitle || "";
+    actions.startDescribe(initial);
+    tuiActions.setCursorPos(initial.length);
   };
 
   const handleDescribeSubmit = async (value: string) => {
@@ -554,14 +562,14 @@ function App() {
   };
 
   const handleMerge = async () => {
-    const parents = Array.from(state.mergeSelectedIds);
+    const parents = Array.from(tuiState.mergeSelectedIds);
     if (parents.length < 2) {
       actions.setStatusMessage("Merge: select at least 2 commits");
       return;
     }
     try {
       await opMerge(parents);
-      actions.setMergeMode(false);
+      tuiActions.setMergeMode(false);
     } catch (e) {
       actions.setStatusMessage(`Error: ${String(e)}`);
     }
@@ -606,14 +614,14 @@ function App() {
     }
   };
 
-  const showSidebar = () => state.termSize.width >= 90 && state.termSize.height >= 16;
-  const detailW = () => showSidebar() ? Math.floor(state.termSize.width * 0.40) : 0;
-  const graphW = () => state.termSize.width - detailW();
+  const showSidebar = () => tuiState.termSize.width >= 90 && tuiState.termSize.height >= 16;
+  const detailW = () => showSidebar() ? Math.floor(tuiState.termSize.width * 0.40) : 0;
+  const graphW = () => tuiState.termSize.width - detailW();
   // 1 row for StatusBar + 1 row for FooterBar = 2 rows
-  const mainHeight = () => state.termSize.height - 2;
+  const mainHeight = () => tuiState.termSize.height - 2;
 
   return (
-    <box width={state.termSize.width} height={state.termSize.height} backgroundColor={BG} flexDirection="column">
+    <box width={tuiState.termSize.width} height={tuiState.termSize.height} backgroundColor={BG} flexDirection="column">
       {/* Top status bar */}
       <StatusBar />
 
@@ -623,21 +631,21 @@ function App() {
             <GraphView
               nodes={layoutResult().nodes}
               selectedId={state.selectedId}
-              scrollOffset={state.scrollOffset}
+              scrollOffset={tuiState.scrollOffset}
               filesCache={state.filesCache}
               width={graphW()}
               height={mainHeight()}
               onEnsureVisible={ensureSelectedVisible}
               layoutMode={state.layoutMode}
-              mergeMode={state.mergeMode}
-              mergeSelectedIds={state.mergeSelectedIds}
+              mergeMode={tuiState.mergeMode}
+              mergeSelectedIds={tuiState.mergeSelectedIds}
             />
           )}
           {state.viewMode === "oplog" && (
             <OpLogView
               entries={state.opLogEntries}
               selectedId={state.opLogSelectedId}
-              scrollOffset={state.scrollOffset}
+              scrollOffset={tuiState.scrollOffset}
               width={graphW()}
               height={mainHeight()}
               onEnsureVisible={ensureOpLogVisible}
@@ -646,7 +654,7 @@ function App() {
           {state.viewMode === "obslog" && (
             <ObslogView
               entries={state.obslogEntries}
-              scrollOffset={state.scrollOffset}
+              scrollOffset={tuiState.scrollOffset}
               selectedIndex={state.obslogSelectedIndex}
               width={graphW()}
               height={mainHeight()}
@@ -661,18 +669,18 @@ function App() {
                <Sidebar
                selected={selectedNode()}
                filesCache={state.filesCache}
-               descExpanded={state.descExpanded}
-               filesExpanded={state.filesExpanded}
-               scrollOffset={state.sidebarScroll}
+               descExpanded={tuiState.descExpanded}
+               filesExpanded={tuiState.filesExpanded}
+               scrollOffset={tuiState.sidebarScroll}
                width={detailW()}
                height={mainHeight()}
-               showHelp={state.showHelp}
+               showHelp={tuiState.showHelp}
                 promptMode={state.describeMode}
                 promptValue={state.describeValue}
-                cursorPos={state.cursorPos}
+                cursorPos={tuiState.cursorPos}
                 confirmPrompt={confirmPrompt()}
-                mergeMode={state.mergeMode}
-                mergeSelectedIds={state.mergeSelectedIds}
+                mergeMode={tuiState.mergeMode}
+                mergeSelectedIds={tuiState.mergeSelectedIds}
                   viewMode={state.viewMode}
                  opLogSelected={state.opLogEntries.find(e => e.id === state.opLogSelectedId)}
                  obslogChangeId={state.obslogChangeId}

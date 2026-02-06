@@ -1,8 +1,9 @@
 import { render } from "solid-js/web";
 import { createEffect, createMemo, createSignal, onCleanup, onMount, Show, Switch, Match } from "solid-js";
 import { actions, navigation, selectedNode, state, layoutResult } from "../core/state";
+import { webActions, webState } from "../core/state-web";
 import { setBackend } from "../core/runtime";
-import { ensureFiles, fetchDiff, opAbandon, opDescribe, opDuplicate, opEdit, opInsertAfter, opInsertBetween, opMerge, opMove, opNew, opRebase, opRedo, opRestoreOperation, opSquash, opSplit, opUndo, refreshLog, refreshOpLog, refreshObslog, toggleInlineFilesForSelected } from "../core/usecases";
+import { ensureFiles, fetchDiff, opAbandon, opDescribe, opDuplicate, opEdit, opInsertAfter, opInsertBetween, opMerge, opMove, opNew, opRebase, opRedo, opRestoreOperation, opSquash, opSplit, opUndo, refreshLog, refreshOpLog, refreshObslog } from "../core/usecases";
 import { createWebBackend } from "./backend";
 import { CanvasGraph } from "./components/CanvasGraph";
 import { Sidebar } from "./components/Sidebar";
@@ -87,7 +88,7 @@ function App() {
           actions.setPinnedNodes(new Map(parsed.pinned));
         }
         if (parsed.viewport) {
-          actions.setViewport(parsed.viewport);
+          webActions.setViewport(parsed.viewport);
         }
       }
     } catch {
@@ -119,7 +120,7 @@ function App() {
       const payload: PersistedLayout = {
         layoutMode: state.layoutMode,
         pinned: Array.from(state.pinnedNodes.entries()),
-        viewport: state.viewport,
+        viewport: webState.viewport,
       };
       localStorage.setItem(persistKey, JSON.stringify(payload));
     } catch {
@@ -211,9 +212,9 @@ function App() {
     if (pendingConfirm()) return;
 
     // Help overlay
-    if (state.showHelp) {
+    if (webState.showHelp) {
       if (e.key === "Escape" || e.key.toLowerCase() === "h") {
-        actions.toggleHelp();
+        webActions.toggleHelp();
       }
       return;
     }
@@ -319,23 +320,25 @@ function App() {
     }
 
     if (e.key.toLowerCase() === "h") {
-      actions.toggleHelp();
+      webActions.toggleHelp();
       return;
     }
 
     if (e.key === "Escape") {
       actions.setRebaseSource(null);
-      actions.resetOpMode();
+      webActions.resetOpMode();
       return;
     }
 
     switch (e.key.toLowerCase()) {
       case "j":
       case "arrowdown":
+        webActions.resetOpMode();
         navigation.moveDown();
         break;
       case "k":
       case "arrowup":
+        webActions.resetOpMode();
         navigation.moveUp();
         break;
       case "r":
@@ -434,33 +437,57 @@ function App() {
   const handleExecuteOp = async () => {
     const node = selected();
     if (!node) return;
-    const paths = Array.from(state.opSelectedPaths);
+    const paths = Array.from(webState.opSelectedPaths);
 
-    if (state.opMode === "split") {
+    if (webState.opMode === "split") {
       if (paths.length === 0) {
         actions.setStatusMessage("Split: select at least one file");
         return;
       }
       await opSplit(node.changeId, paths);
-      actions.resetOpMode();
+      webActions.resetOpMode();
       return;
     }
 
-    if (state.opMode === "squash") {
+    if (webState.opMode === "squash") {
       // Squash selected paths (or all if none) into parent
       await opSquash(node.changeId, { paths: paths.length > 0 ? paths : undefined });
-      actions.resetOpMode();
+      webActions.resetOpMode();
       return;
     }
 
-    if (state.opMode === "move") {
-      if (!state.opTargetId) {
+    if (webState.opMode === "move") {
+      if (!webState.opTargetId) {
         actions.setStatusMessage("Move: click a target node in the graph");
         return;
       }
-      await opSquash(node.changeId, { intoId: state.opTargetId, paths: paths.length > 0 ? paths : undefined });
-      actions.resetOpMode();
+      await opSquash(node.changeId, { intoId: webState.opTargetId, paths: paths.length > 0 ? paths : undefined });
+      webActions.resetOpMode();
       return;
+    }
+  };
+
+  const toggleInlineFilesForSelected = async () => {
+    const sel = state.selectedId;
+    if (!sel) return;
+
+    const prev = webState.expandedFilesNodeId;
+    if (prev && prev !== sel) {
+      actions.setNodeExtraHeight(prev, 0);
+    }
+
+    if (webState.expandedFilesNodeId === sel) {
+      webActions.setExpandedFilesNode(null);
+      actions.setNodeExtraHeight(sel, 0);
+      return;
+    }
+
+    webActions.setExpandedFilesNode(sel);
+    try {
+      const files = await ensureFiles(sel);
+      actions.setNodeExtraHeight(sel, files.length * 14 + 34);
+    } catch {
+      actions.setNodeExtraHeight(sel, 0);
     }
   };
 
@@ -591,10 +618,10 @@ function App() {
                   if (action === "files") {
                     // Toggle files for the specific node whose button was clicked
                     void (async () => {
-                      const prev = state.expandedFilesNodeId;
+                      const prev = webState.expandedFilesNodeId;
                       // If clicking the same node, close it
                       if (prev === nodeId) {
-                        actions.setExpandedFilesNode(null);
+                        webActions.setExpandedFilesNode(null);
                         actions.setNodeExtraHeight(nodeId, 0);
                         return;
                       }
@@ -603,7 +630,7 @@ function App() {
                         actions.setNodeExtraHeight(prev, 0);
                       }
                       // Open the clicked node's files
-                      actions.setExpandedFilesNode(nodeId);
+                      webActions.setExpandedFilesNode(nodeId);
                       try {
                         const files = await ensureFiles(nodeId);
                         // Reserve room for inline controls + padding + files.

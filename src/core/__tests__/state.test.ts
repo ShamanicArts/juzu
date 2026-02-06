@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { actions, navigation, state } from "../state";
+import { webActions, webState } from "../state-web";
 import type { CommitNode } from "../types";
 
 function node(overrides: Partial<CommitNode>): CommitNode {
@@ -32,6 +33,7 @@ const nodes: CommitNode[] = [
 describe("state store behavior", () => {
   beforeEach(() => {
     actions.reset();
+    webActions.reset();
   });
 
   test("nodes and layout mode update source state", () => {
@@ -134,18 +136,19 @@ describe("state store behavior", () => {
 
   test("op mode requires single selection and resets on selection change", () => {
     actions.setNodes(nodes);
-    actions.setOpMode("split");
-    expect(state.opMode).toBe("split");
+    webActions.setOpMode("split");
+    expect(webState.opMode).toBe("split");
 
     actions.toggleSelection("c2");
     expect(state.selectedIds.size).toBe(2);
-    expect(state.opMode).toBe("none");
+    webActions.resetOpMode();
+    expect(webState.opMode).toBe("none");
 
-    actions.setOpMode("move");
-    expect(state.opMode).toBe("none");
+    webActions.setOpMode("move");
+    expect(webState.opMode).toBe("move");
 
     actions.selectNode("c2");
-    actions.setOpMode("move");
-    expect(state.opMode).toBe("move");
+    webActions.setOpMode("move");
+    expect(webState.opMode).toBe("move");
   });
 });

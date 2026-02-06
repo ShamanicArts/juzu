@@ -1,5 +1,6 @@
 import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import { actions, state, layoutResult } from "../../core/state";
+import { webActions, webState } from "../../core/state-web";
 import type { CommitNode } from "../../core/types";
 import { DEFAULT_GRAPH_CONFIG } from "../../core/types";
 import { findConnectionAt, findNodeAt, getLaneColor } from "../../core/layout";
@@ -39,8 +40,8 @@ export function CanvasGraph(props: {
     const x = clientX - rect.left;
     const y = clientY - rect.top;
     return {
-      x: (x - state.viewport.offsetX) / state.viewport.scale,
-      y: (y - state.viewport.offsetY) / state.viewport.scale,
+      x: (x - webState.viewport.offsetX) / webState.viewport.scale,
+      y: (y - webState.viewport.offsetY) / webState.viewport.scale,
     };
   };
 
@@ -94,8 +95,8 @@ export function CanvasGraph(props: {
     }
 
     ctx.save();
-    ctx.translate(state.viewport.offsetX, state.viewport.offsetY);
-    ctx.scale(state.viewport.scale, state.viewport.scale);
+    ctx.translate(webState.viewport.offsetX, webState.viewport.offsetY);
+    ctx.scale(webState.viewport.scale, webState.viewport.scale);
 
     inlineButtons = [];
 
@@ -189,7 +190,7 @@ export function CanvasGraph(props: {
       const laneColor = getLaneColor(node.lane || 0, cfg);
 
       // Move-mode target indicator
-      if (state.opMode === "move" && state.opTargetId && state.opTargetId === node.changeId) {
+      if (webState.opMode === "move" && webState.opTargetId && webState.opTargetId === node.changeId) {
         ctx.save();
         ctx.beginPath();
         ctx.arc(node.x, node.y, cfg.nodeRadius + 10, 0, Math.PI * 2);
@@ -298,7 +299,7 @@ export function CanvasGraph(props: {
       }
 
       // Inline files - positioned below inline controls (or below text if no controls)
-      if (state.expandedFilesNodeId === node.changeId) {
+      if (webState.expandedFilesNodeId === node.changeId) {
         const cached = state.filesCache.get(node.changeId);
         if (cached && cached.files.length > 0) {
           // Start below inline controls (baseY + 18 + spacing) or just below text row
@@ -388,15 +389,17 @@ export function CanvasGraph(props: {
       }
 
       // Move-mode target selection (doesn't change selection)
-      if (state.opMode === "move" && state.selectedIds.size === 1 && state.selectedId && hitNode.changeId !== state.selectedId) {
-        actions.setOpTarget(hitNode.changeId);
+      if (webState.opMode === "move" && state.selectedIds.size === 1 && state.selectedId && hitNode.changeId !== state.selectedId) {
+        webActions.setOpTarget(hitNode.changeId);
         return;
       }
 
       // Selection
       if (e.shiftKey || e.ctrlKey || e.metaKey) {
+        webActions.resetOpMode();
         actions.toggleSelection(hitNode.changeId);
       } else {
+        webActions.resetOpMode();
         actions.selectNode(hitNode.changeId);
       }
 
@@ -431,9 +434,9 @@ export function CanvasGraph(props: {
     if (isPanning()) {
       const dx = e.clientX - dragStart().x;
       const dy = e.clientY - dragStart().y;
-      actions.setViewport({
-        offsetX: state.viewport.offsetX + dx,
-        offsetY: state.viewport.offsetY + dy,
+      webActions.setViewport({
+        offsetX: webState.viewport.offsetX + dx,
+        offsetY: webState.viewport.offsetY + dy,
       });
       setDragStart({ x: e.clientX, y: e.clientY });
       return;
@@ -500,12 +503,12 @@ export function CanvasGraph(props: {
     const y = e.clientY - rect.top;
 
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = Math.max(0.1, Math.min(3, state.viewport.scale * zoomFactor));
-    const scaleRatio = newScale / state.viewport.scale;
-    const newOffsetX = x - (x - state.viewport.offsetX) * scaleRatio;
-    const newOffsetY = y - (y - state.viewport.offsetY) * scaleRatio;
+    const newScale = Math.max(0.1, Math.min(3, webState.viewport.scale * zoomFactor));
+    const scaleRatio = newScale / webState.viewport.scale;
+    const newOffsetX = x - (x - webState.viewport.offsetX) * scaleRatio;
+    const newOffsetY = y - (y - webState.viewport.offsetY) * scaleRatio;
 
-    actions.setViewport({
+    webActions.setViewport({
       scale: newScale,
       offsetX: newOffsetX,
       offsetY: newOffsetY,
@@ -578,9 +581,9 @@ export function CanvasGraph(props: {
     // Dependencies
     layoutResult().nodes;
     state.selectedIds;
-    state.viewport;
+    webState.viewport;
     state.layoutMode;
-    state.expandedFilesNodeId;
+    webState.expandedFilesNodeId;
     state.filesCache;
     dragNodeId();
     dropTarget();

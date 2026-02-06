@@ -1,6 +1,7 @@
 import { Show, createMemo, For } from "solid-js";
 import { RGBA } from "@opentui/core";
 import { state } from "../../core/state";
+import { tuiState } from "../../core/state-tui";
 
 // Tokyo Night palette
 const COLORS = {
@@ -70,9 +71,9 @@ const KEYBINDS: Record<string, Keybind[]> = {
 export function StatusBar() {
   const currentMode = createMemo(() => {
     if (state.describeMode) return "describe";
-    if (state.leaderMode) return "leader";
+    if (tuiState.leaderMode) return "leader";
     if (state.rebaseSourceId) return "rebase";
-    if (state.mergeMode) return "merge";
+    if (tuiState.mergeMode) return "merge";
     if (state.viewMode === "oplog") return "oplog";
     if (state.viewMode === "obslog") return "obslog";
     return "normal";
@@ -113,7 +114,7 @@ export function StatusBar() {
   const showStatusMessage = createMemo(() => {
     if (!state.statusMessage) return false;
     if (state.statusMessage.startsWith("Error")) return true;
-    return !state.leaderMode;
+    return !tuiState.leaderMode;
   });
 
   return (

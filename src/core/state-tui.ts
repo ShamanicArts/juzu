@@ -1,0 +1,71 @@
+import { createStore } from "solid-js/store";
+
+export interface TuiState {
+  termSize: { width: number; height: number };
+  scrollOffset: number;
+  sidebarScroll: number;
+  showHelp: boolean;
+  leaderMode: boolean;
+  cursorPos: number;
+  mergeMode: boolean;
+  mergeSelectedIds: Set<string>;
+  descExpanded: boolean;
+  filesExpanded: boolean;
+}
+
+const initialTuiState: TuiState = {
+  termSize: { width: 80, height: 24 },
+  scrollOffset: 0,
+  sidebarScroll: 0,
+  showHelp: false,
+  leaderMode: false,
+  cursorPos: 0,
+  mergeMode: false,
+  mergeSelectedIds: new Set(),
+  descExpanded: false,
+  filesExpanded: true,
+};
+
+export const [tuiState, setTuiState] = createStore<TuiState>(initialTuiState);
+
+export const tuiActions = {
+  setTermSize: (width: number, height: number) => {
+    setTuiState("termSize", { width, height });
+  },
+
+  setScrollOffset: (offset: number) => {
+    setTuiState("scrollOffset", Math.max(0, offset));
+  },
+
+  setSidebarScroll: (offset: number) => {
+    setTuiState("sidebarScroll", Math.max(0, offset));
+  },
+
+  setShowHelp: (show: boolean) => setTuiState("showHelp", show),
+  toggleHelp: () => setTuiState("showHelp", (v) => !v),
+
+  setLeaderMode: (active: boolean) => setTuiState("leaderMode", active),
+
+  setCursorPos: (pos: number) => setTuiState("cursorPos", Math.max(0, pos)),
+
+  setMergeMode: (active: boolean) => {
+    setTuiState("mergeMode", active);
+    if (!active) setTuiState("mergeSelectedIds", new Set());
+  },
+
+  toggleMergeSelection: (changeId: string) => {
+    const next = new Set(tuiState.mergeSelectedIds);
+    if (next.has(changeId)) next.delete(changeId);
+    else next.add(changeId);
+    setTuiState("mergeSelectedIds", next);
+  },
+
+  clearMergeSelection: () => setTuiState("mergeSelectedIds", new Set()),
+
+  toggleDescExpanded: () => setTuiState("descExpanded", (v) => !v),
+  toggleFilesExpanded: () => setTuiState("filesExpanded", (v) => !v),
+
+  reset: () => {
+    setTuiState({ ...initialTuiState });
+  },
+};

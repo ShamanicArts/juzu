@@ -70,16 +70,24 @@ Implementation update (2026-02-06):
 - Verified refresh/error loading state behavior and file-cache short-circuiting.
 
 ### A.4 Server API Integration Tests (Minimal but real)
-- Start server in test mode against temp repo.
-- Validate key endpoints:
-  - GET `/api/log`, `/api/files/:id`, `/api/diff/:id`, `/api/oplog`, `/api/obslog/:id`
-  - POST `/api/undo`, `/api/redo`, `/api/abandon`, `/api/describe`, `/api/rebase`
-- Validate error contract shape (`{ success: false, error }` or `{ error }`) consistency.
+- [x] Start server in test mode against temp repo.
+- [x] Validate key endpoints:
+  - [x] GET `/api/log`, `/api/files/:id`, `/api/diff/:id`, `/api/oplog`, `/api/obslog/:id`
+  - [x] POST `/api/undo`, `/api/redo`, `/api/abandon`, `/api/describe`, `/api/rebase`
+- [x] Validate error contract shape (`{ success: false, error }` or `{ error }`) consistency.
+
+Implementation update (2026-02-06):
+- Added integration smoke tests in `server/__tests__/api.integration.test.ts`.
+- Test harness creates a temp JJ repo, spawns `server.ts` on a free port, and hits real HTTP endpoints.
+- Added success and error-contract assertions for mutation endpoints listed in A.4.
 
 ### Exit Criteria
 - Stable local test command (single entry command).
 - Core parser/layout/store/usecase coverage in place.
 - Endpoint smoke integration tests passing.
+
+Status (2026-02-06):
+- `bun test` is now the single local entry command and passes with core + server smoke coverage.
 
 ---
 
@@ -120,18 +128,29 @@ Implementation update (2026-02-06):
 **Recommendation:** Perform only after Phase A tests exist.
 
 ### C.1 Exploration Spike (Time-boxed)
-- Design target state split:
-  - shared state (repo, nodes, layout, selection, files cache)
-  - TUI extension state (term size, leader mode, cursor, prompt state)
-  - web extension state (panel modes, UI-only toggles)
-- Produce migration map: current field -> target store.
-- Define compatibility layer to avoid a big-bang rewrite.
+- [x] Design target state split:
+  - [x] shared state (repo, nodes, layout, selection, files cache)
+  - [x] TUI extension state (term size, leader mode, cursor, prompt state)
+  - [x] web extension state (panel modes, UI-only toggles)
+- [x] Produce migration map: current field -> target store.
+- [x] Define compatibility approach for incremental migration.
+
+Migration map (implemented):
+- Shared (`src/core/state.ts`): repo/data/view (`cwd`, `nodes`, `filesCache`, `viewMode`, op/obslog data), layout (`layoutMode`, `pinnedNodes`, `layoutResult`), selection (`selectedId`, `selectedIds`), shared mutation UI intent (`rebaseSourceId`, `describeMode`, `describeValue`), status/loading.
+- TUI extension (`src/core/state-tui.ts`): `termSize`, `scrollOffset`, `sidebarScroll`, `showHelp`, `leaderMode`, `cursorPos`, `mergeMode`, `mergeSelectedIds`, `descExpanded`, `filesExpanded`.
+- Web extension (`src/core/state-web.ts`): `viewport`, `sidebarScroll`, `showHelp`, `expandedFilesNodeId`, `opMode`, `opSelectedPaths`, `opTargetId`.
 
 ### C.2 Incremental Migration
-- Step 1: introduce new store modules while keeping existing API stable.
-- Step 2: migrate TUI consumers.
-- Step 3: migrate web consumers.
-- Step 4: remove deprecated fields and compatibility shims.
+- [x] Step 1: introduce new store modules.
+- [x] Step 2: migrate TUI consumers.
+- [x] Step 3: migrate web consumers.
+- [x] Step 4: remove deprecated fields from shared store and complete migration.
+
+Implementation update (2026-02-06):
+- Added `state-tui.ts` and `state-web.ts` extension stores.
+- Reduced `state.ts` to shared/core concerns and kept shared navigation/actions frontend-agnostic.
+- Migrated TUI and web consumers to use extension stores/actions.
+- Moved inline-files toggle behavior to web app layer so core usecases stay frontend-agnostic.
 
 ### C.3 Safety Rules
 - One frontend migration per change stack step.
@@ -139,9 +158,9 @@ Implementation update (2026-02-06):
 - Full test pass required at each migration checkpoint.
 
 ### Exit Criteria
-- Frontend-specific fields no longer in shared state.
-- Shared actions/usecases remain frontend-agnostic.
-- Regression tests remain green.
+- [x] Frontend-specific fields no longer in shared state.
+- [x] Shared actions/usecases remain frontend-agnostic.
+- [x] Regression tests remain green.
 
 ---
 

@@ -88,31 +88,6 @@ export async function fetchDiff(changeId: string): Promise<string> {
   return backend.diff({ cwd: cwdOrEmpty(), changeId });
 }
 
-export async function toggleInlineFilesForSelected() {
-  const sel = state.selectedId;
-  if (!sel) return;
-
-  const prev = state.expandedFilesNodeId;
-  if (prev && prev !== sel) {
-    actions.setNodeExtraHeight(prev, 0);
-  }
-
-  if (state.expandedFilesNodeId === sel) {
-    actions.setExpandedFilesNode(null);
-    actions.setNodeExtraHeight(sel, 0);
-    return;
-  }
-
-  actions.setExpandedFilesNode(sel);
-  try {
-    const files = await ensureFiles(sel);
-    // Reserve room for inline controls + padding + files.
-    actions.setNodeExtraHeight(sel, files.length * 14 + 34);
-  } catch {
-    actions.setNodeExtraHeight(sel, 0);
-  }
-}
-
 export async function opNew(parentId: string) {
   const backend = getBackend();
   await runMutation("Creating new commit...", () => backend.new({ cwd: cwdOrEmpty(), parentId }));

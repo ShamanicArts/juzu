@@ -1,5 +1,6 @@
 import { For, Show, createMemo } from "solid-js";
 import { actions, selectedNode, state } from "../../core/state";
+import { webActions, webState } from "../../core/state-web";
 
 export function Sidebar(props: {
   diffText: string;
@@ -117,14 +118,14 @@ export function Sidebar(props: {
         </div>
         <Show when={node()}>
           <div class="jjv-panelActions">
-            <button class="jjv-btn jjv-btn--ghost" onClick={() => actions.toggleHelp()}>
-              {state.showHelp ? "Close" : "Help"}
-            </button>
+              <button class="jjv-btn jjv-btn--ghost" onClick={() => webActions.toggleHelp()}>
+              {webState.showHelp ? "Close" : "Help"}
+              </button>
           </div>
         </Show>
       </div>
 
-      <Show when={state.showHelp}>
+      <Show when={webState.showHelp}>
         <div class="jjv-card">
           <div class="jjv-cardTitle">Help</div>
           <div class="jjv-muted">Keyboard</div>
@@ -289,20 +290,20 @@ export function Sidebar(props: {
 
               <div class="jjv-card">
                 <div class="jjv-cardTitle">Operations</div>
-                <Show when={state.opMode === "none"}>
+                <Show when={webState.opMode === "none"}>
                   <div class="jjv-row jjv-row--wrap">
-                    <button class="jjv-btn" onClick={() => actions.setOpMode("split")}>Split</button>
-                    <button class="jjv-btn" onClick={() => actions.setOpMode("squash")}>Squash</button>
-                    <button class="jjv-btn" onClick={() => actions.setOpMode("move")}>Move</button>
+                    <button class="jjv-btn" onClick={() => webActions.setOpMode("split")}>Split</button>
+                    <button class="jjv-btn" onClick={() => webActions.setOpMode("squash")}>Squash</button>
+                    <button class="jjv-btn" onClick={() => webActions.setOpMode("move")}>Move</button>
                   </div>
                 </Show>
-                <Show when={state.opMode !== "none"}>
+                <Show when={webState.opMode !== "none"}>
                   <div class="jjv-muted">
-                    {state.opMode === "split" ? "Select files to split" : state.opMode === "squash" ? "Select files to squash (or none for all)" : state.opTargetId ? `Move target: ${state.opTargetId.slice(0, 8)}` : "Click a target node in graph"}
+                    {webState.opMode === "split" ? "Select files to split" : webState.opMode === "squash" ? "Select files to squash (or none for all)" : webState.opTargetId ? `Move target: ${webState.opTargetId.slice(0, 8)}` : "Click a target node in graph"}
                   </div>
                   <div class="jjv-row" style={{ "margin-top": "8px" }}>
                     <button class="jjv-btn jjv-btn--primary" onClick={props.onExecuteOp}>Confirm</button>
-                    <button class="jjv-btn" onClick={() => actions.resetOpMode()}>Cancel</button>
+                    <button class="jjv-btn" onClick={() => webActions.resetOpMode()}>Cancel</button>
                   </div>
                 </Show>
               </div>
@@ -316,10 +317,10 @@ export function Sidebar(props: {
                         <label class="jjv-fileRow">
                           <input
                             type="checkbox"
-                            disabled={state.opMode === "none"}
-                            checked={state.opSelectedPaths.has(f.path)}
-                            onChange={() => actions.toggleOpFile(f.path)}
-                            style={{ opacity: state.opMode === "none" ? 0.2 : 1 }}
+                            disabled={webState.opMode === "none"}
+                            checked={webState.opSelectedPaths.has(f.path)}
+                            onChange={() => webActions.toggleOpFile(f.path)}
+                            style={{ opacity: webState.opMode === "none" ? 0.2 : 1 }}
                           />
                           <span class={`jjv-fileType jjv-fileType--${f.type} mono`}>{f.type}</span>
                           <span class="jjv-filePath mono">{f.path}</span>
