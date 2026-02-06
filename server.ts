@@ -69,6 +69,70 @@ console.log(`📁 JJ Repository: ${PROC_CWD}`);
 // Script directory for serving static assets
 const SCRIPT_DIR = import.meta.dir;
 
+type SseEventPayload = {
+  type: string;
+  ts: number;
+  seq: number;
+};
+
+const encoder = new TextEncoder();
+const sseClients = new Map<number, ReadableStreamDefaultController<Uint8Array>>();
+let nextSseClientId = 1;
+let eventSeq = 0;
+
+function encodeSseEvent(event: string, payload: SseEventPayload): Uint8Array {
+  const body = `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
+  return encoder.encode(body);
+}
+
+function broadcastSse(event: string, payload: Omit<SseEventPayload, "seq">) {
+  const message: SseEventPayload = { ...payload, seq: ++eventSeq };
+  const chunk = encodeSseEvent(event, message);
+  for (const [clientId, controller] of sseClients.entries()) {
+    try {
+      controller.enqueue(chunk);
+    } catch {
+      sseClients.delete(clientId);
+    }
+  }
+}
+
+function createSseResponse(req: Request): Response {
+  const clientId = nextSseClientId++;
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      sseClients.set(clientId, controller);
+      controller.enqueue(encoder.encode(": connected\n\n"));
+      controller.enqueue(encodeSseEvent("ready", { type: "ready", ts: Date.now(), seq: ++eventSeq }));
+
+      const onAbort = () => {
+        sseClients.delete(clientId);
+        try {
+          controller.close();
+        } catch {
+          // stream already closed
+        }
+      };
+      req.signal.addEventListener("abort", onAbort, { once: true });
+    },
+    cancel() {
+      sseClients.delete(clientId);
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      Connection: "keep-alive",
+    },
+  });
+}
+
+const heartbeatInterval = setInterval(() => {
+  broadcastSse("heartbeat", { type: "heartbeat", ts: Date.now() });
+}, 25_000);
+
 // Architecture Note: server.ts intentionally stays a thin HTTP adapter.
 // The Backend interface is for TUI/Web frontends that need swappable runtime backends.
 // The server already is an adapter boundary, so it calls core jj-api helpers directly.
@@ -94,6 +158,10 @@ const server = Bun.serve({
         const msg = e instanceof Error ? e.message : String(e);
         return new Response(JSON.stringify({ error: msg }), { status: 500 });
       }
+    }
+
+    if (url.pathname === "/api/events") {
+      return createSseResponse(req);
     }
 
     if (url.pathname.startsWith("/api/diff/")) {
@@ -345,6 +413,10 @@ const server = Bun.serve({
 
 const url = `http://localhost:${server.port}`;
 console.log(`🚀 jj-viz running at ${url}`);
+
+process.on("exit", () => {
+  clearInterval(heartbeatInterval);
+});
 
 if (args.open) {
     const platform = process.platform;
