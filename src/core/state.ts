@@ -6,8 +6,8 @@ import { calculateLayout } from "./layout";
 
 export type DiffCacheEntry = {
   atMs: number;
-  diff: string;
   files: Array<{ path: string; diff: string }>;
+  bytes: number;
 };
 
 export type ViewMode = "log" | "oplog" | "obslog" | "diff";
