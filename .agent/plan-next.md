@@ -24,15 +24,20 @@ This reduces risk while keeping delivery velocity high.
 **Goal:** Catch regressions quickly before more refactors.
 
 ### A.1 Test Harness Setup
-- Add a test runner (Bun test) config and scripts in `package.json`.
-- Add test directory structure:
+- [x] Add a test runner (Bun test) config and scripts in `package.json`.
+- [x] Add test directory structure:
   - `src/core/__tests__/`
   - `src/web/__tests__/`
   - `server/__tests__/` (or `src/server/__tests__/`)
-- Add shared fixtures and helpers:
+- [x] Add shared fixtures and helpers:
   - sample jj log/oplog/obslog outputs
   - parser fixtures
   - temporary repo helper for integration tests
+
+Implementation update (2026-02-06):
+- Added `test` and `test:watch` scripts.
+- Added initial test files under core/web/server test directories.
+- Added shared fixtures in `src/test-utils/fixtures/` and helpers in `src/test-utils/`.
 
 ### A.2 Core Unit Tests (First Wave)
 - `src/core/layout.ts`
