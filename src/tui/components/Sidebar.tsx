@@ -42,6 +42,23 @@ interface SidebarProps {
 }
 
 export function Sidebar(props: SidebarProps) {
+  const panelBg = createMemo(() => {
+    props.themeVersion;
+    return RGBA.fromHex(UI_TOKENS.slate.panel);
+  });
+  const titleFg = createMemo(() => {
+    props.themeVersion;
+    return props.showHelp ? RGBA.fromHex(UI_TOKENS.semantic.warn) : RGBA.fromHex(UI_TOKENS.semantic.info);
+  });
+  const borderFg = createMemo(() => {
+    props.themeVersion;
+    return RGBA.fromHex(UI_TOKENS.slate.borderStrong);
+  });
+  const scrollFg = createMemo(() => {
+    props.themeVersion;
+    return RGBA.fromHex(UI_TOKENS.slate.textMuted);
+  });
+
   const contentLines = createMemo(() => {
     props.themeVersion;
     const PANEL_BG = RGBA.fromHex(UI_TOKENS.slate.panel);
@@ -377,10 +394,10 @@ export function Sidebar(props: SidebarProps) {
     <box
       width={props.width}
       height={props.height}
-      backgroundColor={RGBA.fromHex(UI_TOKENS.slate.panel)}
+      backgroundColor={panelBg()}
     >
-      <text fg={props.showHelp ? RGBA.fromHex(UI_TOKENS.semantic.warn) : RGBA.fromHex(UI_TOKENS.semantic.info)}>{title()}</text>
-      <text fg={RGBA.fromHex(UI_TOKENS.slate.borderStrong)}>--------</text>
+      <text fg={titleFg()}>{title()}</text>
+      <text fg={borderFg()}>--------</text>
       <For each={visibleLines().lines}>
         {(line) => (
           <text fg={line.color}>
@@ -390,7 +407,7 @@ export function Sidebar(props: SidebarProps) {
       </For>
       <Show when={scrollIndicator()}>
         <box flexGrow={1} />
-        <text fg={FG_DIM}>{scrollIndicator()}</text>
+        <text fg={scrollFg()}>{scrollIndicator()}</text>
       </Show>
     </box>
   );
