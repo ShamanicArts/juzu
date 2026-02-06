@@ -5,6 +5,7 @@ declare const Bun: any;
 export {};
 
 import solidDomPlugin from "./src/web/bun-plugin-solid-dom";
+import { watch } from "node:fs/promises";
 import {
   fetchJJLogWithGitBranches,
   fetchOpLog,
@@ -132,6 +133,44 @@ function createSseResponse(req: Request): Response {
 const heartbeatInterval = setInterval(() => {
   broadcastSse("heartbeat", { type: "heartbeat", ts: Date.now() });
 }, 25_000);
+
+const watchControllers: AbortController[] = [];
+let repoEventDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleRepoUpdatedEvent() {
+  if (repoEventDebounceTimer) clearTimeout(repoEventDebounceTimer);
+  repoEventDebounceTimer = setTimeout(() => {
+    broadcastSse("repo-updated", { type: "repo-updated", ts: Date.now() });
+  }, 500);
+}
+
+function startRepoWatch(path: string, recursive: boolean) {
+  const controller = new AbortController();
+  watchControllers.push(controller);
+
+  void (async () => {
+    try {
+      for await (const _event of watch(path, { recursive, signal: controller.signal })) {
+        scheduleRepoUpdatedEvent();
+      }
+    } catch (e) {
+      const err = e as Error & { code?: string };
+      if (err.name === "AbortError") return;
+      if (recursive) {
+        startRepoWatch(path, false);
+        return;
+      }
+      console.error(`Watch error for ${path}:`, e);
+    }
+  })();
+}
+
+const jjDir = `${PROC_CWD}/.jj`;
+startRepoWatch(jjDir, true);
+startRepoWatch(`${jjDir}/working_copy`, false);
+startRepoWatch(`${jjDir}/repo`, false);
+startRepoWatch(`${jjDir}/repo/store`, false);
+startRepoWatch(`${jjDir}/repo/store/operations`, false);
 
 // Architecture Note: server.ts intentionally stays a thin HTTP adapter.
 // The Backend interface is for TUI/Web frontends that need swappable runtime backends.
@@ -416,6 +455,11 @@ console.log(`🚀 jj-viz running at ${url}`);
 
 process.on("exit", () => {
   clearInterval(heartbeatInterval);
+  for (const controller of watchControllers) controller.abort();
+  if (repoEventDebounceTimer) {
+    clearTimeout(repoEventDebounceTimer);
+    repoEventDebounceTimer = null;
+  }
 });
 
 if (args.open) {
