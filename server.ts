@@ -12,10 +12,17 @@ import {
   fetchObslog,
   findJJRoot,
   jjAbandon,
+  jjBookmarkDelete,
+  jjBookmarkRename,
+  jjBookmarkSet,
+  jjBookmarkTrack,
+  jjBookmarkUntrack,
   jjCreateNew,
   jjDescribe,
   jjDuplicate,
   jjEdit,
+  jjGitFetch,
+  jjGitPush,
   jjGetDiff,
   jjGetFiles,
   jjInsertAfter,
@@ -23,6 +30,7 @@ import {
   jjRebase,
   jjRedo,
   jjRestoreOperation,
+  jjRestore,
   jjSplit,
   jjSquashPaths,
   jjUndo,
@@ -185,8 +193,9 @@ const server = Bun.serve({
     if (url.pathname === "/api/log") {
       try {
         const limitRaw = url.searchParams.get("limit");
+        const revsetRaw = url.searchParams.get("revset") || undefined;
         const limit = Math.max(1, Math.min(2000, Number(limitRaw || "500") || 500));
-        const data = await fetchJJLogWithGitBranches(PROC_CWD, limit);
+        const data = await fetchJJLogWithGitBranches(PROC_CWD, limit, revsetRaw);
         return new Response(JSON.stringify(data), {
           headers: { 
             "Content-Type": "application/json",
@@ -327,6 +336,91 @@ const server = Bun.serve({
           }
           try {
             await jjSplit(changeId, paths, PROC_CWD, message);
+            return Response.json({ success: true });
+          } catch (e) {
+            return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+          }
+        }
+
+        case "/api/restore": {
+          const { changeId, paths } = body;
+          if (!changeId) return Response.json({ error: "Missing changeId" }, { status: 400 });
+          try {
+            await jjRestore(changeId, PROC_CWD, Array.isArray(paths) ? paths : undefined);
+            return Response.json({ success: true });
+          } catch (e) {
+            return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+          }
+        }
+
+        case "/api/bookmark/set": {
+          const { name, revision } = body;
+          if (!name || !revision) return Response.json({ error: "Missing name or revision" }, { status: 400 });
+          try {
+            await jjBookmarkSet(String(name), String(revision), PROC_CWD);
+            return Response.json({ success: true });
+          } catch (e) {
+            return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+          }
+        }
+
+        case "/api/bookmark/delete": {
+          const { name } = body;
+          if (!name) return Response.json({ error: "Missing name" }, { status: 400 });
+          try {
+            await jjBookmarkDelete(String(name), PROC_CWD);
+            return Response.json({ success: true });
+          } catch (e) {
+            return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+          }
+        }
+
+        case "/api/bookmark/rename": {
+          const { oldName, newName } = body;
+          if (!oldName || !newName) return Response.json({ error: "Missing oldName or newName" }, { status: 400 });
+          try {
+            await jjBookmarkRename(String(oldName), String(newName), PROC_CWD);
+            return Response.json({ success: true });
+          } catch (e) {
+            return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+          }
+        }
+
+        case "/api/bookmark/track": {
+          const { remoteBookmark } = body;
+          if (!remoteBookmark) return Response.json({ error: "Missing remoteBookmark" }, { status: 400 });
+          try {
+            await jjBookmarkTrack(String(remoteBookmark), PROC_CWD);
+            return Response.json({ success: true });
+          } catch (e) {
+            return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+          }
+        }
+
+        case "/api/bookmark/untrack": {
+          const { remoteBookmark } = body;
+          if (!remoteBookmark) return Response.json({ error: "Missing remoteBookmark" }, { status: 400 });
+          try {
+            await jjBookmarkUntrack(String(remoteBookmark), PROC_CWD);
+            return Response.json({ success: true });
+          } catch (e) {
+            return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+          }
+        }
+
+        case "/api/git/fetch": {
+          try {
+            await jjGitFetch(PROC_CWD);
+            return Response.json({ success: true });
+          } catch (e) {
+            return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+          }
+        }
+
+        case "/api/git/push": {
+          const { bookmark } = body;
+          try {
+            await jjGitPush(PROC_CWD, typeof bookmark === "string" ? bookmark : undefined);
             return Response.json({ success: true });
           } catch (e) {
             return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });

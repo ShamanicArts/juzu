@@ -10,6 +10,7 @@ export interface SharedState {
   cwd: string;
   nodes: CommitNode[];
   filesCache: Map<string, FilesCacheEntry>;
+  revsetQuery: string;
 
   viewMode: ViewMode;
 
@@ -39,6 +40,7 @@ const initialState: SharedState = {
   cwd: "",
   nodes: [],
   filesCache: new Map(),
+  revsetQuery: "",
 
   viewMode: "log",
 
@@ -125,6 +127,7 @@ export const actions = {
   },
 
   setFilesCache: (cache: Map<string, FilesCacheEntry>) => setState("filesCache", cache),
+  setRevsetQuery: (revset: string) => setState("revsetQuery", revset),
 
   setNodeExtraHeight: (changeId: string, extraHeight: number) => {
     setState("nodes", (n) => n.changeId === changeId, "extraHeight", Math.max(0, extraHeight));

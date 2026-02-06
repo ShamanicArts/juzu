@@ -104,9 +104,10 @@ async function getWorkingCopyId(cwd: string): Promise<string> {
 /**
  * Fetch the JJ log
  */
-export async function fetchJJLog(cwd: string, limit: number): Promise<CommitNode[]> {
+export async function fetchJJLog(cwd: string, limit: number, revset?: string): Promise<CommitNode[]> {
+  const range = revset && revset.trim() ? revset.trim() : "::";
   const [logText, wcId] = await Promise.all([
-    runCmdText(["jj", "log", "--no-graph", "-r", "::", "--limit", String(limit), "-T", JJ_TEMPLATE], cwd, 15000),
+    runCmdText(["jj", "log", "--no-graph", "-r", range, "--limit", String(limit), "-T", JJ_TEMPLATE], cwd, 15000),
     getWorkingCopyId(cwd),
   ]);
 
@@ -137,9 +138,9 @@ export async function fetchGitBranches(cwd: string): Promise<Map<string, string[
   return commitBranches;
 }
 
-export async function fetchJJLogWithGitBranches(cwd: string, limit: number): Promise<CommitNode[]> {
+export async function fetchJJLogWithGitBranches(cwd: string, limit: number, revset?: string): Promise<CommitNode[]> {
   const [nodes, gitBranches] = await Promise.all([
-    fetchJJLog(cwd, limit),
+    fetchJJLog(cwd, limit, revset),
     fetchGitBranches(cwd),
   ]);
 
@@ -267,6 +268,42 @@ export async function jjSquashPaths(
 export async function jjSplit(changeId: string, paths: string[], cwd: string, message = "split"): Promise<void> {
   const msg = message && message.trim() ? message.trim() : "split";
   await runCmdText(["jj", "split", "-r", changeId, "-m", msg, ...paths], cwd);
+}
+
+export async function jjRestore(changeId: string, cwd: string, paths?: string[]): Promise<void> {
+  const args = ["jj", "restore", "-r", changeId];
+  if (paths && paths.length > 0) args.push(...paths);
+  await runCmdText(args, cwd);
+}
+
+export async function jjBookmarkSet(name: string, revision: string, cwd: string): Promise<void> {
+  await runCmdText(["jj", "bookmark", "set", name, "-r", revision], cwd);
+}
+
+export async function jjBookmarkDelete(name: string, cwd: string): Promise<void> {
+  await runCmdText(["jj", "bookmark", "delete", name], cwd);
+}
+
+export async function jjBookmarkRename(oldName: string, newName: string, cwd: string): Promise<void> {
+  await runCmdText(["jj", "bookmark", "rename", oldName, newName], cwd);
+}
+
+export async function jjBookmarkTrack(remoteBookmark: string, cwd: string): Promise<void> {
+  await runCmdText(["jj", "bookmark", "track", remoteBookmark], cwd);
+}
+
+export async function jjBookmarkUntrack(remoteBookmark: string, cwd: string): Promise<void> {
+  await runCmdText(["jj", "bookmark", "untrack", remoteBookmark], cwd);
+}
+
+export async function jjGitFetch(cwd: string): Promise<void> {
+  await runCmdText(["jj", "git", "fetch"], cwd);
+}
+
+export async function jjGitPush(cwd: string, bookmark?: string): Promise<void> {
+  const args = ["jj", "git", "push"];
+  if (bookmark && bookmark.trim()) args.push("--bookmark", bookmark.trim());
+  await runCmdText(args, cwd);
 }
 
 export async function jjUndo(cwd: string): Promise<void> {

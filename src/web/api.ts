@@ -14,7 +14,11 @@ async function fetchAPI<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  log: (limit = 500) => fetchAPI<CommitNode[]>(`/api/log?limit=${encodeURIComponent(String(limit))}`),
+  log: (limit = 500, revset?: string) => {
+    const q = new URLSearchParams({ limit: String(limit) });
+    if (revset && revset.trim()) q.set("revset", revset.trim());
+    return fetchAPI<CommitNode[]>(`/api/log?${q.toString()}`);
+  },
   files: (changeId: string) => fetchAPI<Array<{ type: string; path: string }>>(`/api/files/${encodeURIComponent(changeId)}`),
   diff: async (changeId: string) => {
     const res = await fetch(`/api/diff/${encodeURIComponent(changeId)}`);
@@ -54,4 +58,22 @@ export const api = {
     fetchAPI<{ success: true }>("/api/squash", { method: "POST", body: JSON.stringify(payload) }),
   split: (payload: { changeId: string; paths: string[]; message?: string }) =>
     fetchAPI<{ success: true }>("/api/split", { method: "POST", body: JSON.stringify(payload) }),
+
+  restore: (payload: { changeId: string; paths?: string[] }) =>
+    fetchAPI<{ success: true }>("/api/restore", { method: "POST", body: JSON.stringify(payload) }),
+
+  bookmarkSet: (payload: { name: string; revision: string }) =>
+    fetchAPI<{ success: true }>("/api/bookmark/set", { method: "POST", body: JSON.stringify(payload) }),
+  bookmarkDelete: (payload: { name: string }) =>
+    fetchAPI<{ success: true }>("/api/bookmark/delete", { method: "POST", body: JSON.stringify(payload) }),
+  bookmarkRename: (payload: { oldName: string; newName: string }) =>
+    fetchAPI<{ success: true }>("/api/bookmark/rename", { method: "POST", body: JSON.stringify(payload) }),
+  bookmarkTrack: (payload: { remoteBookmark: string }) =>
+    fetchAPI<{ success: true }>("/api/bookmark/track", { method: "POST", body: JSON.stringify(payload) }),
+  bookmarkUntrack: (payload: { remoteBookmark: string }) =>
+    fetchAPI<{ success: true }>("/api/bookmark/untrack", { method: "POST", body: JSON.stringify(payload) }),
+
+  gitFetch: () => fetchAPI<{ success: true }>("/api/git/fetch", { method: "POST", body: JSON.stringify({}) }),
+  gitPush: (payload: { bookmark?: string }) =>
+    fetchAPI<{ success: true }>("/api/git/push", { method: "POST", body: JSON.stringify(payload) }),
 };

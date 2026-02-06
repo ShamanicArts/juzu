@@ -27,7 +27,7 @@ export async function refreshLog(limit = 500) {
   actions.setLoading(true);
   actions.setStatusMessage("Loading...");
   try {
-    const nodes = await backend.log({ cwd: cwdOrEmpty(), limit });
+    const nodes = await backend.log({ cwd: cwdOrEmpty(), limit, revset: state.revsetQuery || undefined });
     actions.setNodes(nodes);
     actions.setStatusMessage(`nodes:${nodes.length}`);
   } catch (e) {
@@ -164,6 +164,46 @@ export async function opSplit(changeId: string, paths: string[], message?: strin
 export async function opRestoreOperation(operationId: string) {
   const backend = getBackend();
   await runMutation("Restoring operation...", () => backend.restoreOperation({ cwd: cwdOrEmpty(), operationId }));
+}
+
+export async function opRestore(changeId: string, paths?: string[]) {
+  const backend = getBackend();
+  await runMutation("Restoring files...", () => backend.restore({ cwd: cwdOrEmpty(), changeId, paths }));
+}
+
+export async function opBookmarkSet(name: string, revision: string) {
+  const backend = getBackend();
+  await runMutation(`Setting bookmark ${name}...`, () => backend.bookmarkSet({ cwd: cwdOrEmpty(), name, revision }));
+}
+
+export async function opBookmarkDelete(name: string) {
+  const backend = getBackend();
+  await runMutation(`Deleting bookmark ${name}...`, () => backend.bookmarkDelete({ cwd: cwdOrEmpty(), name }));
+}
+
+export async function opBookmarkRename(oldName: string, newName: string) {
+  const backend = getBackend();
+  await runMutation(`Renaming bookmark ${oldName}...`, () => backend.bookmarkRename({ cwd: cwdOrEmpty(), oldName, newName }));
+}
+
+export async function opBookmarkTrack(remoteBookmark: string) {
+  const backend = getBackend();
+  await runMutation(`Tracking ${remoteBookmark}...`, () => backend.bookmarkTrack({ cwd: cwdOrEmpty(), remoteBookmark }));
+}
+
+export async function opBookmarkUntrack(remoteBookmark: string) {
+  const backend = getBackend();
+  await runMutation(`Untracking ${remoteBookmark}...`, () => backend.bookmarkUntrack({ cwd: cwdOrEmpty(), remoteBookmark }));
+}
+
+export async function opGitFetch() {
+  const backend = getBackend();
+  await runMutation("Fetching from remote...", () => backend.gitFetch({ cwd: cwdOrEmpty() }));
+}
+
+export async function opGitPush(bookmark?: string) {
+  const backend = getBackend();
+  await runMutation("Pushing to remote...", () => backend.gitPush({ cwd: cwdOrEmpty(), bookmark }));
 }
 
 // Op log operations

@@ -1,12 +1,12 @@
 import type { JJBackend } from "../core/backend";
 import type { CommitNode } from "../core/types";
-import { fetchJJLog, fetchFilesForNodes, findJJRoot, jjAbandon, jjDescribe, jjDuplicate, jjEdit, jjGetDiff, jjInsertAfter, jjMove, jjNew, jjRebase, jjSplit, jjSquashPaths, jjUndo, jjRedo, runCmdText, fetchOpLog, fetchObslog, jjRestoreOperation } from "../core/jj-api";
+import { fetchJJLog, fetchFilesForNodes, findJJRoot, jjAbandon, jjBookmarkDelete, jjBookmarkRename, jjBookmarkSet, jjBookmarkTrack, jjBookmarkUntrack, jjDescribe, jjDuplicate, jjEdit, jjGetDiff, jjGitFetch, jjGitPush, jjInsertAfter, jjMove, jjNew, jjRebase, jjRestore, jjSplit, jjSquashPaths, jjUndo, jjRedo, runCmdText, fetchOpLog, fetchObslog, jjRestoreOperation } from "../core/jj-api";
 
 export function createTuiBackend(): JJBackend {
   return {
     findRoot: findJJRoot,
 
-    log: async ({ cwd, limit }) => fetchJJLog(cwd, limit),
+    log: async ({ cwd, limit, revset }) => fetchJJLog(cwd, limit, revset),
     files: async ({ cwd, changeId }) => {
       const nodes: CommitNode[] = [{
         changeId,
@@ -72,6 +72,16 @@ export function createTuiBackend(): JJBackend {
       await runCmdText(args, cwd);
     },
     split: async ({ cwd, changeId, paths, message }) => jjSplit(changeId, paths, cwd, message || "split"),
+    restore: async ({ cwd, changeId, paths }) => jjRestore(changeId, cwd, paths),
+
+    bookmarkSet: async ({ cwd, name, revision }) => jjBookmarkSet(name, revision, cwd),
+    bookmarkDelete: async ({ cwd, name }) => jjBookmarkDelete(name, cwd),
+    bookmarkRename: async ({ cwd, oldName, newName }) => jjBookmarkRename(oldName, newName, cwd),
+    bookmarkTrack: async ({ cwd, remoteBookmark }) => jjBookmarkTrack(remoteBookmark, cwd),
+    bookmarkUntrack: async ({ cwd, remoteBookmark }) => jjBookmarkUntrack(remoteBookmark, cwd),
+
+    gitFetch: async ({ cwd }) => jjGitFetch(cwd),
+    gitPush: async ({ cwd, bookmark }) => jjGitPush(cwd, bookmark),
 
     opLog: async ({ cwd, limit }) => fetchOpLog(cwd, limit),
     restoreOperation: async ({ cwd, operationId }) => jjRestoreOperation(operationId, cwd),

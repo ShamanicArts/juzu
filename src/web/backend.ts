@@ -3,7 +3,7 @@ import { api } from "./api";
 
 export function createWebBackend(): JJBackend {
   return {
-    log: async ({ limit }) => api.log(limit),
+    log: async ({ limit, revset }) => api.log(limit, revset),
     files: async ({ changeId }) => api.files(changeId),
     diff: async ({ changeId }) => api.diff(changeId),
 
@@ -43,6 +43,32 @@ export function createWebBackend(): JJBackend {
     },
     split: async ({ changeId, paths, message }) => {
       await api.split({ changeId, paths, message });
+    },
+    restore: async ({ changeId, paths }) => {
+      await api.restore({ changeId, paths });
+    },
+
+    bookmarkSet: async ({ name, revision }) => {
+      await api.bookmarkSet({ name, revision });
+    },
+    bookmarkDelete: async ({ name }) => {
+      await api.bookmarkDelete({ name });
+    },
+    bookmarkRename: async ({ oldName, newName }) => {
+      await api.bookmarkRename({ oldName, newName });
+    },
+    bookmarkTrack: async ({ remoteBookmark }) => {
+      await api.bookmarkTrack({ remoteBookmark });
+    },
+    bookmarkUntrack: async ({ remoteBookmark }) => {
+      await api.bookmarkUntrack({ remoteBookmark });
+    },
+
+    gitFetch: async () => {
+      await api.gitFetch();
+    },
+    gitPush: async ({ bookmark }) => {
+      await api.gitPush({ bookmark });
     },
 
     opLog: async ({ limit }) => api.opLog(limit),
