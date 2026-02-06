@@ -77,7 +77,7 @@ const KEYBINDS: Record<string, Keybind[]> = {
   ],
 };
 
-export function StatusBar() {
+export function StatusBar(props: { width: number; height: number }) {
   const currentMode = createMemo(() => {
     if (tuiState.revsetMode) return "revset";
     if (state.describeMode) return "describe";
@@ -119,44 +119,74 @@ export function StatusBar() {
     return KEYBINDS[currentMode()] || KEYBINDS.normal;
   });
 
-  const isSpecialMode = createMemo(() => {
-    return ["describe", "revset", "leader", "rebase", "merge"].includes(currentMode());
-  });
-
   const showStatusMessage = createMemo(() => {
     if (!state.statusMessage) return false;
     if (state.statusMessage.startsWith("Error")) return true;
     return !tuiState.leaderMode;
   });
 
+  const wrappedKeybindRows = createMemo(() => {
+    const rows: Keybind[][] = [];
+    const maxRows = Math.max(1, props.height - (showStatusMessage() ? 1 : 0));
+    const firstRowWidth = Math.max(20, props.width - 16);
+    const otherRowWidth = Math.max(20, props.width - 2);
+
+    const segmentWidth = (kb: Keybind) => kb.key.length + 1 + kb.action.length + 2;
+
+    let current: Keybind[] = [];
+    let used = 0;
+    let rowIdx = 0;
+
+    for (const kb of keybinds()) {
+      const limit = rowIdx === 0 ? firstRowWidth : otherRowWidth;
+      const w = segmentWidth(kb);
+      if (used + w > limit && current.length > 0) {
+        rows.push(current);
+        if (rows.length >= maxRows) return rows;
+        current = [kb];
+        used = w;
+        rowIdx++;
+      } else {
+        current.push(kb);
+        used += w;
+      }
+    }
+    if (current.length > 0 && rows.length < maxRows) rows.push(current);
+    return rows;
+  });
+
+  const isSpecialMode = createMemo(() => {
+    return ["describe", "revset", "leader", "rebase", "merge"].includes(currentMode());
+  });
+
   return (
-    <box height={1} backgroundColor={COLORS.barBg} flexDirection="row">
-      {/* Mode badge */}
-      <box
-        backgroundColor={modeColor()}
-        paddingLeft={1}
-        paddingRight={1}
-      >
-        <text fg={isSpecialMode() ? COLORS.dark : COLORS.muted}>
-          <strong>{modeLabel()}</strong>
-        </text>
-      </box>
-
-      {/* Keybinds - using inline boxes for each key/action pair */}
-      <box paddingLeft={2} flexGrow={1} flexDirection="row">
-        <For each={keybinds()}>
-          {(kb) => (
-            <box flexDirection="row">
-              <text fg={COLORS.key}>{kb.key}</text>
-              <text fg={COLORS.action}> {kb.action}  </text>
+    <box height={props.height} backgroundColor={COLORS.barBg} flexDirection="column">
+      <For each={wrappedKeybindRows()}>
+        {(row, idx) => (
+          <box height={1} flexDirection="row">
+            <Show when={idx() === 0}>
+              <box backgroundColor={modeColor()} paddingLeft={1} paddingRight={1}>
+                <text fg={isSpecialMode() ? COLORS.dark : COLORS.muted}>
+                  <strong>{modeLabel()}</strong>
+                </text>
+              </box>
+            </Show>
+            <box paddingLeft={idx() === 0 ? 2 : 1} flexDirection="row">
+              <For each={row}>
+                {(kb) => (
+                  <box flexDirection="row">
+                    <text fg={COLORS.key}>{kb.key}</text>
+                    <text fg={COLORS.action}> {kb.action}  </text>
+                  </box>
+                )}
+              </For>
             </box>
-          )}
-        </For>
-      </box>
+          </box>
+        )}
+      </For>
 
-      {/* Status message on right */}
       <Show when={showStatusMessage()}>
-        <box paddingRight={1}>
+        <box height={1} paddingLeft={1}>
           <text fg={state.statusMessage?.startsWith("Error") ? COLORS.error : COLORS.muted}>
             {state.statusMessage}
           </text>

@@ -224,13 +224,18 @@ export function CanvasGraph(props: {
       }
 
       // Pills (bookmarks/branches)
-      const allRefs = [...(node.bookmarks || []), ...(node.gitBranches || [])];
+      const localBookmarks = (node.bookmarks || []).filter((b) => !b.includes("@"));
+      const trackedBookmarks = (node.bookmarks || []).filter((b) => b.includes("@"));
+      const allRefs = [...localBookmarks, ...trackedBookmarks, ...(node.gitBranches || [])];
       if (allRefs.length > 0) {
         let pillX = layoutResult().textColumnX;
         // Keep pills clearly above the header line (avoid font ascender overlap).
         const pillY = node.y - 36;
-        (node.bookmarks || []).forEach((b) => {
+        localBookmarks.forEach((b) => {
           pillX += drawPill(ctx, pillX, pillY, b, "#00f0ff", "rgba(0, 240, 255, 0.15)", "#00f0ff");
+        });
+        trackedBookmarks.forEach((b) => {
+          pillX += drawPill(ctx, pillX, pillY, b, "#9ad6ff", "rgba(154, 214, 255, 0.12)", "#9ad6ff");
         });
         (node.gitBranches || []).forEach((b) => {
           pillX += drawPill(ctx, pillX, pillY, b, "#ffaa00", "rgba(255, 170, 0, 0.15)", "#ffaa00");

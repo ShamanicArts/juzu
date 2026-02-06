@@ -337,7 +337,7 @@ function App() {
     if (tuiState.leaderMode) {
       switch (name) {
         case "a":
-          requestConfirmation("Abandon selected change?", handleAbandon);
+          requestConfirmation(`Abandon selected change?${bookmarkSafetySuffix()}`, handleAbandon);
           return;
         case "s":
           requestConfirmation("Squash selected change?", handleSquash);
@@ -560,6 +560,14 @@ function App() {
     }
   };
 
+  const bookmarkSafetySuffix = () => {
+    const node = selectedNode();
+    if (!node) return "";
+    const locals = (node.bookmarks || []).filter((b) => !b.includes("@"));
+    if (locals.length === 0) return "";
+    return ` Bookmarks: ${locals.join(", ")}`;
+  };
+
   const handleSquash = async () => {
     const node = selectedNode();
     if (!node) return;
@@ -593,7 +601,7 @@ function App() {
     } else {
       const sourceId = state.rebaseSourceId;
       requestConfirmation(
-        `Rebase ${sourceId.slice(0, 8)} onto ${node.changeId.slice(0, 8)}?`,
+        `Rebase ${sourceId.slice(0, 8)} onto ${node.changeId.slice(0, 8)}?${bookmarkSafetySuffix()}`,
         async () => {
           try {
             await opRebase(sourceId, node.changeId);
@@ -693,13 +701,21 @@ function App() {
   const showSidebar = () => tuiState.termSize.width >= 90 && tuiState.termSize.height >= 16;
   const detailW = () => showSidebar() ? Math.floor(tuiState.termSize.width * 0.40) : 0;
   const graphW = () => tuiState.termSize.width - detailW();
-  // 1 row for StatusBar + 1 row for FooterBar = 2 rows
-  const mainHeight = () => tuiState.termSize.height - 2;
+  const statusBarHeight = () => {
+    const w = tuiState.termSize.width;
+    const h = tuiState.termSize.height;
+    if (h < 14) return 1;
+    if (w < 90) return 3;
+    if (w < 130) return 2;
+    return 1;
+  };
+  // status bar + footer row
+  const mainHeight = () => Math.max(1, tuiState.termSize.height - statusBarHeight() - 1);
 
   return (
     <box width={tuiState.termSize.width} height={tuiState.termSize.height} backgroundColor={BG} flexDirection="column">
       {/* Top status bar */}
-      <StatusBar />
+      <StatusBar width={tuiState.termSize.width} height={statusBarHeight()} />
 
       <box flexDirection="row" flexGrow={1} height={mainHeight()}>
         <box width={graphW()} height={mainHeight()}>

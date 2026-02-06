@@ -678,6 +678,20 @@ function App() {
             <button class="jjv-btn" disabled={state.isLoading} onClick={() => void refresh()}>
               Refresh
             </button>
+            <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading} onClick={() => {
+              maybeRunDestructive("Undo last operation?", () => {
+                void opUndo();
+              }, "Undo");
+            }}>
+              Undo
+            </button>
+            <button class="jjv-btn jjv-btn--ghost" disabled={state.isLoading} onClick={() => {
+              maybeRunDestructive("Redo last operation?", () => {
+                void opRedo();
+              }, "Redo");
+            }}>
+              Redo
+            </button>
 
             <select
               class="jjv-select"
@@ -880,16 +894,6 @@ function App() {
                     }, "Abandon");
                   }
                   if (kind === "duplicate") void opDuplicate(node.changeId);
-                  if (kind === "undo") {
-                    maybeRunDestructive("Undo last operation?", () => {
-                      void opUndo();
-                    }, "Undo");
-                  }
-                  if (kind === "redo") {
-                    maybeRunDestructive("Redo last operation?", () => {
-                      void opRedo();
-                    }, "Redo");
-                  }
                   if (kind === "rebase") {
                     if (!state.rebaseSourceId) {
                       actions.setRebaseSource(node.changeId);

@@ -201,3 +201,15 @@ Implementation update (2026-02-06):
 - Regressions are caught by tests before manual QA.
 - Destructive operations use consistent in-app confirmation UX.
 - Shared/core state is cleaner and less coupled to frontend details.
+
+---
+
+## Phase E - JJ Workflow Expansion (No resolve yet)
+
+Status (2026-02-06):
+- Added bookmark lifecycle operations (set/delete/rename/track/untrack) across core/server/web/tui surfaces.
+- Added sync operations (`jj git fetch`, `jj git push`) across web and TUI commands.
+- Added revset-filtered log support (`/api/log?revset=...`) and revset UI flows in web + TUI.
+- Added restore operation (`jj restore`) with web file-level controls and TUI shortcut.
+- Improved bookmark-aware safety prompts and visual distinction for tracked remote bookmarks.
+- Conflict resolve integration intentionally deferred.

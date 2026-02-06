@@ -13,7 +13,7 @@ export function Sidebar(props: {
   onBookmarkRename: (oldName: string, newName: string) => void;
   onBookmarkTrack: (remoteBookmark: string) => void;
   onBookmarkUntrack: (remoteBookmark: string) => void;
-  onRunMutation: (kind: "new" | "edit" | "describe" | "rebase" | "abandon" | "duplicate" | "undo" | "redo") => void;
+  onRunMutation: (kind: "new" | "edit" | "describe" | "rebase" | "abandon" | "duplicate") => void;
 }) {
   const node = createMemo(() => selectedNode());
   const isMulti = createMemo(() => state.selectedIds.size > 1);
@@ -78,8 +78,6 @@ export function Sidebar(props: {
       { label: "New", kind: "new" },
       { label: "Desc", kind: "describe" },
       { label: "Rebase", kind: "rebase" },
-      { label: "Undo", kind: "undo" },
-      { label: "Redo", kind: "redo" },
     ];
     return items;
   });
@@ -211,7 +209,8 @@ export function Sidebar(props: {
                   <Show when={n().isEmpty}>
                     <span class={badge("empty")}>empty</span>
                   </Show>
-                  <For each={n().bookmarks}>{(b) => <span class={badge("bookmark")}>{b}</span>}</For>
+                  <For each={(n().bookmarks || []).filter((b) => !b.includes("@"))}>{(b) => <span class={badge("bookmark")}>{b}</span>}</For>
+                  <For each={(n().bookmarks || []).filter((b) => b.includes("@"))}>{(b) => <span class={badge("branch")}>{b}</span>}</For>
                   <For each={n().gitBranches}>{(b) => <span class={badge("branch")}>{b}</span>}</For>
                 </div>
 
