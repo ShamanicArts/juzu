@@ -6,7 +6,7 @@ import { watch } from "node:fs/promises";
 import { state, actions, navigation, selectedNode, layoutResult } from "../core/state";
 import { tuiActions, tuiState } from "../core/state-tui";
 import { setBackend } from "../core/runtime";
-import { initCwdFrom, opAbandon, opDescribe, opDuplicate, opEdit, opInsertBetween, opMerge, opNew, opRebase, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
+import { initCwdFrom, opAbandon, opBookmarkDelete, opBookmarkSet, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertBetween, opMerge, opNew, opRebase, opRestore, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
 import { createTuiBackend } from "./backend";
 import { GraphView } from "./components/GraphView";
 import { Sidebar } from "./components/Sidebar";
@@ -242,6 +242,39 @@ function App() {
       return;
     }
 
+    // Handle revset prompt mode
+    if (tuiState.revsetMode) {
+      if (name === "return" || name === "enter") {
+        const value = tuiActions.submitRevset();
+        actions.setRevsetQuery(value.trim());
+        tuiActions.setCursorPos(0);
+        void refresh();
+        return;
+      } else if (name === "escape") {
+        tuiActions.cancelRevset();
+        tuiActions.setCursorPos(0);
+        actions.setStatusMessage("Revset cancelled");
+        return;
+      } else if (name === "backspace") {
+        const newValue = tuiState.revsetValue.slice(0, tuiState.cursorPos - 1) + tuiState.revsetValue.slice(tuiState.cursorPos);
+        tuiActions.updateRevset(newValue);
+        tuiActions.setCursorPos(Math.max(0, tuiState.cursorPos - 1));
+        return;
+      } else if (name === "left") {
+        tuiActions.setCursorPos(Math.max(0, tuiState.cursorPos - 1));
+        return;
+      } else if (name === "right") {
+        tuiActions.setCursorPos(Math.min(tuiState.revsetValue.length, tuiState.cursorPos + 1));
+        return;
+      } else if (key.sequence && key.sequence.length === 1) {
+        const newValue = tuiState.revsetValue.slice(0, tuiState.cursorPos) + key.sequence + tuiState.revsetValue.slice(tuiState.cursorPos);
+        tuiActions.updateRevset(newValue);
+        tuiActions.setCursorPos(tuiState.cursorPos + key.sequence.length);
+        return;
+      }
+      return;
+    }
+
     // Handle describe mode
     if (state.describeMode) {
       if (name === "return" || name === "enter") {
@@ -321,6 +354,36 @@ function App() {
           tuiActions.setMergeMode(true);
           actions.setStatusMessage("Merge mode: Space=select Enter=merge Esc=cancel");
           return;
+        case "f":
+          tuiActions.setLeaderMode(false);
+          void opGitFetch();
+          return;
+        case "p":
+          tuiActions.setLeaderMode(false);
+          void opGitPush();
+          return;
+        case "b": {
+          tuiActions.setLeaderMode(false);
+          const node = selectedNode();
+          if (!node) return;
+          const name = `wip/${node.changeId.slice(0, 8)}`;
+          void opBookmarkSet(name, node.changeId);
+          return;
+        }
+        case "x": {
+          tuiActions.setLeaderMode(false);
+          const node = selectedNode();
+          if (!node) return;
+          const local = (node.bookmarks || []).filter((b) => !b.includes("@"));
+          if (local.length === 0) {
+            actions.setStatusMessage("No local bookmark on selected change");
+            return;
+          }
+          requestConfirmation(`Delete bookmark ${local[0]}?`, () => {
+            void opBookmarkDelete(local[0]!);
+          });
+          return;
+        }
         case "escape":
           tuiActions.setLeaderMode(false);
           actions.setStatusMessage("Cancelled");
@@ -427,6 +490,19 @@ function App() {
       case "g":
         handleBackToLog();
         break;
+      case "/":
+        tuiActions.startRevset(state.revsetQuery || "");
+        tuiActions.setCursorPos((state.revsetQuery || "").length);
+        actions.setStatusMessage("Revset filter mode");
+        break;
+      case "z": {
+        const node = selectedNode();
+        if (!node) break;
+        requestConfirmation(`Restore selected change ${node.changeId.slice(0, 8)}?`, () => {
+          void opRestore(node.changeId);
+        });
+        break;
+      }
     }
 
     // Leader key: Ctrl+X
@@ -675,8 +751,9 @@ function App() {
                width={detailW()}
                height={mainHeight()}
                showHelp={tuiState.showHelp}
-                promptMode={state.describeMode}
-                promptValue={state.describeValue}
+                promptMode={state.describeMode || tuiState.revsetMode}
+                promptLabel={tuiState.revsetMode ? "Revset" : "Edit Description"}
+                promptValue={tuiState.revsetMode ? tuiState.revsetValue : state.describeValue}
                 cursorPos={tuiState.cursorPos}
                 confirmPrompt={confirmPrompt()}
                 mergeMode={tuiState.mergeMode}

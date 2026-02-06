@@ -22,6 +22,7 @@ interface SidebarProps {
   height: number;
   showHelp?: boolean;
   promptMode?: boolean;
+  promptLabel?: string;
   promptValue?: string;
   cursorPos?: number;
   confirmPrompt?: string | null;
@@ -60,11 +61,17 @@ export function Sidebar(props: SidebarProps) {
         { text: "e           Edit/checkout", color: FG },
         { text: "d           Describe", color: FG },
         { text: "b           Rebase", color: FG },
+        { text: "/           Revset filter", color: FG },
+        { text: "z           Restore selected", color: FG },
         { text: "Ctrl+x a    Abandon", color: FG },
         { text: "Ctrl+x s    Squash", color: FG },
         { text: "Ctrl+x d    Duplicate", color: FG },
         { text: "Ctrl+x u    Redo", color: FG },
         { text: "Ctrl+x m    Merge mode", color: FG },
+        { text: "Ctrl+x f    Fetch", color: FG },
+        { text: "Ctrl+x p    Push", color: FG },
+        { text: "Ctrl+x b    Set bookmark", color: FG },
+        { text: "Ctrl+x x    Delete bookmark", color: FG },
         { text: "u           Undo", color: FG },
         { text: "y / n       Confirm / cancel", color: FG },
         { text: "", color: FG_DIM },
@@ -239,7 +246,7 @@ export function Sidebar(props: SidebarProps) {
       const text = props.promptValue || "";
       const cursorPos = props.cursorPos ?? text.length;
       const display = text.slice(0, cursorPos) + "_" + text.slice(cursorPos);
-      lines.push({ text: "Edit Description:", color: CYAN });
+      lines.push({ text: `${props.promptLabel || "Edit Description"}:`, color: CYAN });
       lines.push({ text: display, color: YELLOW });
       lines.push({ text: "", color: FG_DIM });
       lines.push({ text: "Enter: save  Esc: cancel  ←/→: move cursor", color: FG_DIM });

@@ -11,6 +11,8 @@ export interface TuiState {
   mergeSelectedIds: Set<string>;
   descExpanded: boolean;
   filesExpanded: boolean;
+  revsetMode: boolean;
+  revsetValue: string;
 }
 
 const initialTuiState: TuiState = {
@@ -24,6 +26,8 @@ const initialTuiState: TuiState = {
   mergeSelectedIds: new Set(),
   descExpanded: false,
   filesExpanded: true,
+  revsetMode: false,
+  revsetValue: "",
 };
 
 export const [tuiState, setTuiState] = createStore<TuiState>(initialTuiState);
@@ -64,6 +68,22 @@ export const tuiActions = {
 
   toggleDescExpanded: () => setTuiState("descExpanded", (v) => !v),
   toggleFilesExpanded: () => setTuiState("filesExpanded", (v) => !v),
+
+  startRevset: (initial: string) => {
+    setTuiState("revsetMode", true);
+    setTuiState("revsetValue", initial);
+  },
+  updateRevset: (value: string) => setTuiState("revsetValue", value),
+  cancelRevset: () => {
+    setTuiState("revsetMode", false);
+    setTuiState("revsetValue", "");
+  },
+  submitRevset: (): string => {
+    const value = tuiState.revsetValue;
+    setTuiState("revsetMode", false);
+    setTuiState("revsetValue", value);
+    return value;
+  },
 
   reset: () => {
     setTuiState({ ...initialTuiState });

@@ -33,6 +33,11 @@ describe("frontend extension stores", () => {
     tuiActions.setCursorPos(5);
     expect(tuiState.cursorPos).toBe(5);
 
+    tuiActions.startRevset("::@");
+    expect(tuiState.revsetMode).toBe(true);
+    expect(tuiActions.submitRevset()).toBe("::@");
+    expect(tuiState.revsetMode).toBe(false);
+
     tuiActions.setMergeMode(false);
     expect(tuiState.mergeSelectedIds.size).toBe(0);
   });

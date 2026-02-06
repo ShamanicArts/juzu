@@ -33,6 +33,7 @@ const KEYBINDS: Record<string, Keybind[]> = {
     { key: "^x", action: "LEADER" },
     { key: "o", action: "OPLOG" },
     { key: "v", action: "OBSLOG" },
+    { key: "/", action: "REVSET" },
     { key: "h", action: "HELP" },
   ],
   leader: [
@@ -41,6 +42,10 @@ const KEYBINDS: Record<string, Keybind[]> = {
     { key: "d", action: "DUPE" },
     { key: "u", action: "REDO" },
     { key: "m", action: "MERGE" },
+    { key: "f", action: "FETCH" },
+    { key: "p", action: "PUSH" },
+    { key: "b", action: "BM SET" },
+    { key: "x", action: "BM DEL" },
     { key: "Esc", action: "CANCEL" },
   ],
   rebase: [
@@ -57,6 +62,10 @@ const KEYBINDS: Record<string, Keybind[]> = {
     { key: "Enter", action: "CONFIRM" },
     { key: "Esc", action: "CANCEL" },
   ],
+  revset: [
+    { key: "Enter", action: "APPLY" },
+    { key: "Esc", action: "CANCEL" },
+  ],
   oplog: [
     { key: "r", action: "RESTORE" },
     { key: "g", action: "LOG" },
@@ -70,6 +79,7 @@ const KEYBINDS: Record<string, Keybind[]> = {
 
 export function StatusBar() {
   const currentMode = createMemo(() => {
+    if (tuiState.revsetMode) return "revset";
     if (state.describeMode) return "describe";
     if (tuiState.leaderMode) return "leader";
     if (state.rebaseSourceId) return "rebase";
@@ -83,6 +93,7 @@ export function StatusBar() {
     const mode = currentMode();
     switch (mode) {
       case "describe": return "DESCRIBE";
+      case "revset": return "REVSET";
       case "leader": return "LEADER";
       case "rebase": return "REBASE";
       case "merge": return "MERGE";
@@ -96,6 +107,7 @@ export function StatusBar() {
     const mode = currentMode();
     switch (mode) {
       case "describe": return COLORS.describe;
+      case "revset": return COLORS.describe;
       case "leader": return COLORS.leader;
       case "rebase": return COLORS.rebase;
       case "merge": return COLORS.merge;
@@ -108,7 +120,7 @@ export function StatusBar() {
   });
 
   const isSpecialMode = createMemo(() => {
-    return ["describe", "leader", "rebase", "merge"].includes(currentMode());
+    return ["describe", "revset", "leader", "rebase", "merge"].includes(currentMode());
   });
 
   const showStatusMessage = createMemo(() => {
