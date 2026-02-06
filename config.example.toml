@@ -1,0 +1,26 @@
+[theme]
+# Uses themes/<name>.toml from:
+# 1) <repo>/.jj-viz/themes/
+# 2) ~/.config/jj-viz/themes/
+# 3) bundled ./themes/
+name = "slate"
+
+[web]
+pollIntervalMs = 3000
+navigationLockDefault = false
+
+[tui]
+sidebarBreakpointWidth = 90
+sidebarMinHeight = 16
+stackedSidebarRatio = 0.5
+
+[graph]
+nodeRadius = 5
+laneWidth = 24
+ySpacing = 84
+canvasPadding = 50
+textColumnGap = 60
+
+# Optional token overrides (partial is fine)
+# [uiTokens.semantic]
+# info = "#7f9fbf"
