@@ -4,10 +4,11 @@ import type { KeyEvent } from "@opentui/core";
 import { RGBA } from "@opentui/core";
 import { readFile, readdir, watch, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import clipboardy from "clipboardy";
 import { state, actions, navigation, selectedNode, layoutResult } from "../core/state";
 import { tuiActions, tuiState } from "../core/state-tui";
 import { setBackend } from "../core/runtime";
-import { initCwdFrom, opAbandon, opBookmarkDelete, opBookmarkSet, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertBetween, opMerge, opNew, opRebase, opRestore, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
+import { ensureDiff, initCwdFrom, opAbandon, opBookmarkDelete, opBookmarkSet, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertBetween, opMerge, opNew, opRebase, opRestore, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
 import { createTuiBackend } from "./backend";
 import { GraphView } from "./components/GraphView";
 import { Sidebar } from "./components/Sidebar";
@@ -15,6 +16,7 @@ import { OpLogView } from "./components/OpLogView";
 import { ObslogView } from "./components/ObslogView";
 import { StatusBar } from "./components/StatusBar";
 import { FooterBar } from "./components/FooterBar";
+import { DiffView } from "./components/DiffView";
 import { UI_TOKENS } from "../core/ui-tokens";
 import { getRuntimeConfig } from "../core/runtime-config";
 import { resolveAndApplyRuntimeConfig } from "../core/config-loader";
@@ -65,6 +67,209 @@ function App() {
   let pendingConfirmation: { message: string; run: () => Promise<void> | void } | null = null;
   const [confirmPrompt, setConfirmPrompt] = createSignal<string | null>(null);
   const [themeOptions, setThemeOptions] = createSignal<string[]>(["slate", "ember"]);
+  const CLIPBOARD_ERROR_STATUS = "Error: clipboard copy failed in terminal session";
+
+  const tryRawOsc52Copy = (text: string, target: "c" | "p") => {
+    try {
+      if (!process.stdout.isTTY) return false;
+      const payload = Buffer.from(text, "utf8").toString("base64");
+      const oscBel = `\u001b]52;${target};${payload}\u0007`;
+
+      if (process.env.TMUX || process.env.STY) {
+        process.stdout.write(`\u001bPtmux;\u001b${oscBel}\u001b\\`);
+      } else {
+        process.stdout.write(oscBel);
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const tryNativeClipboardCopy = async (text: string) => {
+    try {
+      await clipboardy.write(text);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const buildDiffCopyRows = (diffText: string): string[] => {
+    const raw = (diffText || "").split(/\r?\n/);
+    let oldLine = 0;
+    let newLine = 0;
+    let inHunk = false;
+    const rows: Array<{ n: number; s: " " | "+" | "-"; t: string }> = [];
+
+    for (const line of raw) {
+      if (line.startsWith("@@ ")) {
+        const m = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+        if (m) {
+          oldLine = Number(m[1] || "0");
+          newLine = Number(m[2] || "0");
+          inHunk = true;
+        }
+        continue;
+      }
+      if (!inHunk) continue;
+      if (line.startsWith("--- ") || line.startsWith("+++ ") || line.startsWith("diff --git ") || line.startsWith("index ")) {
+        continue;
+      }
+      if (line.startsWith(" ")) {
+        rows.push({ n: oldLine, s: " ", t: line.slice(1) });
+        oldLine++;
+        newLine++;
+        continue;
+      }
+      if (line.startsWith("-") && !line.startsWith("--- ")) {
+        rows.push({ n: oldLine, s: "-", t: line.slice(1) });
+        oldLine++;
+        continue;
+      }
+      if (line.startsWith("+") && !line.startsWith("+++ ")) {
+        rows.push({ n: newLine, s: "+", t: line.slice(1) });
+        newLine++;
+        continue;
+      }
+    }
+
+    if (rows.length === 0) {
+      return (diffText || "").trimEnd().split("\n");
+    }
+
+    const lineNumWidth = Math.max(1, String(Math.max(...rows.map((r) => r.n))).length);
+    return rows.map((r) => `${String(r.n).padStart(lineNumWidth, " ")} ${r.s} ${r.t}`);
+  };
+
+  const wrapRowsToWidth = (rows: string[], width: number): string[] => {
+    const w = Math.max(1, width);
+    const out: string[] = [];
+    for (const row of rows) {
+      const text = row || "";
+      if (text.length === 0) {
+        out.push("");
+        continue;
+      }
+      for (let i = 0; i < text.length; i += w) {
+        out.push(text.slice(i, i + w));
+      }
+    }
+    return out;
+  };
+
+  const extractSelectionFromLines = (
+    lines: string[],
+    width: number,
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+  ): string => {
+    if (lines.length === 0) return "";
+    const maxX = Math.max(0, width - 1);
+    const sx = Math.max(0, Math.min(startX, maxX));
+    const ex = Math.max(0, Math.min(endX, maxX));
+    const sy = Math.max(0, Math.min(startY, lines.length - 1));
+    const ey = Math.max(0, Math.min(endY, lines.length - 1));
+    if (ey < sy) return "";
+
+    const out: string[] = [];
+    const endExclusive = ex + 1;
+    for (let y = sy; y <= ey; y++) {
+      const line = (lines[y] || "").padEnd(width, " ");
+      if (y === sy && y === ey) out.push(line.slice(sx, endExclusive).replace(/[ \t]+$/, ""));
+      else if (y === sy) out.push(line.slice(sx).replace(/[ \t]+$/, ""));
+      else if (y === ey) out.push(line.slice(0, endExclusive).replace(/[ \t]+$/, ""));
+      else out.push(line.replace(/[ \t]+$/, ""));
+    }
+    return out.join("\n").replace(/[\n\r]+$/, "");
+  };
+
+  const getFullDiffSelectionText = (selection: any): string => {
+    if (state.viewMode !== "diff") return "";
+
+    const payload = fullDiffPayload();
+    const diffText = payload.diff || "";
+    if (!diffText.trim()) return "";
+
+    const paneWidth = useVerticalLayout() ? tuiState.termSize.width : graphW();
+    if (paneWidth <= 0) return "";
+
+    const titleRows = payload.title ? 1 : 0;
+    const paneX = 0;
+    const paneY = statusBarHeight() + titleRows;
+    const paneHeight = Math.max(1, graphH() - titleRows);
+
+    const a = selection?.anchor;
+    const f = selection?.focus;
+    if (!a || !f) return "";
+
+    const minX = Math.min(a.x, f.x);
+    const maxX = Math.max(a.x, f.x);
+    const minY = Math.min(a.y, f.y);
+    const maxY = Math.max(a.y, f.y);
+
+    const left = Math.max(minX, paneX);
+    const right = Math.min(maxX, paneX + paneWidth - 1);
+    const top = Math.max(minY, paneY);
+    const bottom = Math.min(maxY, paneY + paneHeight - 1);
+    if (right < left || bottom < top) return "";
+
+    const localStartX = left - paneX;
+    const localEndX = right - paneX;
+    const localStartY = top - paneY;
+    const localEndY = bottom - paneY;
+
+    const rows = buildDiffCopyRows(diffText);
+    const wrapped = wrapRowsToWidth(rows, paneWidth);
+    return extractSelectionFromLines(wrapped, paneWidth, localStartX, localStartY, localEndX, localEndY);
+  };
+
+  const copyTextToClipboardBuffers = async (text: string, announce: boolean) => {
+    if (!text) {
+      if (announce) actions.setStatusMessage("Nothing selected to copy");
+      return false;
+    }
+
+    const inZellij = Boolean(process.env.ZELLIJ);
+
+    const copiedRawClipboard = tryRawOsc52Copy(text, "c");
+    const copiedRawPrimary = tryRawOsc52Copy(text, "p");
+
+    const copiedClipboard = renderer.copyToClipboardOSC52(text, 0);
+    const copiedPrimary = renderer.copyToClipboardOSC52(text, 1);
+    const copiedByRenderer = copiedClipboard || copiedPrimary;
+    const copiedByNative = await tryNativeClipboardCopy(text);
+    const copiedByRaw = copiedRawClipboard || copiedRawPrimary;
+
+    const copied = copiedByNative || copiedByRenderer || (!inZellij && copiedByRaw);
+
+    if (copied) {
+      if (announce) {
+        actions.setStatusMessage("Copied to clipboard");
+      }
+      return true;
+    }
+
+    actions.setStatusMessage(CLIPBOARD_ERROR_STATUS);
+    return false;
+  };
+
+  const copyCurrentSelection = async () => {
+    const selection = renderer.getSelection();
+    if (!selection) return;
+
+    let text = selection.getSelectedText() || "";
+    if (!text) text = getFullDiffSelectionText(selection);
+
+    if (text) {
+      await copyTextToClipboardBuffers(text, true);
+    }
+
+    renderer.clearSelection();
+  };
 
   const discoverThemes = async (repoCwd: string) => {
     const names = new Set<string>(["slate", "ember"]);
@@ -164,6 +369,21 @@ function App() {
     }
   });
 
+  createEffect(() => {
+    const node = selectedNode();
+    const mode = state.viewMode;
+    if (!node) return;
+    if (mode !== "log" && mode !== "diff") return;
+    void ensureDiff(node.changeId).catch(() => {
+      // Best-effort prefetch for sidebar/full diff rendering.
+    });
+  });
+
+  createEffect(() => {
+    state.selectedId;
+    tuiActions.setDiffFileIndex(0);
+  });
+
   const refresh = async () => {
     try {
       await refreshLog(500);
@@ -206,11 +426,31 @@ function App() {
     actions.setStatusMessage(`${message} (y/n)`);
   };
 
+  const isPrevDiffFileKey = (key: KeyEvent, name: string) => {
+    return (
+      key.sequence === "[" ||
+      name === "[" ||
+      name === "openbracket" ||
+      name === "leftbracket" ||
+      name === "bracketleft"
+    );
+  };
+
+  const isNextDiffFileKey = (key: KeyEvent, name: string) => {
+    return (
+      key.sequence === "]" ||
+      name === "]" ||
+      name === "closebracket" ||
+      name === "rightbracket" ||
+      name === "bracketright"
+    );
+  };
+
   useKeyboard((key: KeyEvent) => {
     const rawName = (key.name || key.sequence || "");
     const name = rawName.toLowerCase();
 
-    if (key.ctrl && key.name === "c") {
+    if (key.ctrl && !key.shift && key.name === "c") {
       renderer.destroy();
       return;
     }
@@ -230,6 +470,15 @@ function App() {
         return;
       }
       actions.setStatusMessage(`${pendingConfirmation.message} (y/n)`);
+      return;
+    }
+
+    if (key.ctrl && name === "d") {
+      if (state.viewMode === "diff") {
+        handleBackToLog();
+      } else if (state.viewMode === "log") {
+        void handleDiffView();
+      }
       return;
     }
 
@@ -309,6 +558,34 @@ function App() {
           return;
         case "pagedown":
           actions.setObslogSelectedIndex(state.obslogSelectedIndex + 10);
+          return;
+      }
+      return;
+    }
+
+    // Handle full diff mode
+    if (state.viewMode === "diff") {
+      if (isPrevDiffFileKey(key, name)) {
+        cycleSidebarDiffFile(-1);
+        return;
+      }
+      if (isNextDiffFileKey(key, name)) {
+        cycleSidebarDiffFile(1);
+        return;
+      }
+      switch (name) {
+        case "g":
+        case "escape":
+        case "q":
+          handleBackToLog();
+          return;
+        case "up":
+        case "k":
+          navigation.moveUp();
+          return;
+        case "down":
+        case "j":
+          navigation.moveDown();
           return;
       }
       return;
@@ -615,6 +892,15 @@ function App() {
       }
     }
 
+    if (isPrevDiffFileKey(key, name)) {
+      cycleSidebarDiffFile(-1);
+      return;
+    }
+    if (isNextDiffFileKey(key, name)) {
+      cycleSidebarDiffFile(1);
+      return;
+    }
+
     // Leader key: Ctrl+X
     if (key.ctrl && name === "x") {
       tuiActions.setLeaderMode(true);
@@ -827,6 +1113,28 @@ function App() {
     actions.setStatusMessage("Back to log view");
   };
 
+  const handleDiffView = async () => {
+    const node = selectedNode();
+    if (!node) return;
+    try {
+      await ensureDiff(node.changeId, 0);
+      actions.setViewMode("diff");
+      actions.setStatusMessage(`Diff view: ${node.changeId.slice(0, 8)}`);
+    } catch (e) {
+      actions.setStatusMessage(`Error: ${String(e)}`);
+    }
+  };
+
+  const cycleSidebarDiffFile = (dir: -1 | 1) => {
+    const node = selectedNode();
+    if (!node) return;
+    const entry = state.diffCache.get(node.changeId);
+    const total = entry?.files.length || 0;
+    if (total <= 0) return;
+    const next = (tuiState.diffFileIndex + dir + total) % total;
+    tuiActions.setDiffFileIndex(next);
+  };
+
   const handleOpRestore = async () => {
     if (state.viewMode !== "oplog" || !state.opLogSelectedId) return;
     try {
@@ -836,6 +1144,38 @@ function App() {
     } catch (e) {
       actions.setStatusMessage(`Error: ${String(e)}`);
     }
+  };
+
+  const selectedDiffEntry = () => {
+    const node = selectedNode();
+    if (!node) return null;
+    return state.diffCache.get(node.changeId) || null;
+  };
+
+  const sidebarDiffPreview = () => {
+    const entry = selectedDiffEntry();
+    if (!entry || entry.files.length === 0) return null;
+    const total = entry.files.length;
+    const index = Math.max(0, Math.min(tuiState.diffFileIndex, total - 1));
+    const file = entry.files[index]!;
+    return {
+      path: file.path,
+      diff: file.diff,
+      index,
+      total,
+    };
+  };
+
+  const fullDiffPayload = () => {
+    const entry = selectedDiffEntry();
+    if (!entry) return { diff: "", title: "Diff" };
+    if (entry.files.length === 0) return { diff: entry.diff, title: "Diff (single patch)" };
+    const preview = sidebarDiffPreview();
+    if (!preview) return { diff: entry.diff, title: "Diff" };
+    return {
+      diff: preview.diff,
+      title: `File ${preview.index + 1}/${preview.total}: ${preview.path}   [ / ] next/prev   Ctrl+d back`,
+    };
   };
 
   // Layout: horizontal (side-by-side) when wide enough, vertical (stacked) when narrow
@@ -866,7 +1206,15 @@ function App() {
   const mainHeight = () => Math.max(1, tuiState.termSize.height - statusBarHeight() - 1);
 
   return (
-    <box width={tuiState.termSize.width} height={tuiState.termSize.height} backgroundColor={BG()} flexDirection="column">
+    <box
+      width={tuiState.termSize.width}
+      height={tuiState.termSize.height}
+      backgroundColor={BG()}
+      flexDirection="column"
+      onMouseUp={async () => {
+        await copyCurrentSelection();
+      }}
+    >
       {/* Top status bar */}
       <StatusBar width={tuiState.termSize.width} height={statusBarHeight()} themeVersion={tuiState.themeVersion} />
 
@@ -910,6 +1258,15 @@ function App() {
               themeVersion={tuiState.themeVersion}
             />
           )}
+          {state.viewMode === "diff" && (
+            <DiffView
+              width={useVerticalLayout() ? tuiState.termSize.width : graphW()}
+              height={graphH()}
+              diff={fullDiffPayload().diff}
+              title={fullDiffPayload().title}
+              themeVersion={tuiState.themeVersion}
+            />
+          )}
         </box>
 
         {showSidebar() && (
@@ -943,6 +1300,7 @@ function App() {
                  opLogSelected={state.opLogEntries.find(e => e.id === state.opLogSelectedId)}
                  obslogChangeId={state.obslogChangeId}
                  obslogSelected={state.obslogEntries[state.obslogSelectedIndex] || null}
+                 diffPreview={sidebarDiffPreview()}
                />
             </box>
           )}

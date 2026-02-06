@@ -1,6 +1,6 @@
 import { createEffect } from "solid-js";
 import { useRenderer } from "@opentui/solid";
-import { FrameBufferRenderable, RGBA } from "@opentui/core";
+import { FrameBufferRenderable, RGBA, convertGlobalToLocalSelection } from "@opentui/core";
 import type { CommitNode, FilesCacheEntry, LayoutMode } from "../../core/types";
 import { UI_TOKENS } from "../../core/ui-tokens";
 
@@ -28,10 +28,94 @@ interface GraphViewProps {
   themeVersion?: number;
 }
 
+type LocalSelection = {
+  anchorX: number;
+  anchorY: number;
+  focusX: number;
+  focusY: number;
+  isActive: boolean;
+};
+
+class SelectableFrameBufferRenderable extends FrameBufferRenderable {
+  private localSelection: LocalSelection | null = null;
+  private readonly getLines: () => string[];
+
+  constructor(ctx: any, options: ConstructorParameters<typeof FrameBufferRenderable>[1] & { getLines: () => string[] }) {
+    super(ctx, options);
+    this.selectable = true;
+    this.getLines = options.getLines;
+  }
+
+  shouldStartSelection(x: number, y: number): boolean {
+    const localX = x - this.x;
+    const localY = y - this.y;
+    return localX >= 0 && localY >= 0 && localX < this.width && localY < this.height;
+  }
+
+  onSelectionChanged(selection: any): boolean {
+    this.localSelection = convertGlobalToLocalSelection(selection, this.x, this.y) as LocalSelection | null;
+    return this.hasSelection();
+  }
+
+  hasSelection(): boolean {
+    if (!this.localSelection?.isActive) return false;
+    return this.localSelection.anchorX !== this.localSelection.focusX || this.localSelection.anchorY !== this.localSelection.focusY;
+  }
+
+  getSelectedText(): string {
+    if (!this.localSelection?.isActive) return "";
+
+    const lines = this.getLines();
+    if (lines.length === 0) return "";
+
+    let ax = this.localSelection.anchorX;
+    let ay = this.localSelection.anchorY;
+    let fx = this.localSelection.focusX;
+    let fy = this.localSelection.focusY;
+
+    const forward = ay < fy || (ay === fy && ax <= fx);
+    if (!forward) {
+      [ax, fx] = [fx, ax];
+      [ay, fy] = [fy, ay];
+    }
+
+    ay = Math.max(0, Math.min(ay, lines.length - 1));
+    fy = Math.max(0, Math.min(fy, lines.length - 1));
+
+    const clampX = (x: number) => Math.max(0, Math.min(x, this.width - 1));
+    ax = clampX(ax);
+    fx = clampX(fx);
+
+    const endExclusive = fx + 1;
+    const out: string[] = [];
+
+    const sliceWithPadding = (line: string, start: number, end: number) => {
+      const padded = line.padEnd(Math.max(end, 0), " ");
+      return padded.slice(Math.max(0, start), Math.max(0, end));
+    };
+
+    for (let y = ay; y <= fy; y++) {
+      const line = lines[y] || "";
+      if (y === ay && y === fy) {
+        out.push(sliceWithPadding(line, ax, endExclusive).replace(/[ \t]+$/, ""));
+      } else if (y === ay) {
+        out.push(sliceWithPadding(line, ax, this.width).replace(/[ \t]+$/, ""));
+      } else if (y === fy) {
+        out.push(sliceWithPadding(line, 0, endExclusive).replace(/[ \t]+$/, ""));
+      } else {
+        out.push(line.replace(/[ \t]+$/, ""));
+      }
+    }
+
+    return out.join("\n").replace(/[\n\r]+$/, "");
+  }
+}
+
 export function GraphView(props: GraphViewProps) {
   const renderer = useRenderer();
-  let canvas: FrameBufferRenderable | undefined;
+  let canvas: SelectableFrameBufferRenderable | undefined;
   let parentBox: any = undefined;
+  let graphLines: string[] = [];
 
   const viewBg = () => {
     props.themeVersion;
@@ -42,12 +126,13 @@ export function GraphView(props: GraphViewProps) {
     if (!parentBox || canvas) return;
     if (props.width <= 0 || props.height <= 0) return;
 
-    canvas = new FrameBufferRenderable(renderer, {
+    canvas = new SelectableFrameBufferRenderable(renderer, {
       id: "graph-canvas",
       width: props.width,
       height: props.height,
       respectAlpha: true,
       live: true,
+      getLines: () => graphLines,
     });
 
     canvas.frameBuffer.fillRect(0, 0, props.width, props.height, BG());
@@ -376,6 +461,9 @@ export function GraphView(props: GraphViewProps) {
         }
       }
     }
+
+    const raw = Buffer.from(canvas.frameBuffer.getRealCharBytes(true)).toString("utf8");
+    graphLines = raw.split("\n").slice(0, h).map((line) => line.slice(0, w));
 
     canvas.requestRender?.();
   };
