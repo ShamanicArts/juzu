@@ -23,74 +23,109 @@ function readPositiveIntEnv(name: string, fallback: number): number {
 function estimateDiffEntryBytes(files: Array<{ path: string; diff: string }>): number {
   let total = 0;
   for (const f of files) {
-    total += Buffer.byteLength(f.path, "utf8");
-    total += Buffer.byteLength(f.diff, "utf8");
+    // Approximate byte length without Buffer.byteLength overhead for ASCII-heavy diffs
+    total += f.path.length + f.diff.length;
   }
   return total;
 }
 
-function selectedKeepSet(extraId?: string): Set<string> {
-  const keep = new Set<string>();
-  if (state.selectedId) keep.add(state.selectedId);
-  if (extraId) keep.add(extraId);
-  return keep;
-}
-
-function pruneFilesCache(cache: Map<string, { atMs: number; files: FileEntry[] }>, keep: Set<string>): Map<string, { atMs: number; files: FileEntry[] }> {
-  if (cache.size <= FILES_CACHE_MAX_ENTRIES) return cache;
-  const out = new Map(cache);
-  const candidates = Array.from(out.entries())
-    .filter(([changeId]) => !keep.has(changeId))
-    .sort((a, b) => a[1].atMs - b[1].atMs);
-  while (out.size > FILES_CACHE_MAX_ENTRIES && candidates.length > 0) {
-    const oldest = candidates.shift();
-    if (!oldest) break;
-    out.delete(oldest[0]);
+/**
+ * Prune files cache in-place on the provided map. Returns true if anything was deleted.
+ * Avoids creating intermediate Map copies.
+ */
+function pruneFilesCacheInPlace(cache: Map<string, { atMs: number; files: FileEntry[] }>, keepId: string | null): boolean {
+  if (cache.size <= FILES_CACHE_MAX_ENTRIES) return false;
+  // Build sorted eviction list — only allocate the candidate array
+  const candidates: Array<[string, number]> = [];
+  for (const [changeId, entry] of cache) {
+    if (changeId === keepId) continue;
+    candidates.push([changeId, entry.atMs]);
   }
-  return out;
+  if (candidates.length === 0) return false;
+  candidates.sort((a, b) => a[1] - b[1]);
+  let deleted = false;
+  while (cache.size > FILES_CACHE_MAX_ENTRIES && candidates.length > 0) {
+    cache.delete(candidates.shift()![0]);
+    deleted = true;
+  }
+  return deleted;
 }
 
-function pruneDiffCache(
+/**
+ * Prune diff cache in-place. Returns true if anything was deleted.
+ */
+function pruneDiffCacheInPlace(
   cache: Map<string, { atMs: number; files: Array<{ path: string; diff: string }>; bytes: number }>,
-  keep: Set<string>
-): Map<string, { atMs: number; files: Array<{ path: string; diff: string }>; bytes: number }> {
-  if (cache.size === 0) return cache;
+  keepId: string | null
+): boolean {
+  if (cache.size === 0) return false;
 
-  const out = new Map(cache);
-  const candidates = Array.from(out.entries())
-    .filter(([changeId]) => !keep.has(changeId))
-    .sort((a, b) => a[1].atMs - b[1].atMs);
+  let totalBytes = 0;
+  for (const entry of cache.values()) totalBytes += entry.bytes;
 
-  const totalBytes = () => {
-    let total = 0;
-    for (const entry of out.values()) total += entry.bytes;
-    return total;
-  };
+  if (cache.size <= DIFF_CACHE_MAX_ENTRIES && totalBytes <= DIFF_CACHE_MAX_BYTES) return false;
 
-  while ((out.size > DIFF_CACHE_MAX_ENTRIES || totalBytes() > DIFF_CACHE_MAX_BYTES) && candidates.length > 0) {
-    const oldest = candidates.shift();
-    if (!oldest) break;
-    out.delete(oldest[0]);
+  const candidates: Array<[string, number]> = [];
+  for (const [changeId, entry] of cache) {
+    if (changeId === keepId) continue;
+    candidates.push([changeId, entry.atMs]);
   }
+  if (candidates.length === 0) return false;
+  candidates.sort((a, b) => a[1] - b[1]);
 
-  return out;
+  let deleted = false;
+  while ((cache.size > DIFF_CACHE_MAX_ENTRIES || totalBytes > DIFF_CACHE_MAX_BYTES) && candidates.length > 0) {
+    const key = candidates.shift()![0];
+    const entry = cache.get(key);
+    if (entry) totalBytes -= entry.bytes;
+    cache.delete(key);
+    deleted = true;
+  }
+  return deleted;
 }
 
+/**
+ * Prune caches after a refresh, removing entries for nodes no longer visible.
+ * Mutates in-place and only triggers a store update if something actually changed.
+ */
 function pruneCachesForVisibleNodes(nodes: Array<{ changeId: string }>) {
   const visibleIds = new Set(nodes.map((n) => n.changeId));
-  const keep = selectedKeepSet();
+  const keepId = state.selectedId;
 
-  const filesSubset = new Map<string, { atMs: number; files: FileEntry[] }>();
-  for (const [changeId, entry] of state.filesCache) {
-    if (visibleIds.has(changeId) || keep.has(changeId)) filesSubset.set(changeId, entry);
+  // Prune files cache: remove entries for invisible, non-selected nodes
+  const filesCache = state.filesCache;
+  let filesChanged = false;
+  const filesToDelete: string[] = [];
+  for (const changeId of filesCache.keys()) {
+    if (!visibleIds.has(changeId) && changeId !== keepId) filesToDelete.push(changeId);
   }
-  actions.setFilesCache(pruneFilesCache(filesSubset, keep));
+  if (filesToDelete.length > 0) {
+    // Must create a new Map to trigger SolidJS reactivity, but only copy once
+    const next = new Map(filesCache);
+    for (const id of filesToDelete) next.delete(id);
+    pruneFilesCacheInPlace(next, keepId);
+    actions.setFilesCache(next);
+    filesChanged = true;
+  } else if (pruneFilesCacheInPlace(filesCache as Map<string, { atMs: number; files: FileEntry[] }>, keepId)) {
+    // Entries were pruned by count — trigger reactivity
+    actions.setFilesCache(new Map(filesCache));
+    filesChanged = true;
+  }
 
-  const diffSubset = new Map(state.diffCache);
-  for (const changeId of diffSubset.keys()) {
-    if (!visibleIds.has(changeId) && !keep.has(changeId)) diffSubset.delete(changeId);
+  // Prune diff cache
+  const diffCache = state.diffCache;
+  const diffToDelete: string[] = [];
+  for (const changeId of diffCache.keys()) {
+    if (!visibleIds.has(changeId) && changeId !== keepId) diffToDelete.push(changeId);
   }
-  actions.setDiffCache(pruneDiffCache(diffSubset, keep));
+  if (diffToDelete.length > 0) {
+    const next = new Map(diffCache);
+    for (const id of diffToDelete) next.delete(id);
+    pruneDiffCacheInPlace(next, keepId);
+    actions.setDiffCache(next);
+  } else if (pruneDiffCacheInPlace(diffCache as Map<string, { atMs: number; files: Array<{ path: string; diff: string }>; bytes: number }>, keepId)) {
+    actions.setDiffCache(new Map(diffCache));
+  }
 }
 
 function cwdOrEmpty() {
@@ -112,6 +147,28 @@ async function runMutation(label: string, fn: () => Promise<void>) {
   }
 }
 
+/**
+ * Fingerprint a node list so we can skip no-op state updates.
+ * Uses changeId + commitId + description (covers rebases, describes, amends).
+ */
+function nodesFingerprint(nodes: Array<{ changeId: string; commitId: string; descriptionTitle: string; isEmpty: boolean; isConflict: boolean; bookmarks: string[] }>): string {
+  // Fast hash: concatenate key fields with a separator
+  let fp = "";
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    fp += n.changeId;
+    fp += n.commitId;
+    fp += n.descriptionTitle;
+    fp += n.isEmpty ? "1" : "0";
+    fp += n.isConflict ? "1" : "0";
+    fp += n.bookmarks.length > 0 ? n.bookmarks.join(",") : "";
+    fp += "|";
+  }
+  return fp;
+}
+
+let _lastLogFingerprint = "";
+
 export async function refreshLog(limit = activeLogLimit) {
   activeLogLimit = Math.max(1, limit);
   const backend = getBackend();
@@ -119,6 +176,16 @@ export async function refreshLog(limit = activeLogLimit) {
   actions.setStatusMessage("Loading...");
   try {
     const nodes = await backend.log({ cwd: cwdOrEmpty(), limit: activeLogLimit, revset: state.revsetQuery || undefined });
+
+    // Skip the entire state update + layout recomputation if nothing changed.
+    // This prevents the idle memory growth from watcher-triggered no-op refreshes.
+    const fp = nodesFingerprint(nodes);
+    if (fp === _lastLogFingerprint && nodes.length === state.nodes.length) {
+      actions.setStatusMessage(`nodes:${nodes.length}`);
+      return;
+    }
+    _lastLogFingerprint = fp;
+
     actions.setNodes(nodes);
     pruneCachesForVisibleNodes(nodes);
     actions.setStatusMessage(`nodes:${nodes.length}`);
@@ -178,7 +245,8 @@ export async function ensureFiles(changeId: string, maxAgeMs = 30_000): Promise<
   const files = await backend.files({ cwd: cwdOrEmpty(), changeId });
   const next = new Map(state.filesCache);
   next.set(changeId, { atMs: now, files });
-  actions.setFilesCache(pruneFilesCache(next, selectedKeepSet(changeId)));
+  pruneFilesCacheInPlace(next, state.selectedId);
+  actions.setFilesCache(next);
   return files;
 }
 
@@ -198,7 +266,8 @@ export async function ensureDiff(changeId: string, maxAgeMs = 30_000): Promise<s
   const bytes = estimateDiffEntryBytes(files);
   const next = new Map(state.diffCache);
   next.set(changeId, { atMs: now, files, bytes });
-  actions.setDiffCache(pruneDiffCache(next, selectedKeepSet(changeId)));
+  pruneDiffCacheInPlace(next, state.selectedId);
+  actions.setDiffCache(next);
   return files[0]?.diff || diff;
 }
 

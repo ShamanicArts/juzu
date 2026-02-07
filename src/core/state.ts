@@ -93,21 +93,38 @@ export const layoutResult = createMemo<LayoutResult>(() => {
   return calculateLayout(state.layoutMode, withPins);
 });
 
+// Cache a changeId→index lookup to avoid repeated linear scans.
+// Invalidated whenever layoutResult changes.
+let _nodeIndexCache: Map<string, number> | null = null;
+let _cachedLayoutNodes: CommitNode[] | null = null;
+
+function getNodeIndexMap(): Map<string, number> {
+  const nodes = layoutResult().nodes;
+  if (nodes === _cachedLayoutNodes && _nodeIndexCache) return _nodeIndexCache;
+  const map = new Map<string, number>();
+  for (let i = 0; i < nodes.length; i++) map.set(nodes[i].changeId, i);
+  _nodeIndexCache = map;
+  _cachedLayoutNodes = nodes;
+  return map;
+}
+
 export const selectedNode = () => {
   if (!state.selectedId) return null;
-  return layoutResult().nodes.find((n) => n.changeId === state.selectedId) || null;
+  const nodes = layoutResult().nodes;
+  const idx = getNodeIndexMap().get(state.selectedId);
+  return idx !== undefined ? nodes[idx] : null;
 };
 
 export const selectedIndex = () => {
   if (!state.selectedId) return 0;
-  return layoutResult().nodes.findIndex((n) => n.changeId === state.selectedId);
+  return getNodeIndexMap().get(state.selectedId) ?? 0;
 };
 
 export const actions = {
   setCwd: (cwd: string) => setState("cwd", cwd),
 
   setNodes: (nodes: CommitNode[]) => {
-    setState((prev) => ({ ...prev, nodes }));
+    setState("nodes", nodes);
     if (!state.selectedId && nodes.length > 0) {
       const wc = nodes.find((n) => n.isWorkingCopy);
       actions.selectNode(wc?.changeId || nodes[0]?.changeId || null);

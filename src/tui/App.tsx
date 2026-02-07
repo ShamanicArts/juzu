@@ -4,7 +4,12 @@ import type { KeyEvent } from "@opentui/core";
 import { RGBA } from "@opentui/core";
 import { readFile, readdir, watch, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import clipboardy from "clipboardy";
+// Lazy-load clipboardy only when actually copying to avoid startup memory cost
+let _clipboardy: typeof import("clipboardy") | null = null;
+const getClipboardy = async () => {
+  if (!_clipboardy) _clipboardy = await import("clipboardy");
+  return _clipboardy;
+};
 import { state, actions, navigation, selectedNode, layoutResult } from "../core/state";
 import { tuiActions, tuiState } from "../core/state-tui";
 import { setBackend } from "../core/runtime";
@@ -99,7 +104,8 @@ function App() {
 
   const tryNativeClipboardCopy = async (text: string) => {
     try {
-      await clipboardy.write(text);
+      const cb = await getClipboardy();
+      await cb.default.write(text);
       return true;
     } catch {
       return false;
@@ -372,10 +378,18 @@ function App() {
     }
   });
 
+  // Track last fetched IDs to avoid re-fetching for the same selection
+  let _lastFilesChangeId: string | null = null;
+  let _lastDiffChangeId: string | null = null;
+  let _lastSelectedIdForDiffReset: string | null = null;
+
   createEffect(() => {
     const node = selectedNode();
     if (!node) return;
     if (state.viewMode !== "log") return;
+    // Skip if we already fetched for this changeId
+    if (node.changeId === _lastFilesChangeId) return;
+    _lastFilesChangeId = node.changeId;
     void ensureFiles(node.changeId).catch(() => {
       // Best-effort cache hydration for selected node details.
     });
@@ -387,13 +401,18 @@ function App() {
     if (!node) return;
     if (mode === "log" && !TUI_PREFETCH_DIFF_IN_LOG) return;
     if (mode !== "log" && mode !== "diff") return;
+    // Skip if we already fetched for this changeId
+    if (node.changeId === _lastDiffChangeId) return;
+    _lastDiffChangeId = node.changeId;
     void ensureDiff(node.changeId).catch(() => {
       // Best-effort prefetch for sidebar/full diff rendering.
     });
   });
 
   createEffect(() => {
-    state.selectedId;
+    const id = state.selectedId;
+    if (id === _lastSelectedIdForDiffReset) return;
+    _lastSelectedIdForDiffReset = id;
     tuiActions.setDiffFileIndex(0);
   });
 

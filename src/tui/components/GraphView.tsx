@@ -141,6 +141,9 @@ export function GraphView(props: GraphViewProps) {
   let canvas: SelectableFrameBufferRenderable | undefined;
   let parentBox: any = undefined;
   let graphLines: string[] = [];
+  // Reusable maps to avoid allocating new Maps on every draw frame
+  let _indexByIdAll: Map<string, number> | null = null;
+  let _childrenById: Map<string, CommitNode[]> | null = null;
 
   const viewBg = () => {
     props.themeVersion;
@@ -214,8 +217,11 @@ export function GraphView(props: GraphViewProps) {
 
     // Global index so we can render connections that span beyond the visible window.
     // This fixes missing lane/edge segments when one endpoint is off-screen.
-    const indexByIdAll = new Map<string, number>();
-    props.nodes.forEach((n, i) => indexByIdAll.set(n.changeId, i));
+    // Reuse the map across frames to reduce allocation pressure.
+    if (!_indexByIdAll) _indexByIdAll = new Map<string, number>();
+    else _indexByIdAll.clear();
+    const indexByIdAll = _indexByIdAll;
+    for (let i = 0; i < props.nodes.length; i++) indexByIdAll.set(props.nodes[i].changeId, i);
 
     const rowYCell = (i: number) => headerH + 1 + i * rowStride;
     const rowYAbs = (globalIndex: number) => headerH + 1 + (globalIndex - start) * rowStride;
@@ -244,7 +250,13 @@ export function GraphView(props: GraphViewProps) {
     if (props.layoutMode === "mainline" && maxLane > 0) {
       // Build child lists from the full graph so fork/merge points can render
       // even when the connected commit is off-screen.
-      const childrenById = new Map<string, CommitNode[]>();
+      // Reuse arrays where possible; clear between frames.
+      if (!_childrenById) _childrenById = new Map<string, CommitNode[]>();
+      else {
+        for (const arr of _childrenById.values()) arr.length = 0;
+        _childrenById.clear();
+      }
+      const childrenById = _childrenById;
       for (const child of props.nodes) {
         for (const pid of child.parents) {
           const arr = childrenById.get(pid);

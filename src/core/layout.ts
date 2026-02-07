@@ -325,8 +325,36 @@ export function calculateLayout(
   config: Partial<GraphConfig> = {}
 ): LayoutResult {
   const cfg = { ...DEFAULT_CONFIG, ...config };
-  const nodesCopy = nodes.map((n) => ({ ...n }));
-  const nodesMap = new Map(nodesCopy.map((n) => [n.changeId, n]));
+  // Shallow-copy nodes but reuse the same object shape to reduce allocation pressure.
+  // Pre-set layout fields so layout functions can assign directly.
+  const nodesCopy: CommitNode[] = new Array(nodes.length);
+  const nodesMap = new Map<string, CommitNode>();
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    const copy: CommitNode = {
+      changeId: n.changeId,
+      commitId: n.commitId,
+      parents: n.parents,
+      author: n.author,
+      time: n.time,
+      bookmarks: n.bookmarks,
+      gitBranches: n.gitBranches,
+      descriptionTitle: n.descriptionTitle,
+      descriptionFull: n.descriptionFull,
+      isEmpty: n.isEmpty,
+      isConflict: n.isConflict,
+      isHidden: n.isHidden,
+      isRoot: n.isRoot,
+      isWorkingCopy: n.isWorkingCopy,
+      lane: n.lane,
+      x: n.x,
+      y: n.y,
+      extraHeight: n.extraHeight,
+      isPinned: n.isPinned,
+    };
+    nodesCopy[i] = copy;
+    nodesMap.set(copy.changeId, copy);
+  }
 
   // Apply lane assignment based on mode
   switch (mode) {
