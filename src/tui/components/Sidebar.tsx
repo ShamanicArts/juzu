@@ -46,9 +46,12 @@ interface SidebarProps {
     index: number;
     total: number;
   } | null;
+  collapsed?: boolean;
 }
 
 export function Sidebar(props: SidebarProps) {
+  const isCollapsed = createMemo(() => Boolean(props.collapsed));
+
   const panelBg = createMemo(() => {
     props.themeVersion;
     return RGBA.fromHex(UI_TOKENS.slate.panel);
@@ -90,6 +93,7 @@ export function Sidebar(props: SidebarProps) {
   });
 
   const showInlineDiff = createMemo(() => {
+    if (isCollapsed()) return false;
     if (!props.diffPreview) return false;
     if (props.viewMode && props.viewMode !== "log") return false;
     if (props.confirmPrompt) return false;
@@ -153,6 +157,7 @@ export function Sidebar(props: SidebarProps) {
         { text: "Ctrl+X d    Duplicate", color: FG },
         { text: "Ctrl+X u    Redo", color: FG },
         { text: "Ctrl+X t    Theme picker", color: FG },
+        { text: "Ctrl+X r    Toggle collapsed sidebar", color: FG },
         { text: "Ctrl+X m    Merge mode", color: FG },
         { text: "Ctrl+X f    Fetch", color: FG },
         { text: "Ctrl+X p    Push", color: FG },
@@ -434,7 +439,7 @@ export function Sidebar(props: SidebarProps) {
     };
   });
 
-  const title = () => props.showHelp ? "Help (h to close)" : "Details";
+  const title = () => (props.showHelp ? "Help (h to close)" : isCollapsed() ? "Sidebar" : "Details");
   const scrollIndicator = () => {
     const v = visibleLines();
     if (v.canScrollUp && v.canScrollDown) return "↑ PgUp/PgDn ↓";
@@ -449,43 +454,53 @@ export function Sidebar(props: SidebarProps) {
       height={props.height}
       backgroundColor={panelBg()}
     >
-      <text fg={titleFg()}>{title()}</text>
-      <text fg={borderFg()}>--------</text>
-      <For each={visibleLines().lines}>
-        {(line) => (
-          <text fg={line.color}>
-            {line.text || " "}
-          </text>
-        )}
-      </For>
-      <text fg={scrollFg()}>{scrollIndicator() || " "}</text>
+      <Show
+        when={isCollapsed()}
+        fallback={
+          <>
+            <text fg={titleFg()}>{title()}</text>
+            <text fg={borderFg()}>{"-".repeat(Math.max(0, props.width - 1))}</text>
+            <For each={visibleLines().lines}>
+              {(line) => (
+                <text fg={line.color}>
+                  {line.text || " "}
+                </text>
+              )}
+            </For>
+            <text fg={scrollFg()}>{scrollIndicator() || " "}</text>
 
-      <Show when={showInlineDiff()}>
-        <text fg={diffHeaderFg()}>{`Diff ${props.diffPreview!.index + 1}/${props.diffPreview!.total}: ${props.diffPreview!.path}`}</text>
-        <text fg={scrollFg()}>[ / ] switch file, Ctrl+d full diff</text>
-        <box height={diffBodyHeight()}>
-          <diff
-            width={props.width}
-            height={diffBodyHeight()}
-            diff={props.diffPreview!.diff}
-            view="unified"
-            showLineNumbers={true}
-            lineNumberFg={diffColors().lineNumberFg}
-            lineNumberBg={diffColors().lineNumberBg}
-            contextBg={diffColors().contextBg}
-            addedBg={diffColors().addedBg}
-            removedBg={diffColors().removedBg}
-            addedContentBg={diffColors().addedContentBg}
-            removedContentBg={diffColors().removedContentBg}
-            contextContentBg={diffColors().contextContentBg}
-            addedSignColor={diffColors().addedSignColor}
-            removedSignColor={diffColors().removedSignColor}
-            addedLineNumberBg={diffColors().addedLineNumberBg}
-            removedLineNumberBg={diffColors().removedLineNumberBg}
-            fg={diffColors().fg}
-            wrapMode="char"
-          />
-        </box>
+            <Show when={showInlineDiff()}>
+              <text fg={diffHeaderFg()}>{`Diff ${props.diffPreview!.index + 1}/${props.diffPreview!.total}: ${props.diffPreview!.path}`}</text>
+              <text fg={scrollFg()}>[ / ] switch file, Ctrl+d full diff</text>
+              <box height={diffBodyHeight()}>
+                <diff
+                  width={Math.max(1, props.width - 4)}
+                  height={diffBodyHeight()}
+                  diff={props.diffPreview!.diff}
+                  view="unified"
+                  showLineNumbers={true}
+                  lineNumberFg={diffColors().lineNumberFg}
+                  lineNumberBg={diffColors().lineNumberBg}
+                  contextBg={diffColors().contextBg}
+                  addedBg={diffColors().addedBg}
+                  removedBg={diffColors().removedBg}
+                  addedContentBg={diffColors().addedContentBg}
+                  removedContentBg={diffColors().removedContentBg}
+                  contextContentBg={diffColors().contextContentBg}
+                  addedSignColor={diffColors().addedSignColor}
+                  removedSignColor={diffColors().removedSignColor}
+                  addedLineNumberBg={diffColors().addedLineNumberBg}
+                  removedLineNumberBg={diffColors().removedLineNumberBg}
+                  fg={diffColors().fg}
+                  wrapMode="char"
+                />
+              </box>
+            </Show>
+          </>
+        }
+      >
+        <text fg={titleFg()}>[ ]</text>
+        <text fg={FG_DIM}>^X r</text>
       </Show>
     </box>
   );

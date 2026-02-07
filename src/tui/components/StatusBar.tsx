@@ -44,6 +44,7 @@ const KEYBINDS: Record<string, Keybind[]> = {
     { key: "d", action: "DUPE" },
     { key: "u", action: "REDO" },
     { key: "t", action: "THEME" },
+    { key: "r", action: "COLLAPSE" },
     { key: "m", action: "MERGE" },
     { key: "f", action: "FETCH" },
     { key: "p", action: "PUSH" },
@@ -169,7 +170,7 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
     if (props.width < 110) return "";
     switch (currentMode()) {
       case "leader":
-        return "Ctrl+X prefix: a/s/d/u/m/f/p/b/x";
+        return "";
       case "rebase":
         return "select destination and confirm";
       case "merge":

@@ -6,6 +6,7 @@ export interface TuiState {
   sidebarScroll: number;
   showHelp: boolean;
   leaderMode: boolean;
+  sidebarCollapsed: boolean;
   cursorPos: number;
   mergeMode: boolean;
   mergeSelectedIds: Set<string>;
@@ -28,6 +29,7 @@ const initialTuiState: TuiState = {
   sidebarScroll: 0,
   showHelp: false,
   leaderMode: false,
+  sidebarCollapsed: false,
   cursorPos: 0,
   mergeMode: false,
   mergeSelectedIds: new Set(),
@@ -60,6 +62,8 @@ export const tuiActions = {
   toggleHelp: () => setTuiState("showHelp", (v) => !v),
 
   setLeaderMode: (active: boolean) => setTuiState("leaderMode", active),
+
+  toggleSidebarCollapsed: () => setTuiState("sidebarCollapsed", (v) => !v),
 
   setCursorPos: (pos: number) => setTuiState("cursorPos", Math.max(0, pos)),
 

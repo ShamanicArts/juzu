@@ -168,6 +168,18 @@ export function GraphView(props: GraphViewProps) {
     parentBox.add(canvas);
   };
 
+  const removeCanvas = () => {
+    if (!canvas) return;
+    if (parentBox) {
+      try {
+        parentBox.remove("graph-canvas");
+      } catch {
+        // ignore
+      }
+    }
+    canvas = undefined;
+  };
+
   const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
   const truncate = (s: string, maxLen: number) => {
     if (maxLen <= 0) return "";
@@ -505,6 +517,10 @@ export function GraphView(props: GraphViewProps) {
             const fileName = f.path.split("/").pop() || f.path;
             const fileText = `${f.type}:${fileName}`;
             const isLast = fi === filesToShow.length - 1;
+            const sepLen = !isLast ? 1 : 0;
+            
+            // Stop if this file would overflow the buffer
+            if (currentX + fileText.length + sepLen > textX + fileMaxW) break;
             
             // Color code by file change type, with brightening for selected
             let fileColor;
@@ -524,8 +540,10 @@ export function GraphView(props: GraphViewProps) {
           
           if (filesCached.files.length > 3) {
             const moreText = ` +${filesCached.files.length - 3}`;
-            const moreColor = isSelected ? brighten(graphColorsHex.textMuted(), 40) : RGBA.fromHex(graphColorsHex.textMuted());
-            fb.drawText(moreText, currentX, y + 2, moreColor);
+            if (currentX + moreText.length <= textX + fileMaxW) {
+              const moreColor = isSelected ? brighten(graphColorsHex.textMuted(), 40) : RGBA.fromHex(graphColorsHex.textMuted());
+              fb.drawText(moreText, currentX, y + 2, moreColor);
+            }
           }
         } else if (filesCached) {
           const noFilesColor = isSelected ? brighten(graphColorsHex.textMuted(), 40) : RGBA.fromHex(graphColorsHex.textMuted());
@@ -547,15 +565,8 @@ export function GraphView(props: GraphViewProps) {
   const setupCanvas = (el: any) => {
     if (!el) return;
     parentBox = el;
-    
-    if (canvas) {
-      try {
-        parentBox.remove("graph-canvas");
-      } catch {
-        // ignore
-      }
-    }
-    
+
+    removeCanvas();
     tryCreateCanvas();
   };
 
@@ -576,13 +587,20 @@ export function GraphView(props: GraphViewProps) {
     if (canvas && parentBox) {
       const nextW = props.width;
       const nextH = props.height;
+      if (nextW <= 0 || nextH <= 0) {
+        removeCanvas();
+        return;
+      }
+
       const currentW = (canvas as any).width as number;
       const currentH = (canvas as any).height as number;
-      if (currentW !== nextW) (canvas as any).width = nextW;
-      if (currentH !== nextH) (canvas as any).height = nextH;
-      if (nextW > 0 && nextH > 0) {
-        canvas.frameBuffer.fillRect(0, 0, nextW, nextH, BG());
+      if (currentW !== nextW || currentH !== nextH) {
+        removeCanvas();
+        tryCreateCanvas();
+        return;
       }
+
+      canvas.frameBuffer.fillRect(0, 0, nextW, nextH, BG());
       draw();
     }
   });
