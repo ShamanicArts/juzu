@@ -10,15 +10,15 @@ import { readFixture } from "../../test-utils/fixtures";
 describe("jj-api parsers", () => {
   test("parseJJLogText parses valid entries and skips malformed blocks", async () => {
     const sample = await readFixture("jj-log.sample.txt");
-    const mixed = `${sample}\nbad§block§only`;
+    const mixed = `${sample}\nbad\x01block\x01only`;
     const parsed = parseJJLogText(mixed, "cccc3333");
-    expect(parsed).toHaveLength(2);
+    expect(parsed).toHaveLength(3);
     expect(parsed[1]?.isWorkingCopy).toBe(true);
   });
 
   test("parseOpLogText parses tags and skips malformed blocks", async () => {
     const sample = await readFixture("jj-oplog.sample.txt");
-    const mixed = `${sample}\nmissing§fields`;
+    const mixed = `${sample}\nmissing\x01fields`;
     const parsed = parseOpLogText(mixed);
     expect(parsed).toHaveLength(2);
     expect(parsed[0]?.tags.length).toBeGreaterThan(0);
@@ -27,7 +27,7 @@ describe("jj-api parsers", () => {
 
   test("parseObslogText parses operation metadata and skips malformed blocks", async () => {
     const sample = await readFixture("jj-obslog.sample.txt");
-    const mixed = `${sample}\ninvalid§obslog`;
+    const mixed = `${sample}\ninvalid\x01obslog`;
     const parsed = parseObslogText(mixed, "aaaa1111");
     expect(parsed).toHaveLength(2);
     expect(parsed[0]?.operationId.length).toBeGreaterThan(0);

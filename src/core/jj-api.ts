@@ -1,15 +1,15 @@
 import type { CommitNode, FilesCacheEntry } from "./types";
 
 export const JJ_TEMPLATE =
-  `change_id.short() ++ "§" ++ commit_id.short() ++ "§" ++ parents.map(|p| p.change_id().short()).join(",") ++ "§" ++ author.email() ++ "§" ++ author.timestamp() ++ "§" ++ bookmarks.join(",") ++ "§" ++ description.first_line() ++ "§" ++ description ++ "§" ++ empty ++ "§" ++ conflict ++ "§" ++ hidden ++ "§" ++ root ++ "§<JJ-SEP>§"`;
+  `change_id.short() ++ "\x01" ++ commit_id.short() ++ "\x01" ++ parents.map(|p| p.change_id().short()).join(",") ++ "\x01" ++ author.email() ++ "\x01" ++ author.timestamp() ++ "\x01" ++ bookmarks.join(",") ++ "\x01" ++ description.first_line() ++ "\x01" ++ description ++ "\x01" ++ empty ++ "\x01" ++ conflict ++ "\x01" ++ hidden ++ "\x01" ++ root ++ "\x01<JJ-SEP>\x01"`;
 
 export function parseJJLogText(logText: string, wcId: string): CommitNode[] {
   return logText
-    .split("§<JJ-SEP>§")
+    .split("\x01<JJ-SEP>\x01")
     .map((b) => b.trim())
     .filter(Boolean)
     .map((block) => {
-      const parts = block.split("§");
+      const parts = block.split("\x01");
       if (parts.length < 12) return null;
 
       const changeId = parts[0].trim();
@@ -18,7 +18,7 @@ export function parseJJLogText(logText: string, wcId: string): CommitNode[] {
       const hidden = parts[parts.length - 2].trim();
       const conflict = parts[parts.length - 3].trim();
       const empty = parts[parts.length - 4].trim();
-      const descriptionFull = parts.slice(7, parts.length - 4).join("§").trim();
+      const descriptionFull = parts.slice(7, parts.length - 4).join("\x01").trim();
 
       return {
         changeId,
@@ -350,15 +350,15 @@ export interface OpLogEntry {
 }
 
 export const OP_LOG_TEMPLATE =
-  `id.short() ++ "§" ++ id.short(8) ++ "§" ++ time ++ "§" ++ time.duration() ++ "§" ++ tags ++ "§" ++ description.first_line() ++ "§" ++ description ++ "§" ++ current_operation ++ "§" ++ user ++ "\n§<JJ-OP-SEP>§\n"`;
+  `id.short() ++ "\x01" ++ id.short(8) ++ "\x01" ++ time ++ "\x01" ++ time.duration() ++ "\x01" ++ tags ++ "\x01" ++ description.first_line() ++ "\x01" ++ description ++ "\x01" ++ current_operation ++ "\x01" ++ user ++ "\n\x01<JJ-OP-SEP>\x01\n"`;
 
 export function parseOpLogText(logText: string): OpLogEntry[] {
   return logText
-    .split("§<JJ-OP-SEP>§")
+    .split("\x01<JJ-OP-SEP>\x01")
     .map((b) => b.trim())
     .filter(Boolean)
     .map((block) => {
-      const parts = block.split("§");
+      const parts = block.split("\x01");
       if (parts.length < 9) return null;
 
       return {
@@ -406,15 +406,15 @@ export interface ObslogEntry {
 // CommitEvolutionEntry provides `commit()` and `operation()`.
 // We include operation info so the UI can explain *why* a version exists.
 export const OBSLOG_TEMPLATE =
-  `commit.change_id().short() ++ "§" ++ commit.commit_id().short() ++ "§" ++ operation.id().short() ++ "§" ++ operation.description().first_line() ++ "§" ++ operation.description() ++ "§" ++ operation.user() ++ "§" ++ operation.time().duration() ++ "§" ++ operation.tags() ++ "§" ++ commit.author().timestamp() ++ "§" ++ commit.author().email() ++ "§" ++ commit.hidden() ++ "§" ++ commit.description().first_line() ++ "§" ++ commit.description() ++ "§" ++ commit.empty() ++ "§" ++ commit.conflict() ++ "\n§<JJ-OBS-SEP>§\n"`;
+  `commit.change_id().short() ++ "\x01" ++ commit.commit_id().short() ++ "\x01" ++ operation.id().short() ++ "\x01" ++ operation.description().first_line() ++ "\x01" ++ operation.description() ++ "\x01" ++ operation.user() ++ "\x01" ++ operation.time().duration() ++ "\x01" ++ operation.tags() ++ "\x01" ++ commit.author().timestamp() ++ "\x01" ++ commit.author().email() ++ "\x01" ++ commit.hidden() ++ "\x01" ++ commit.description().first_line() ++ "\x01" ++ commit.description() ++ "\x01" ++ commit.empty() ++ "\x01" ++ commit.conflict() ++ "\n\x01<JJ-OBS-SEP>\x01\n"`;
 
 export function parseObslogText(logText: string, wcId: string): ObslogEntry[] {
   return logText
-    .split("§<JJ-OBS-SEP>§")
+    .split("\x01<JJ-OBS-SEP>\x01")
     .map((b) => b.trim())
     .filter(Boolean)
     .map((block) => {
-      const parts = block.split("§");
+      const parts = block.split("\x01");
       if (parts.length < 15) return null;
 
       const changeIdEntry = parts[0].trim();
@@ -425,7 +425,7 @@ export function parseObslogText(logText: string, wcId: string): ObslogEntry[] {
       const operationDuration = parts[6].trim();
       const operationTags = parts[7] ? parts[7].split("\n").map((t) => t.trim()).filter(Boolean) : [];
       const isHidden = parts[10].trim() === "true";
-      const descriptionFull = parts.slice(12, parts.length - 2).join("§").trim();
+      const descriptionFull = parts.slice(12, parts.length - 2).join("\x01").trim();
 
       return {
         changeId: changeIdEntry,
