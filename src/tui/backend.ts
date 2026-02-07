@@ -1,35 +1,12 @@
 import type { JJBackend } from "../core/backend";
-import type { CommitNode } from "../core/types";
-import { fetchJJLog, fetchFilesForNodes, findJJRoot, jjAbandon, jjBookmarkDelete, jjBookmarkRename, jjBookmarkSet, jjBookmarkTrack, jjBookmarkUntrack, jjDescribe, jjDuplicate, jjEdit, jjGetDiff, jjGitFetch, jjGitPush, jjInsertAfter, jjMove, jjNew, jjRebase, jjRestore, jjSplit, jjSquashPaths, jjUndo, jjRedo, runCmdText, fetchOpLog, fetchObslog, jjRestoreOperation } from "../core/jj-api";
+import { fetchJJLog, findJJRoot, jjAbandon, jjBookmarkDelete, jjBookmarkRename, jjBookmarkSet, jjBookmarkTrack, jjBookmarkUntrack, jjDescribe, jjDuplicate, jjEdit, jjGetDiff, jjGetFiles, jjGitFetch, jjGitPush, jjInsertAfter, jjMove, jjNew, jjRebase, jjRestore, jjSplit, jjSquashPaths, jjUndo, jjRedo, runCmdText, fetchOpLog, fetchObslog, jjRestoreOperation } from "../core/jj-api";
 
 export function createTuiBackend(): JJBackend {
   return {
     findRoot: findJJRoot,
 
     log: async ({ cwd, limit, revset }) => fetchJJLog(cwd, limit, revset),
-    files: async ({ cwd, changeId }) => {
-      const nodes: CommitNode[] = [{
-        changeId,
-        commitId: "",
-        parents: [],
-        author: "",
-        time: "",
-        bookmarks: [],
-        gitBranches: [],
-        descriptionTitle: "",
-        descriptionFull: "",
-        isEmpty: false,
-        isConflict: false,
-        isHidden: false,
-        isRoot: false,
-        isWorkingCopy: false,
-      }];
-      let out: Array<{ type: string; path: string }> = [];
-      await fetchFilesForNodes(nodes, cwd, (cache) => {
-        out = cache.get(changeId)?.files || [];
-      });
-      return out;
-    },
+    files: async ({ cwd, changeId }) => jjGetFiles(changeId, cwd),
     diff: async ({ cwd, changeId }) => jjGetDiff(changeId, cwd),
 
     new: async ({ cwd, parentId, parentIds }) => {

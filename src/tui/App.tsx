@@ -13,7 +13,7 @@ const getClipboardy = async () => {
 import { state, actions, navigation, selectedNode, layoutResult } from "../core/state";
 import { tuiActions, tuiState } from "../core/state-tui";
 import { setBackend } from "../core/runtime";
-import { ensureDiff, ensureFiles, initCwdFrom, opAbandon, opBookmarkDelete, opBookmarkSet, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertBetween, opMerge, opNew, opRebase, opRestore, opSquash, opUndo, opRedo, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
+import { ensureDiff, ensureFiles, initCwdFrom, opAbandon, opBookmarkDelete, opBookmarkSet, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertBetween, opMerge, opNew, opRebase, opRestore, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
 import { createTuiBackend } from "./backend";
 import { GraphView } from "./components/GraphView";
 import { Sidebar } from "./components/Sidebar";
@@ -31,13 +31,23 @@ const PANEL_BG = () => RGBA.fromHex(UI_TOKENS.slate.panel);
 const RUNTIME = getRuntimeConfig();
 const TUI_LOG_LIMIT = readPositiveIntEnv("JJVIZ_TUI_LOG_LIMIT", 80);
 const TUI_REFRESH_DEBOUNCE_MS = readPositiveIntEnv("JJVIZ_TUI_REFRESH_DEBOUNCE_MS", 700);
-const TUI_PREFETCH_DIFF_IN_LOG = RUNTIME.tui.prefetchDiffInLog;
+const TUI_FILES_PREFETCH_RADIUS = readPositiveIntEnv("JJVIZ_TUI_FILES_PREFETCH_RADIUS", 8);
+const TUI_FILES_PREFETCH_MAX_AGE_MS = readPositiveIntEnv("JJVIZ_TUI_FILES_PREFETCH_MAX_AGE_MS", 60_000);
+const TUI_FILES_PREFETCH_CONCURRENCY = readPositiveIntEnv("JJVIZ_TUI_FILES_PREFETCH_CONCURRENCY", 1);
+const TUI_DIFF_PREFETCH_DEBOUNCE_MS = readPositiveIntEnv("JJVIZ_TUI_DIFF_PREFETCH_DEBOUNCE_MS", 180);
+
+const SIDEBAR_COLLAPSED_W = 6;
+const SIDEBAR_COLLAPSED_H = 3;
 
 function readPositiveIntEnv(name: string, fallback: number): number {
-  const raw = process.env[name];
+  const raw = typeof process !== "undefined" ? process.env?.[name] : undefined;
   if (!raw) return fallback;
   const parsed = Number.parseInt(raw, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function shouldClearDiffCacheOutsideDiffMode(): boolean {
+  return getRuntimeConfig().tui.clearDiffCacheWhenNotInDiff;
 }
 
 function extractThemeNameFromToml(raw: string): string | null {
@@ -79,6 +89,9 @@ function App() {
   const renderer = useRenderer();
   const watchControllers: AbortController[] = [];
   let refreshDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let diffPrefetchTimer: ReturnType<typeof setTimeout> | null = null;
+  let diffPrefetchInFlight = false;
+  let queuedDiffPrefetchId: string | null = null;
   let pendingConfirmation: { message: string; run: () => Promise<void> | void } | null = null;
   const [confirmPrompt, setConfirmPrompt] = createSignal<string | null>(null);
   const [themeOptions, setThemeOptions] = createSignal<string[]>(["slate", "ember"]);
@@ -376,12 +389,59 @@ function App() {
       clearTimeout(refreshDebounceTimer);
       refreshDebounceTimer = null;
     }
+    if (diffPrefetchTimer) {
+      clearTimeout(diffPrefetchTimer);
+      diffPrefetchTimer = null;
+    }
+    queuedDiffPrefetchId = null;
   });
 
   // Track last fetched IDs to avoid re-fetching for the same selection
   let _lastFilesChangeId: string | null = null;
-  let _lastDiffChangeId: string | null = null;
+  let _lastDiffDirectChangeId: string | null = null;
+  let _lastDiffQueuedChangeId: string | null = null;
+  let _lastFilesPrefetchKey: string | null = null;
   let _lastSelectedIdForDiffReset: string | null = null;
+
+  const collectNearbyChangeIds = () => {
+    const nodes = layoutResult().nodes;
+    if (nodes.length === 0) return [] as string[];
+    const selected = state.selectedId;
+    const selectedIdx = Math.max(0, nodes.findIndex((n) => n.changeId === selected));
+    const start = Math.max(0, selectedIdx - TUI_FILES_PREFETCH_RADIUS);
+    const end = Math.min(nodes.length, selectedIdx + TUI_FILES_PREFETCH_RADIUS + 1);
+    return nodes.slice(start, end).map((n) => n.changeId);
+  };
+
+  const runQueuedDiffPrefetch = async () => {
+    if (diffPrefetchInFlight) return;
+    const changeId = queuedDiffPrefetchId;
+    if (!changeId) return;
+    queuedDiffPrefetchId = null;
+    diffPrefetchInFlight = true;
+    try {
+      await ensureDiff(changeId);
+    } catch {
+      // Best-effort prefetch for sidebar/full diff rendering.
+    } finally {
+      diffPrefetchInFlight = false;
+      if (queuedDiffPrefetchId && queuedDiffPrefetchId !== changeId) {
+        void runQueuedDiffPrefetch();
+      }
+    }
+  };
+
+  const scheduleDiffPrefetch = (changeId: string) => {
+    if (!changeId) return;
+    if (changeId === _lastDiffQueuedChangeId) return;
+    _lastDiffQueuedChangeId = changeId;
+    queuedDiffPrefetchId = changeId;
+    if (diffPrefetchTimer) clearTimeout(diffPrefetchTimer);
+    diffPrefetchTimer = setTimeout(() => {
+      diffPrefetchTimer = null;
+      void runQueuedDiffPrefetch();
+    }, TUI_DIFF_PREFETCH_DEBOUNCE_MS);
+  };
 
   createEffect(() => {
     const node = selectedNode();
@@ -396,17 +456,63 @@ function App() {
   });
 
   createEffect(() => {
+    if (state.viewMode !== "log") return;
+    const ids = collectNearbyChangeIds();
+    if (ids.length === 0) return;
+    const key = ids.join(",");
+    if (key === _lastFilesPrefetchKey) return;
+    _lastFilesPrefetchKey = key;
+    void prefetchFiles(ids, TUI_FILES_PREFETCH_MAX_AGE_MS, TUI_FILES_PREFETCH_CONCURRENCY).catch(() => {
+      // Keep prefetch best-effort to avoid noisy failures.
+    });
+  });
+
+  createEffect(() => {
     const node = selectedNode();
     const mode = state.viewMode;
     if (!node) return;
-    if (mode === "log" && !TUI_PREFETCH_DIFF_IN_LOG) return;
-    if (mode !== "log" && mode !== "diff") return;
-    // Skip if we already fetched for this changeId
-    if (node.changeId === _lastDiffChangeId) return;
-    _lastDiffChangeId = node.changeId;
-    void ensureDiff(node.changeId).catch(() => {
-      // Best-effort prefetch for sidebar/full diff rendering.
-    });
+    if (mode === "diff") {
+      if (node.changeId === _lastDiffDirectChangeId) return;
+      _lastDiffDirectChangeId = node.changeId;
+      queuedDiffPrefetchId = null;
+      if (diffPrefetchTimer) {
+        clearTimeout(diffPrefetchTimer);
+        diffPrefetchTimer = null;
+      }
+      void ensureDiff(node.changeId).catch(() => {
+        // Best-effort prefetch for sidebar/full diff rendering.
+      });
+      return;
+    }
+    if (mode !== "log") return;
+    // Always keep selected commit diff available in log mode for sidebar preview.
+    // prefetchDiffInLog controls extra/background prefetch, not selected-item preview.
+    scheduleDiffPrefetch(node.changeId);
+  });
+
+  createEffect(() => {
+    if (!shouldClearDiffCacheOutsideDiffMode()) return;
+    if (state.viewMode === "diff") return;
+    if (state.diffCache.size === 0) return;
+
+    // Keep current selection while in log mode so sidebar diff preview remains visible.
+    const keepId = state.viewMode === "log" ? state.selectedId : null;
+    if (keepId && state.diffCache.size === 1 && state.diffCache.has(keepId)) return;
+
+    if (!keepId) {
+      actions.setDiffCache(new Map());
+      return;
+    }
+
+    const entry = state.diffCache.get(keepId);
+    if (!entry) {
+      actions.setDiffCache(new Map());
+      return;
+    }
+
+    const next = new Map<string, typeof entry>();
+    next.set(keepId, entry);
+    if (next.size !== state.diffCache.size) actions.setDiffCache(next);
   });
 
   createEffect(() => {
@@ -744,6 +850,14 @@ function App() {
     // Handle leader mode
     if (tuiState.leaderMode) {
       switch (name) {
+        case "r":
+          tuiActions.setLeaderMode(false);
+          {
+            const nextCollapsed = !tuiState.sidebarCollapsed;
+            tuiActions.toggleSidebarCollapsed();
+            actions.setStatusMessage(nextCollapsed ? "Sidebar: collapsed" : "Sidebar: expanded");
+          }
+          return;
         case "a":
           requestConfirmation(`Abandon selected change?${bookmarkSafetySuffix()}`, handleAbandon);
           return;
@@ -1216,11 +1330,19 @@ function App() {
     tuiState.themeVersion;
     return BG();
   };
-  const detailW = () => !useVerticalLayout() && showSidebar() ? Math.floor(tuiState.termSize.width * 0.40) : 0;
+  const detailW = () => {
+    if (useVerticalLayout() || !showSidebar()) return 0;
+    if (tuiState.sidebarCollapsed) return Math.min(SIDEBAR_COLLAPSED_W, Math.max(0, tuiState.termSize.width - 10));
+    return Math.floor(tuiState.termSize.width * 0.40);
+  };
   const graphW = () => tuiState.termSize.width - detailW();
   // Buffer between diff content and sidebar in horizontal layout
   const DIFF_SIDEBAR_BUFFER = 2;
-  const sidebarH = () => useVerticalLayout() && showSidebar() ? Math.floor(mainHeight() * RUNTIME.tui.stackedSidebarRatio) : 0;
+  const sidebarH = () => {
+    if (!useVerticalLayout() || !showSidebar()) return 0;
+    if (tuiState.sidebarCollapsed) return Math.min(SIDEBAR_COLLAPSED_H, Math.max(1, mainHeight() - 4));
+    return Math.floor(mainHeight() * RUNTIME.tui.stackedSidebarRatio);
+  };
   const graphH = () => mainHeight() - sidebarH();
   const statusBarHeight = () => {
     const w = tuiState.termSize.width;
@@ -1334,6 +1456,7 @@ function App() {
                  obslogChangeId={state.obslogChangeId}
                  obslogSelected={state.obslogEntries[state.obslogSelectedIndex] || null}
                  diffPreview={sidebarDiffPreview()}
+                 collapsed={tuiState.sidebarCollapsed}
                />
             </box>
           )}

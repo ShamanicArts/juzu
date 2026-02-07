@@ -12,9 +12,11 @@ const PREFETCH_CONCURRENCY = readPositiveIntEnv("JJVIZ_PREFETCH_CONCURRENCY", 2)
 const PREFETCH_FILES_MAX_AGE_MS = readPositiveIntEnv("JJVIZ_PREFETCH_FILES_MAX_AGE_MS", 10_000);
 
 let activeLogLimit = DEFAULT_LOG_LIMIT;
+const inFlightFilesById = new Map<string, Promise<FileEntry[]>>();
+const inFlightDiffById = new Map<string, Promise<string>>();
 
 function readPositiveIntEnv(name: string, fallback: number): number {
-  const raw = process.env[name];
+  const raw = typeof process !== "undefined" ? process.env?.[name] : undefined;
   if (!raw) return fallback;
   const parsed = Number.parseInt(raw, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -241,13 +243,25 @@ export async function ensureFiles(changeId: string, maxAgeMs = 30_000): Promise<
   const cached = state.filesCache.get(changeId);
   if (cached && now - cached.atMs < maxAgeMs) return cached.files;
 
-  const backend = getBackend();
-  const files = await backend.files({ cwd: cwdOrEmpty(), changeId });
-  const next = new Map(state.filesCache);
-  next.set(changeId, { atMs: now, files });
-  pruneFilesCacheInPlace(next, state.selectedId);
-  actions.setFilesCache(next);
-  return files;
+  const pending = inFlightFilesById.get(changeId);
+  if (pending) return pending;
+
+  const task = (async () => {
+    const backend = getBackend();
+    const files = await backend.files({ cwd: cwdOrEmpty(), changeId });
+    const next = new Map(state.filesCache);
+    next.set(changeId, { atMs: Date.now(), files });
+    pruneFilesCacheInPlace(next, state.selectedId);
+    actions.setFilesCache(next);
+    return files;
+  })();
+
+  inFlightFilesById.set(changeId, task);
+  try {
+    return await task;
+  } finally {
+    if (inFlightFilesById.get(changeId) === task) inFlightFilesById.delete(changeId);
+  }
 }
 
 export async function fetchDiff(changeId: string): Promise<string> {
@@ -260,15 +274,27 @@ export async function ensureDiff(changeId: string, maxAgeMs = 30_000): Promise<s
   const cached = state.diffCache.get(changeId);
   if (cached && now - cached.atMs < maxAgeMs) return cached.files[0]?.diff || "";
 
-  const backend = getBackend();
-  const diff = await backend.diff({ cwd: cwdOrEmpty(), changeId });
-  const files = splitDiffByFile(diff);
-  const bytes = estimateDiffEntryBytes(files);
-  const next = new Map(state.diffCache);
-  next.set(changeId, { atMs: now, files, bytes });
-  pruneDiffCacheInPlace(next, state.selectedId);
-  actions.setDiffCache(next);
-  return files[0]?.diff || diff;
+  const pending = inFlightDiffById.get(changeId);
+  if (pending) return pending;
+
+  const task = (async () => {
+    const backend = getBackend();
+    const diff = await backend.diff({ cwd: cwdOrEmpty(), changeId });
+    const files = splitDiffByFile(diff);
+    const bytes = estimateDiffEntryBytes(files);
+    const next = new Map(state.diffCache);
+    next.set(changeId, { atMs: Date.now(), files, bytes });
+    pruneDiffCacheInPlace(next, state.selectedId);
+    actions.setDiffCache(next);
+    return files[0]?.diff || diff;
+  })();
+
+  inFlightDiffById.set(changeId, task);
+  try {
+    return await task;
+  } finally {
+    if (inFlightDiffById.get(changeId) === task) inFlightDiffById.delete(changeId);
+  }
 }
 
 export async function opNew(parentId: string) {
