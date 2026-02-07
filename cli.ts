@@ -35,11 +35,17 @@ Examples:
 }
 
 if (wantsTui) {
-  // OpenTUI Solid relies on a Bun plugin to compile TSX.
-  // That plugin must be preloaded before modules are compiled,
-  // so we run the TUI in a separate Bun process.
-  const tuiEntry = `${import.meta.dir}/src/tui/main.ts`;
-  const preloadPath = `${import.meta.dir}/node_modules/@opentui/solid/scripts/preload.ts`;
+  // Prefer pre-compiled production build (saves ~36MB by skipping Babel preload).
+  // Falls back to dev mode if dist/tui/ doesn't exist.
+  const prodEntry = `${import.meta.dir}/dist/tui/tui/main.js`;
+  const prodPreload = `${import.meta.dir}/scripts/preload-solid-client.ts`;
+  const devEntry = `${import.meta.dir}/src/tui/main.ts`;
+  const devPreload = `${import.meta.dir}/node_modules/@opentui/solid/scripts/preload.ts`;
+
+  const useProd = await Bun.file(prodEntry).exists();
+  const tuiEntry = useProd ? prodEntry : devEntry;
+  const preloadPath = useProd ? prodPreload : devPreload;
+
   const proc = Bun.spawn([
     "bun",
     "--preload",
