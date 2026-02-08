@@ -55,11 +55,11 @@ function clampConfig(config: JjVizRuntimeConfig): JjVizRuntimeConfig {
   out.tui.clearDiffCacheWhenNotInDiff = typeof out.tui.clearDiffCacheWhenNotInDiff === "boolean"
     ? out.tui.clearDiffCacheWhenNotInDiff
     : DEFAULT_RUNTIME_CONFIG.tui.clearDiffCacheWhenNotInDiff;
-  out.graph.nodeRadius = Math.max(2, Math.min(20, out.graph.nodeRadius || DEFAULT_RUNTIME_CONFIG.graph.nodeRadius));
-  out.graph.laneWidth = Math.max(8, Math.min(80, out.graph.laneWidth || DEFAULT_RUNTIME_CONFIG.graph.laneWidth));
-  out.graph.ySpacing = Math.max(24, Math.min(220, out.graph.ySpacing || DEFAULT_RUNTIME_CONFIG.graph.ySpacing));
-  out.graph.canvasPadding = Math.max(0, Math.min(300, out.graph.canvasPadding || DEFAULT_RUNTIME_CONFIG.graph.canvasPadding));
-  out.graph.textColumnGap = Math.max(8, Math.min(300, out.graph.textColumnGap || DEFAULT_RUNTIME_CONFIG.graph.textColumnGap));
+  out.visual.nodeRadius = Math.max(2, Math.min(20, out.visual.nodeRadius || DEFAULT_RUNTIME_CONFIG.visual.nodeRadius));
+  out.visual.laneWidth = Math.max(8, Math.min(80, out.visual.laneWidth || DEFAULT_RUNTIME_CONFIG.visual.laneWidth));
+  out.visual.ySpacing = Math.max(24, Math.min(220, out.visual.ySpacing || DEFAULT_RUNTIME_CONFIG.visual.ySpacing));
+  out.visual.canvasPadding = Math.max(0, Math.min(300, out.visual.canvasPadding || DEFAULT_RUNTIME_CONFIG.visual.canvasPadding));
+  out.visual.textColumnGap = Math.max(8, Math.min(300, out.visual.textColumnGap || DEFAULT_RUNTIME_CONFIG.visual.textColumnGap));
   return out;
 }
 
@@ -79,6 +79,19 @@ async function loadThemeByName(name: string, opts: ResolveOptions): Promise<Reco
 async function loadThemeByPath(path: string, opts: ResolveOptions): Promise<Record<string, unknown> | null> {
   const resolved = isAbsolute(path) ? path : join(opts.repoRoot || process.cwd(), path);
   return await readTomlFile(resolved);
+}
+
+async function loadThemeConfig(opts: ResolveOptions): Promise<DeepPartial<JjVizRuntimeConfig> | null> {
+  const xdg = process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
+  const candidates: string[] = [];
+  if (opts.repoRoot) candidates.push(join(opts.repoRoot, ".jj-viz", "themes", "config.toml"));
+  if (xdg) candidates.push(join(xdg, "jj-viz", "themes", "config.toml"));
+  candidates.push(join(opts.appDir, "themes", "config.toml"));
+  for (const path of candidates) {
+    const parsed = await readTomlFile(path);
+    if (parsed) return parsed as DeepPartial<JjVizRuntimeConfig>;
+  }
+  return null;
 }
 
 export async function resolveRuntimeConfig(opts: ResolveOptions): Promise<JjVizRuntimeConfig> {
@@ -112,6 +125,13 @@ export async function resolveRuntimeConfig(opts: ResolveOptions): Promise<JjVizR
   const themeName = cliTheme || envTheme || merged.theme?.name || DEFAULT_RUNTIME_CONFIG.theme.name;
   const explicitThemePath = (merged as any)?.theme?.file as string | undefined;
 
+  // 1. Load theme config (themes/config.toml) for base visual/uiTokens defaults
+  const themeConfigParsed = await loadThemeConfig(opts);
+  if (themeConfigParsed) {
+    merged = deepMerge(merged, themeConfigParsed);
+  }
+
+  // 2. Load specific theme file for overrides
   const themeParsed = explicitThemePath
     ? await loadThemeByPath(explicitThemePath, opts)
     : await loadThemeByName(themeName, opts);

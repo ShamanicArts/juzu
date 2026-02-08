@@ -1,17 +1,19 @@
 import { DEFAULT_UI_TOKENS, setUiTokens, type UiTokens } from "./ui-tokens";
 
+export interface VisualConfig {
+  nodeRadius: number;
+  laneWidth: number;
+  ySpacing: number;
+  canvasPadding: number;
+  textColumnGap: number;
+}
+
 export interface JjVizRuntimeConfig {
   theme: {
     name: string;
   };
+  visual: VisualConfig;
   uiTokens: UiTokens;
-  graph: {
-    nodeRadius: number;
-    laneWidth: number;
-    ySpacing: number;
-    canvasPadding: number;
-    textColumnGap: number;
-  };
   web: {
     pollIntervalMs: number;
     navigationLockDefault: boolean;
@@ -33,14 +35,14 @@ export const DEFAULT_RUNTIME_CONFIG: JjVizRuntimeConfig = {
   theme: {
     name: "slate",
   },
-  uiTokens: DEFAULT_UI_TOKENS,
-  graph: {
+  visual: {
     nodeRadius: 5,
     laneWidth: 24,
     ySpacing: 84,
     canvasPadding: 50,
     textColumnGap: 60,
   },
+  uiTokens: DEFAULT_UI_TOKENS,
   web: {
     pollIntervalMs: 3000,
     navigationLockDefault: false,

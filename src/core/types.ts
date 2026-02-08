@@ -48,12 +48,12 @@ export interface GraphConfig {
 }
 
 export const DEFAULT_GRAPH_CONFIG: GraphConfig = {
-  nodeRadius: getRuntimeConfig().graph.nodeRadius,
-  laneWidth: getRuntimeConfig().graph.laneWidth,
+  nodeRadius: getRuntimeConfig().visual.nodeRadius,
+  laneWidth: getRuntimeConfig().visual.laneWidth,
   // Web canvas needs room for: bookmark pills above + inline controls/files below.
-  ySpacing: getRuntimeConfig().graph.ySpacing,
-  canvasPadding: getRuntimeConfig().graph.canvasPadding,
-  textColumnGap: getRuntimeConfig().graph.textColumnGap,
+  ySpacing: getRuntimeConfig().visual.ySpacing,
+  canvasPadding: getRuntimeConfig().visual.canvasPadding,
+  textColumnGap: getRuntimeConfig().visual.textColumnGap,
   colors: {
     node: '#444',
     nodeSelected: '#ffffff',

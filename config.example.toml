@@ -1,8 +1,12 @@
+# Main Configuration File
+# This file controls application behavior. For visual/theming settings,
+# see themes/config.toml (or ~/.config/jj-viz/themes/config.toml)
+
 [theme]
-# Uses themes/<name>.toml from:
-# 1) <repo>/.jj-viz/themes/
-# 2) ~/.config/jj-viz/themes/
-# 3) bundled ./themes/
+# Select which theme to use. Theme files are loaded from:
+# 1) <repo>/.jj-viz/themes/<name>.toml
+# 2) ~/.config/jj-viz/themes/<name>.toml
+# 3) bundled ./themes/<name>.toml
 name = "slate"
 
 [web]
@@ -13,19 +17,14 @@ navigationLockDefault = false
 sidebarBreakpointWidth = 90
 sidebarMinHeight = 16
 stackedSidebarRatio = 0.5
+prefetchDiffInLog = false
+clearDiffCacheWhenNotInDiff = true
 
-[graph]
-nodeRadius = 5
-laneWidth = 24
-ySpacing = 84
-canvasPadding = 50
-textColumnGap = 60
-
-# Optional token overrides (partial is fine)
+# Optional: Override specific UI tokens from the theme.
+# These override both the base theme and the theme file.
 # [uiTokens.semantic]
 # info = "#7f9fbf"
 #
-# Optional diff overrides (sidebar + full diff view)
 # [uiTokens.diff]
 # addedBg = "#1f3a2a"
 # removedBg = "#47252b"

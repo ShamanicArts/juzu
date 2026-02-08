@@ -3,11 +3,11 @@ import { UI_TOKENS } from "./ui-tokens";
 import { getRuntimeConfig } from "./runtime-config";
 
 const DEFAULT_CONFIG: GraphConfig = {
-  nodeRadius: getRuntimeConfig().graph.nodeRadius,
-  laneWidth: getRuntimeConfig().graph.laneWidth,
-  ySpacing: getRuntimeConfig().graph.ySpacing,
-  canvasPadding: getRuntimeConfig().graph.canvasPadding,
-  textColumnGap: getRuntimeConfig().graph.textColumnGap,
+  nodeRadius: getRuntimeConfig().visual.nodeRadius,
+  laneWidth: getRuntimeConfig().visual.laneWidth,
+  ySpacing: getRuntimeConfig().visual.ySpacing,
+  canvasPadding: getRuntimeConfig().visual.canvasPadding,
+  textColumnGap: getRuntimeConfig().visual.textColumnGap,
   colors: {
     node: UI_TOKENS.graph.node,
     nodeSelected: UI_TOKENS.graph.nodeSelected,
