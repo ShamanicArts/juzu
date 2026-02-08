@@ -24,7 +24,7 @@ interface Keybind {
 }
 
 const KEYBINDS: Record<string, Keybind[]> = {
-  normal: [
+  log: [
     { key: "n", action: "NEW" },
     { key: "e", action: "EDIT" },
     { key: "d", action: "DESC" },
@@ -98,7 +98,7 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
     if (state.viewMode === "oplog") return "oplog";
     if (state.viewMode === "obslog") return "obslog";
     if (state.viewMode === "diff") return "diff";
-    return "normal";
+    return "log";
   });
 
   const modeLabel = createMemo(() => {
@@ -140,7 +140,7 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
   });
 
   const keybinds = createMemo(() => {
-    return KEYBINDS[currentMode()] || KEYBINDS.normal;
+    return KEYBINDS[currentMode()] || KEYBINDS.log;
   });
 
   const compactActions = createMemo(() => props.width < 92);
