@@ -19,6 +19,43 @@ const FG_DIM = RGBA.fromHex(UI_TOKENS.slate.textMuted);
 const FG_LABEL = RGBA.fromHex(mixHex(UI_TOKENS.slate.textMuted, UI_TOKENS.slate.text, 0.65));
 const FG = RGBA.fromHex(UI_TOKENS.slate.text);
 
+// Map file extensions to tree-sitter language identifiers
+function getLanguageFromPath(path: string): string | undefined {
+  const ext = path.split('.').pop()?.toLowerCase();
+  const langMap: Record<string, string> = {
+    ts: 'typescript',
+    tsx: 'typescript',
+    js: 'javascript',
+    jsx: 'javascript',
+    mjs: 'javascript',
+    cjs: 'javascript',
+    py: 'python',
+    rs: 'rust',
+    go: 'go',
+    json: 'json',
+    toml: 'toml',
+    yaml: 'yaml',
+    yml: 'yaml',
+    md: 'markdown',
+    html: 'html',
+    css: 'css',
+    scss: 'css',
+    sh: 'bash',
+    bash: 'bash',
+    zsh: 'bash',
+    c: 'c',
+    cpp: 'cpp',
+    h: 'c',
+    hpp: 'cpp',
+    java: 'java',
+    rb: 'ruby',
+    lua: 'lua',
+    vim: 'vim',
+    sql: 'sql',
+  };
+  return ext ? langMap[ext] : undefined;
+}
+
 interface SidebarProps {
   selected: CommitNode | null;
   filesCache: Map<string, FilesCacheEntry>;
@@ -112,6 +149,12 @@ export function Sidebar(props: SidebarProps) {
   const diffBodyHeight = createMemo(() => {
     if (!showInlineDiff()) return 0;
     return Math.max(6, Math.floor(props.height * 0.35));
+  });
+
+  // Derive syntax highlighting language from file path
+  const diffLanguage = createMemo(() => {
+    if (!props.diffPreview?.path) return undefined;
+    return getLanguageFromPath(props.diffPreview.path);
   });
 
   const detailRows = createMemo(() => {
@@ -476,6 +519,7 @@ export function Sidebar(props: SidebarProps) {
       width={props.width}
       height={props.height}
       backgroundColor={panelBg()}
+      paddingLeft={1}
     >
       <Show
         when={isCollapsed()}
@@ -500,6 +544,7 @@ export function Sidebar(props: SidebarProps) {
                   width={Math.max(1, props.width - 4)}
                   height={diffBodyHeight()}
                   diff={props.diffPreview!.diff}
+                  language={diffLanguage()}
                   view="unified"
                   showLineNumbers={true}
                   lineNumberFg={diffColors().lineNumberFg}
