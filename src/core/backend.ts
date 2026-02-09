@@ -8,6 +8,7 @@ export interface JJBackend {
   findRoot?: (startDir: string) => Promise<string | null>;
 
   log: (args: { cwd: string; limit: number; revset?: string }) => Promise<CommitNode[]>;
+  nodeCount: (args: { cwd: string; revset?: string }) => Promise<number>;
   files: (args: { cwd: string; changeId: string }) => Promise<FileEntry[]>;
   diff: (args: { cwd: string; changeId: string }) => Promise<string>;
 

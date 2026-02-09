@@ -1,7 +1,7 @@
 import { useRenderer, useKeyboard } from "@opentui/solid";
 import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
-import type { KeyEvent } from "@opentui/core";
-import { RGBA } from "@opentui/core";
+import type { KeyEvent, MouseEvent } from "@opentui/core";
+import { MouseButton, RGBA } from "@opentui/core";
 import { readFile, readdir, watch, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 // Lazy-load clipboardy only when actually copying to avoid startup memory cost
@@ -31,6 +31,7 @@ import {
   matchesKeySpec,
   resolveTuiKeymapConfig,
   type CommandId,
+  type LeaderModeId,
 } from "../core/tui-keymap";
 
 const BG = () => RGBA.fromHex(UI_TOKENS.slate.bg0);
@@ -576,6 +577,64 @@ function App() {
     else if (idx >= offset + visibleRows) tuiActions.setScrollOffset(Math.max(0, idx - visibleRows + 1));
   };
 
+  const mouseScrollDirection = (event: MouseEvent): -1 | 1 | 0 => {
+    const dir = event.scroll?.direction;
+    if (dir === "up" || dir === "left") return -1;
+    if (dir === "down" || dir === "right") return 1;
+    if (event.button === MouseButton.WHEEL_UP) return -1;
+    if (event.button === MouseButton.WHEEL_DOWN) return 1;
+    return 0;
+  };
+
+  const mouseScrollSteps = (event: MouseEvent): number => {
+    const raw = Math.abs(event.scroll?.delta ?? 1);
+    return Math.max(1, Math.min(6, Math.round(raw)));
+  };
+
+  const moveMainSelectionBy = (delta: number) => {
+    if (delta === 0) return;
+    if (state.viewMode === "diff") return;
+
+    if (state.viewMode === "oplog") {
+      const entries = state.opLogEntries;
+      if (entries.length === 0) return;
+      const current = Math.max(0, entries.findIndex((entry) => entry.id === state.opLogSelectedId));
+      const next = Math.max(0, Math.min(entries.length - 1, current + delta));
+      if (next !== current) actions.selectOpLogEntry(entries[next]!.id);
+      return;
+    }
+
+    if (state.viewMode === "obslog") {
+      const maxIdx = Math.max(0, state.obslogEntries.length - 1);
+      const current = Math.max(0, Math.min(state.obslogSelectedIndex, maxIdx));
+      const next = Math.max(0, Math.min(maxIdx, current + delta));
+      if (next !== current) actions.setObslogSelectedIndex(next);
+      return;
+    }
+
+    const nodes = layoutResult().nodes;
+    if (nodes.length === 0) return;
+    const current = Math.max(0, nodes.findIndex((node) => node.changeId === state.selectedId));
+    const next = Math.max(0, Math.min(nodes.length - 1, current + delta));
+    if (next !== current) actions.selectNode(nodes[next]!.changeId);
+  };
+
+  const handleMainPaneScroll = (event: MouseEvent) => {
+    const dir = mouseScrollDirection(event);
+    if (dir === 0 || state.viewMode === "diff") return;
+    const step = mouseScrollSteps(event);
+    moveMainSelectionBy(dir * step);
+    event.stopPropagation();
+  };
+
+  const handleSidebarScroll = (event: MouseEvent) => {
+    const dir = mouseScrollDirection(event);
+    if (dir === 0 || !showSidebar() || tuiState.sidebarCollapsed) return;
+    const step = mouseScrollSteps(event) * 3;
+    tuiActions.setSidebarScroll(tuiState.sidebarScroll + dir * step);
+    event.stopPropagation();
+  };
+
   const requestConfirmation = (message: string, run: () => Promise<void> | void) => {
     pendingConfirmation = { message, run };
     setConfirmPrompt(message);
@@ -742,6 +801,26 @@ function App() {
       default:
         return false;
     }
+  };
+
+  const activateLeaderModeFromStatus = (mode: LeaderModeId) => {
+    const keymap = keymapConfig();
+    tuiActions.setActiveLeaderMode(mode);
+    actions.setStatusMessage(`${keymap.labels[mode]} mode`);
+  };
+
+  const runCommandFromStatus = (command: CommandId) => {
+    const keymap = keymapConfig();
+    const executed = executeCommand(command);
+    if (executed && tuiState.activeLeaderMode && !keymap.stickyModes) {
+      tuiActions.setActiveLeaderMode(null);
+    }
+  };
+
+  const exitActiveModeFromStatus = () => {
+    if (!tuiState.activeLeaderMode) return;
+    tuiActions.setActiveLeaderMode(null);
+    actions.setStatusMessage("Cancelled");
   };
 
   useKeyboard((key: KeyEvent) => {
@@ -1418,10 +1497,18 @@ function App() {
         height={statusBarHeight()}
         themeVersion={tuiState.themeVersion}
         keymap={keymapConfig()}
+        onActivateMode={activateLeaderModeFromStatus}
+        onRunCommand={runCommandFromStatus}
+        onExitMode={exitActiveModeFromStatus}
       />
 
-      <box flexDirection={useVerticalLayout() ? "column" : "row"} flexGrow={1} height={mainHeight()}>
-        <box width={useVerticalLayout() ? tuiState.termSize.width : graphW()} height={graphH()} backgroundColor={graphPaneBg()}>
+        <box flexDirection={useVerticalLayout() ? "column" : "row"} flexGrow={1} height={mainHeight()}>
+          <box
+            width={useVerticalLayout() ? tuiState.termSize.width : graphW()}
+            height={graphH()}
+            backgroundColor={graphPaneBg()}
+            onMouseScroll={handleMainPaneScroll}
+          >
         {state.viewMode === "log" && (
             <GraphView
               nodes={layoutResult().nodes}
@@ -1472,10 +1559,11 @@ function App() {
         </box>
 
         {showSidebar() && (
-          <box 
-            width={useVerticalLayout() ? tuiState.termSize.width : detailW()} 
-            height={useVerticalLayout() ? sidebarH() : mainHeight()} 
+          <box
+            width={useVerticalLayout() ? tuiState.termSize.width : detailW()}
+            height={useVerticalLayout() ? sidebarH() : mainHeight()}
             backgroundColor={PANEL_BG()}
+            onMouseScroll={handleSidebarScroll}
           >
                <Sidebar
                selected={selectedNode()}

@@ -45,6 +45,9 @@ function makeBackend(overrides: Partial<JJBackend> = {}) {
       calls.log++;
       return nodes;
     },
+    nodeCount: async () => {
+      return nodes.length;
+    },
     files: async () => {
       calls.files++;
       return [{ type: "M", path: "src/app.ts" }];

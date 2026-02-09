@@ -12,6 +12,7 @@ const PREFETCH_CONCURRENCY = readPositiveIntEnv("JUZU_PREFETCH_CONCURRENCY", 2);
 const PREFETCH_FILES_MAX_AGE_MS = readPositiveIntEnv("JUZU_PREFETCH_FILES_MAX_AGE_MS", 10_000);
 
 let activeLogLimit = DEFAULT_LOG_LIMIT;
+let _totalNodeCount = 0;
 const inFlightFilesById = new Map<string, Promise<FileEntry[]>>();
 const inFlightDiffById = new Map<string, Promise<string>>();
 
@@ -191,14 +192,21 @@ export async function refreshLog(limit = activeLogLimit) {
     // This prevents the idle memory growth from watcher-triggered no-op refreshes.
     const fp = nodesFingerprint(nodes);
     if (fp === _lastLogFingerprint && nodes.length === state.nodes.length) {
-      actions.setStatusMessage(`nodes:${nodes.length}`);
+      actions.setStatusMessage(`nodes:${_totalNodeCount}`);
       return;
     }
     _lastLogFingerprint = fp;
 
     actions.setNodes(nodes);
     pruneCachesForVisibleNodes(nodes);
-    actions.setStatusMessage(`nodes:${nodes.length}`);
+
+    // Fetch total node count
+    try {
+      _totalNodeCount = await getBackend().nodeCount({ cwd: cwdOrEmpty(), revset: state.revsetQuery });
+    } catch {
+      _totalNodeCount = 0;
+    }
+    actions.setStatusMessage(`nodes:${_totalNodeCount}`);
   } catch (e) {
     actions.setStatusMessage(`Error: ${String(e)}`);
     throw e;

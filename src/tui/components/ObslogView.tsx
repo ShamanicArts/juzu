@@ -3,6 +3,7 @@ import { useRenderer } from "@opentui/solid";
 import { FrameBufferRenderable, RGBA } from "@opentui/core";
 import type { ObslogEntry } from "../../core/jj-api";
 import { UI_TOKENS } from "../../core/ui-tokens";
+import { mixHex } from "../../core/color-utils";
 
 const SEL_BG = RGBA.fromInts(60, 70, 100, 180);
 
@@ -52,7 +53,7 @@ export function ObslogView(props: ObslogViewProps) {
     if (!canvas) return;
 
     const BG = RGBA.fromHex(UI_TOKENS.slate.bg0);
-    const FG_DIM = RGBA.fromHex(UI_TOKENS.slate.textMuted);
+    const FG_DIM = RGBA.fromHex(mixHex(UI_TOKENS.slate.textMuted, UI_TOKENS.slate.text, 0.35));
     const FG = RGBA.fromHex(UI_TOKENS.slate.text);
     const GREEN = RGBA.fromHex(UI_TOKENS.semantic.success);
     const RED = RGBA.fromHex(UI_TOKENS.semantic.error);

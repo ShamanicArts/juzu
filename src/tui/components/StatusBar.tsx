@@ -4,10 +4,17 @@ import { state } from "../../core/state";
 import { tuiState } from "../../core/state-tui";
 import { UI_TOKENS } from "../../core/ui-tokens";
 import { mixHex } from "../../core/color-utils";
-import { commandLabel, formatKeyHint, type StatusContextId, type TuiKeymapConfig } from "../../core/tui-keymap";
+import {
+  commandLabel,
+  formatKeyHint,
+  type CommandId,
+  type LeaderModeId,
+  type StatusContextId,
+  type TuiKeymapConfig,
+} from "../../core/tui-keymap";
 
 type Tone = "action" | "ops" | "view" | "marks" | "neutral";
-type Item = { key: string; label: string; tone: Tone };
+type Item = { key: string; label: string; tone: Tone; onClick?: () => void };
 
 const MODE_TONE: Record<string, Tone> = {
   action: "action",
@@ -62,7 +69,18 @@ function statusContextActive(context: StatusContextId): boolean {
   }
 }
 
-export function StatusBar(props: { width: number; height: number; themeVersion?: number; keymap: TuiKeymapConfig }) {
+interface StatusBarProps {
+  width: number;
+  height: number;
+  themeVersion?: number;
+  keymap: TuiKeymapConfig;
+  onActivateMode?: (mode: LeaderModeId) => void;
+  onRunCommand?: (command: CommandId) => void;
+  onExitMode?: () => void;
+  onStatusHintKey?: (keySpec: string) => void;
+}
+
+export function StatusBar(props: StatusBarProps) {
   const activeStatusContext = createMemo<StatusContextId | null>(() => {
     for (const id of props.keymap.statusContextOrder) {
       if (statusContextActive(id)) return id;
@@ -108,7 +126,7 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
 
   const mutedText = createMemo(() => {
     props.themeVersion;
-    return RGBA.fromHex(UI_TOKENS.slate.textMuted);
+    return RGBA.fromHex(mixHex(UI_TOKENS.slate.textMuted, UI_TOKENS.slate.text, 0.45));
   });
 
   const errorText = createMemo(() => {
@@ -124,6 +142,7 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
       key: formatKeyHint(item.key),
       label: item.label,
       tone: item.tone,
+      onClick: item.key ? () => props.onStatusHintKey?.(item.key) : undefined,
     }));
   });
 
@@ -142,8 +161,9 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
         key: useMinimal ? "" : formatKeyHint(key),
         label: commandLabel(command, props.keymap.commandLabels),
         tone,
+        onClick: () => props.onRunCommand?.(command),
       }));
-      modeItems.push({ key: useMinimal ? "" : "Esc/q", label: "Exit", tone: "neutral" });
+      modeItems.push({ key: useMinimal ? "" : "Esc/q", label: "Exit", tone: "neutral", onClick: () => props.onExitMode?.() });
       return modeItems;
     }
 
@@ -155,6 +175,7 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
       key: useMinimal ? "" : formatKeyHint(props.keymap.leaders[mode]),
       label: props.keymap.badges[mode],
       tone: MODE_TONE[mode] || "neutral",
+      onClick: () => props.onActivateMode?.(mode),
     }));
 
     if (!props.keymap.showIdleBindingsInStatus || useMinimal) return modeItems;
@@ -162,6 +183,7 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
       key: formatKeyHint(key),
       label: commandLabel(command, props.keymap.commandLabels),
       tone: "neutral" as const,
+      onClick: () => props.onRunCommand?.(command),
     }));
     return [...modeItems, ...idleItems];
   });
@@ -221,7 +243,14 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
             <box paddingLeft={idx() === 0 ? 2 : 1} flexDirection="row">
               <For each={row}>
                 {(item) => (
-                  <>
+                  <box
+                    flexDirection="row"
+                    onMouseUp={(event: any) => {
+                      if (!item.onClick) return;
+                      event?.stopPropagation?.();
+                      item.onClick();
+                    }}
+                  >
                     <Show when={item.key.length > 0}>
                       <text fg={keyColor()}>{item.key}</text>
                       <text> </text>
@@ -230,7 +259,7 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
                       <text fg={itemFg(item.tone, props.themeVersion)}>{item.label}</text>
                     </box>
                     <text> </text>
-                  </>
+                  </box>
                 )}
               </For>
             </box>

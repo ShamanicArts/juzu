@@ -19,39 +19,35 @@ const FG_DIM = RGBA.fromHex(UI_TOKENS.slate.textMuted);
 const FG_LABEL = RGBA.fromHex(mixHex(UI_TOKENS.slate.textMuted, UI_TOKENS.slate.text, 0.65));
 const FG = RGBA.fromHex(UI_TOKENS.slate.text);
 
+// Sidebar padding (left side)
+const SIDEBAR_PAD = 1;
+
+// Truncate text to fit within maxWidth, adding ellipsis if needed
+function truncateText(text: string, maxWidth: number): string {
+  if (text.length <= maxWidth) return text;
+  if (maxWidth <= 3) return text.slice(0, maxWidth);
+  return text.slice(0, maxWidth - 1) + "…";
+}
+
+// Pad text with leading space and truncate to fit sidebar width
+function padLine(text: string, sidebarWidth: number): string {
+  const maxWidth = sidebarWidth - SIDEBAR_PAD - 1; // -1 for right margin
+  const padded = " ".repeat(SIDEBAR_PAD) + text;
+  return truncateText(padded, sidebarWidth - 1);
+}
+
 // Map file extensions to tree-sitter language identifiers
 function getLanguageFromPath(path: string): string | undefined {
   const ext = path.split('.').pop()?.toLowerCase();
   const langMap: Record<string, string> = {
-    ts: 'typescript',
-    tsx: 'typescript',
-    js: 'javascript',
-    jsx: 'javascript',
-    mjs: 'javascript',
-    cjs: 'javascript',
-    py: 'python',
-    rs: 'rust',
-    go: 'go',
-    json: 'json',
-    toml: 'toml',
-    yaml: 'yaml',
-    yml: 'yaml',
-    md: 'markdown',
-    html: 'html',
-    css: 'css',
-    scss: 'css',
-    sh: 'bash',
-    bash: 'bash',
-    zsh: 'bash',
-    c: 'c',
-    cpp: 'cpp',
-    h: 'c',
-    hpp: 'cpp',
-    java: 'java',
-    rb: 'ruby',
-    lua: 'lua',
-    vim: 'vim',
-    sql: 'sql',
+    ts: 'typescript', tsx: 'typescript',
+    js: 'javascript', jsx: 'javascript', mjs: 'javascript', cjs: 'javascript',
+    py: 'python', rs: 'rust', go: 'go',
+    json: 'json', toml: 'toml', yaml: 'yaml', yml: 'yaml',
+    md: 'markdown', html: 'html', css: 'css', scss: 'css',
+    sh: 'bash', bash: 'bash', zsh: 'bash',
+    c: 'c', cpp: 'cpp', h: 'c', hpp: 'cpp',
+    java: 'java', rb: 'ruby', lua: 'lua', sql: 'sql',
   };
   return ext ? langMap[ext] : undefined;
 }
@@ -151,7 +147,7 @@ export function Sidebar(props: SidebarProps) {
     return Math.max(6, Math.floor(props.height * 0.35));
   });
 
-  // Derive syntax highlighting language from file path
+  // Derive syntax highlighting language from diff file path
   const diffLanguage = createMemo(() => {
     if (!props.diffPreview?.path) return undefined;
     return getLanguageFromPath(props.diffPreview.path);
@@ -456,9 +452,11 @@ export function Sidebar(props: SidebarProps) {
     const cached = props.filesCache.get(selected.changeId);
     if (cached && cached.files.length > 0) {
       const filesToShow = props.filesExpanded ? cached.files : cached.files.slice(0, 8);
+      const maxFileWidth = props.width - 4; // Leave room for type prefix and margins
       for (const f of filesToShow) {
         const fileColor = f.type === "A" ? GREEN : f.type === "D" ? RED : CYAN;
-        lines.push({ text: `${f.type} ${f.path}`, color: fileColor });
+        const fileText = `${f.type} ${truncateText(f.path, maxFileWidth - 2)}`;
+        lines.push({ text: fileText, color: fileColor });
       }
       if (!props.filesExpanded && cached.files.length > filesToShow.length) {
         lines.push({ text: `... +${cached.files.length - filesToShow.length} more`, color: FG_DIM });
@@ -537,14 +535,14 @@ export function Sidebar(props: SidebarProps) {
             <text fg={scrollFg()}>{scrollIndicator() || " "}</text>
 
             <Show when={showInlineDiff()}>
-              <text fg={diffHeaderFg()}>{`Diff ${props.diffPreview!.index + 1}/${props.diffPreview!.total}: ${props.diffPreview!.path}`}</text>
-              <text fg={scrollFg()}>[ / ] switch file, Ctrl+d full diff</text>
+              <text fg={diffHeaderFg()}>{truncateText(`Diff ${props.diffPreview!.index + 1}/${props.diffPreview!.total}: ${props.diffPreview!.path}`, props.width - 2)}</text>
+              <text fg={scrollFg()}>{truncateText("[ / ] switch file, Ctrl+d full diff", props.width - 2)}</text>
               <box height={diffBodyHeight()}>
                 <diff
                   width={Math.max(1, props.width - 4)}
                   height={diffBodyHeight()}
                   diff={props.diffPreview!.diff}
-                  language={diffLanguage()}
+                  filetype={diffLanguage()}
                   view="unified"
                   showLineNumbers={true}
                   lineNumberFg={diffColors().lineNumberFg}

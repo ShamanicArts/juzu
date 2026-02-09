@@ -102,6 +102,15 @@ async function getWorkingCopyId(cwd: string): Promise<string> {
 }
 
 /**
+ * Fetch total node count in repository
+ */
+export async function fetchTotalNodeCount(cwd: string, revset?: string): Promise<number> {
+  const range = revset && revset.trim() ? revset.trim() : "::";
+  const logText = await runCmdText(["jj", "log", "--no-graph", "-r", range, "-T", "change_id.short()"], cwd, 15000);
+  return logText.trim().split("\n").filter(Boolean).length;
+}
+
+/**
  * Fetch the JJ log
  */
 export async function fetchJJLog(cwd: string, limit: number, revset?: string): Promise<CommitNode[]> {
