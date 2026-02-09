@@ -246,7 +246,7 @@ const DEFAULT_CONFIG: TuiKeymapConfig = {
   showLeaderTriggersInStatus: true,
   modeOrder: [...LEADER_MODE_IDS],
   statusContextOrder: [...DEFAULT_STATUS_CONTEXT_ORDER],
-  exitKeys: ["escape", "ctrl+g"],
+  exitKeys: ["escape", "q"],
   leaders: { ...DEFAULT_LEADERS },
   labels: { ...DEFAULT_LABELS },
   badges: { ...DEFAULT_BADGES },

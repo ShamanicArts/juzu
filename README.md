@@ -191,7 +191,7 @@ The TUI now defaults to persistent leader modes (no timeout):
 
 - Press a leader key (for example `Ctrl+x`) to enter that action category.
 - The status bar shows mode badges for all leaders, with the active one highlighted.
-- In a leader mode, key actions stay active until you exit with `Esc` or `Ctrl+g`.
+- In a leader mode, key actions stay active until you exit with `Esc` or `q`.
 
 Default mode leaders:
 

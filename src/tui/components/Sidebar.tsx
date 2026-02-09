@@ -149,7 +149,7 @@ export function Sidebar(props: SidebarProps) {
         { text: "View", color: CYAN },
         { text: "[ / ]       Cycle file diff", color: FG },
         { text: "q           Quit", color: FG },
-        { text: "Esc/Ctrl+g  Exit active mode", color: FG },
+        { text: "Esc/q       Exit active mode", color: FG },
         { text: "h           Toggle help", color: YELLOW },
         { text: "", color: FG_DIM },
         { text: "Press h to close help", color: FG_DIM },

@@ -138,7 +138,7 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
         label: commandLabel(command, props.keymap.commandLabels),
         tone,
       }));
-      modeItems.push({ key: "Esc/^g", label: "Exit", tone: "neutral" });
+      modeItems.push({ key: "Esc/q", label: "Exit", tone: "neutral" });
       return modeItems;
     }
 

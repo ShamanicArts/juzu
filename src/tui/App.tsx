@@ -1007,7 +1007,7 @@ function App() {
 
     if (tuiState.activeLeaderMode) {
       const activeMode = tuiState.activeLeaderMode;
-      if (keymap.exitKeys.some((spec) => matchesKeySpec(spec, key))) {
+      if (name === "q" || keymap.exitKeys.some((spec) => matchesKeySpec(spec, key))) {
         tuiActions.setActiveLeaderMode(null);
         actions.setStatusMessage("Cancelled");
         return;

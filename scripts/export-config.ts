@@ -42,7 +42,7 @@ showIdleBindingsInStatus = false
 showLeaderTriggersInStatus = true
 modeOrder = ["action", "ops", "view", "marks"]
 statusContextOrder = ["oplog", "obslog", "diff", "merge", "rebase", "describe", "revset", "themePicker"]
-exitKeys = ["escape", "ctrl+g"]
+exitKeys = ["escape", "q"]
 
 [tui.keymap.leaders]
 action = "ctrl+x"
