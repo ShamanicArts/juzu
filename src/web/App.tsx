@@ -117,8 +117,8 @@ function App() {
   const selected = createMemo(() => selectedNode());
   const multiCount = createMemo(() => state.selectedIds.size);
 
-  const persistKey = "jj-viz-layout";
-  const themePersistKey = "jj-viz-theme";
+  const persistKey = "juzu-layout";
+  const themePersistKey = "juzu-theme";
   const pollIntervalMs = getRuntimeConfig().web.pollIntervalMs;
   let pollingInterval: ReturnType<typeof setInterval> | null = null;
   let sse: EventSource | null = null;

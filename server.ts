@@ -44,13 +44,13 @@ const args = {
     port: parseInt(process.argv.find(a => a.startsWith('--port='))?.split('=')[1] || process.env.PORT || '3000'),
     open: process.argv.includes('--open') || process.argv.includes('-o'),
     help: process.argv.includes('--help') || process.argv.includes('-h'),
-    theme: process.argv.find(a => a.startsWith('--theme='))?.split('=')[1] || process.env.JJVIZ_THEME || null,
+    theme: process.argv.find(a => a.startsWith('--theme='))?.split('=')[1] || process.env.JUZU_THEME || null,
 };
 
 // Show help
 if (args.help) {
     console.log(`
-jj-viz - High-performance Canvas visualization for Jujutsu VCS
+juzu - High-performance Canvas visualization for Jujutsu VCS
 
 Usage: bun run server.ts [options]
 
@@ -544,8 +544,8 @@ const server = Bun.serve({
         const xdg = process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
         const themeDirs = [
           join(SCRIPT_DIR, "themes"),
-          ...(xdg ? [join(xdg, "jj-viz", "themes")] : []),
-          ...(PROC_CWD ? [join(PROC_CWD, ".jj-viz", "themes")] : []),
+          ...(xdg ? [join(xdg, "juzu", "themes")] : []),
+          ...(PROC_CWD ? [join(PROC_CWD, ".juzu", "themes")] : []),
         ];
         
         const themeNames = new Set<string>();
@@ -553,7 +553,7 @@ const server = Bun.serve({
           try {
             const files = await readdir(dir);
             for (const file of files) {
-              if (file.endsWith(".toml")) {
+              if (file.endsWith(".toml") && file !== "config.toml") {
                 themeNames.add(file.slice(0, -5));
               }
             }
@@ -576,8 +576,8 @@ const server = Bun.serve({
       try {
         const xdg = process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
         const themePaths = [
-          ...(PROC_CWD ? [join(PROC_CWD, ".jj-viz", "themes", `${themeName}.toml`)] : []),
-          ...(xdg ? [join(xdg, "jj-viz", "themes", `${themeName}.toml`)] : []),
+          ...(PROC_CWD ? [join(PROC_CWD, ".juzu", "themes", `${themeName}.toml`)] : []),
+          ...(xdg ? [join(xdg, "juzu", "themes", `${themeName}.toml`)] : []),
           join(SCRIPT_DIR, "themes", `${themeName}.toml`),
         ];
         
@@ -634,7 +634,7 @@ const server = Bun.serve({
 });
 
 const url = `http://localhost:${server.port}`;
-console.log(`🚀 jj-viz running at ${url}`);
+console.log(`🚀 juzu running at ${url}`);
 
 process.on("exit", () => {
   clearInterval(heartbeatInterval);

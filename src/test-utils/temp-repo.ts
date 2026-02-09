@@ -15,7 +15,7 @@ export type TempJJRepo = {
 };
 
 export async function createTempJJRepo(): Promise<TempJJRepo> {
-  const path = await mkdtemp(join(tmpdir(), "jj-viz-test-"));
+  const path = await mkdtemp(join(tmpdir(), "juzu-test-"));
   await runCmd(["jj", "git", "init"], path);
 
   return {

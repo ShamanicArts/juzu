@@ -66,8 +66,8 @@ function clampConfig(config: JjVizRuntimeConfig): JjVizRuntimeConfig {
 async function loadThemeByName(name: string, opts: ResolveOptions): Promise<Record<string, unknown> | null> {
   const xdg = process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
   const candidates: string[] = [];
-  if (opts.repoRoot) candidates.push(join(opts.repoRoot, ".jj-viz", "themes", `${name}.toml`));
-  if (xdg) candidates.push(join(xdg, "jj-viz", "themes", `${name}.toml`));
+  if (opts.repoRoot) candidates.push(join(opts.repoRoot, ".juzu", "themes", `${name}.toml`));
+  if (xdg) candidates.push(join(xdg, "juzu", "themes", `${name}.toml`));
   candidates.push(join(opts.appDir, "themes", `${name}.toml`));
   for (const path of candidates) {
     const parsed = await readTomlFile(path);
@@ -84,8 +84,8 @@ async function loadThemeByPath(path: string, opts: ResolveOptions): Promise<Reco
 async function loadThemeConfig(opts: ResolveOptions): Promise<DeepPartial<JjVizRuntimeConfig> | null> {
   const xdg = process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
   const candidates: string[] = [];
-  if (opts.repoRoot) candidates.push(join(opts.repoRoot, ".jj-viz", "themes", "config.toml"));
-  if (xdg) candidates.push(join(xdg, "jj-viz", "themes", "config.toml"));
+  if (opts.repoRoot) candidates.push(join(opts.repoRoot, ".juzu", "themes", "config.toml"));
+  if (xdg) candidates.push(join(xdg, "juzu", "themes", "config.toml"));
   candidates.push(join(opts.appDir, "themes", "config.toml"));
   for (const path of candidates) {
     const parsed = await readTomlFile(path);
@@ -98,13 +98,13 @@ export async function resolveRuntimeConfig(opts: ResolveOptions): Promise<JjVizR
   const argv = opts.argv || process.argv.slice(2);
   const cliTheme = getOption(argv, "--theme");
   const cliConfigPath = getOption(argv, "--config");
-  const envTheme = process.env.JJVIZ_THEME || null;
-  const envConfigPath = process.env.JJVIZ_CONFIG || null;
+  const envTheme = process.env.JUZU_THEME || null;
+  const envConfigPath = process.env.JUZU_CONFIG || null;
 
   const xdg = process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
-  const globalConfigPath = xdg ? join(xdg, "jj-viz", "config.toml") : null;
-  const repoConfigPath = opts.repoRoot ? join(opts.repoRoot, ".jj-viz.toml") : null;
-  const repoLocalConfigPath = opts.repoRoot ? join(opts.repoRoot, ".jj-viz.local.toml") : null;
+  const globalConfigPath = xdg ? join(xdg, "juzu", "config.toml") : null;
+  const repoConfigPath = opts.repoRoot ? join(opts.repoRoot, ".juzu.toml") : null;
+  const repoLocalConfigPath = opts.repoRoot ? join(opts.repoRoot, ".juzu.local.toml") : null;
 
   let merged: JjVizRuntimeConfig = JSON.parse(JSON.stringify(DEFAULT_RUNTIME_CONFIG));
 

@@ -1,8 +1,8 @@
-# jj-viz Implementation Plan
+# juzu Implementation Plan
 
 ## Project Overview
 
-jj-viz is a Bun/SolidJS visualization tool for the Jujutsu (jj) version control system with both a web UI (HTML5 Canvas) and a TUI (OpenTUI). The codebase has accumulated bugs, regressions, dead code, and architectural conflicts that require systematic cleanup.
+juzu is a Bun/SolidJS visualization tool for the Jujutsu (jj) version control system with both a web UI (HTML5 Canvas) and a TUI (OpenTUI). The codebase has accumulated bugs, regressions, dead code, and architectural conflicts that require systematic cleanup.
 
 **Current State:** Functional but brittle
 **Target State:** Robust, maintainable, with live updates working

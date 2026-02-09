@@ -11,9 +11,9 @@ const passThroughArgs = args.filter((a) => a.startsWith("--theme=") || a.startsW
 
 if (wantsHelp) {
   console.log(`
-jj-viz - High-performance visualization for Jujutsu VCS
+juzu - High-performance visualization for Jujutsu VCS
 
-Usage: jj-viz [options]
+Usage: juzu [options]
 
 Options:
   --tui, -t      Run in terminal UI mode (TUI)
@@ -21,15 +21,15 @@ Options:
   -o, --open     Auto-open browser (web mode only)
   --theme=<name> Theme name (looks for themes/<name>.toml)
   --config=<path> Explicit config TOML file
-  -h, --help     Get help with using jj-viz
+  -h, --help     Get help with using juzu
 
 Examples:
-  jj-viz                    # Start web server on port 3000 (no auto-open)
-  jj-viz --tui              # Start TUI mode
-  jj-viz --port=8080        # Web server on custom port
-  jj-viz --open             # Start web server and open browser
-  jj-viz --theme=slate      # Use bundled theme
-  jj-viz -t                 # Short flag for TUI mode
+  juzu                      # Start web server on port 3000 (no auto-open)
+  juzu --tui                # Start TUI mode
+  juzu --port=8080          # Web server on custom port
+  juzu --open               # Start web server and open browser
+  juzu --theme=slate        # Use bundled theme
+  juzu -t                   # Short flag for TUI mode
 `);
   process.exit(0);
 }

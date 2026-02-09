@@ -29,12 +29,12 @@ import { resolveAndApplyRuntimeConfig } from "../core/config-loader";
 const BG = () => RGBA.fromHex(UI_TOKENS.slate.bg0);
 const PANEL_BG = () => RGBA.fromHex(UI_TOKENS.slate.panel);
 const RUNTIME = getRuntimeConfig();
-const TUI_LOG_LIMIT = readPositiveIntEnv("JJVIZ_TUI_LOG_LIMIT", 80);
-const TUI_REFRESH_DEBOUNCE_MS = readPositiveIntEnv("JJVIZ_TUI_REFRESH_DEBOUNCE_MS", 700);
-const TUI_FILES_PREFETCH_RADIUS = readPositiveIntEnv("JJVIZ_TUI_FILES_PREFETCH_RADIUS", 8);
-const TUI_FILES_PREFETCH_MAX_AGE_MS = readPositiveIntEnv("JJVIZ_TUI_FILES_PREFETCH_MAX_AGE_MS", 60_000);
-const TUI_FILES_PREFETCH_CONCURRENCY = readPositiveIntEnv("JJVIZ_TUI_FILES_PREFETCH_CONCURRENCY", 1);
-const TUI_DIFF_PREFETCH_DEBOUNCE_MS = readPositiveIntEnv("JJVIZ_TUI_DIFF_PREFETCH_DEBOUNCE_MS", 180);
+const TUI_LOG_LIMIT = readPositiveIntEnv("JUZU_TUI_LOG_LIMIT", 80);
+const TUI_REFRESH_DEBOUNCE_MS = readPositiveIntEnv("JUZU_TUI_REFRESH_DEBOUNCE_MS", 700);
+const TUI_FILES_PREFETCH_RADIUS = readPositiveIntEnv("JUZU_TUI_FILES_PREFETCH_RADIUS", 8);
+const TUI_FILES_PREFETCH_MAX_AGE_MS = readPositiveIntEnv("JUZU_TUI_FILES_PREFETCH_MAX_AGE_MS", 60_000);
+const TUI_FILES_PREFETCH_CONCURRENCY = readPositiveIntEnv("JUZU_TUI_FILES_PREFETCH_CONCURRENCY", 1);
+const TUI_DIFF_PREFETCH_DEBOUNCE_MS = readPositiveIntEnv("JUZU_TUI_DIFF_PREFETCH_DEBOUNCE_MS", 180);
 
 const SIDEBAR_COLLAPSED_W = 6;
 const SIDEBAR_COLLAPSED_H = 3;
@@ -305,8 +305,8 @@ function App() {
     const xdg = process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
     const dirs = [
       join(import.meta.dir, "../../themes"),
-      join(repoCwd, ".jj-viz/themes"),
-      xdg ? join(xdg, "jj-viz/themes") : null,
+      join(repoCwd, ".juzu/themes"),
+      xdg ? join(xdg, "juzu/themes") : null,
     ].filter(Boolean) as string[];
 
     for (const dir of dirs) {
@@ -315,6 +315,7 @@ function App() {
         for (const e of entries) {
           if (!e.isFile()) continue;
           if (!e.name.endsWith(".toml")) continue;
+          if (e.name === "config.toml") continue;
           names.add(e.name.slice(0, -5));
         }
       } catch {
@@ -329,6 +330,13 @@ function App() {
     if (refreshDebounceTimer) clearTimeout(refreshDebounceTimer);
     refreshDebounceTimer = setTimeout(() => {
       if (pendingConfirmation) return;
+      // Always refresh files for selected commit on file watch events
+      // This ensures file changes are visible even when log fingerprint matches
+      const selected = selectedNode();
+      if (selected) {
+        _lastFilesChangeId = null; // Force re-fetch of files
+        void ensureFiles(selected.changeId, 0).catch(() => {});
+      }
       void refresh();
     }, TUI_REFRESH_DEBOUNCE_MS);
   };
@@ -1192,7 +1200,7 @@ function App() {
       return;
     }
 
-    const themePath = `${state.cwd}/.jj-viz.local.toml`;
+    const themePath = `${state.cwd}/.juzu.local.toml`;
     let raw = "";
     try {
       raw = await readFile(themePath, "utf8");

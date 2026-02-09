@@ -1,6 +1,6 @@
-# Memory Optimizations for jj-viz TUI
+# Memory Optimizations for juzu TUI
 
-This document captures all memory optimizations applied to the jj-viz TUI application, explaining what was done, why, and the measured results.
+This document captures all memory optimizations applied to the juzu TUI application, explaining what was done, why, and the measured results.
 
 ## Summary
 

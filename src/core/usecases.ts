@@ -4,12 +4,12 @@ import type { FileEntry } from "./backend";
 import type { OpLogEntry, ObslogEntry } from "./jj-api";
 import { splitDiffByFile } from "./diff";
 
-const DEFAULT_LOG_LIMIT = readPositiveIntEnv("JJVIZ_LOG_LIMIT", 500);
-const FILES_CACHE_MAX_ENTRIES = readPositiveIntEnv("JJVIZ_FILES_CACHE_MAX_ENTRIES", 12);
-const DIFF_CACHE_MAX_ENTRIES = readPositiveIntEnv("JJVIZ_DIFF_CACHE_MAX_ENTRIES", 1);
-const DIFF_CACHE_MAX_BYTES = readPositiveIntEnv("JJVIZ_DIFF_CACHE_MAX_BYTES", 3 * 1024 * 1024);
-const PREFETCH_CONCURRENCY = readPositiveIntEnv("JJVIZ_PREFETCH_CONCURRENCY", 2);
-const PREFETCH_FILES_MAX_AGE_MS = readPositiveIntEnv("JJVIZ_PREFETCH_FILES_MAX_AGE_MS", 10_000);
+const DEFAULT_LOG_LIMIT = readPositiveIntEnv("JUZU_LOG_LIMIT", 500);
+const FILES_CACHE_MAX_ENTRIES = readPositiveIntEnv("JUZU_FILES_CACHE_MAX_ENTRIES", 12);
+const DIFF_CACHE_MAX_ENTRIES = readPositiveIntEnv("JUZU_DIFF_CACHE_MAX_ENTRIES", 1);
+const DIFF_CACHE_MAX_BYTES = readPositiveIntEnv("JUZU_DIFF_CACHE_MAX_BYTES", 3 * 1024 * 1024);
+const PREFETCH_CONCURRENCY = readPositiveIntEnv("JUZU_PREFETCH_CONCURRENCY", 2);
+const PREFETCH_FILES_MAX_AGE_MS = readPositiveIntEnv("JUZU_PREFETCH_FILES_MAX_AGE_MS", 10_000);
 
 let activeLogLimit = DEFAULT_LOG_LIMIT;
 const inFlightFilesById = new Map<string, Promise<FileEntry[]>>();
@@ -151,9 +151,9 @@ async function runMutation(label: string, fn: () => Promise<void>) {
 
 /**
  * Fingerprint a node list so we can skip no-op state updates.
- * Uses changeId + commitId + description (covers rebases, describes, amends).
+ * Uses changeId + commitId + description + files (covers rebases, describes, amends, file changes).
  */
-function nodesFingerprint(nodes: Array<{ changeId: string; commitId: string; descriptionTitle: string; isEmpty: boolean; isConflict: boolean; bookmarks: string[] }>): string {
+function nodesFingerprint(nodes: Array<{ changeId: string; commitId: string; descriptionTitle: string; isEmpty: boolean; isConflict: boolean; bookmarks: string[]; files?: Array<{ path: string; type: string }> }>): string {
   // Fast hash: concatenate key fields with a separator
   let fp = "";
   for (let i = 0; i < nodes.length; i++) {
@@ -164,6 +164,14 @@ function nodesFingerprint(nodes: Array<{ changeId: string; commitId: string; des
     fp += n.isEmpty ? "1" : "0";
     fp += n.isConflict ? "1" : "0";
     fp += n.bookmarks.length > 0 ? n.bookmarks.join(",") : "";
+    // Include file changes in fingerprint so file modifications trigger re-render
+    if (n.files && n.files.length > 0) {
+      fp += "F";
+      for (const f of n.files) {
+        fp += f.path;
+        fp += f.type;
+      }
+    }
     fp += "|";
   }
   return fp;

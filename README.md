@@ -1,4 +1,4 @@
-# jj-viz
+# juzu
 
 A high-performance, interactive visualization tool for the [Jujutsu (jj)](https://github.com/martinvonz/jj) version control system.
 
@@ -42,7 +42,7 @@ Built with **Bun** and **HTML5 Canvas**, this tool provides a "Circuit Board" st
 ```bash
 # From any jj repository
 cd /path/to/your/jj-repo
-bun run /path/to/jj-viz/cli.ts
+bun run /path/to/juzu/cli.ts
 ```
 
 ### Option 2: Global Alias
@@ -51,31 +51,31 @@ Add to your `~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish`:
 
 ```bash
 # Bash/Zsh
-alias jjviz='bun run /path/to/jj-viz/cli.ts'
+alias juzu='bun run /path/to/juzu/cli.ts'
 
-# Or if you put jj-viz in ~/tools
-alias jjviz='bun run ~/tools/jj-viz/cli.ts'
+# Or if you put juzu in ~/tools
+alias juzu='bun run ~/tools/juzu/cli.ts'
 ```
 
 Then use from any jj repository:
 ```bash
 cd my-project
-jjviz
+juzu
 ```
 
 ### Option 3: Local Directory
 
 ```bash
-# Clone or copy jj-viz to a permanent location
+# Clone or copy juzu to a permanent location
 mkdir -p ~/tools
-cp -r jj-viz ~/tools/
+cp -r juzu ~/tools/
 
 # Run from anywhere
 cd my-project
-bun run ~/tools/jj-viz/cli.ts
+bun run ~/tools/juzu/cli.ts
 
 # Or TUI
-# bun run ~/tools/jj-viz/cli.ts --tui
+# bun run ~/tools/juzu/cli.ts --tui
 ```
 
 ## Usage
@@ -109,26 +109,26 @@ bun run cli.ts --help
 
 ## Configuration and Themes
 
-jj-viz supports layered TOML config for both TUI and Web.
+juzu supports layered TOML config for both TUI and Web.
 
 Config load order (low to high priority):
 
-1. `~/.config/jj-viz/config.toml`
-2. `<repo>/.jj-viz.toml`
-3. `<repo>/.jj-viz.local.toml`
-4. `JJVIZ_CONFIG=/path/to/config.toml`
+1. `~/.config/juzu/config.toml`
+2. `<repo>/.juzu.toml`
+3. `<repo>/.juzu.local.toml`
+4. `JUZU_CONFIG=/path/to/config.toml`
 5. `--config=/path/to/config.toml`
 
 Theme selection precedence:
 
 1. `theme.name` in config
-2. `JJVIZ_THEME=<name>`
+2. `JUZU_THEME=<name>`
 3. `--theme=<name>`
 
 Theme lookup paths (in order):
 
-1. `<repo>/.jj-viz/themes/<name>.toml`
-2. `~/.config/jj-viz/themes/<name>.toml`
+1. `<repo>/.juzu/themes/<name>.toml`
+2. `~/.config/juzu/themes/<name>.toml`
 3. bundled `themes/<name>.toml`
 
 Bundled themes:
@@ -192,7 +192,7 @@ The tool follows a "Game Loop" architecture:
 
 ```bash
 # Clone repository
-cd jj-viz
+cd juzu
 
 # Install dependencies (Bun handles this automatically)
 

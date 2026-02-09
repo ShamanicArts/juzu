@@ -1,4 +1,4 @@
-# jj-viz Validation + Architecture Plan (v2)
+# juzu Validation + Architecture Plan (v2)
 
 ## Why this plan
 

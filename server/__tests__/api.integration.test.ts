@@ -3,7 +3,7 @@ import { createServer } from "node:net";
 import { join } from "node:path";
 import { createTempJJRepo, type TempJJRepo } from "../../src/test-utils/temp-repo";
 
-const workspaceRoot = "/home/shamanic/dev/jj-viz";
+const workspaceRoot = join(import.meta.dir, "../..");
 
 type StartedServer = {
   baseUrl: string;
@@ -175,7 +175,7 @@ describe("server API integration smoke", () => {
     const rootResp = await fetch(`${server.baseUrl}/`);
     expect(rootResp.status).toBe(200);
     const rootHtml = await rootResp.text();
-    expect(rootHtml.includes("jj-viz")).toBe(true);
+    expect(rootHtml.includes("juzu")).toBe(true);
 
     const appResp = await fetch(`${server.baseUrl}/web/app.js`);
     expect(appResp.status).toBe(200);

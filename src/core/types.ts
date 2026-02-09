@@ -1,4 +1,4 @@
-// Shared types for jj-viz - used by both TUI and Web UI
+// Shared types for juzu - used by both TUI and Web UI
 
 export interface CommitNode {
   changeId: string;
