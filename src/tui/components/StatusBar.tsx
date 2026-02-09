@@ -32,11 +32,11 @@ function toneHex(tone: Tone): string {
 }
 
 function itemBg(tone: Tone, _themeVersion?: number): RGBA {
-  return RGBA.fromHex(mixHex(UI_TOKENS.slate.bg2, toneHex(tone), 0.24));
+  return RGBA.fromHex(mixHex(UI_TOKENS.slate.bg2, toneHex(tone), 0.42));
 }
 
 function itemFg(tone: Tone, _themeVersion?: number): RGBA {
-  return RGBA.fromHex(mixHex(UI_TOKENS.slate.textMuted, toneHex(tone), 0.34));
+  return RGBA.fromHex(mixHex(UI_TOKENS.slate.text, toneHex(tone), 0.46));
 }
 
 function statusContextActive(context: StatusContextId): boolean {
@@ -88,7 +88,7 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
 
   const modeBg = createMemo(() => {
     props.themeVersion;
-    return RGBA.fromHex(modeTint());
+    return RGBA.fromHex(mixHex(modeTint(), UI_TOKENS.slate.text, 0.18));
   });
 
   const barBg = createMemo(() => {
