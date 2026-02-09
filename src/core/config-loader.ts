@@ -133,6 +133,19 @@ function deepMerge<T>(base: T, patch: DeepPartial<T> | undefined): T {
   return out as T;
 }
 
+function stripThemeConfigDiffTokens(config: DeepPartial<JjVizRuntimeConfig>): DeepPartial<JjVizRuntimeConfig> {
+  // Keep diff backgrounds theme-driven unless a concrete theme or user config overrides them.
+  const uiTokens = (config as { uiTokens?: Record<string, unknown> }).uiTokens;
+  if (!uiTokens || typeof uiTokens !== "object" || !("diff" in uiTokens)) return config;
+  const next = JSON.parse(JSON.stringify(config)) as DeepPartial<JjVizRuntimeConfig> & {
+    uiTokens?: Record<string, unknown>;
+  };
+  if (next.uiTokens && typeof next.uiTokens === "object") {
+    delete next.uiTokens.diff;
+  }
+  return next;
+}
+
 function clampConfig(config: JjVizRuntimeConfig): JjVizRuntimeConfig {
   const out = JSON.parse(JSON.stringify(config)) as JjVizRuntimeConfig;
   const layoutModes = new Set(["chronological", "mainline", "bookmark-centric", "wc-focused", "topological"]);
@@ -224,7 +237,7 @@ export async function resolveRuntimeConfig(opts: ResolveOptions): Promise<JjVizR
   // 1. Load theme config (themes/config.toml) for base visual/uiTokens defaults
   const themeConfigParsed = await loadThemeConfig(opts);
   if (themeConfigParsed) {
-    merged = deepMerge(merged, themeConfigParsed);
+    merged = deepMerge(merged, stripThemeConfigDiffTokens(themeConfigParsed));
   }
 
   // 2. Load specific theme file for overrides
