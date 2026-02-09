@@ -1,11 +1,12 @@
 import { createStore } from "solid-js/store";
+import type { LeaderModeId } from "./tui-keymap";
 
 export interface TuiState {
   termSize: { width: number; height: number };
   scrollOffset: number;
   sidebarScroll: number;
   showHelp: boolean;
-  leaderMode: boolean;
+  activeLeaderMode: LeaderModeId | null;
   sidebarCollapsed: boolean;
   cursorPos: number;
   mergeMode: boolean;
@@ -28,7 +29,7 @@ const initialTuiState: TuiState = {
   scrollOffset: 0,
   sidebarScroll: 0,
   showHelp: false,
-  leaderMode: false,
+  activeLeaderMode: null,
   sidebarCollapsed: false,
   cursorPos: 0,
   mergeMode: false,
@@ -61,7 +62,7 @@ export const tuiActions = {
   setShowHelp: (show: boolean) => setTuiState("showHelp", show),
   toggleHelp: () => setTuiState("showHelp", (v) => !v),
 
-  setLeaderMode: (active: boolean) => setTuiState("leaderMode", active),
+  setActiveLeaderMode: (mode: LeaderModeId | null) => setTuiState("activeLeaderMode", mode),
 
   toggleSidebarCollapsed: () => setTuiState("sidebarCollapsed", (v) => !v),
 

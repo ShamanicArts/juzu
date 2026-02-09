@@ -25,6 +25,13 @@ import { DiffView } from "./components/DiffView";
 import { UI_TOKENS } from "../core/ui-tokens";
 import { getRuntimeConfig } from "../core/runtime-config";
 import { resolveAndApplyRuntimeConfig } from "../core/config-loader";
+import {
+  findCommandForEvent,
+  findLeaderModeForEvent,
+  matchesKeySpec,
+  resolveTuiKeymapConfig,
+  type CommandId,
+} from "../core/tui-keymap";
 
 const BG = () => RGBA.fromHex(UI_TOKENS.slate.bg0);
 const PANEL_BG = () => RGBA.fromHex(UI_TOKENS.slate.panel);
@@ -100,6 +107,7 @@ function App() {
   const [confirmPrompt, setConfirmPrompt] = createSignal<string | null>(null);
   const [themeOptions, setThemeOptions] = createSignal<string[]>(["slate", "ember"]);
   const CLIPBOARD_ERROR_STATUS = "Error: clipboard copy failed in terminal session";
+  const keymapConfig = () => resolveTuiKeymapConfig((getRuntimeConfig() as any)?.tui?.keymap);
 
   const tryRawOsc52Copy = (text: string, target: "c" | "p") => {
     try {
@@ -571,7 +579,7 @@ function App() {
   const requestConfirmation = (message: string, run: () => Promise<void> | void) => {
     pendingConfirmation = { message, run };
     setConfirmPrompt(message);
-    tuiActions.setLeaderMode(false);
+    tuiActions.setActiveLeaderMode(null);
     actions.setStatusMessage(`${message} (y/n)`);
   };
 
@@ -593,6 +601,147 @@ function App() {
       name === "rightbracket" ||
       name === "bracketright"
     );
+  };
+
+  const executeCommand = (command: CommandId): boolean => {
+    switch (command) {
+      case "new":
+        void handleNew();
+        return true;
+      case "edit":
+        void handleEdit();
+        return true;
+      case "describe":
+        handleDescribe();
+        tuiActions.setActiveLeaderMode(null);
+        return true;
+      case "rebase":
+        void handleRebase();
+        return true;
+      case "insert":
+        void handleInsert();
+        return true;
+      case "abandon":
+        requestConfirmation(`Abandon selected change?${bookmarkSafetySuffix()}`, handleAbandon);
+        return true;
+      case "squash":
+        requestConfirmation("Squash selected change?", handleSquash);
+        return true;
+      case "duplicate":
+        void handleDuplicate();
+        return true;
+      case "undo":
+        requestConfirmation("Undo last operation?", handleUndo);
+        return true;
+      case "redo":
+        requestConfirmation("Redo last operation?", handleRedo);
+        return true;
+      case "git-fetch":
+        void opGitFetch();
+        return true;
+      case "git-push":
+        void opGitPush();
+        return true;
+      case "bookmark-set": {
+        const node = selectedNode();
+        if (!node) return true;
+        const bookmarkName = `wip/${node.changeId.slice(0, 8)}`;
+        void opBookmarkSet(bookmarkName, node.changeId);
+        return true;
+      }
+      case "bookmark-delete": {
+        const node = selectedNode();
+        if (!node) return true;
+        const local = (node.bookmarks || []).filter((b) => !b.includes("@"));
+        if (local.length === 0) {
+          actions.setStatusMessage("No local bookmark on selected change");
+          return true;
+        }
+        requestConfirmation(`Delete bookmark ${local[0]}?`, () => {
+          void opBookmarkDelete(local[0]!);
+        });
+        return true;
+      }
+      case "merge-mode":
+        tuiActions.setActiveLeaderMode(null);
+        tuiActions.setMergeMode(true);
+        actions.setStatusMessage("Merge mode: Space=select Enter=merge Esc=cancel");
+        return true;
+      case "theme-picker": {
+        tuiActions.setActiveLeaderMode(null);
+        const opts = themeOptions();
+        const current = getRuntimeConfig().theme.name;
+        const idx = Math.max(0, opts.indexOf(current));
+        tuiActions.startThemePicker(idx);
+        actions.setStatusMessage("Theme picker: j/k select theme, Enter apply, Esc exit");
+        return true;
+      }
+      case "oplog":
+        tuiActions.setActiveLeaderMode(null);
+        void handleOpLog();
+        return true;
+      case "obslog":
+        tuiActions.setActiveLeaderMode(null);
+        void handleObslog();
+        return true;
+      case "back-log":
+        tuiActions.setActiveLeaderMode(null);
+        handleBackToLog();
+        return true;
+      case "restore": {
+        const node = selectedNode();
+        if (!node) return true;
+        requestConfirmation(`Restore selected change ${node.changeId.slice(0, 8)}?`, () => {
+          void opRestore(node.changeId);
+        });
+        return true;
+      }
+      case "layout-chronological":
+        actions.setLayoutMode("chronological");
+        return true;
+      case "layout-mainline":
+        actions.setLayoutMode("mainline");
+        return true;
+      case "layout-bookmark-centric":
+        actions.setLayoutMode("bookmark-centric");
+        return true;
+      case "layout-wc-focused":
+        actions.setLayoutMode("wc-focused");
+        return true;
+      case "layout-topological":
+        actions.setLayoutMode("topological");
+        return true;
+      case "toggle-sidebar": {
+        const nextCollapsed = !tuiState.sidebarCollapsed;
+        tuiActions.toggleSidebarCollapsed();
+        actions.setStatusMessage(nextCollapsed ? "Sidebar: collapsed" : "Sidebar: expanded");
+        return true;
+      }
+      case "refresh":
+        void refresh();
+        return true;
+      case "toggle-help":
+        tuiActions.toggleHelp();
+        return true;
+      case "toggle-files":
+        tuiActions.toggleFilesExpanded();
+        return true;
+      case "toggle-description":
+        tuiActions.toggleDescExpanded();
+        return true;
+      case "revset":
+        tuiActions.setActiveLeaderMode(null);
+        tuiActions.startRevset(state.revsetQuery || "");
+        tuiActions.setCursorPos((state.revsetQuery || "").length);
+        actions.setStatusMessage("Revset filter mode");
+        return true;
+      case "diff-toggle":
+        if (state.viewMode === "diff") handleBackToLog();
+        else if (state.viewMode === "log") void handleDiffView();
+        return true;
+      default:
+        return false;
+    }
   };
 
   useKeyboard((key: KeyEvent) => {
@@ -619,15 +768,6 @@ function App() {
         return;
       }
       actions.setStatusMessage(`${pendingConfirmation.message} (y/n)`);
-      return;
-    }
-
-    if (key.ctrl && name === "d") {
-      if (state.viewMode === "diff") {
-        handleBackToLog();
-      } else if (state.viewMode === "log") {
-        void handleDiffView();
-      }
       return;
     }
 
@@ -859,93 +999,53 @@ function App() {
       return;
     }
 
-    // Handle leader mode
-    if (tuiState.leaderMode) {
+    const keymap = keymapConfig();
+
+    if (tuiState.activeLeaderMode) {
+      const activeMode = tuiState.activeLeaderMode;
+      if (keymap.exitKeys.some((spec) => matchesKeySpec(spec, key))) {
+        tuiActions.setActiveLeaderMode(null);
+        actions.setStatusMessage("Cancelled");
+        return;
+      }
+
+      const command = findCommandForEvent(keymap.modeBindings[activeMode], key);
+      if (command) {
+        executeCommand(command);
+        if (!keymap.stickyModes) tuiActions.setActiveLeaderMode(null);
+        return;
+      }
+
       switch (name) {
-        case "r":
-          tuiActions.setLeaderMode(false);
-          {
-            const nextCollapsed = !tuiState.sidebarCollapsed;
-            tuiActions.toggleSidebarCollapsed();
-            actions.setStatusMessage(nextCollapsed ? "Sidebar: collapsed" : "Sidebar: expanded");
-          }
-          return;
-        case "a":
-          requestConfirmation(`Abandon selected change?${bookmarkSafetySuffix()}`, handleAbandon);
-          return;
-        case "s":
-          requestConfirmation("Squash selected change?", handleSquash);
-          return;
-        case "d":
-          tuiActions.setLeaderMode(false);
-          handleDuplicate();
-          return;
-        case "u":
-          requestConfirmation("Redo last operation?", handleRedo);
-          return;
-        case "m":
-          tuiActions.setLeaderMode(false);
-          tuiActions.setMergeMode(true);
-          actions.setStatusMessage("Merge mode: Space=select Enter=merge Esc=cancel");
-          return;
-        case "f":
-          tuiActions.setLeaderMode(false);
-          void opGitFetch();
-          return;
-        case "p":
-          tuiActions.setLeaderMode(false);
-          void opGitPush();
-          return;
-        case "b": {
-          tuiActions.setLeaderMode(false);
-          const node = selectedNode();
-          if (!node) return;
-          const name = `wip/${node.changeId.slice(0, 8)}`;
-          void opBookmarkSet(name, node.changeId);
-          return;
-        }
-        case "x": {
-          tuiActions.setLeaderMode(false);
-          const node = selectedNode();
-          if (!node) return;
-          const local = (node.bookmarks || []).filter((b) => !b.includes("@"));
-          if (local.length === 0) {
-            actions.setStatusMessage("No local bookmark on selected change");
-            return;
-          }
-          requestConfirmation(`Delete bookmark ${local[0]}?`, () => {
-            void opBookmarkDelete(local[0]!);
-          });
-          return;
-        }
-        case "t":
-          tuiActions.setLeaderMode(false);
-          {
-            const opts = themeOptions();
-            const current = getRuntimeConfig().theme.name;
-            const idx = Math.max(0, opts.indexOf(current));
-            tuiActions.startThemePicker(idx);
-            actions.setStatusMessage("Theme picker: j/k select theme, Enter apply, Esc exit");
-          }
-          return;
-        case "escape":
-          tuiActions.setLeaderMode(false);
-          actions.setStatusMessage("Cancelled");
-          return;
         case "up":
-        case "down":
-        case "left":
-        case "right":
         case "k":
+          navigation.moveUp();
+          return;
+        case "down":
         case "j":
-          // Allow navigation - cancel leader mode silently and fall through
-          tuiActions.setLeaderMode(false);
-          break;
-        default:
-          // Unknown key - just cancel leader mode silently
-          tuiActions.setLeaderMode(false);
+          navigation.moveDown();
+          return;
+        case "pageup":
+          tuiActions.setSidebarScroll(tuiState.sidebarScroll - 10);
+          return;
+        case "pagedown":
+          tuiActions.setSidebarScroll(tuiState.sidebarScroll + 10);
           return;
       }
+      return;
+    }
+
+    const nextMode = findLeaderModeForEvent(keymap, key);
+    if (nextMode) {
+      tuiActions.setActiveLeaderMode(nextMode);
+      actions.setStatusMessage(`${keymap.labels[nextMode]} mode`);
+      return;
+    }
+
+    const idleCommand = findCommandForEvent(keymap.idleBindings, key);
+    if (idleCommand) {
+      executeCommand(idleCommand);
+      return;
     }
 
     switch (name) {
@@ -972,81 +1072,12 @@ function App() {
       case "pagedown":
         tuiActions.setSidebarScroll(tuiState.sidebarScroll + 10);
         break;
-      case "r":
-        refresh();
-        break;
-      case "f":
-        tuiActions.toggleFilesExpanded();
-        break;
-      case "x":
-        if (!key.ctrl && !key.meta) {
-          tuiActions.toggleDescExpanded();
-        }
-        break;
-      case "h":
-        tuiActions.toggleHelp();
-        break;
-      case "1":
-        actions.setLayoutMode("chronological");
-        break;
-      case "2":
-        actions.setLayoutMode("mainline");
-        break;
-      case "3":
-        actions.setLayoutMode("bookmark-centric");
-        break;
-      case "4":
-        actions.setLayoutMode("wc-focused");
-        break;
-      case "5":
-        actions.setLayoutMode("topological");
-        break;
-      case "n":
-        handleNew();
-        break;
-      case "e":
-        handleEdit();
-        break;
-      case "d":
-        handleDescribe();
-        break;
-      case "b":
-        handleRebase();
-        break;
       case "return":
       case "enter":
         if (state.rebaseSourceId) {
           handleRebase();
         }
         break;
-      case "i":
-        handleInsert();
-        break;
-      case "u":
-        requestConfirmation("Undo last operation?", handleUndo);
-        break;
-      case "o":
-        handleOpLog();
-        break;
-      case "v":
-        handleObslog();
-        break;
-      case "g":
-        handleBackToLog();
-        break;
-      case "/":
-        tuiActions.startRevset(state.revsetQuery || "");
-        tuiActions.setCursorPos((state.revsetQuery || "").length);
-        actions.setStatusMessage("Revset filter mode");
-        break;
-      case "z": {
-        const node = selectedNode();
-        if (!node) break;
-        requestConfirmation(`Restore selected change ${node.changeId.slice(0, 8)}?`, () => {
-          void opRestore(node.changeId);
-        });
-        break;
-      }
     }
 
     if (isPrevDiffFileKey(key, name)) {
@@ -1058,11 +1089,6 @@ function App() {
       return;
     }
 
-    // Leader key: Ctrl+X
-    if (key.ctrl && name === "x") {
-      tuiActions.setLeaderMode(true);
-      actions.setStatusMessage("Leader mode");
-    }
   });
 
   const handleNew = async () => {
@@ -1383,7 +1409,12 @@ function App() {
       }}
     >
       {/* Top status bar */}
-      <StatusBar width={tuiState.termSize.width} height={statusBarHeight()} themeVersion={tuiState.themeVersion} />
+      <StatusBar
+        width={tuiState.termSize.width}
+        height={statusBarHeight()}
+        themeVersion={tuiState.themeVersion}
+        keymap={keymapConfig()}
+      />
 
       <box flexDirection={useVerticalLayout() ? "column" : "row"} flexGrow={1} height={mainHeight()}>
         <box width={useVerticalLayout() ? tuiState.termSize.width : graphW()} height={graphH()} backgroundColor={graphPaneBg()}>
@@ -1469,6 +1500,7 @@ function App() {
                  obslogSelected={state.obslogEntries[state.obslogSelectedIndex] || null}
                  diffPreview={sidebarDiffPreview()}
                  collapsed={tuiState.sidebarCollapsed}
+                 keymap={keymapConfig()}
                />
             </box>
           )}

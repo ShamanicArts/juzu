@@ -6,6 +6,7 @@ import type { ViewMode } from "../../core/state";
 import { UI_TOKENS } from "../../core/ui-tokens";
 import { getRuntimeConfig } from "../../core/runtime-config";
 import { mixHex } from "../../core/color-utils";
+import { commandLabel, type TuiKeymapConfig } from "../../core/tui-keymap";
 
 const PANEL_BG = RGBA.fromHex(UI_TOKENS.slate.panel);
 const CYAN = RGBA.fromHex(UI_TOKENS.semantic.info);
@@ -47,6 +48,7 @@ interface SidebarProps {
     total: number;
   } | null;
   collapsed?: boolean;
+  keymap?: TuiKeymapConfig;
 }
 
 export function Sidebar(props: SidebarProps) {
@@ -141,40 +143,46 @@ export function Sidebar(props: SidebarProps) {
         { text: "j/k or ↑/↓  Navigate", color: FG },
         { text: "PgUp/PgDn   Scroll", color: FG },
         { text: "", color: FG_DIM },
-        { text: "Layout", color: CYAN },
-        { text: "1-5         Layout modes", color: FG },
-        { text: "", color: FG_DIM },
-        { text: "Operations", color: CYAN },
-        { text: "n           New commit", color: FG },
-        { text: "e           Edit/checkout", color: FG },
-        { text: "d           Describe", color: FG },
-        { text: "b           Rebase", color: FG },
-        { text: "Ctrl+d      Full diff view", color: FG },
-        { text: "/           Revset filter", color: FG },
-        { text: "z           Restore selected", color: FG },
-        { text: "Ctrl+X a    Abandon", color: FG },
-        { text: "Ctrl+X s    Squash", color: FG },
-        { text: "Ctrl+X d    Duplicate", color: FG },
-        { text: "Ctrl+X u    Redo", color: FG },
-        { text: "Ctrl+X t    Theme picker", color: FG },
-        { text: "Ctrl+X r    Toggle collapsed sidebar", color: FG },
-        { text: "Ctrl+X m    Merge mode", color: FG },
-        { text: "Ctrl+X f    Fetch", color: FG },
-        { text: "Ctrl+X p    Push", color: FG },
-        { text: "Ctrl+X b    Set bookmark", color: FG },
-        { text: "Ctrl+X x    Delete bookmark", color: FG },
-        { text: "u           Undo", color: FG },
+        { text: "Leader Modes", color: CYAN },
         { text: "y / n       Confirm / cancel", color: FG },
         { text: "", color: FG_DIM },
         { text: "View", color: CYAN },
-        { text: "x           Toggle desc", color: FG },
-        { text: "f           Toggle files", color: FG },
         { text: "[ / ]       Cycle file diff", color: FG },
-        { text: "r           Refresh", color: FG },
+        { text: "q           Quit", color: FG },
+        { text: "Esc/Ctrl+g  Exit active mode", color: FG },
         { text: "h           Toggle help", color: YELLOW },
         { text: "", color: FG_DIM },
         { text: "Press h to close help", color: FG_DIM },
       ];
+
+      if (props.keymap) {
+        const modeLines: Array<{ text: string; color: RGBA }> = [];
+        for (const mode of props.keymap.modeOrder) {
+          modeLines.push({ text: `${props.keymap.leaders[mode]}  ${props.keymap.labels[mode]}`, color: FG });
+          const bindings = Object.entries(props.keymap.modeBindings[mode]).sort((a, b) => a[0].localeCompare(b[0]));
+          if (bindings.length > 0) {
+            const summary = bindings
+              .slice(0, 6)
+              .map(([key, command]) => `${key}:${commandLabel(command)}`)
+              .join("  ");
+            modeLines.push({ text: `  ${summary}`, color: FG_DIM });
+          }
+        }
+
+        if (Object.keys(props.keymap.idleBindings).length > 0) {
+          modeLines.push({ text: "", color: FG_DIM });
+          modeLines.push({ text: "Idle Bindings", color: CYAN });
+          const idleSummary = Object.entries(props.keymap.idleBindings)
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([key, command]) => `${key}:${commandLabel(command)}`)
+            .join("  ");
+          modeLines.push({ text: idleSummary, color: FG_DIM });
+        }
+
+        const insertAt = lines.findIndex((line) => line.text === "y / n       Confirm / cancel");
+        lines.splice(Math.max(0, insertAt), 0, ...modeLines, { text: "", color: FG_DIM });
+      }
+
       return lines;
     }
 
@@ -418,9 +426,13 @@ export function Sidebar(props: SidebarProps) {
     }
 
     const themeName = getRuntimeConfig().theme.name;
+    const themeLeader = props.keymap?.leaders.theme || "ctrl+t";
+    const themeModeBindings = props.keymap?.modeBindings.theme || {};
+    const themeSelectKey = Object.entries(themeModeBindings).find(([, cmd]) => cmd === "theme-picker")?.[0] || "t";
+    const themeHint = `${themeLeader} then ${themeSelectKey}`;
     const themeSelector = themeName === "ember"
-      ? "Themes: slate [ember]  (Ctrl+X t)"
-      : "Themes: [slate] ember  (Ctrl+X t)";
+      ? `Themes: slate [ember]  (${themeHint})`
+      : `Themes: [slate] ember  (${themeHint})`;
     lines.push({ text: "", color: FG_DIM });
     lines.push({ text: themeSelector, color: FG_DIM });
 

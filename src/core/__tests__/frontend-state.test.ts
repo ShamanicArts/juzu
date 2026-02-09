@@ -22,9 +22,9 @@ describe("frontend extension stores", () => {
     expect(webState.opTargetId).toBe(null);
   });
 
-  test("tui state tracks leader, merge and cursor", () => {
-    tuiActions.setLeaderMode(true);
-    expect(tuiState.leaderMode).toBe(true);
+  test("tui state tracks leader mode, merge and cursor", () => {
+    tuiActions.setActiveLeaderMode("revision");
+    expect(tuiState.activeLeaderMode).toBe("revision");
 
     tuiActions.setMergeMode(true);
     tuiActions.toggleMergeSelection("x1");
