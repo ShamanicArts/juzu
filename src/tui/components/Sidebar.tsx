@@ -6,7 +6,7 @@ import type { ViewMode } from "../../core/state";
 import { UI_TOKENS } from "../../core/ui-tokens";
 import { getRuntimeConfig } from "../../core/runtime-config";
 import { mixHex } from "../../core/color-utils";
-import { commandLabel, type TuiKeymapConfig } from "../../core/tui-keymap";
+import { commandLabel, formatKeyHint, type TuiKeymapConfig } from "../../core/tui-keymap";
 
 const PANEL_BG = RGBA.fromHex(UI_TOKENS.slate.panel);
 const CYAN = RGBA.fromHex(UI_TOKENS.semantic.info);
@@ -426,10 +426,15 @@ export function Sidebar(props: SidebarProps) {
     }
 
     const themeName = getRuntimeConfig().theme.name;
-    const themeLeader = props.keymap?.leaders.theme || "ctrl+t";
-    const themeModeBindings = props.keymap?.modeBindings.theme || {};
-    const themeSelectKey = Object.entries(themeModeBindings).find(([, cmd]) => cmd === "theme-picker")?.[0] || "t";
-    const themeHint = `${themeLeader} then ${themeSelectKey}`;
+    const idleThemeKey = props.keymap
+      ? Object.entries(props.keymap.idleBindings).find(([, cmd]) => cmd === "theme-picker")?.[0]
+      : null;
+    const viewLeader = props.keymap?.leaders.view || "ctrl+l";
+    const viewBindings = props.keymap?.modeBindings.view || {};
+    const viewThemeKey = Object.entries(viewBindings).find(([, cmd]) => cmd === "theme-picker")?.[0] || "t";
+    const themeHint = idleThemeKey
+      ? formatKeyHint(idleThemeKey)
+      : `${formatKeyHint(viewLeader)} then ${formatKeyHint(viewThemeKey)}`;
     const themeSelector = themeName === "ember"
       ? `Themes: slate [ember]  (${themeHint})`
       : `Themes: [slate] ember  (${themeHint})`;

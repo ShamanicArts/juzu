@@ -27,22 +27,25 @@ clearDiffCacheWhenNotInDiff = true
 [tui.keymap]
 # Leader modes are persistent by default (no timeout).
 stickyModes = true
-showIdleBindingsInStatus = true
-modeOrder = ["revision", "history", "graph", "bookmark", "theme"]
+showIdleBindingsInStatus = false
+showLeaderTriggersInStatus = true
+modeOrder = ["action", "ops", "view", "marks"]
+statusContextOrder = ["oplog", "obslog", "diff", "merge", "rebase", "describe", "revset", "themePicker"]
 exitKeys = ["escape", "ctrl+g"]
 
 [tui.keymap.leaders]
-revision = "ctrl+x"
-history = "ctrl+o"
-graph = "ctrl+g"
-bookmark = "ctrl+b"
-theme = "ctrl+t"
+action = "ctrl+x"
+ops = "ctrl+o"
+view = "ctrl+l"
+marks = "ctrl+b"
 
 [tui.keymap.idleBindings]
 # Add optional single-key shortcuts in idle mode if desired.
 # n = "new"
+h = "toggle-help"
+"ctrl+d" = "diff-toggle"
 
-[tui.keymap.modeBindings.revision]
+[tui.keymap.modeBindings.action]
 n = "new"
 e = "edit"
 d = "describe"
@@ -52,8 +55,9 @@ a = "abandon"
 s = "squash"
 y = "duplicate"
 z = "restore"
+m = "merge-mode"
 
-[tui.keymap.modeBindings.history]
+[tui.keymap.modeBindings.ops]
 u = "undo"
 r = "redo"
 f = "git-fetch"
@@ -62,28 +66,59 @@ o = "oplog"
 v = "obslog"
 g = "back-log"
 
-[tui.keymap.modeBindings.graph]
+[tui.keymap.modeBindings.view]
 "1" = "layout-chronological"
 "2" = "layout-mainline"
 "3" = "layout-bookmark-centric"
 "4" = "layout-wc-focused"
 "5" = "layout-topological"
-m = "merge-mode"
 c = "toggle-sidebar"
+t = "theme-picker"
 r = "refresh"
+f = "toggle-files"
+x = "toggle-description"
+h = "toggle-help"
+"/" = "revset"
+"ctrl+d" = "diff-toggle"
 
-[tui.keymap.modeBindings.bookmark]
+[tui.keymap.modeBindings.marks]
 s = "bookmark-set"
 d = "bookmark-delete"
 
-[tui.keymap.modeBindings.theme]
-t = "theme-picker"
-h = "toggle-help"
+[tui.keymap.statusContextLabels]
+oplog = "OPLOG"
+obslog = "OBSLOG"
+diff = "DIFF"
+merge = "MERGE"
+rebase = "REBASE"
+describe = "DESCRIBE"
+revset = "REVSET"
+themePicker = "THEME"
+
+# Optional: override built-in action names shown in status chips.
+# [tui.keymap.commandLabels]
+# "bookmark-set" = "Bookmark +"
+# "bookmark-delete" = "Bookmark -"
+
+# Optional: override context-specific status chips (array of tables).
+# [[tui.keymap.statusContexts.oplog]]
+# key = "r"
+# label = "Restore"
+# tone = "ops"
+#
+# [[tui.keymap.statusContexts.oplog]]
+# key = "g"
+# label = "Log"
+# tone = "ops"
 
 # Optional: Override specific UI tokens from the theme.
 # These override both the base theme and the theme file.
 # [uiTokens.semantic]
 # info = "#7f9fbf"
+# modeAction = "#c9a86a"
+# modeOps = "#7f9fbf"
+# modeView = "#6f89ad"
+# modeMarks = "#74b88c"
 #
 # [uiTokens.diff]
 # addedBg = "#1f3a2a"

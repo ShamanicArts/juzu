@@ -27,6 +27,7 @@ export interface JjVizRuntimeConfig {
     stackedSidebarRatio: number;
     prefetchDiffInLog: boolean;
     clearDiffCacheWhenNotInDiff: boolean;
+    keymap?: unknown;
   };
 }
 
@@ -59,6 +60,7 @@ export const DEFAULT_RUNTIME_CONFIG: JjVizRuntimeConfig = {
     stackedSidebarRatio: 0.5,
     prefetchDiffInLog: false,
     clearDiffCacheWhenNotInDiff: true,
+    keymap: {},
   },
 };
 

@@ -23,8 +23,8 @@ describe("frontend extension stores", () => {
   });
 
   test("tui state tracks leader mode, merge and cursor", () => {
-    tuiActions.setActiveLeaderMode("revision");
-    expect(tuiState.activeLeaderMode).toBe("revision");
+    tuiActions.setActiveLeaderMode("action");
+    expect(tuiState.activeLeaderMode).toBe("action");
 
     tuiActions.setMergeMode(true);
     tuiActions.toggleMergeSelection("x1");

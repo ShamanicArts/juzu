@@ -195,13 +195,16 @@ The TUI now defaults to persistent leader modes (no timeout):
 
 Default mode leaders:
 
-- `Ctrl+x` -> Revision
-- `Ctrl+o` -> History/operations
-- `Ctrl+g` -> Graph/layout
-- `Ctrl+b` -> Bookmark
-- `Ctrl+t` -> Theme/UI
+- `Ctrl+x` -> Actions
+- `Ctrl+o` -> Operations
+- `Ctrl+l` -> View (layout/sidebar/theme)
+- `Ctrl+b` -> Marks
 
-You can customize leaders, mode order, mode bindings, and optional idle single-key bindings via `[tui.keymap]` in config.
+You can customize leaders, mode order, mode bindings, badge labels, context priority/order, command labels, and optional idle single-key bindings via `[tui.keymap]` in config.
+
+Status-context chips (oplog/obslog/diff/merge/etc.) are also configurable through `[tui.keymap.statusContexts.*]` and `[tui.keymap.statusContextLabels]`.
+
+Status bar mode/button coloring is theme-driven via `uiTokens.semantic.modeAction`, `modeOps`, `modeView`, and `modeMarks` (override in user config if you want custom emphasis).
 
 Note: `Ctrl+s` is often intercepted by terminal flow control unless you disable XON/XOFF (`stty -ixon`), so it is not used by default.
 

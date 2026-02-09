@@ -19,6 +19,10 @@ export const DEFAULT_UI_TOKENS = {
     fileMod: "#f59e0b",
     fileDel: "#ef4444",
     modeLog: "#6f89ad",
+    modeAction: "#c9a86a",
+    modeOps: "#7f9fbf",
+    modeView: "#6f89ad",
+    modeMarks: "#74b88c",
   },
   graph: {
     node: "#444",

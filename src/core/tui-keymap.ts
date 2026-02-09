@@ -1,7 +1,11 @@
 import type { KeyEvent } from "@opentui/core";
 
-export const LEADER_MODE_IDS = ["revision", "history", "graph", "bookmark", "theme"] as const;
+export const LEADER_MODE_IDS = ["action", "ops", "view", "marks"] as const;
 export type LeaderModeId = typeof LEADER_MODE_IDS[number];
+export type ToneId = LeaderModeId | "neutral";
+
+export const STATUS_CONTEXT_IDS = ["oplog", "obslog", "diff", "merge", "rebase", "describe", "revset", "themePicker"] as const;
+export type StatusContextId = typeof STATUS_CONTEXT_IDS[number];
 
 export const COMMAND_IDS = [
   "new",
@@ -39,50 +43,58 @@ export const COMMAND_IDS = [
 ] as const;
 
 export type CommandId = typeof COMMAND_IDS[number];
-
 export type BindingMap = Record<string, CommandId>;
+
+export interface StatusHintItem {
+  key: string;
+  label: string;
+  tone: ToneId;
+}
 
 export interface TuiKeymapConfig {
   stickyModes: boolean;
   showIdleBindingsInStatus: boolean;
+  showLeaderTriggersInStatus: boolean;
   modeOrder: LeaderModeId[];
+  statusContextOrder: StatusContextId[];
   exitKeys: string[];
   leaders: Record<LeaderModeId, string>;
   labels: Record<LeaderModeId, string>;
   badges: Record<LeaderModeId, string>;
   idleBindings: BindingMap;
   modeBindings: Record<LeaderModeId, BindingMap>;
+  commandLabels: Partial<Record<CommandId, string>>;
+  statusContextLabels: Record<StatusContextId, string>;
+  statusContexts: Record<StatusContextId, StatusHintItem[]>;
 }
 
 const COMMAND_ID_SET = new Set<string>(COMMAND_IDS);
 const LEADER_MODE_SET = new Set<string>(LEADER_MODE_IDS);
+const STATUS_CONTEXT_SET = new Set<string>(STATUS_CONTEXT_IDS);
 
 const DEFAULT_LEADERS: Record<LeaderModeId, string> = {
-  revision: "ctrl+x",
-  history: "ctrl+o",
-  graph: "ctrl+g",
-  bookmark: "ctrl+b",
-  theme: "ctrl+t",
+  action: "ctrl+x",
+  ops: "ctrl+o",
+  view: "ctrl+l",
+  marks: "ctrl+b",
 };
 
 const DEFAULT_LABELS: Record<LeaderModeId, string> = {
-  revision: "Revision",
-  history: "History",
-  graph: "Graph",
-  bookmark: "Bookmark",
-  theme: "Theme",
+  action: "Actions",
+  ops: "Operations",
+  view: "View",
+  marks: "Marks",
 };
 
 const DEFAULT_BADGES: Record<LeaderModeId, string> = {
-  revision: "REV",
-  history: "OPS",
-  graph: "GRAPH",
-  bookmark: "BOOK",
-  theme: "THEME",
+  action: "ACT",
+  ops: "OPS",
+  view: "VIEW",
+  marks: "MARK",
 };
 
 const DEFAULT_MODE_BINDINGS: Record<LeaderModeId, BindingMap> = {
-  revision: {
+  action: {
     n: "new",
     e: "edit",
     d: "describe",
@@ -92,8 +104,9 @@ const DEFAULT_MODE_BINDINGS: Record<LeaderModeId, BindingMap> = {
     s: "squash",
     y: "duplicate",
     z: "restore",
+    m: "merge-mode",
   },
-  history: {
+  ops: {
     u: "undo",
     r: "redo",
     f: "git-fetch",
@@ -102,52 +115,187 @@ const DEFAULT_MODE_BINDINGS: Record<LeaderModeId, BindingMap> = {
     v: "obslog",
     g: "back-log",
   },
-  graph: {
+  view: {
     "1": "layout-chronological",
     "2": "layout-mainline",
     "3": "layout-bookmark-centric",
     "4": "layout-wc-focused",
     "5": "layout-topological",
-    m: "merge-mode",
     c: "toggle-sidebar",
+    t: "theme-picker",
     r: "refresh",
     f: "toggle-files",
     x: "toggle-description",
     h: "toggle-help",
+    "/": "revset",
+    "ctrl+d": "diff-toggle",
   },
-  bookmark: {
+  marks: {
     s: "bookmark-set",
     d: "bookmark-delete",
-  },
-  theme: {
-    t: "theme-picker",
-    h: "toggle-help",
   },
 };
 
 const DEFAULT_IDLE_BINDINGS: BindingMap = {
-  "/": "revset",
-  "ctrl+d": "diff-toggle",
   h: "toggle-help",
+  "ctrl+d": "diff-toggle",
+};
+
+const DEFAULT_COMMAND_LABELS: Record<CommandId, string> = {
+  new: "New",
+  edit: "Edit",
+  describe: "Describe",
+  rebase: "Rebase",
+  insert: "Insert",
+  abandon: "Abandon",
+  squash: "Squash",
+  duplicate: "Duplicate",
+  undo: "Undo",
+  redo: "Redo",
+  "git-fetch": "Fetch",
+  "git-push": "Push",
+  "bookmark-set": "BM Set",
+  "bookmark-delete": "BM Del",
+  "merge-mode": "Merge",
+  "theme-picker": "Theme",
+  oplog: "OpLog",
+  obslog: "Obslog",
+  "back-log": "Back",
+  restore: "Restore",
+  "layout-chronological": "Layout Chron",
+  "layout-mainline": "Layout Main",
+  "layout-bookmark-centric": "Layout BM",
+  "layout-wc-focused": "Layout WC",
+  "layout-topological": "Layout Topo",
+  "toggle-sidebar": "Sidebar",
+  refresh: "Refresh",
+  "toggle-help": "Help",
+  "toggle-files": "Files",
+  "toggle-description": "Description",
+  revset: "Revset",
+  "diff-toggle": "Diff",
+};
+
+const DEFAULT_STATUS_CONTEXTS: Record<StatusContextId, StatusHintItem[]> = {
+  oplog: [
+    { key: "r", label: "Restore", tone: "ops" },
+    { key: "g", label: "Log", tone: "ops" },
+    { key: "j/k", label: "Move", tone: "neutral" },
+    { key: "Esc", label: "Exit", tone: "neutral" },
+  ],
+  obslog: [
+    { key: "g", label: "Log", tone: "ops" },
+    { key: "j/k", label: "Move", tone: "neutral" },
+    { key: "Esc", label: "Exit", tone: "neutral" },
+  ],
+  diff: [
+    { key: "^d", label: "Log", tone: "view" },
+    { key: "[ ]", label: "File", tone: "view" },
+    { key: "j/k", label: "Move", tone: "neutral" },
+    { key: "Esc", label: "Exit", tone: "neutral" },
+  ],
+  merge: [
+    { key: "Space", label: "Select", tone: "action" },
+    { key: "Enter", label: "Confirm", tone: "action" },
+    { key: "Esc", label: "Cancel", tone: "neutral" },
+  ],
+  rebase: [
+    { key: "Enter", label: "Confirm", tone: "action" },
+    { key: "Esc", label: "Cancel", tone: "neutral" },
+  ],
+  describe: [
+    { key: "Enter", label: "Apply", tone: "neutral" },
+    { key: "Esc", label: "Cancel", tone: "neutral" },
+  ],
+  revset: [
+    { key: "Enter", label: "Apply", tone: "neutral" },
+    { key: "Esc", label: "Cancel", tone: "neutral" },
+  ],
+  themePicker: [
+    { key: "j/k", label: "Select", tone: "view" },
+    { key: "Enter", label: "Apply", tone: "view" },
+    { key: "Esc", label: "Cancel", tone: "neutral" },
+  ],
+};
+
+const DEFAULT_STATUS_CONTEXT_ORDER: StatusContextId[] = [
+  "oplog",
+  "obslog",
+  "diff",
+  "merge",
+  "rebase",
+  "describe",
+  "revset",
+  "themePicker",
+];
+
+const DEFAULT_STATUS_CONTEXT_LABELS: Record<StatusContextId, string> = {
+  oplog: "OPLOG",
+  obslog: "OBSLOG",
+  diff: "DIFF",
+  merge: "MERGE",
+  rebase: "REBASE",
+  describe: "DESCRIBE",
+  revset: "REVSET",
+  themePicker: "THEME",
 };
 
 const DEFAULT_CONFIG: TuiKeymapConfig = {
   stickyModes: true,
-  showIdleBindingsInStatus: true,
+  showIdleBindingsInStatus: false,
+  showLeaderTriggersInStatus: true,
   modeOrder: [...LEADER_MODE_IDS],
+  statusContextOrder: [...DEFAULT_STATUS_CONTEXT_ORDER],
   exitKeys: ["escape", "ctrl+g"],
   leaders: { ...DEFAULT_LEADERS },
   labels: { ...DEFAULT_LABELS },
   badges: { ...DEFAULT_BADGES },
   idleBindings: { ...DEFAULT_IDLE_BINDINGS },
   modeBindings: {
-    revision: { ...DEFAULT_MODE_BINDINGS.revision },
-    history: { ...DEFAULT_MODE_BINDINGS.history },
-    graph: { ...DEFAULT_MODE_BINDINGS.graph },
-    bookmark: { ...DEFAULT_MODE_BINDINGS.bookmark },
-    theme: { ...DEFAULT_MODE_BINDINGS.theme },
+    action: { ...DEFAULT_MODE_BINDINGS.action },
+    ops: { ...DEFAULT_MODE_BINDINGS.ops },
+    view: { ...DEFAULT_MODE_BINDINGS.view },
+    marks: { ...DEFAULT_MODE_BINDINGS.marks },
+  },
+  commandLabels: { ...DEFAULT_COMMAND_LABELS },
+  statusContextLabels: { ...DEFAULT_STATUS_CONTEXT_LABELS },
+  statusContexts: {
+    oplog: [...DEFAULT_STATUS_CONTEXTS.oplog],
+    obslog: [...DEFAULT_STATUS_CONTEXTS.obslog],
+    diff: [...DEFAULT_STATUS_CONTEXTS.diff],
+    merge: [...DEFAULT_STATUS_CONTEXTS.merge],
+    rebase: [...DEFAULT_STATUS_CONTEXTS.rebase],
+    describe: [...DEFAULT_STATUS_CONTEXTS.describe],
+    revset: [...DEFAULT_STATUS_CONTEXTS.revset],
+    themePicker: [...DEFAULT_STATUS_CONTEXTS.themePicker],
   },
 };
+
+function canonicalModeId(raw: string): LeaderModeId | null {
+  const id = raw.trim().toLowerCase();
+  if (LEADER_MODE_SET.has(id)) return id as LeaderModeId;
+  const aliases: Record<string, LeaderModeId> = {
+    revision: "action",
+    history: "ops",
+    graph: "view",
+    bookmark: "marks",
+    theme: "view",
+  };
+  return aliases[id] || null;
+}
+
+function canonicalStatusContextId(raw: string): StatusContextId | null {
+  const id = raw.trim();
+  if (!id) return null;
+  const normalized = id.toLowerCase();
+  if (STATUS_CONTEXT_SET.has(normalized)) return normalized as StatusContextId;
+  const aliases: Record<string, StatusContextId> = {
+    theme: "themePicker",
+    themepicker: "themePicker",
+    "theme-picker": "themePicker",
+  };
+  return aliases[normalized] || null;
+}
 
 function asObject(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
@@ -207,6 +355,38 @@ function readBindingMap(value: unknown): BindingMap {
   return out;
 }
 
+function readTone(value: unknown): ToneId | null {
+  if (typeof value !== "string") return null;
+  const lowered = value.trim().toLowerCase();
+  if (lowered === "neutral") return "neutral";
+  const mode = canonicalModeId(lowered);
+  return mode || null;
+}
+
+function readStatusHintItems(value: unknown): StatusHintItem[] {
+  const out: StatusHintItem[] = [];
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const obj = asObject(item);
+      const key = asString(obj.key);
+      const label = asString(obj.label);
+      if (!key || !label) continue;
+      const tone = readTone(obj.tone) || "neutral";
+      out.push({ key, label, tone });
+    }
+    return out;
+  }
+
+  const obj = asObject(value);
+  for (const [key, rawLabel] of Object.entries(obj)) {
+    const label = asString(rawLabel);
+    if (!label) continue;
+    out.push({ key, label, tone: "neutral" });
+  }
+  return out;
+}
+
 export function resolveTuiKeymapConfig(rawConfig: unknown): TuiKeymapConfig {
   const raw = asObject(rawConfig);
   const resolved: TuiKeymapConfig = {
@@ -214,18 +394,33 @@ export function resolveTuiKeymapConfig(rawConfig: unknown): TuiKeymapConfig {
     showIdleBindingsInStatus: typeof raw.showIdleBindingsInStatus === "boolean"
       ? raw.showIdleBindingsInStatus
       : DEFAULT_CONFIG.showIdleBindingsInStatus,
+    showLeaderTriggersInStatus: typeof raw.showLeaderTriggersInStatus === "boolean"
+      ? raw.showLeaderTriggersInStatus
+      : DEFAULT_CONFIG.showLeaderTriggersInStatus,
     modeOrder: [...DEFAULT_CONFIG.modeOrder],
+    statusContextOrder: [...DEFAULT_CONFIG.statusContextOrder],
     exitKeys: [...DEFAULT_CONFIG.exitKeys],
     leaders: { ...DEFAULT_CONFIG.leaders },
     labels: { ...DEFAULT_CONFIG.labels },
     badges: { ...DEFAULT_CONFIG.badges },
     idleBindings: { ...DEFAULT_CONFIG.idleBindings },
     modeBindings: {
-      revision: { ...DEFAULT_CONFIG.modeBindings.revision },
-      history: { ...DEFAULT_CONFIG.modeBindings.history },
-      graph: { ...DEFAULT_CONFIG.modeBindings.graph },
-      bookmark: { ...DEFAULT_CONFIG.modeBindings.bookmark },
-      theme: { ...DEFAULT_CONFIG.modeBindings.theme },
+      action: { ...DEFAULT_CONFIG.modeBindings.action },
+      ops: { ...DEFAULT_CONFIG.modeBindings.ops },
+      view: { ...DEFAULT_CONFIG.modeBindings.view },
+      marks: { ...DEFAULT_CONFIG.modeBindings.marks },
+    },
+    commandLabels: { ...DEFAULT_CONFIG.commandLabels },
+    statusContextLabels: { ...DEFAULT_CONFIG.statusContextLabels },
+    statusContexts: {
+      oplog: [...DEFAULT_CONFIG.statusContexts.oplog],
+      obslog: [...DEFAULT_CONFIG.statusContexts.obslog],
+      diff: [...DEFAULT_CONFIG.statusContexts.diff],
+      merge: [...DEFAULT_CONFIG.statusContexts.merge],
+      rebase: [...DEFAULT_CONFIG.statusContexts.rebase],
+      describe: [...DEFAULT_CONFIG.statusContexts.describe],
+      revset: [...DEFAULT_CONFIG.statusContexts.revset],
+      themePicker: [...DEFAULT_CONFIG.statusContexts.themePicker],
     },
   };
 
@@ -233,11 +428,22 @@ export function resolveTuiKeymapConfig(rawConfig: unknown): TuiKeymapConfig {
     const next: LeaderModeId[] = [];
     for (const v of raw.modeOrder) {
       if (typeof v !== "string") continue;
-      const id = v.trim().toLowerCase();
-      if (!LEADER_MODE_SET.has(id)) continue;
-      if (!next.includes(id as LeaderModeId)) next.push(id as LeaderModeId);
+      const id = canonicalModeId(v);
+      if (!id) continue;
+      if (!next.includes(id)) next.push(id);
     }
     if (next.length > 0) resolved.modeOrder = next;
+  }
+
+  if (Array.isArray(raw.statusContextOrder)) {
+    const next: StatusContextId[] = [];
+    for (const v of raw.statusContextOrder) {
+      if (typeof v !== "string") continue;
+      const id = canonicalStatusContextId(v);
+      if (!id) continue;
+      if (!next.includes(id)) next.push(id);
+    }
+    if (next.length > 0) resolved.statusContextOrder = next;
   }
 
   if (Array.isArray(raw.exitKeys)) {
@@ -248,32 +454,65 @@ export function resolveTuiKeymapConfig(rawConfig: unknown): TuiKeymapConfig {
   }
 
   const leaderObj = asObject(raw.leaders);
-  for (const mode of LEADER_MODE_IDS) {
-    const v = asString(leaderObj[mode]);
+  for (const [rawMode, rawValue] of Object.entries(leaderObj)) {
+    const mode = canonicalModeId(rawMode);
+    if (!mode) continue;
+    const v = asString(rawValue);
     if (!v) continue;
     const normalized = normalizeKeySpec(v);
     if (normalized) resolved.leaders[mode] = normalized;
   }
 
   const labelObj = asObject(raw.labels);
-  for (const mode of LEADER_MODE_IDS) {
-    const v = asString(labelObj[mode]);
+  for (const [rawMode, rawValue] of Object.entries(labelObj)) {
+    const mode = canonicalModeId(rawMode);
+    if (!mode) continue;
+    const v = asString(rawValue);
     if (v) resolved.labels[mode] = v;
   }
 
   const badgeObj = asObject(raw.badges);
-  for (const mode of LEADER_MODE_IDS) {
-    const v = asString(badgeObj[mode]);
+  for (const [rawMode, rawValue] of Object.entries(badgeObj)) {
+    const mode = canonicalModeId(rawMode);
+    if (!mode) continue;
+    const v = asString(rawValue);
     if (v) resolved.badges[mode] = v;
+  }
+
+  const commandLabelObj = asObject(raw.commandLabels);
+  for (const [rawCommand, rawLabel] of Object.entries(commandLabelObj)) {
+    const command = asString(rawCommand);
+    const label = asString(rawLabel);
+    if (!command || !label) continue;
+    if (!COMMAND_ID_SET.has(command)) continue;
+    resolved.commandLabels[command as CommandId] = label;
+  }
+
+  const statusContextLabelObj = asObject(raw.statusContextLabels);
+  for (const [rawContext, rawLabel] of Object.entries(statusContextLabelObj)) {
+    const context = canonicalStatusContextId(rawContext);
+    const label = asString(rawLabel);
+    if (!context || !label) continue;
+    resolved.statusContextLabels[context] = label;
   }
 
   const idle = readBindingMap(raw.idleBindings);
   resolved.idleBindings = { ...resolved.idleBindings, ...idle };
 
   const modeBindingsObj = asObject(raw.modeBindings);
-  for (const mode of LEADER_MODE_IDS) {
-    const modeRaw = readBindingMap(modeBindingsObj[mode]);
+  for (const [rawMode, modeValue] of Object.entries(modeBindingsObj)) {
+    const mode = canonicalModeId(rawMode);
+    if (!mode) continue;
+    const modeRaw = readBindingMap(modeValue);
     resolved.modeBindings[mode] = { ...resolved.modeBindings[mode], ...modeRaw };
+  }
+
+  const statusContextsObj = asObject(raw.statusContexts);
+  for (const [rawContext, rawItems] of Object.entries(statusContextsObj)) {
+    const context = canonicalStatusContextId(rawContext);
+    if (!context) continue;
+    const parsed = readStatusHintItems(rawItems);
+    if (parsed.length > 0) resolved.statusContexts[context] = parsed;
   }
 
   return resolved;
@@ -319,40 +558,16 @@ export function findLeaderModeForEvent(config: TuiKeymapConfig, key: KeyEvent): 
   return null;
 }
 
-export function commandLabel(command: CommandId): string {
-  const map: Record<CommandId, string> = {
-    new: "New",
-    edit: "Edit",
-    describe: "Describe",
-    rebase: "Rebase",
-    insert: "Insert",
-    abandon: "Abandon",
-    squash: "Squash",
-    duplicate: "Duplicate",
-    undo: "Undo",
-    redo: "Redo",
-    "git-fetch": "Fetch",
-    "git-push": "Push",
-    "bookmark-set": "BM Set",
-    "bookmark-delete": "BM Del",
-    "merge-mode": "Merge",
-    "theme-picker": "Theme",
-    oplog: "OpLog",
-    obslog: "Obslog",
-    "back-log": "Back",
-    restore: "Restore",
-    "layout-chronological": "Layout Chron",
-    "layout-mainline": "Layout Main",
-    "layout-bookmark-centric": "Layout BM",
-    "layout-wc-focused": "Layout WC",
-    "layout-topological": "Layout Topo",
-    "toggle-sidebar": "Sidebar",
-    refresh: "Refresh",
-    "toggle-help": "Help",
-    "toggle-files": "Files",
-    "toggle-description": "Description",
-    revset: "Revset",
-    "diff-toggle": "Diff",
-  };
-  return map[command] || command;
+export function commandLabel(command: CommandId, labels?: Partial<Record<CommandId, string>>): string {
+  return labels?.[command] || DEFAULT_COMMAND_LABELS[command] || command;
+}
+
+export function formatKeyHint(spec: string): string {
+  const key = normalizeKeySpec(spec);
+  if (!key) return spec;
+  const parts = key.split("+");
+  const base = parts[parts.length - 1] || "";
+  const mods = new Set(parts.slice(0, -1));
+  const prefix = `${mods.has("ctrl") ? "^" : ""}${mods.has("alt") ? "!" : ""}${mods.has("meta") ? "M-" : ""}`;
+  return `${prefix}${base}`;
 }

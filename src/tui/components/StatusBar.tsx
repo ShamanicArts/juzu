@@ -3,36 +3,158 @@ import { RGBA } from "@opentui/core";
 import { state } from "../../core/state";
 import { tuiState } from "../../core/state-tui";
 import { UI_TOKENS } from "../../core/ui-tokens";
-import { commandLabel, type TuiKeymapConfig } from "../../core/tui-keymap";
+import { mixHex } from "../../core/color-utils";
+import { commandLabel, formatKeyHint, type StatusContextId, type TuiKeymapConfig } from "../../core/tui-keymap";
 
-type Hint = { key: string; label: string };
+type Tone = "action" | "ops" | "view" | "marks" | "neutral";
+type Item = { key: string; label: string; tone: Tone };
 
-const COLORS = {
-  barBg: () => RGBA.fromHex(UI_TOKENS.slate.panel),
-  modeBg: () => RGBA.fromHex(UI_TOKENS.slate.bg2),
-  modeText: () => RGBA.fromHex(UI_TOKENS.slate.text),
-  badgeMutedBg: () => RGBA.fromHex(UI_TOKENS.slate.bg2),
-  badgeMutedText: () => RGBA.fromHex(UI_TOKENS.slate.textMuted),
-  badgeActiveBg: () => RGBA.fromHex(UI_TOKENS.semantic.info),
-  badgeActiveText: () => RGBA.fromHex(UI_TOKENS.slate.bg0),
-  key: () => RGBA.fromHex(UI_TOKENS.semantic.info),
-  action: () => RGBA.fromHex(UI_TOKENS.slate.text),
-  muted: () => RGBA.fromHex(UI_TOKENS.slate.textMuted),
-  error: () => RGBA.fromHex(UI_TOKENS.semantic.error),
+const MODE_TONE: Record<string, Tone> = {
+  action: "action",
+  ops: "ops",
+  view: "view",
+  marks: "marks",
 };
 
+function toneHex(tone: Tone): string {
+  switch (tone) {
+    case "action":
+      return (UI_TOKENS.semantic as any).modeAction || UI_TOKENS.semantic.warn;
+    case "ops":
+      return (UI_TOKENS.semantic as any).modeOps || UI_TOKENS.semantic.info;
+    case "view":
+      return (UI_TOKENS.semantic as any).modeView || UI_TOKENS.semantic.modeLog;
+    case "marks":
+      return (UI_TOKENS.semantic as any).modeMarks || UI_TOKENS.semantic.success;
+    default:
+      return UI_TOKENS.slate.textMuted;
+  }
+}
+
+function itemBg(tone: Tone, _themeVersion?: number): RGBA {
+  return RGBA.fromHex(mixHex(UI_TOKENS.slate.bg2, toneHex(tone), 0.24));
+}
+
+function itemFg(tone: Tone, _themeVersion?: number): RGBA {
+  return RGBA.fromHex(mixHex(UI_TOKENS.slate.textMuted, toneHex(tone), 0.34));
+}
+
+function statusContextActive(context: StatusContextId): boolean {
+  switch (context) {
+    case "oplog":
+      return state.viewMode === "oplog";
+    case "obslog":
+      return state.viewMode === "obslog";
+    case "diff":
+      return state.viewMode === "diff";
+    case "merge":
+      return tuiState.mergeMode;
+    case "rebase":
+      return Boolean(state.rebaseSourceId);
+    case "describe":
+      return state.describeMode;
+    case "revset":
+      return tuiState.revsetMode;
+    case "themePicker":
+      return tuiState.themePickerMode;
+    default:
+      return false;
+  }
+}
+
 export function StatusBar(props: { width: number; height: number; themeVersion?: number; keymap: TuiKeymapConfig }) {
-  const currentMode = createMemo(() => {
-    if (tuiState.revsetMode) return "REVSET";
-    if (state.describeMode) return "DESCRIBE";
-    if (state.rebaseSourceId) return "REBASE";
-    if (tuiState.mergeMode) return "MERGE";
-    if (tuiState.themePickerMode) return "THEME";
-    if (state.viewMode === "oplog") return "OPLOG";
-    if (state.viewMode === "obslog") return "OBSLOG";
-    if (state.viewMode === "diff") return "DIFF";
+  const activeStatusContext = createMemo<StatusContextId | null>(() => {
+    for (const id of props.keymap.statusContextOrder) {
+      if (statusContextActive(id)) return id;
+    }
+    return null;
+  });
+
+  const modeLabel = createMemo(() => {
+    const context = activeStatusContext();
+    if (context) return props.keymap.statusContextLabels[context] || context.toUpperCase();
     if (tuiState.activeLeaderMode) return props.keymap.labels[tuiState.activeLeaderMode].toUpperCase();
     return "LOG";
+  });
+
+  const modeTint = createMemo(() => {
+    const context = activeStatusContext();
+    if (context === "oplog" || context === "obslog") return toneHex("ops");
+    if (context === "diff" || context === "themePicker") return toneHex("view");
+    if (context === "merge" || context === "rebase") return toneHex("action");
+    if (tuiState.activeLeaderMode) return toneHex(MODE_TONE[tuiState.activeLeaderMode] || "neutral");
+    return UI_TOKENS.semantic.modeLog;
+  });
+
+  const modeBg = createMemo(() => {
+    props.themeVersion;
+    return RGBA.fromHex(modeTint());
+  });
+
+  const barBg = createMemo(() => {
+    props.themeVersion;
+    return RGBA.fromHex(UI_TOKENS.slate.panel);
+  });
+
+  const keyColor = createMemo(() => {
+    props.themeVersion;
+    return RGBA.fromHex(UI_TOKENS.semantic.info);
+  });
+
+  const darkText = createMemo(() => {
+    props.themeVersion;
+    return RGBA.fromHex(UI_TOKENS.slate.bg0);
+  });
+
+  const mutedText = createMemo(() => {
+    props.themeVersion;
+    return RGBA.fromHex(UI_TOKENS.slate.textMuted);
+  });
+
+  const errorText = createMemo(() => {
+    props.themeVersion;
+    return RGBA.fromHex(UI_TOKENS.semantic.error);
+  });
+
+  const contextItems = createMemo<Item[] | null>(() => {
+    const context = activeStatusContext();
+    if (!context) return null;
+    const configured = props.keymap.statusContexts[context] || [];
+    return configured.map((item) => ({
+      key: formatKeyHint(item.key),
+      label: item.label,
+      tone: item.tone,
+    }));
+  });
+
+  const items = createMemo<Item[]>(() => {
+    const ctx = contextItems();
+    if (ctx) return ctx;
+
+    if (tuiState.activeLeaderMode) {
+      const tone = MODE_TONE[tuiState.activeLeaderMode] || "neutral";
+      const modeItems = Object.entries(props.keymap.modeBindings[tuiState.activeLeaderMode]).map(([key, command]) => ({
+        key: formatKeyHint(key),
+        label: commandLabel(command, props.keymap.commandLabels),
+        tone,
+      }));
+      modeItems.push({ key: "Esc/^g", label: "Exit", tone: "neutral" });
+      return modeItems;
+    }
+
+    const modeItems: Item[] = props.keymap.modeOrder.map((mode) => ({
+      key: props.keymap.showLeaderTriggersInStatus ? formatKeyHint(props.keymap.leaders[mode]) : "",
+      label: props.keymap.badges[mode],
+      tone: MODE_TONE[mode] || "neutral",
+    }));
+
+    if (!props.keymap.showIdleBindingsInStatus) return modeItems;
+    const idleItems = Object.entries(props.keymap.idleBindings).map(([key, command]) => ({
+      key: formatKeyHint(key),
+      label: commandLabel(command, props.keymap.commandLabels),
+      tone: "neutral" as const,
+    }));
+    return [...modeItems, ...idleItems];
   });
 
   const showStatusMessage = createMemo(() => {
@@ -44,50 +166,26 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
     return !tuiState.activeLeaderMode;
   });
 
-  const badgeRows = createMemo(() => {
-    return props.keymap.modeOrder.map((mode) => ({
-      id: mode,
-      active: tuiState.activeLeaderMode === mode,
-      badge: props.keymap.badges[mode],
-      trigger: props.keymap.leaders[mode],
-    }));
-  });
+  const wrappedRows = createMemo(() => {
+    const rows: Item[][] = [];
+    const maxRows = Math.max(1, props.height - (showStatusMessage() ? 1 : 0));
+    const firstRowWidth = Math.max(20, props.width - 14);
+    const otherRowWidth = Math.max(20, props.width - 2);
+    const segmentWidth = (item: Item) => item.key.length + item.label.length + 6;
 
-  const hintItems = createMemo<Hint[]>(() => {
-    if (tuiState.activeLeaderMode) {
-      return Object.entries(props.keymap.modeBindings[tuiState.activeLeaderMode])
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([key, command]) => ({ key, label: commandLabel(command) }));
-    }
-
-    const leaders: Hint[] = props.keymap.modeOrder.map((mode) => ({
-      key: props.keymap.leaders[mode],
-      label: props.keymap.labels[mode],
-    }));
-
-    if (!props.keymap.showIdleBindingsInStatus) return leaders;
-    const idle = Object.entries(props.keymap.idleBindings)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([key, command]) => ({ key, label: commandLabel(command) }));
-    return [...leaders, ...idle];
-  });
-
-  const wrappedHintRows = createMemo(() => {
-    const rows: Hint[][] = [];
-    const maxRows = Math.max(1, props.height - 1 - (showStatusMessage() ? 1 : 0));
-    const maxWidth = Math.max(16, props.width - 2);
-    const segmentWidth = (item: Hint) => item.key.length + item.label.length + 4;
-
-    let current: Hint[] = [];
+    let current: Item[] = [];
     let used = 0;
+    let rowIndex = 0;
 
-    for (const item of hintItems()) {
+    for (const item of items()) {
+      const limit = rowIndex === 0 ? firstRowWidth : otherRowWidth;
       const w = segmentWidth(item);
-      if (used + w > maxWidth && current.length > 0) {
+      if (used + w > limit && current.length > 0) {
         rows.push(current);
         if (rows.length >= maxRows) return rows;
         current = [item];
         used = w;
+        rowIndex++;
       } else {
         current.push(item);
         used += w;
@@ -98,64 +196,44 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
     return rows;
   });
 
-  const themeBarBg = createMemo(() => {
-    props.themeVersion;
-    return COLORS.barBg();
-  });
-
   return (
-    <box height={props.height} backgroundColor={themeBarBg()} flexDirection="column">
-      <box height={1} flexDirection="row" alignItems="center">
-        <box backgroundColor={COLORS.modeBg()} paddingLeft={1} paddingRight={1}>
-          <text fg={COLORS.modeText()}>
-            <strong>{currentMode()}</strong>
-          </text>
-        </box>
+    <box height={props.height} backgroundColor={barBg()} flexDirection="column">
+      <For each={wrappedRows()}>
+        {(row, idx) => (
+          <box height={1} flexDirection="row" alignItems="center">
+            <Show when={idx() === 0}>
+              <box backgroundColor={modeBg()} paddingLeft={1} paddingRight={1}>
+                <text fg={darkText()}>
+                  <strong>{modeLabel()}</strong>
+                </text>
+              </box>
+            </Show>
 
-        <box paddingLeft={1} flexDirection="row">
-          <For each={badgeRows()}>
-            {(badge) => (
-              <>
-                <box backgroundColor={badge.active ? COLORS.badgeActiveBg() : COLORS.badgeMutedBg()} paddingLeft={1} paddingRight={1}>
-                  <text fg={badge.active ? COLORS.badgeActiveText() : COLORS.badgeMutedText()}>
-                    {badge.badge}
-                  </text>
-                  <Show when={!badge.active}>
-                    <text fg={COLORS.badgeMutedText()}>:{badge.trigger}</text>
-                  </Show>
-                </box>
-                <text> </text>
-              </>
-            )}
-          </For>
-        </box>
-
-        <box flexGrow={1} />
-        <Show when={tuiState.activeLeaderMode}>
-          <box paddingRight={1}>
-            <text fg={COLORS.muted()}>Esc/Ctrl+g exit mode</text>
-          </box>
-        </Show>
-      </box>
-
-      <For each={wrappedHintRows()}>
-        {(row) => (
-          <box height={1} paddingLeft={1} flexDirection="row">
-            <For each={row}>
-              {(item) => (
-                <box flexDirection="row">
-                  <text fg={COLORS.key()}>{item.key}</text>
-                  <text fg={COLORS.action()}> {item.label} </text>
-                </box>
-              )}
-            </For>
+            <box paddingLeft={idx() === 0 ? 2 : 1} flexDirection="row">
+              <For each={row}>
+                {(item) => (
+                  <>
+                    <Show when={item.key.length > 0}>
+                      <text fg={keyColor()}>{item.key}</text>
+                      <text> </text>
+                    </Show>
+                    <box backgroundColor={itemBg(item.tone, props.themeVersion)} paddingLeft={1} paddingRight={1}>
+                      <text fg={itemFg(item.tone, props.themeVersion)}>{item.label}</text>
+                    </box>
+                    <text> </text>
+                  </>
+                )}
+              </For>
+            </box>
           </box>
         )}
       </For>
 
       <Show when={showStatusMessage()}>
         <box height={1} paddingLeft={1}>
-          <text fg={state.statusMessage?.startsWith("Error") ? COLORS.error() : COLORS.muted()}>{state.statusMessage}</text>
+          <text fg={state.statusMessage?.startsWith("Error") ? errorText() : mutedText()}>
+            {state.statusMessage}
+          </text>
         </box>
       </Show>
     </box>

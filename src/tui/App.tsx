@@ -107,7 +107,7 @@ function App() {
   const [confirmPrompt, setConfirmPrompt] = createSignal<string | null>(null);
   const [themeOptions, setThemeOptions] = createSignal<string[]>(["slate", "ember"]);
   const CLIPBOARD_ERROR_STATUS = "Error: clipboard copy failed in terminal session";
-  const keymapConfig = () => resolveTuiKeymapConfig((getRuntimeConfig() as any)?.tui?.keymap);
+  const keymapConfig = () => resolveTuiKeymapConfig(getRuntimeConfig().tui.keymap);
 
   const tryRawOsc52Copy = (text: string, target: "c" | "p") => {
     try {
@@ -854,6 +854,10 @@ function App() {
 
     // Handle full diff mode
     if (state.viewMode === "diff") {
+      if (matchesKeySpec("ctrl+d", key)) {
+        handleBackToLog();
+        return;
+      }
       if (isPrevDiffFileKey(key, name)) {
         cycleSidebarDiffFile(-1);
         return;
@@ -1389,11 +1393,11 @@ function App() {
 
     // Keep status bar height stable so graph area does not resize when
     // mode/status rows appear (leader mode, theme messages, etc).
-    let rows = w < 90 ? 4 : 3;
-    if (w < 70) rows += 1;
+    let rows = w < 90 ? 3 : 2;
+    if (w < 70) rows = 3;
 
     const maxAllowed = Math.max(1, h - 8);
-    return Math.max(1, Math.min(rows, Math.min(4, maxAllowed)));
+    return Math.max(1, Math.min(rows, Math.min(3, maxAllowed)));
   };
   // status bar + footer row
   const mainHeight = () => Math.max(1, tuiState.termSize.height - statusBarHeight() - 1);
