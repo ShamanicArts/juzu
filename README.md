@@ -150,6 +150,11 @@ Theme selection precedence:
 2. `JUZU_THEME=<name>`
 3. `--theme=<name>`
 
+Layout startup mode:
+
+- Set `layout.startupMode` in config to choose default graph layout on launch.
+- Allowed values: `chronological`, `mainline`, `bookmark-centric`, `wc-focused`, `topological`.
+
 Theme lookup paths (in order):
 
 1. `<repo>/.juzu/themes/<name>.toml`

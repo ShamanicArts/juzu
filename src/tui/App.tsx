@@ -29,9 +29,13 @@ import { resolveAndApplyRuntimeConfig } from "../core/config-loader";
 const BG = () => RGBA.fromHex(UI_TOKENS.slate.bg0);
 const PANEL_BG = () => RGBA.fromHex(UI_TOKENS.slate.panel);
 const RUNTIME = getRuntimeConfig();
+const TUI_FILES_CACHE_MAX_ENTRIES = readPositiveIntEnv("JUZU_FILES_CACHE_MAX_ENTRIES", 48);
 const TUI_LOG_LIMIT = readPositiveIntEnv("JUZU_TUI_LOG_LIMIT", 80);
 const TUI_REFRESH_DEBOUNCE_MS = readPositiveIntEnv("JUZU_TUI_REFRESH_DEBOUNCE_MS", 700);
-const TUI_FILES_PREFETCH_RADIUS = readPositiveIntEnv("JUZU_TUI_FILES_PREFETCH_RADIUS", 8);
+const TUI_FILES_PREFETCH_RADIUS = Math.min(
+  readPositiveIntEnv("JUZU_TUI_FILES_PREFETCH_RADIUS", 8),
+  Math.max(1, Math.floor((TUI_FILES_CACHE_MAX_ENTRIES - 1) / 2))
+);
 const TUI_FILES_PREFETCH_MAX_AGE_MS = readPositiveIntEnv("JUZU_TUI_FILES_PREFETCH_MAX_AGE_MS", 60_000);
 const TUI_FILES_PREFETCH_CONCURRENCY = readPositiveIntEnv("JUZU_TUI_FILES_PREFETCH_CONCURRENCY", 1);
 const TUI_DIFF_PREFETCH_DEBOUNCE_MS = readPositiveIntEnv("JUZU_TUI_DIFF_PREFETCH_DEBOUNCE_MS", 180);

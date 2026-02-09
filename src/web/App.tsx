@@ -278,6 +278,10 @@ function App() {
       try {
         const savedTheme = localStorage.getItem(themePersistKey);
         const serverConfig = await fetch("/api/config").then(r => r.ok ? r.json() : null);
+        const startupMode = serverConfig?.layout?.startupMode;
+        if (typeof startupMode === "string") {
+          actions.setLayoutMode(startupMode as any);
+        }
         const themeToLoad = savedTheme || serverConfig?.theme?.name || "slate";
 
         if (themeToLoad) {

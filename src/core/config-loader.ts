@@ -15,6 +15,9 @@ type ResolveOptions = {
 const DEFAULT_GLOBAL_CONFIG_TOML = `[theme]
 name = "slate"
 
+[layout]
+startupMode = "chronological"
+
 [web]
 pollIntervalMs = 3000
 navigationLockDefault = false
@@ -132,6 +135,10 @@ function deepMerge<T>(base: T, patch: DeepPartial<T> | undefined): T {
 
 function clampConfig(config: JjVizRuntimeConfig): JjVizRuntimeConfig {
   const out = JSON.parse(JSON.stringify(config)) as JjVizRuntimeConfig;
+  const layoutModes = new Set(["chronological", "mainline", "bookmark-centric", "wc-focused", "topological"]);
+  out.layout.startupMode = layoutModes.has(out.layout.startupMode)
+    ? out.layout.startupMode
+    : DEFAULT_RUNTIME_CONFIG.layout.startupMode;
   out.web.pollIntervalMs = Math.max(500, Math.min(60_000, out.web.pollIntervalMs || DEFAULT_RUNTIME_CONFIG.web.pollIntervalMs));
   out.tui.sidebarBreakpointWidth = Math.max(60, Math.min(220, out.tui.sidebarBreakpointWidth || DEFAULT_RUNTIME_CONFIG.tui.sidebarBreakpointWidth));
   out.tui.sidebarMinHeight = Math.max(8, Math.min(80, out.tui.sidebarMinHeight || DEFAULT_RUNTIME_CONFIG.tui.sidebarMinHeight));

@@ -3,6 +3,7 @@ import { createStore } from "solid-js/store";
 import type { CommitNode, FilesCacheEntry, LayoutMode, LayoutResult } from "./types";
 import type { OpLogEntry, ObslogEntry } from "./jj-api";
 import { calculateLayout } from "./layout";
+import { getRuntimeConfig } from "./runtime-config";
 
 export type DiffCacheEntry = {
   atMs: number;
@@ -59,7 +60,7 @@ const initialState: SharedState = {
   obslogChangeId: null,
   obslogSelectedIndex: 0,
 
-  layoutMode: "chronological",
+  layoutMode: getRuntimeConfig().layout.startupMode,
   pinnedNodes: new Map(),
 
   selectedId: null,

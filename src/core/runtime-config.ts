@@ -12,6 +12,9 @@ export interface JjVizRuntimeConfig {
   theme: {
     name: string;
   };
+  layout: {
+    startupMode: "chronological" | "mainline" | "bookmark-centric" | "wc-focused" | "topological";
+  };
   visual: VisualConfig;
   uiTokens: UiTokens;
   web: {
@@ -34,6 +37,9 @@ type DeepPartial<T> = {
 export const DEFAULT_RUNTIME_CONFIG: JjVizRuntimeConfig = {
   theme: {
     name: "slate",
+  },
+  layout: {
+    startupMode: "chronological",
   },
   visual: {
     nodeRadius: 5,

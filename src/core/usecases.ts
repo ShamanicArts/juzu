@@ -5,7 +5,7 @@ import type { OpLogEntry, ObslogEntry } from "./jj-api";
 import { splitDiffByFile } from "./diff";
 
 const DEFAULT_LOG_LIMIT = readPositiveIntEnv("JUZU_LOG_LIMIT", 500);
-const FILES_CACHE_MAX_ENTRIES = readPositiveIntEnv("JUZU_FILES_CACHE_MAX_ENTRIES", 12);
+const FILES_CACHE_MAX_ENTRIES = readPositiveIntEnv("JUZU_FILES_CACHE_MAX_ENTRIES", 48);
 const DIFF_CACHE_MAX_ENTRIES = readPositiveIntEnv("JUZU_DIFF_CACHE_MAX_ENTRIES", 1);
 const DIFF_CACHE_MAX_BYTES = readPositiveIntEnv("JUZU_DIFF_CACHE_MAX_BYTES", 3 * 1024 * 1024);
 const PREFETCH_CONCURRENCY = readPositiveIntEnv("JUZU_PREFETCH_CONCURRENCY", 2);
