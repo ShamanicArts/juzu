@@ -1,4 +1,5 @@
 import { join, isAbsolute } from "node:path";
+import { copyFile, mkdir, readdir, writeFile } from "node:fs/promises";
 import { applyRuntimeConfig, DEFAULT_RUNTIME_CONFIG, type JjVizRuntimeConfig } from "./runtime-config";
 
 type DeepPartial<T> = {
@@ -10,6 +11,92 @@ type ResolveOptions = {
   repoRoot?: string | null;
   appDir: string;
 };
+
+const DEFAULT_GLOBAL_CONFIG_TOML = `[theme]
+name = "slate"
+
+[web]
+pollIntervalMs = 3000
+navigationLockDefault = false
+
+[tui]
+sidebarBreakpointWidth = 90
+sidebarMinHeight = 16
+stackedSidebarRatio = 0.5
+prefetchDiffInLog = false
+clearDiffCacheWhenNotInDiff = true
+`;
+
+let didBootstrapGlobalConfig = false;
+
+function getXdgConfigHome(): string | null {
+  return process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  return await Bun.file(path).exists();
+}
+
+async function bootstrapGlobalConfig(opts: ResolveOptions): Promise<void> {
+  if (didBootstrapGlobalConfig) return;
+  didBootstrapGlobalConfig = true;
+  if (process.env.JUZU_DISABLE_BOOTSTRAP === "1") return;
+
+  const xdg = getXdgConfigHome();
+  if (!xdg) return;
+
+  const globalDir = join(xdg, "juzu");
+  const globalThemesDir = join(globalDir, "themes");
+  const globalConfigPath = join(globalDir, "config.toml");
+  const bundledThemesDir = join(opts.appDir, "themes");
+  const bundledConfigPath = join(opts.appDir, "config.example.toml");
+
+  let createdGlobalConfig = false;
+  let copiedThemes = 0;
+
+  try {
+    await mkdir(globalThemesDir, { recursive: true });
+
+    if (!(await pathExists(globalConfigPath))) {
+      let defaultConfig = DEFAULT_GLOBAL_CONFIG_TOML;
+      try {
+        const bundledConfigFile = Bun.file(bundledConfigPath);
+        if (await bundledConfigFile.exists()) {
+          const raw = await bundledConfigFile.text();
+          if (raw.trim()) defaultConfig = raw;
+        }
+      } catch {
+        // Fallback to inline defaults when bundled config is unavailable.
+      }
+      await writeFile(globalConfigPath, defaultConfig, "utf8");
+      createdGlobalConfig = true;
+    }
+
+    let bundledThemeFiles: string[] = [];
+    try {
+      bundledThemeFiles = (await readdir(bundledThemesDir)).filter((name) => name.endsWith(".toml"));
+    } catch {
+      bundledThemeFiles = [];
+    }
+
+    for (const themeFile of bundledThemeFiles) {
+      const src = join(bundledThemesDir, themeFile);
+      const dst = join(globalThemesDir, themeFile);
+      if (await pathExists(dst)) continue;
+      await copyFile(src, dst);
+      copiedThemes += 1;
+    }
+
+    if (createdGlobalConfig || copiedThemes > 0) {
+      const details: string[] = [];
+      if (createdGlobalConfig) details.push("config.toml");
+      if (copiedThemes > 0) details.push(`${copiedThemes} theme files`);
+      console.log(`🧩 Initialized global juzu config at ${globalDir} (${details.join(", ")})`);
+    }
+  } catch (error) {
+    console.warn(`⚠️ Could not initialize global juzu config: ${String(error)}`);
+  }
+}
 
 function getOption(argv: string[], name: string): string | null {
   const prefix = `${name}=`;
@@ -64,7 +151,7 @@ function clampConfig(config: JjVizRuntimeConfig): JjVizRuntimeConfig {
 }
 
 async function loadThemeByName(name: string, opts: ResolveOptions): Promise<Record<string, unknown> | null> {
-  const xdg = process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
+  const xdg = getXdgConfigHome();
   const candidates: string[] = [];
   if (opts.repoRoot) candidates.push(join(opts.repoRoot, ".juzu", "themes", `${name}.toml`));
   if (xdg) candidates.push(join(xdg, "juzu", "themes", `${name}.toml`));
@@ -82,7 +169,7 @@ async function loadThemeByPath(path: string, opts: ResolveOptions): Promise<Reco
 }
 
 async function loadThemeConfig(opts: ResolveOptions): Promise<DeepPartial<JjVizRuntimeConfig> | null> {
-  const xdg = process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
+  const xdg = getXdgConfigHome();
   const candidates: string[] = [];
   if (opts.repoRoot) candidates.push(join(opts.repoRoot, ".juzu", "themes", "config.toml"));
   if (xdg) candidates.push(join(xdg, "juzu", "themes", "config.toml"));
@@ -95,13 +182,15 @@ async function loadThemeConfig(opts: ResolveOptions): Promise<DeepPartial<JjVizR
 }
 
 export async function resolveRuntimeConfig(opts: ResolveOptions): Promise<JjVizRuntimeConfig> {
+  await bootstrapGlobalConfig(opts);
+
   const argv = opts.argv || process.argv.slice(2);
   const cliTheme = getOption(argv, "--theme");
   const cliConfigPath = getOption(argv, "--config");
   const envTheme = process.env.JUZU_THEME || null;
   const envConfigPath = process.env.JUZU_CONFIG || null;
 
-  const xdg = process.env.XDG_CONFIG_HOME || (process.env.HOME ? join(process.env.HOME, ".config") : null);
+  const xdg = getXdgConfigHome();
   const globalConfigPath = xdg ? join(xdg, "juzu", "config.toml") : null;
   const repoConfigPath = opts.repoRoot ? join(opts.repoRoot, ".juzu.toml") : null;
   const repoLocalConfigPath = opts.repoRoot ? join(opts.repoRoot, ".juzu.local.toml") : null;

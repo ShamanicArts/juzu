@@ -111,6 +111,31 @@ bun run cli.ts --help
 
 juzu supports layered TOML config for both TUI and Web.
 
+On first real run (web or TUI), juzu bootstraps missing global config files:
+
+- `~/.config/juzu/config.toml`
+- `~/.config/juzu/themes/*.toml`
+
+It only creates missing files and never overwrites existing user edits.
+
+To promote your repo/dev config to global config:
+
+```bash
+bun run config:export
+```
+
+Default source priority for export is:
+
+1. `<repo>/.juzu.local.toml`
+2. `<repo>/.juzu.toml`
+3. `<repo>/config.example.toml`
+
+Optional flags:
+
+- `--source=/absolute/or/relative/path.toml`
+- `--target=/absolute/or/relative/path.toml`
+- `--no-backup` (by default, existing global config is backed up first)
+
 Config load order (low to high priority):
 
 1. `~/.config/juzu/config.toml`
@@ -130,6 +155,12 @@ Theme lookup paths (in order):
 1. `<repo>/.juzu/themes/<name>.toml`
 2. `~/.config/juzu/themes/<name>.toml`
 3. bundled `themes/<name>.toml`
+
+To push the repo's bundled themes into your global theme folder for quick testing:
+
+```bash
+bun run themes:export
+```
 
 Bundled themes:
 
