@@ -185,6 +185,26 @@ bun run cli.ts --tui --theme=ember
 
 See `config.example.toml` for all first-pass options.
 
+### TUI Leader Modes
+
+The TUI now defaults to persistent leader modes (no timeout):
+
+- Press a leader key (for example `Ctrl+x`) to enter that action category.
+- The status bar shows mode badges for all leaders, with the active one highlighted.
+- In a leader mode, key actions stay active until you exit with `Esc` or `Ctrl+g`.
+
+Default mode leaders:
+
+- `Ctrl+x` -> Revision
+- `Ctrl+o` -> History/operations
+- `Ctrl+g` -> Graph/layout
+- `Ctrl+b` -> Bookmark
+- `Ctrl+t` -> Theme/UI
+
+You can customize leaders, mode order, mode bindings, and optional idle single-key bindings via `[tui.keymap]` in config.
+
+Note: `Ctrl+s` is often intercepted by terminal flow control unless you disable XON/XOFF (`stty -ixon`), so it is not used by default.
+
 Diff colors are theme-driven. You can optionally override diff rendering colors via:
 
 ```toml

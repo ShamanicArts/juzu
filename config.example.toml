@@ -24,6 +24,62 @@ stackedSidebarRatio = 0.5
 prefetchDiffInLog = false
 clearDiffCacheWhenNotInDiff = true
 
+[tui.keymap]
+# Leader modes are persistent by default (no timeout).
+stickyModes = true
+showIdleBindingsInStatus = true
+modeOrder = ["revision", "history", "graph", "bookmark", "theme"]
+exitKeys = ["escape", "ctrl+g"]
+
+[tui.keymap.leaders]
+revision = "ctrl+x"
+history = "ctrl+o"
+graph = "ctrl+g"
+bookmark = "ctrl+b"
+theme = "ctrl+t"
+
+[tui.keymap.idleBindings]
+# Add optional single-key shortcuts in idle mode if desired.
+# n = "new"
+
+[tui.keymap.modeBindings.revision]
+n = "new"
+e = "edit"
+d = "describe"
+b = "rebase"
+i = "insert"
+a = "abandon"
+s = "squash"
+y = "duplicate"
+z = "restore"
+
+[tui.keymap.modeBindings.history]
+u = "undo"
+r = "redo"
+f = "git-fetch"
+p = "git-push"
+o = "oplog"
+v = "obslog"
+g = "back-log"
+
+[tui.keymap.modeBindings.graph]
+"1" = "layout-chronological"
+"2" = "layout-mainline"
+"3" = "layout-bookmark-centric"
+"4" = "layout-wc-focused"
+"5" = "layout-topological"
+m = "merge-mode"
+c = "toggle-sidebar"
+r = "refresh"
+
+[tui.keymap.modeBindings.bookmark]
+s = "bookmark-set"
+d = "bookmark-delete"
+
+[tui.keymap.modeBindings.theme]
+t = "theme-picker"
+h = "toggle-help"
+
 # Optional: Override specific UI tokens from the theme.
 # These override both the base theme and the theme file.
 # [uiTokens.semantic]
