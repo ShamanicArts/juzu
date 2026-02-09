@@ -19,6 +19,11 @@ export const api = {
     if (revset && revset.trim()) q.set("revset", revset.trim());
     return fetchAPI<CommitNode[]>(`/api/log?${q.toString()}`);
   },
+  nodeCount: async (revset?: string) => {
+    const q = revset && revset.trim() ? new URLSearchParams({ revset: revset.trim() }) : "";
+    const result = await fetchAPI<{ count: number }>(`/api/node-count${q ? "?" + q.toString() : ""}`);
+    return result.count;
+  },
   files: (changeId: string) => fetchAPI<Array<{ type: string; path: string }>>(`/api/files/${encodeURIComponent(changeId)}`),
   diff: async (changeId: string) => {
     const res = await fetch(`/api/diff/${encodeURIComponent(changeId)}`);

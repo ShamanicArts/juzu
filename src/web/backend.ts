@@ -4,6 +4,7 @@ import { api } from "./api";
 export function createWebBackend(): JJBackend {
   return {
     log: async ({ limit, revset }) => api.log(limit, revset),
+    nodeCount: async ({ revset }) => api.nodeCount(revset),
     files: async ({ changeId }) => api.files(changeId),
     diff: async ({ changeId }) => api.diff(changeId),
 

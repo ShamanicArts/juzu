@@ -36,7 +36,7 @@ export function FooterBar(props: { themeVersion?: number }) {
   });
 
   const nodeCount = createMemo(() => {
-    return state.nodes?.length || 0;
+    return state.totalNodeCount ?? state.nodes?.length ?? 0;
   });
 
   const layoutMode = createMemo(() => {

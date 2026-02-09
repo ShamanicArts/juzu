@@ -1273,7 +1273,7 @@ function App() {
         </div>
 
         <div class="jjv-footerRight">
-          <span class="jjv-footerMeta">{state.nodes.length} nodes · {state.layoutMode}</span>
+          <span class="jjv-footerMeta">{state.totalNodeCount ?? state.nodes.length} nodes · {state.layoutMode}</span>
           <span class={`jjv-footerStatus ${isError() ? "jjv-footerStatus--error" : ""}`}>
             {state.statusMessage || "ready"}
           </span>

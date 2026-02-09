@@ -13,6 +13,7 @@ import {
   fetchJJLogWithGitBranches,
   fetchOpLog,
   fetchObslog,
+  fetchTotalNodeCount,
   findJJRoot,
   jjAbandon,
   jjBookmarkDelete,
@@ -235,6 +236,21 @@ const server = Bun.serve({
           "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
         },
       });
+    }
+
+    if (url.pathname === "/api/node-count") {
+      try {
+        const revsetRaw = url.searchParams.get("revset");
+        const count = await fetchTotalNodeCount(PROC_CWD, revsetRaw ?? undefined);
+        return new Response(JSON.stringify({ count }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (e: unknown) {
+        console.error(e);
+        return new Response(JSON.stringify({ count: 0 }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
     }
 
     if (url.pathname === "/api/events") {

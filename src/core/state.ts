@@ -16,6 +16,7 @@ export type ViewMode = "log" | "oplog" | "obslog" | "diff";
 export interface SharedState {
   cwd: string;
   nodes: CommitNode[];
+  totalNodeCount: number;
   filesCache: Map<string, FilesCacheEntry>;
   diffCache: Map<string, DiffCacheEntry>;
   revsetQuery: string;
@@ -47,6 +48,7 @@ export interface SharedState {
 const initialState: SharedState = {
   cwd: "",
   nodes: [],
+  totalNodeCount: 0,
   filesCache: new Map(),
   diffCache: new Map(),
   revsetQuery: "",
@@ -183,6 +185,7 @@ export const actions = {
 
   setStatusMessage: (msg: string) => setState("statusMessage", msg),
   setLoading: (loading: boolean) => setState("isLoading", loading),
+  setTotalNodeCount: (count: number) => setState("totalNodeCount", count),
 
   pinNode: (changeId: string, lane: number) => {
     const next = new Map(state.pinnedNodes);

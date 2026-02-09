@@ -206,6 +206,7 @@ export async function refreshLog(limit = activeLogLimit) {
     } catch {
       _totalNodeCount = 0;
     }
+    actions.setTotalNodeCount(_totalNodeCount);
     actions.setStatusMessage(`nodes:${_totalNodeCount}`);
   } catch (e) {
     actions.setStatusMessage(`Error: ${String(e)}`);

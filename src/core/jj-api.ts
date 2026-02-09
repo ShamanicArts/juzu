@@ -106,8 +106,10 @@ async function getWorkingCopyId(cwd: string): Promise<string> {
  */
 export async function fetchTotalNodeCount(cwd: string, revset?: string): Promise<number> {
   const range = revset && revset.trim() ? revset.trim() : "::";
-  const logText = await runCmdText(["jj", "log", "--no-graph", "-r", range, "-T", "change_id.short()"], cwd, 15000);
-  return logText.trim().split("\n").filter(Boolean).length;
+  const wcId = await getWorkingCopyId(cwd);
+  const logText = await runCmdText(["jj", "log", "--no-graph", "-r", range, "-T", JJ_TEMPLATE], cwd, 30000);
+  const nodes = parseJJLogText(logText, wcId);
+  return nodes.length;
 }
 
 /**
