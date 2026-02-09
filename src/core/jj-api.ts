@@ -1,7 +1,7 @@
 import type { CommitNode, FilesCacheEntry } from "./types";
 
 export const JJ_TEMPLATE =
-  `change_id.short() ++ "\x01" ++ commit_id.short() ++ "\x01" ++ parents.map(|p| p.change_id().short()).join(",") ++ "\x01" ++ author.email() ++ "\x01" ++ author.timestamp() ++ "\x01" ++ bookmarks.join(",") ++ "\x01" ++ description.first_line() ++ "\x01" ++ description ++ "\x01" ++ empty ++ "\x01" ++ conflict ++ "\x01" ++ hidden ++ "\x01" ++ root ++ "\x01<JJ-SEP>\x01"`;
+  `change_id.short() ++ "\x01" ++ commit_id.short() ++ "\x01" ++ parents.map(|p| p.change_id().short()).join(",") ++ "\x01" ++ author.email() ++ "\x01" ++ author.timestamp() ++ "\x01" ++ bookmarks.join(",") ++ "\x01" ++ description.first_line() ++ "\x01" ++ empty ++ "\x01" ++ conflict ++ "\x01" ++ hidden ++ "\x01" ++ root ++ "\x01<JJ-SEP>\x01"`;
 
 export function parseJJLogText(logText: string, wcId: string): CommitNode[] {
   return logText
@@ -10,7 +10,7 @@ export function parseJJLogText(logText: string, wcId: string): CommitNode[] {
     .filter(Boolean)
     .map((block) => {
       const parts = block.split("\x01");
-      if (parts.length < 12) return null;
+      if (parts.length < 11) return null;
 
       const changeId = parts[0].trim();
       const commitId = parts[1].trim();
@@ -18,7 +18,6 @@ export function parseJJLogText(logText: string, wcId: string): CommitNode[] {
       const hidden = parts[parts.length - 2].trim();
       const conflict = parts[parts.length - 3].trim();
       const empty = parts[parts.length - 4].trim();
-      const descriptionFull = parts.slice(7, parts.length - 4).join("\x01").trim();
 
       return {
         changeId,
@@ -29,7 +28,7 @@ export function parseJJLogText(logText: string, wcId: string): CommitNode[] {
         bookmarks: parts[5] ? parts[5].split(",").map((b) => b.trim()).filter(Boolean) : [],
         gitBranches: [],
         descriptionTitle: parts[6].trim(),
-        descriptionFull,
+        descriptionFull: "",
         isEmpty: empty === "true",
         isConflict: conflict === "true",
         isHidden: hidden === "true",
@@ -106,10 +105,12 @@ async function getWorkingCopyId(cwd: string): Promise<string> {
  */
 export async function fetchTotalNodeCount(cwd: string, revset?: string): Promise<number> {
   const range = revset && revset.trim() ? revset.trim() : "::";
-  const wcId = await getWorkingCopyId(cwd);
-  const logText = await runCmdText(["jj", "log", "--no-graph", "-r", range, "-T", JJ_TEMPLATE], cwd, 30000);
-  const nodes = parseJJLogText(logText, wcId);
-  return nodes.length;
+  const out = await runCmdText(["jj", "log", "-r", range, "--count"], cwd, 15000);
+  const m = out.match(/(\d+)/);
+  if (!m?.[1]) throw new Error("Failed to parse jj log --count output");
+  const parsed = Number.parseInt(m[1], 10);
+  if (!Number.isFinite(parsed) || parsed < 0) throw new Error("Invalid jj log --count result");
+  return parsed;
 }
 
 /**
@@ -123,6 +124,11 @@ export async function fetchJJLog(cwd: string, limit: number, revset?: string): P
   ]);
 
   return parseJJLogText(logText, wcId);
+}
+
+export async function fetchCommitDescription(cwd: string, changeId: string): Promise<string> {
+  const out = await runCmdText(["jj", "log", "--no-graph", "-r", changeId, "-T", "description"], cwd, 10000);
+  return out.trimEnd();
 }
 
 export async function fetchGitBranches(cwd: string): Promise<Map<string, string[]>> {
@@ -159,17 +165,14 @@ export async function fetchJJLogWithGitBranches(cwd: string, limit: number, revs
 }
 
 export function enrichNodesWithGitBranches(nodes: CommitNode[], gitBranches: Map<string, string[]>): CommitNode[] {
-  
-  return nodes.map((node) => {
+  for (const node of nodes) {
     const branches =
       gitBranches.get(node.commitId) ||
       gitBranches.get(node.commitId.slice(0, 7)) ||
       [];
-    return {
-      ...node,
-      gitBranches: branches,
-    };
-  });
+    node.gitBranches = branches;
+  }
+  return nodes;
 }
 
 /**
@@ -327,6 +330,10 @@ export async function jjRedo(cwd: string): Promise<void> {
 
 export async function jjGetDiff(changeId: string, cwd: string): Promise<string> {
   return runCmdText(["jj", "diff", "--git", "-r", changeId], cwd);
+}
+
+export async function jjGetDiffForPath(changeId: string, path: string, cwd: string): Promise<string> {
+  return runCmdText(["jj", "diff", "--git", "-r", changeId, "--", path], cwd);
 }
 
 export async function jjGetFiles(changeId: string, cwd: string): Promise<Array<{ type: string; path: string }>> {

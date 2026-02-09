@@ -63,6 +63,15 @@ describe("layout modes", () => {
     expect((byId.get("b1")?.lane ?? 0) > 0).toBe(true);
   });
 
+  test("pinning overrides assigned lanes in a single pass", () => {
+    const pinned = new Map<string, number>([["b1", 5]]);
+    const out = calculateLayout("chronological", fixtureNodes(), {}, pinned);
+    const byId = new Map(out.nodes.map((n) => [n.changeId, n]));
+    expect(byId.get("b1")?.lane).toBe(5);
+    expect(byId.get("b1")?.isPinned).toBe(true);
+    expect(byId.get("c4")?.lane).toBe(0);
+  });
+
   test("all modes produce deterministic lane assignment", () => {
     const modes: LayoutMode[] = ["chronological", "mainline", "bookmark-centric", "wc-focused", "topological"];
     for (const mode of modes) {

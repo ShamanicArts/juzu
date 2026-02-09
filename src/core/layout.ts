@@ -19,6 +19,20 @@ const DEFAULT_CONFIG: GraphConfig = {
   },
 };
 
+function buildChildrenById(nodes: CommitNode[]): Map<string, CommitNode[]> {
+  const childrenById = new Map<string, CommitNode[]>();
+  for (let i = 0; i < nodes.length; i++) {
+    const child = nodes[i]!;
+    for (let p = 0; p < child.parents.length; p++) {
+      const parentId = child.parents[p]!;
+      const arr = childrenById.get(parentId);
+      if (arr) arr.push(child);
+      else childrenById.set(parentId, [child]);
+    }
+  }
+  return childrenById;
+}
+
 function layoutChronological(nodes: CommitNode[], nodesMap: Map<string, CommitNode>) {
   const nodeLanes = new Map<string, number>();
   let nextFreeLane = 0;
@@ -73,11 +87,12 @@ function layoutWcFocused(nodes: CommitNode[], nodesMap: Map<string, CommitNode>)
   }
 
   wc.lane = 0;
+  const childrenById = buildChildrenById(nodes);
   const visited = new Set<string>();
   const queue: Array<[CommitNode, number]> = [[wc, 0]];
 
-  while (queue.length > 0) {
-    const [node, lane] = queue.shift()!;
+  for (let qi = 0; qi < queue.length; qi++) {
+    const [node, lane] = queue[qi]!;
     if (visited.has(node.changeId)) continue;
     visited.add(node.changeId);
 
@@ -88,11 +103,13 @@ function layoutWcFocused(nodes: CommitNode[], nodesMap: Map<string, CommitNode>)
       if (parent && !visited.has(parentId)) queue.push([parent, lane + 1 + idx]);
     });
 
-    nodes.forEach((child) => {
-      if (child.parents.includes(node.changeId) && !visited.has(child.changeId)) {
-        queue.push([child, lane - 1]);
+    const children = childrenById.get(node.changeId);
+    if (children) {
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i]!;
+        if (!visited.has(child.changeId)) queue.push([child, lane - 1]);
       }
-    });
+    }
   }
 
   let maxLane = Math.max(...nodes.map((n) => n.lane || 0));
@@ -137,9 +154,8 @@ function layoutMainline(
   });
 
   // Find heads (nodes with no children)
-  const hasChildren = new Set<string>();
-  nodes.forEach((n) => n.parents.forEach((p) => hasChildren.add(p)));
-  const heads = nodes.filter((n) => !hasChildren.has(n.changeId));
+  const childrenById = buildChildrenById(nodes);
+  const heads = nodes.filter((n) => !childrenById.has(n.changeId));
 
   // Build mainline: find longest/best path from any head to root
   let bestPath: CommitNode[] = [];
@@ -220,18 +236,16 @@ function layoutMainline(
     while (toProcess.length > 0) {
       const current = toProcess.shift()!;
 
-      // Find children
-      nodes.forEach((child) => {
-        if (branchSet.has(child.changeId)) return;
-        if (mainlineSet.has(child.changeId)) return;
-
-        // Child has this node as parent
-        if (child.parents.includes(current.changeId)) {
-          branchSet.add(child.changeId);
-          commits.push(child);
-          toProcess.push(child);
-        }
-      });
+      const children = childrenById.get(current.changeId);
+      if (!children) continue;
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i]!;
+        if (branchSet.has(child.changeId)) continue;
+        if (mainlineSet.has(child.changeId)) continue;
+        branchSet.add(child.changeId);
+        commits.push(child);
+        toProcess.push(child);
+      }
     }
 
     // Sort commits by Y position
@@ -322,7 +336,8 @@ function layoutMainline(
 export function calculateLayout(
   mode: LayoutMode,
   nodes: CommitNode[],
-  config: Partial<GraphConfig> = {}
+  config: Partial<GraphConfig> = {},
+  pinnedNodes?: Map<string, number>
 ): LayoutResult {
   const cfg = { ...DEFAULT_CONFIG, ...config };
   // Shallow-copy nodes but reuse the same object shape to reduce allocation pressure.
@@ -346,11 +361,11 @@ export function calculateLayout(
       isHidden: n.isHidden,
       isRoot: n.isRoot,
       isWorkingCopy: n.isWorkingCopy,
-      lane: n.lane,
-      x: n.x,
-      y: n.y,
+      lane: undefined,
+      x: undefined,
+      y: undefined,
       extraHeight: n.extraHeight,
-      isPinned: n.isPinned,
+      isPinned: false,
     };
     nodesCopy[i] = copy;
     nodesMap.set(copy.changeId, copy);
@@ -375,7 +390,21 @@ export function calculateLayout(
       break;
   }
 
+  if (pinnedNodes && pinnedNodes.size > 0) {
+    for (let i = 0; i < nodesCopy.length; i++) {
+      const node = nodesCopy[i]!;
+      const pinnedLane = pinnedNodes.get(node.changeId);
+      if (pinnedLane === undefined) continue;
+      node.lane = Math.max(0, Math.floor(pinnedLane));
+      node.isPinned = true;
+    }
+  }
+
   // Calculate coordinates
+  for (let i = 0; i < nodesCopy.length; i++) {
+    if (nodesCopy[i]!.lane === undefined) nodesCopy[i]!.lane = 0;
+  }
+
   const maxLane = Math.max(0, ...nodesCopy.map((n) => n.lane || 0));
   const graphWidth = (maxLane + 1) * cfg.laneWidth;
   const textColumnX = cfg.canvasPadding + graphWidth + cfg.textColumnGap;
@@ -439,10 +468,13 @@ export function findConnectionAt(
 ): { from: CommitNode; to: CommitNode } | null {
   const cfg = { ...DEFAULT_CONFIG, ...config };
   const threshold = 8;
+  const thresholdSq = threshold * threshold;
+  const nodesById = new Map<string, CommitNode>();
+  for (let i = 0; i < nodes.length; i++) nodesById.set(nodes[i]!.changeId, nodes[i]!);
 
   for (const node of nodes) {
     for (const parentId of node.parents) {
-      const parent = nodes.find((n) => n.changeId === parentId);
+      const parent = nodesById.get(parentId);
       if (!parent || parent.x === undefined || parent.y === undefined || node.x === undefined || node.y === undefined) {
         continue;
       }
@@ -456,7 +488,7 @@ export function findConnectionAt(
 
       const dx = x - midX;
       const dy = y - midY;
-      if (Math.sqrt(dx * dx + dy * dy) < threshold) {
+      if (dx * dx + dy * dy < thresholdSq) {
         return { from: parent, to: node };
       }
     }

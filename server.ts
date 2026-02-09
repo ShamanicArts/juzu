@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { resolveAndApplyRuntimeConfig } from "./src/core/config-loader";
 import { getRuntimeConfig } from "./src/core/runtime-config";
 import {
+  fetchCommitDescription,
   fetchJJLogWithGitBranches,
   fetchOpLog,
   fetchObslog,
@@ -28,6 +29,7 @@ import {
   jjGitFetch,
   jjGitPush,
   jjGetDiff,
+  jjGetDiffForPath,
   jjGetFiles,
   jjInsertAfter,
   jjMove,
@@ -268,6 +270,20 @@ const server = Bun.serve({
         return new Response("Error fetching diff: " + msg, { status: 500 });
       }
     }
+
+    if (url.pathname.startsWith("/api/diff-file/")) {
+      const id = url.pathname.split("/").pop();
+      const path = url.searchParams.get("path") || "";
+      if (!id) return new Response("Missing id", { status: 400 });
+      if (!path.trim()) return new Response("Missing path", { status: 400 });
+      try {
+        const diff = await jjGetDiffForPath(id, path, PROC_CWD);
+        return new Response(diff);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return new Response("Error fetching file diff: " + msg, { status: 500 });
+      }
+    }
     
     if (url.pathname.startsWith("/api/files/")) {
       const id = url.pathname.split("/").pop();
@@ -278,6 +294,18 @@ const server = Bun.serve({
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         return new Response("Error fetching files: " + msg, { status: 500 });
+      }
+    }
+
+    if (url.pathname.startsWith("/api/description/")) {
+      const id = url.pathname.split("/").pop();
+      if (!id) return new Response("Missing id", { status: 400 });
+      try {
+        const description = await fetchCommitDescription(PROC_CWD, id);
+        return new Response(description);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        return new Response("Error fetching description: " + msg, { status: 500 });
       }
     }
 

@@ -26,7 +26,11 @@ navigationLockDefault = false
 sidebarBreakpointWidth = 90
 sidebarMinHeight = 16
 stackedSidebarRatio = 0.5
+sidebarDiffPreview = false
 prefetchDiffInLog = false
+prefetchFilesInLog = false
+filesCacheMaxEntries = 12
+filesCacheMaxBytes = 1500000
 clearDiffCacheWhenNotInDiff = true
 `;
 
@@ -156,9 +160,38 @@ function clampConfig(config: JjVizRuntimeConfig): JjVizRuntimeConfig {
   out.tui.sidebarBreakpointWidth = Math.max(60, Math.min(220, out.tui.sidebarBreakpointWidth || DEFAULT_RUNTIME_CONFIG.tui.sidebarBreakpointWidth));
   out.tui.sidebarMinHeight = Math.max(8, Math.min(80, out.tui.sidebarMinHeight || DEFAULT_RUNTIME_CONFIG.tui.sidebarMinHeight));
   out.tui.stackedSidebarRatio = Math.max(0.2, Math.min(0.8, out.tui.stackedSidebarRatio || DEFAULT_RUNTIME_CONFIG.tui.stackedSidebarRatio));
+
+  if (typeof (out.tui as any).sidebarDiffPreview === "boolean") {
+    out.tui.sidebarDiffPreview = Boolean((out.tui as any).sidebarDiffPreview);
+  } else {
+    // Backward compatibility: support old mode string and legacy prefetch flag.
+    const previewModeRaw = typeof (out.tui as any).sidebarDiffPreviewMode === "string"
+      ? String((out.tui as any).sidebarDiffPreviewMode).toLowerCase()
+      : null;
+    if (previewModeRaw === "diffu") out.tui.sidebarDiffPreview = true;
+    else if (previewModeRaw === "off") out.tui.sidebarDiffPreview = false;
+    else {
+      const legacyPrefetch = typeof out.tui.prefetchDiffInLog === "boolean"
+        ? out.tui.prefetchDiffInLog
+        : DEFAULT_RUNTIME_CONFIG.tui.prefetchDiffInLog;
+      out.tui.sidebarDiffPreview = legacyPrefetch;
+    }
+  }
+
   out.tui.prefetchDiffInLog = typeof out.tui.prefetchDiffInLog === "boolean"
     ? out.tui.prefetchDiffInLog
     : DEFAULT_RUNTIME_CONFIG.tui.prefetchDiffInLog;
+  out.tui.prefetchFilesInLog = typeof out.tui.prefetchFilesInLog === "boolean"
+    ? out.tui.prefetchFilesInLog
+    : DEFAULT_RUNTIME_CONFIG.tui.prefetchFilesInLog;
+  out.tui.filesCacheMaxEntries = Math.max(
+    1,
+    Math.min(256, Number(out.tui.filesCacheMaxEntries || DEFAULT_RUNTIME_CONFIG.tui.filesCacheMaxEntries))
+  );
+  out.tui.filesCacheMaxBytes = Math.max(
+    64_000,
+    Math.min(64 * 1024 * 1024, Number(out.tui.filesCacheMaxBytes || DEFAULT_RUNTIME_CONFIG.tui.filesCacheMaxBytes))
+  );
   out.tui.clearDiffCacheWhenNotInDiff = typeof out.tui.clearDiffCacheWhenNotInDiff === "boolean"
     ? out.tui.clearDiffCacheWhenNotInDiff
     : DEFAULT_RUNTIME_CONFIG.tui.clearDiffCacheWhenNotInDiff;

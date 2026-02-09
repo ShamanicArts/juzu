@@ -571,3 +571,38 @@ Use append-only entries. Do not rewrite history except to fix obvious factual er
   - Run new idle trace+PID sample to compare slopes and verify refresh counter reduction.
   - If redraw stays high despite reduced refresh events, investigate renderer invalidation loop boundaries.
 - Status: `complete`
+
+### [2026-02-10 04:00] Fix Set 13: restore selected-file watch updates without broad refresh churn
+
+- Context: User reported file watch behavior regression: sidebar/files did not refresh until moving selection.
+- Goal:
+  - Keep memory-safe throttled watch behavior.
+  - Restore immediate selected-commit file summary updates on watch events.
+- Actions performed:
+  - Updated `src/tui/App.tsx` `scheduleRefresh()`:
+    - retained global watch refresh throttle (`JUZU_TUI_WATCH_REFRESH_MIN_MS`)
+    - reintroduced targeted `ensureFiles(selected.changeId, 0)` for selected commit only
+    - reset `_lastFilesChangeId` to force selected summary refresh
+  - This avoids broad cache churn while restoring expected live-update UX.
+- Validation:
+  - Tests: `bun test src/core/__tests__/layout.test.ts src/core/__tests__/state.test.ts src/core/__tests__/usecases.test.ts src/core/__tests__/jj-api.test.ts` passed.
+  - Build: `bun run scripts/build-tui.ts` passed.
+- Status: `complete`
+
+### [2026-02-10 04:10] Fix Set 14: configurable sidebar diff preview toggle (enabled locally)
+
+- Context: User requested explicit config support to turn DiffU sidebar preview mode on and have it enabled.
+- Actions performed:
+  - Added runtime config key: `tui.sidebarDiffPreview` (`true | false`) in `src/core/runtime-config.ts`.
+  - Added config parsing and clamping in `src/core/config-loader.ts`.
+  - Added backward-compat mapping from legacy `sidebarDiffPreviewMode` and `prefetchDiffInLog` when boolean toggle is not explicitly set.
+  - Added key to `config.example.toml`.
+  - Updated TUI behavior:
+    - `src/tui/App.tsx` now uses `sidebarDiffPreview` for log-mode inline diff auto-load decision.
+    - `src/tui/components/Sidebar.tsx` now respects `sidebarDiffPreview` when rendering inline diff block.
+  - Enabled mode in local config `/.juzu.local.toml`:
+    - `sidebarDiffPreview = true`
+- Validation:
+  - Tests: `bun test src/core/__tests__/usecases.test.ts src/core/__tests__/layout.test.ts src/core/__tests__/state.test.ts src/core/__tests__/jj-api.test.ts` passed.
+  - Build: `bun run scripts/build-tui.ts` passed.
+- Status: `complete`

@@ -5,8 +5,10 @@ export function createWebBackend(): JJBackend {
   return {
     log: async ({ limit, revset }) => api.log(limit, revset),
     nodeCount: async ({ revset }) => api.nodeCount(revset),
+    description: async ({ changeId }) => api.description(changeId),
     files: async ({ changeId }) => api.files(changeId),
     diff: async ({ changeId }) => api.diff(changeId),
+    diffFile: async ({ changeId, path }) => api.diffFile(changeId, path),
 
     new: async ({ parentId, parentIds }) => {
       await api.new({ parentId, parentIds });

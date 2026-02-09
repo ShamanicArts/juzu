@@ -9,8 +9,10 @@ export interface JJBackend {
 
   log: (args: { cwd: string; limit: number; revset?: string }) => Promise<CommitNode[]>;
   nodeCount: (args: { cwd: string; revset?: string }) => Promise<number>;
+  description: (args: { cwd: string; changeId: string }) => Promise<string>;
   files: (args: { cwd: string; changeId: string }) => Promise<FileEntry[]>;
   diff: (args: { cwd: string; changeId: string }) => Promise<string>;
+  diffFile?: (args: { cwd: string; changeId: string; path: string }) => Promise<string>;
 
   new: (args: { cwd: string; parentId?: string; parentIds?: string[] }) => Promise<void>;
   edit: (args: { cwd: string; changeId: string }) => Promise<void>;

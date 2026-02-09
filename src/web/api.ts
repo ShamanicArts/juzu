@@ -24,9 +24,20 @@ export const api = {
     const result = await fetchAPI<{ count: number }>(`/api/node-count${q ? "?" + q.toString() : ""}`);
     return result.count;
   },
+  description: async (changeId: string) => {
+    const res = await fetch(`/api/description/${encodeURIComponent(changeId)}`);
+    if (!res.ok) throw new Error(await res.text());
+    return await res.text();
+  },
   files: (changeId: string) => fetchAPI<Array<{ type: string; path: string }>>(`/api/files/${encodeURIComponent(changeId)}`),
   diff: async (changeId: string) => {
     const res = await fetch(`/api/diff/${encodeURIComponent(changeId)}`);
+    if (!res.ok) throw new Error(await res.text());
+    return await res.text();
+  },
+  diffFile: async (changeId: string, path: string) => {
+    const q = new URLSearchParams({ path });
+    const res = await fetch(`/api/diff-file/${encodeURIComponent(changeId)}?${q.toString()}`);
     if (!res.ok) throw new Error(await res.text());
     return await res.text();
   },

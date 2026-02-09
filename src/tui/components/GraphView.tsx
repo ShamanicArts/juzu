@@ -3,13 +3,9 @@ import { useRenderer } from "@opentui/solid";
 import { FrameBufferRenderable, RGBA, convertGlobalToLocalSelection } from "@opentui/core";
 import type { CommitNode, FilesCacheEntry, LayoutMode } from "../../core/types";
 import { UI_TOKENS } from "../../core/ui-tokens";
+import { reportGraphDraw } from "../telemetry";
 
 const BG = () => RGBA.fromHex(UI_TOKENS.slate.bg0);
-const FG = () => RGBA.fromHex(UI_TOKENS.slate.text);
-const GREEN = () => RGBA.fromHex(UI_TOKENS.semantic.success);
-const RED = () => RGBA.fromHex(UI_TOKENS.semantic.error);
-const YELLOW = () => RGBA.fromHex(UI_TOKENS.semantic.warn);
-const CYAN = () => RGBA.fromHex(UI_TOKENS.semantic.info);
 
 // Graph text colors with theme fallbacks - hex strings
 const graphColorsHex = {
@@ -51,6 +47,7 @@ interface GraphViewProps {
   mergeMode?: boolean;
   layoutMode?: LayoutMode;
   themeVersion?: number;
+  onClick?: (changeId: string) => void;
 }
 
 type LocalSelection = {
@@ -144,6 +141,8 @@ export function GraphView(props: GraphViewProps) {
   // Reusable maps to avoid allocating new Maps on every draw frame
   let _indexByIdAll: Map<string, number> | null = null;
   let _childrenById: Map<string, CommitNode[]> | null = null;
+  // Store node positions for click detection
+  let _nodePositions: Map<string, { x: number; y: number }> | null = null;
 
   const viewBg = () => {
     props.themeVersion;
@@ -163,7 +162,7 @@ export function GraphView(props: GraphViewProps) {
       getLines: () => graphLines,
     });
 
-    canvas.frameBuffer.fillRect(0, 0, props.width, props.height, BG());
+    canvas.frameBuffer.fillRect(0, 0, props.width, props.height, viewBg());
     draw();
     parentBox.add(canvas);
   };
@@ -198,7 +197,26 @@ export function GraphView(props: GraphViewProps) {
 
     if (w <= 0 || h <= 0) return;
 
-    fb.fillRect(0, 0, w, h, BG());
+    const bgColor = viewBg();
+    const whiteColor = RGBA.fromHex("#ffffff");
+    const successColor = RGBA.fromHex(UI_TOKENS.semantic.success);
+    const errorColor = RGBA.fromHex(UI_TOKENS.semantic.error);
+    const commitIdColor = RGBA.fromHex(graphColorsHex.commitId());
+    const bookmarkColor = RGBA.fromHex(graphColorsHex.bookmark());
+    const fileAddColor = RGBA.fromHex(graphColorsHex.fileAdd());
+    const fileDelColor = RGBA.fromHex(graphColorsHex.fileDel());
+    const fileModColor = RGBA.fromHex(graphColorsHex.fileMod());
+    const textColor = RGBA.fromHex(graphColorsHex.fg());
+    const mutedColor = RGBA.fromHex(graphColorsHex.textMuted());
+    const selectedTextColor = brighten(graphColorsHex.fg());
+    const selectedBookmarkColor = brighten(graphColorsHex.bookmark());
+    const selectedFileAddColor = brighten(graphColorsHex.fileAdd());
+    const selectedFileDelColor = brighten(graphColorsHex.fileDel());
+    const selectedFileModColor = brighten(graphColorsHex.fileMod());
+    const selectedMutedColor = brighten(graphColorsHex.textMuted(), 40);
+    const selectedSeparatorColor = brighten(graphColorsHex.fg(), 40);
+
+    fb.fillRect(0, 0, w, h, bgColor);
 
     const rowStride = 4;
     const visibleRows = Math.max(1, Math.floor((graphH - 2) / rowStride));
@@ -210,6 +228,10 @@ export function GraphView(props: GraphViewProps) {
     
     // Find selected index in visible range
     const selLocal = visible.findIndex(n => n.changeId === props.selectedId);
+    
+    // Store node positions for click detection (reuse map)
+    if (!_nodePositions) _nodePositions = new Map<string, { x: number; y: number }>();
+    else _nodePositions.clear();
 
     let maxLane = 0;
     for (const n of props.nodes) maxLane = Math.max(maxLane, n.lane || 0);
@@ -239,7 +261,7 @@ export function GraphView(props: GraphViewProps) {
     const rowYAbs = (globalIndex: number) => headerH + 1 + (globalIndex - start) * rowStride;
     const laneXCell = (lane: number) => leftPad + (maxLane - lane) * laneWidth;
 
-    const bgAtAbsY = (_absY: number) => BG();
+    const bgAtAbsY = (_absY: number) => bgColor;
 
     const LANE_COLORS = laneColors();
 
@@ -251,7 +273,7 @@ export function GraphView(props: GraphViewProps) {
 
     const selectedNode = selLocal >= 0 && selLocal < visible.length ? visible[selLocal] : null;
     const selectedId = props.selectedId;
-    const WHITE = RGBA.fromHex("#ffffff");
+    const WHITE = whiteColor;
 
     // Mainline mode: draw a horizontal "bus" only as far as needed.
     // We still want an easy-to-read trunk, but we should not paint a full-width
@@ -434,6 +456,9 @@ export function GraphView(props: GraphViewProps) {
       const y = rowYCell(i);
       const laneColor = LANE_COLORS[lane % LANE_COLORS.length];
       const isSelected = i === selLocal;
+      
+      // Store node position for click detection
+      _nodePositions.set(node.changeId, { x, y });
 
       if (textX > x + 2) {
         for (let cx = x + 1; cx < Math.min(textX - 1, w); cx++) setGraphCell(cx, y, ".", laneColor);
@@ -443,13 +468,13 @@ export function GraphView(props: GraphViewProps) {
       let fg = laneColor;
       if (props.mergeMode && props.mergeSelectedIds?.has(node.changeId)) {
         ch = "✓";
-        fg = GREEN();
+        fg = successColor;
       } else if (node.isWorkingCopy) {
         ch = "@";
-        fg = GREEN();
+        fg = successColor;
       } else if (node.isConflict) {
         ch = "!";
-        fg = RED();
+        fg = errorColor;
       } else if (node.isEmpty) {
         ch = isSelected ? "0" : "o";
         fg = laneColor;
@@ -477,11 +502,11 @@ export function GraphView(props: GraphViewProps) {
         // Indicator column: @ stays left, > moves right when selected
         if (node.isWorkingCopy && isSelected) {
           // Selected WC: ...@>
-          fb.drawText("@", Math.max(0, textX - 3), y, GREEN());
+          fb.drawText("@", Math.max(0, textX - 3), y, successColor);
           fb.drawText(">", Math.max(0, textX - 2), y, WHITE);
         } else if (node.isWorkingCopy) {
           // Non-selected WC: ...@
-          fb.drawText("@", Math.max(0, textX - 2), y, GREEN());
+          fb.drawText("@", Math.max(0, textX - 2), y, successColor);
         } else if (isSelected) {
           // Selected non-WC: ...>
           fb.drawText(">", Math.max(0, textX - 2), y, WHITE);
@@ -492,16 +517,16 @@ export function GraphView(props: GraphViewProps) {
         fb.drawText(" ", textX + 8, y, laneColor);
         
         // Commit ID - line 1 (top line gets full white when selected)
-        fb.drawText(commitShort, textX + 9, y, isSelected ? WHITE : RGBA.fromHex(graphColorsHex.commitId()));
+        fb.drawText(commitShort, textX + 9, y, isSelected ? WHITE : commitIdColor);
         
         // Description - line 2 (brighter version when selected, not full white)
-        const descColor = isSelected ? brighten(graphColorsHex.fg()) : RGBA.fromHex(graphColorsHex.fg());
+        const descColor = isSelected ? selectedTextColor : textColor;
         fb.drawText(desc, textX, y + 1, descColor);
 
         // Bookmarks - line 2 (brighter bookmark color when selected)
         if (node.bookmarks.length > 0) {
           const bm = ` (${node.bookmarks.join(",")})`;
-          const bmColor = isSelected ? brighten(graphColorsHex.bookmark()) : RGBA.fromHex(graphColorsHex.bookmark());
+          const bmColor = isSelected ? selectedBookmarkColor : bookmarkColor;
           fb.drawText(truncate(bm, Math.max(0, w - (textX + desc.length) - 1)), textX + Math.min(desc.length, descMax), y + 1, bmColor);
         }
 
@@ -524,15 +549,15 @@ export function GraphView(props: GraphViewProps) {
             
             // Color code by file change type, with brightening for selected
             let fileColor;
-            if (f.type === "A") fileColor = isSelected ? brighten(graphColorsHex.fileAdd()) : RGBA.fromHex(graphColorsHex.fileAdd());
-            else if (f.type === "D") fileColor = isSelected ? brighten(graphColorsHex.fileDel()) : RGBA.fromHex(graphColorsHex.fileDel());
-            else fileColor = isSelected ? brighten(graphColorsHex.fileMod()) : RGBA.fromHex(graphColorsHex.fileMod());
+            if (f.type === "A") fileColor = isSelected ? selectedFileAddColor : fileAddColor;
+            else if (f.type === "D") fileColor = isSelected ? selectedFileDelColor : fileDelColor;
+            else fileColor = isSelected ? selectedFileModColor : fileModColor;
             
             fb.drawText(fileText, currentX, y + 2, fileColor);
             currentX += fileText.length;
             
             if (!isLast) {
-              const sepColor = isSelected ? brighten(graphColorsHex.fg(), 40) : RGBA.fromHex(graphColorsHex.fg());
+              const sepColor = isSelected ? selectedSeparatorColor : textColor;
               fb.drawText(" ", currentX, y + 2, sepColor);
               currentX += 1;
             }
@@ -541,12 +566,12 @@ export function GraphView(props: GraphViewProps) {
           if (filesCached.files.length > 3) {
             const moreText = ` +${filesCached.files.length - 3}`;
             if (currentX + moreText.length <= textX + fileMaxW) {
-              const moreColor = isSelected ? brighten(graphColorsHex.textMuted(), 40) : RGBA.fromHex(graphColorsHex.textMuted());
+              const moreColor = isSelected ? selectedMutedColor : mutedColor;
               fb.drawText(moreText, currentX, y + 2, moreColor);
             }
           }
         } else if (filesCached) {
-          const noFilesColor = isSelected ? brighten(graphColorsHex.textMuted(), 40) : RGBA.fromHex(graphColorsHex.textMuted());
+          const noFilesColor = isSelected ? selectedMutedColor : mutedColor;
           fb.drawText("(no files)", textX, y + 2, noFilesColor);
         }
       }
@@ -558,6 +583,16 @@ export function GraphView(props: GraphViewProps) {
     } else if (graphLines.length > 0) {
       graphLines = [];
     }
+
+    reportGraphDraw({
+      width: w,
+      height: h,
+      totalNodes: props.nodes.length,
+      visibleNodes: visible.length,
+      visibleRows,
+      scrollOffset: start,
+      hasSelection: canvas.hasSelection(),
+    });
 
     canvas.requestRender?.();
   };
@@ -600,10 +635,72 @@ export function GraphView(props: GraphViewProps) {
         return;
       }
 
-      canvas.frameBuffer.fillRect(0, 0, nextW, nextH, BG());
+      canvas.frameBuffer.fillRect(0, 0, nextW, nextH, viewBg());
       draw();
     }
   });
 
-  return <box ref={setupCanvas} width={props.width} height={props.height} backgroundColor={viewBg()} />;
+  const handleClick = (event: any) => {
+    if (!props.onClick || !_nodePositions) return;
+    
+    const clickX = event.x;
+    const clickY = event.y;
+    const headerH = 0;
+   const rowStride = 4;
+    const start = props.scrollOffset;
+    
+    // Calculate visible range
+    const visible = props.nodes.slice(start, start + Math.max(1, Math.floor((props.height - 2) / rowStride)));
+    
+    let maxLane = 0;
+    for (const n of props.nodes) maxLane = Math.max(maxLane, n.lane || 0);
+    
+    const minTextW = 28;
+    const textGap = 3;
+    const leftPad = 2;
+    const maxLaneWidth = 4;
+    const minLaneWidth = 2;
+    const laneWidth = clamp(
+      Math.floor((props.width - leftPad - textGap - minTextW) / Math.max(1, maxLane + 1)),
+      minLaneWidth,
+      maxLaneWidth
+    );
+    const lanesW = (maxLane + 1) * laneWidth;
+    const textX = leftPad + lanesW + textGap;
+    
+    const laneXCell = (lane: number) => leftPad + (maxLane - lane) * laneWidth;
+    const rowYCell = (i: number) => headerH + 1 + i * rowStride;
+    
+    // Find the row the click is in
+    const clickedRowIndex = Math.floor((clickY - headerH) / rowStride);
+    if (clickedRowIndex < 0 || clickedRowIndex >= visible.length) return;
+    
+    const clickedNode = visible[clickedRowIndex];
+    if (!clickedNode) return;
+    
+    // Check if click is reasonably close to node position or within text area
+    const nodeX = laneXCell(clickedNode.lane || 0);
+    const nodeY = rowYCell(clickedRowIndex);
+    
+    // Accept clicks within a reasonable horizontal range:
+    // - Near the node circle (nodeX +/- 1)
+    // - Within the text area (textX to width)
+    const isNearNode = Math.abs(clickX - nodeX) <= 1;
+    const isInText = clickX >= textX && clickX < props.width;
+    
+    if (isNearNode || isInText) {
+      event.stopPropagation?.(); // Prevent bubbling
+      props.onClick(clickedNode.changeId);
+    }
+  };
+  
+  return (
+    <box 
+      ref={setupCanvas} 
+      width={props.width} 
+      height={props.height} 
+      backgroundColor={viewBg()}
+      onMouseUp={handleClick}
+    />
+  );
 }

@@ -2,7 +2,7 @@ import { useRenderer, useKeyboard } from "@opentui/solid";
 import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import type { KeyEvent, MouseEvent } from "@opentui/core";
 import { MouseButton, RGBA } from "@opentui/core";
-import { readFile, readdir, watch, writeFile } from "node:fs/promises";
+import { appendFile, readFile, readdir, watch, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 // Lazy-load clipboardy only when actually copying to avoid startup memory cost
 let _clipboardy: typeof import("clipboardy") | null = null;
@@ -10,10 +10,10 @@ const getClipboardy = async () => {
   if (!_clipboardy) _clipboardy = await import("clipboardy");
   return _clipboardy;
 };
-import { state, actions, navigation, selectedNode, layoutResult } from "../core/state";
+import { state, actions, navigation, selectedIndex, selectedNode, layoutResult } from "../core/state";
 import { tuiActions, tuiState } from "../core/state-tui";
 import { setBackend } from "../core/runtime";
-import { ensureDiff, ensureFiles, initCwdFrom, opAbandon, opBookmarkDelete, opBookmarkSet, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertBetween, opMerge, opNew, opRebase, opRestore, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
+import { ensureDescription, ensureDiff, ensureDiffForFile, ensureFiles, initCwdFrom, opAbandon, opBookmarkDelete, opBookmarkSet, opDescribe, opDuplicate, opEdit, opGitFetch, opGitPush, opInsertBetween, opMerge, opNew, opRebase, opRestore, opSquash, opUndo, opRedo, prefetchFiles, refreshLog, refreshOpLog, refreshObslog, opRestoreOperation } from "../core/usecases";
 import { createTuiBackend } from "./backend";
 import { GraphView } from "./components/GraphView";
 import { Sidebar } from "./components/Sidebar";
@@ -22,6 +22,7 @@ import { ObslogView } from "./components/ObslogView";
 import { StatusBar } from "./components/StatusBar";
 import { FooterBar } from "./components/FooterBar";
 import { DiffView } from "./components/DiffView";
+import { getGraphDrawTelemetry } from "./telemetry";
 import { UI_TOKENS } from "../core/ui-tokens";
 import { getRuntimeConfig } from "../core/runtime-config";
 import { resolveAndApplyRuntimeConfig } from "../core/config-loader";
@@ -37,16 +38,30 @@ import {
 const BG = () => RGBA.fromHex(UI_TOKENS.slate.bg0);
 const PANEL_BG = () => RGBA.fromHex(UI_TOKENS.slate.panel);
 const RUNTIME = getRuntimeConfig();
-const TUI_FILES_CACHE_MAX_ENTRIES = readPositiveIntEnv("JUZU_FILES_CACHE_MAX_ENTRIES", 48);
+const TUI_FILES_CACHE_MAX_ENTRIES = Math.max(1, getRuntimeConfig().tui.filesCacheMaxEntries || 12);
 const TUI_LOG_LIMIT = readPositiveIntEnv("JUZU_TUI_LOG_LIMIT", 80);
+const TUI_LOG_GROWTH_CHUNK = readPositiveIntEnv("JUZU_TUI_LOG_GROWTH_CHUNK", 400);
+const TUI_LOG_SHRINK_BUFFER_ROWS = readPositiveIntEnv("JUZU_TUI_LOG_SHRINK_BUFFER_ROWS", 180);
+const TUI_LOG_WINDOW_ADJUST_COOLDOWN_MS = readPositiveIntEnv("JUZU_TUI_LOG_WINDOW_ADJUST_COOLDOWN_MS", 1200);
 const TUI_REFRESH_DEBOUNCE_MS = readPositiveIntEnv("JUZU_TUI_REFRESH_DEBOUNCE_MS", 700);
+const TUI_WATCH_REFRESH_MIN_MS = readPositiveIntEnv("JUZU_TUI_WATCH_REFRESH_MIN_MS", 2500);
 const TUI_FILES_PREFETCH_RADIUS = Math.min(
   readPositiveIntEnv("JUZU_TUI_FILES_PREFETCH_RADIUS", 8),
   Math.max(1, Math.floor((TUI_FILES_CACHE_MAX_ENTRIES - 1) / 2))
 );
 const TUI_FILES_PREFETCH_MAX_AGE_MS = readPositiveIntEnv("JUZU_TUI_FILES_PREFETCH_MAX_AGE_MS", 60_000);
 const TUI_FILES_PREFETCH_CONCURRENCY = readPositiveIntEnv("JUZU_TUI_FILES_PREFETCH_CONCURRENCY", 1);
-const TUI_DIFF_PREFETCH_DEBOUNCE_MS = readPositiveIntEnv("JUZU_TUI_DIFF_PREFETCH_DEBOUNCE_MS", 180);
+const TUI_SELECTED_FILES_DEBOUNCE_MS = readPositiveIntEnv("JUZU_TUI_SELECTED_FILES_DEBOUNCE_MS", 320);
+const TUI_SELECTED_DESCRIPTION_DEBOUNCE_MS = readPositiveIntEnv("JUZU_TUI_SELECTED_DESCRIPTION_DEBOUNCE_MS", 420);
+const TUI_NEARBY_FILES_PREFETCH_DEBOUNCE_MS = readPositiveIntEnv("JUZU_TUI_NEARBY_FILES_PREFETCH_DEBOUNCE_MS", 700);
+const TUI_DIFF_PREFETCH_DEBOUNCE_MS = readPositiveIntEnv("JUZU_TUI_DIFF_PREFETCH_DEBOUNCE_MS", 550);
+const TUI_MEM_TRACE_INTERVAL_MS = readPositiveIntEnv("JUZU_MEM_TRACE_INTERVAL_MS", 1000);
+const TUI_MEM_TRACE_ENABLED =
+  (typeof process !== "undefined" && process.env?.JUZU_MEM_TRACE === "1") ||
+  Boolean(typeof process !== "undefined" && process.env?.JUZU_MEM_TRACE_FILE);
+const TUI_MEM_TRACE_FILE =
+  (typeof process !== "undefined" && process.env?.JUZU_MEM_TRACE_FILE) ||
+  `/tmp/juzu-mem-trace-${typeof process !== "undefined" ? process.pid : "unknown"}.jsonl`;
 
 const SIDEBAR_COLLAPSED_W = 6;
 const SIDEBAR_COLLAPSED_H = 3;
@@ -60,6 +75,28 @@ function readPositiveIntEnv(name: string, fallback: number): number {
 
 function shouldClearDiffCacheOutsideDiffMode(): boolean {
   return getRuntimeConfig().tui.clearDiffCacheWhenNotInDiff;
+}
+
+function estimateFilesCacheBytes(cache: Map<string, { files: Array<{ type: string; path: string }>; bytes?: number }>): number {
+  let total = 0;
+  for (const entry of cache.values()) {
+    if (entry.bytes && entry.bytes > 0) {
+      total += entry.bytes;
+      continue;
+    }
+    const files = entry.files || [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i]!;
+      total += (f.path?.length || 0) + (f.type?.length || 1) + 8;
+    }
+  }
+  return total;
+}
+
+function estimateDiffCacheBytes(cache: Map<string, { bytes: number }>): number {
+  let total = 0;
+  for (const entry of cache.values()) total += entry.bytes || 0;
+  return total;
 }
 
 function extractThemeNameFromToml(raw: string): string | null {
@@ -101,9 +138,31 @@ function App() {
   const renderer = useRenderer();
   const watchControllers: AbortController[] = [];
   let refreshDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let selectedFilesTimer: ReturnType<typeof setTimeout> | null = null;
+  let selectedDescriptionTimer: ReturnType<typeof setTimeout> | null = null;
+  let nearbyFilesPrefetchTimer: ReturnType<typeof setTimeout> | null = null;
   let diffPrefetchTimer: ReturnType<typeof setTimeout> | null = null;
   let diffPrefetchInFlight = false;
-  let queuedDiffPrefetchId: string | null = null;
+  let logWindowAdjustInFlight = false;
+  let lastLogWindowAdjustAt = 0;
+  let lastWatchRefreshAt = 0;
+  let currentLogLimit = TUI_LOG_LIMIT;
+  let queuedDiffPrefetch: { changeId: string; path: string } | null = null;
+  let memTraceTimer: ReturnType<typeof setInterval> | null = null;
+  let memTraceLastDrawCount = 0;
+  let memTraceSampleSeq = 0;
+  const traceCounters = {
+    watchEvents: 0,
+    watchRefreshSkipped: 0,
+    refreshCalls: 0,
+    refreshExpandCalls: 0,
+    refreshShrinkCalls: 0,
+    ensureFilesCalls: 0,
+    prefetchFilesCalls: 0,
+    ensureDiffCalls: 0,
+    ensureDiffForFileCalls: 0,
+    ensureDescriptionCalls: 0,
+  };
   let pendingConfirmation: { message: string; run: () => Promise<void> | void } | null = null;
   const [confirmPrompt, setConfirmPrompt] = createSignal<string | null>(null);
   const [themeOptions, setThemeOptions] = createSignal<string[]>(["slate", "ember"]);
@@ -343,13 +402,24 @@ function App() {
     if (refreshDebounceTimer) clearTimeout(refreshDebounceTimer);
     refreshDebounceTimer = setTimeout(() => {
       if (pendingConfirmation) return;
-      // Always refresh files for selected commit on file watch events
-      // This ensures file changes are visible even when log fingerprint matches
+      const now = Date.now();
+      if (now - lastWatchRefreshAt < TUI_WATCH_REFRESH_MIN_MS) {
+        traceCounters.watchRefreshSkipped += 1;
+        return;
+      }
+      lastWatchRefreshAt = now;
+
+      // Refresh selected commit file summary eagerly so sidebar updates without
+      // requiring a selection move, while keeping scope narrow for memory.
       const selected = selectedNode();
       if (selected) {
-        _lastFilesChangeId = null; // Force re-fetch of files
-        void ensureFiles(selected.changeId, 0).catch(() => {});
+        _lastFilesChangeId = null;
+        traceCounters.ensureFilesCalls += 1;
+        void ensureFiles(selected.changeId, 0).catch(() => {
+          // Best-effort selected summary refresh on watch events.
+        });
       }
+
       void refresh();
     }, TUI_REFRESH_DEBOUNCE_MS);
   };
@@ -360,6 +430,7 @@ function App() {
     void (async () => {
       try {
         for await (const _event of watch(path, { recursive: false, signal: controller.signal })) {
+          traceCounters.watchEvents += 1;
           scheduleRefresh();
         }
       } catch (e) {
@@ -372,6 +443,7 @@ function App() {
 
   onMount(async () => {
     setBackend(createTuiBackend());
+    startMemoryTrace();
     const startDir = process.cwd();
     const repoCwd = await initCwdFrom(startDir);
     if (!repoCwd) {
@@ -410,19 +482,36 @@ function App() {
       clearTimeout(refreshDebounceTimer);
       refreshDebounceTimer = null;
     }
+    if (selectedFilesTimer) {
+      clearTimeout(selectedFilesTimer);
+      selectedFilesTimer = null;
+    }
+    if (selectedDescriptionTimer) {
+      clearTimeout(selectedDescriptionTimer);
+      selectedDescriptionTimer = null;
+    }
+    if (nearbyFilesPrefetchTimer) {
+      clearTimeout(nearbyFilesPrefetchTimer);
+      nearbyFilesPrefetchTimer = null;
+    }
     if (diffPrefetchTimer) {
       clearTimeout(diffPrefetchTimer);
       diffPrefetchTimer = null;
     }
-    queuedDiffPrefetchId = null;
+    if (memTraceTimer) {
+      clearInterval(memTraceTimer);
+      memTraceTimer = null;
+    }
+    queuedDiffPrefetch = null;
   });
 
   // Track last fetched IDs to avoid re-fetching for the same selection
   let _lastFilesChangeId: string | null = null;
   let _lastDiffDirectChangeId: string | null = null;
-  let _lastDiffQueuedChangeId: string | null = null;
+  let _lastDiffQueuedKey: string | null = null;
   let _lastFilesPrefetchKey: string | null = null;
   let _lastSelectedIdForDiffReset: string | null = null;
+  let _lastDescriptionChangeId: string | null = null;
 
   const collectNearbyChangeIds = () => {
     const nodes = layoutResult().nodes;
@@ -436,27 +525,29 @@ function App() {
 
   const runQueuedDiffPrefetch = async () => {
     if (diffPrefetchInFlight) return;
-    const changeId = queuedDiffPrefetchId;
-    if (!changeId) return;
-    queuedDiffPrefetchId = null;
+    const queued = queuedDiffPrefetch;
+    if (!queued) return;
+    queuedDiffPrefetch = null;
     diffPrefetchInFlight = true;
     try {
-      await ensureDiff(changeId);
+      traceCounters.ensureDiffForFileCalls += 1;
+      await ensureDiffForFile(queued.changeId, queued.path);
     } catch {
       // Best-effort prefetch for sidebar/full diff rendering.
     } finally {
       diffPrefetchInFlight = false;
-      if (queuedDiffPrefetchId && queuedDiffPrefetchId !== changeId) {
+      if (queuedDiffPrefetch) {
         void runQueuedDiffPrefetch();
       }
     }
   };
 
-  const scheduleDiffPrefetch = (changeId: string) => {
-    if (!changeId) return;
-    if (changeId === _lastDiffQueuedChangeId) return;
-    _lastDiffQueuedChangeId = changeId;
-    queuedDiffPrefetchId = changeId;
+  const scheduleDiffPrefetch = (changeId: string, path: string) => {
+    if (!changeId || !path) return;
+    const key = `${changeId}\x00${path}`;
+    if (key === _lastDiffQueuedKey) return;
+    _lastDiffQueuedKey = key;
+    queuedDiffPrefetch = { changeId, path };
     if (diffPrefetchTimer) clearTimeout(diffPrefetchTimer);
     diffPrefetchTimer = setTimeout(() => {
       diffPrefetchTimer = null;
@@ -464,28 +555,157 @@ function App() {
     }, TUI_DIFF_PREFETCH_DEBOUNCE_MS);
   };
 
+  const scheduleSelectedFilesHydration = (changeId: string) => {
+    if (!changeId) return;
+    if (selectedFilesTimer) clearTimeout(selectedFilesTimer);
+    selectedFilesTimer = setTimeout(() => {
+      selectedFilesTimer = null;
+      const selected = selectedNode();
+      if (!selected || selected.changeId !== changeId) return;
+      if (changeId === _lastFilesChangeId) return;
+      _lastFilesChangeId = changeId;
+      traceCounters.ensureFilesCalls += 1;
+      void ensureFiles(changeId).catch(() => {
+        // Best-effort cache hydration for selected node details.
+      });
+    }, TUI_SELECTED_FILES_DEBOUNCE_MS);
+  };
+
+  const scheduleNearbyFilesPrefetch = (ids: string[], key: string) => {
+    if (nearbyFilesPrefetchTimer) clearTimeout(nearbyFilesPrefetchTimer);
+    nearbyFilesPrefetchTimer = setTimeout(() => {
+      nearbyFilesPrefetchTimer = null;
+      const current = collectNearbyChangeIds();
+      const currentKey = current.join(",");
+      if (currentKey !== key) return;
+      if (key === _lastFilesPrefetchKey) return;
+      _lastFilesPrefetchKey = key;
+      traceCounters.prefetchFilesCalls += 1;
+      void prefetchFiles(ids, TUI_FILES_PREFETCH_MAX_AGE_MS, TUI_FILES_PREFETCH_CONCURRENCY).catch(() => {
+        // Keep prefetch best-effort to avoid noisy failures.
+      });
+    }, TUI_NEARBY_FILES_PREFETCH_DEBOUNCE_MS);
+  };
+
+  const scheduleSelectedDescriptionHydration = (changeId: string) => {
+    if (!changeId) return;
+    if (selectedDescriptionTimer) clearTimeout(selectedDescriptionTimer);
+    selectedDescriptionTimer = setTimeout(() => {
+      selectedDescriptionTimer = null;
+      const selected = selectedNode();
+      if (!selected || selected.changeId !== changeId) return;
+      if (selected.descriptionFull && selected.descriptionFull.trim().length > 0) return;
+      if (_lastDescriptionChangeId === changeId) return;
+      _lastDescriptionChangeId = changeId;
+      traceCounters.ensureDescriptionCalls += 1;
+      void ensureDescription(changeId).catch(() => {
+        // Description hydration is best-effort.
+      });
+    }, TUI_SELECTED_DESCRIPTION_DEBOUNCE_MS);
+  };
+
+  const startMemoryTrace = () => {
+    if (!TUI_MEM_TRACE_ENABLED) return;
+    if (memTraceTimer) return;
+
+    const startedAt = Date.now();
+    void appendFile(
+      TUI_MEM_TRACE_FILE,
+      JSON.stringify({
+        type: "session-start",
+        at: new Date(startedAt).toISOString(),
+        pid: typeof process !== "undefined" ? process.pid : null,
+        intervalMs: TUI_MEM_TRACE_INTERVAL_MS,
+      }) + "\n"
+    ).catch(() => {});
+
+    memTraceTimer = setInterval(() => {
+      const now = Date.now();
+      const mu = process.memoryUsage();
+      const graph = getGraphDrawTelemetry();
+      const drawDelta = graph.drawCount - memTraceLastDrawCount;
+      memTraceLastDrawCount = graph.drawCount;
+      memTraceSampleSeq += 1;
+
+      const filesCacheBytes = estimateFilesCacheBytes(state.filesCache as Map<string, { files: Array<{ type: string; path: string }>; bytes?: number }>);
+      const diffCacheBytes = estimateDiffCacheBytes(state.diffCache as Map<string, { bytes: number }>);
+
+      const payload = {
+        type: "sample",
+        seq: memTraceSampleSeq,
+        at: new Date(now).toISOString(),
+        uptimeMs: now - startedAt,
+        mem: {
+          rssMb: Number((mu.rss / (1024 * 1024)).toFixed(2)),
+          heapUsedMb: Number((mu.heapUsed / (1024 * 1024)).toFixed(2)),
+          heapTotalMb: Number((mu.heapTotal / (1024 * 1024)).toFixed(2)),
+          externalMb: Number((mu.external / (1024 * 1024)).toFixed(2)),
+          arrayBuffersMb: Number(((mu.arrayBuffers || 0) / (1024 * 1024)).toFixed(2)),
+        },
+        app: {
+          viewMode: state.viewMode,
+          isLoading: state.isLoading,
+          nodes: state.nodes.length,
+          totalNodes: state.totalNodeCount,
+          selectedId: state.selectedId,
+          filesCacheEntries: state.filesCache.size,
+          filesCacheBytes,
+          diffCacheEntries: state.diffCache.size,
+          diffCacheBytes,
+          pinnedNodes: state.pinnedNodes.size,
+        },
+        graph: {
+          drawCount: graph.drawCount,
+          drawDelta,
+          lastDrawAtMs: graph.lastDrawAtMs,
+          width: graph.width,
+          height: graph.height,
+          totalNodes: graph.totalNodes,
+          visibleNodes: graph.visibleNodes,
+          visibleRows: graph.visibleRows,
+          scrollOffset: graph.scrollOffset,
+          hasSelection: graph.hasSelection,
+        },
+        counters: {
+          refreshCalls: traceCounters.refreshCalls,
+          watchEvents: traceCounters.watchEvents,
+          watchRefreshSkipped: traceCounters.watchRefreshSkipped,
+          refreshExpandCalls: traceCounters.refreshExpandCalls,
+          refreshShrinkCalls: traceCounters.refreshShrinkCalls,
+          ensureFilesCalls: traceCounters.ensureFilesCalls,
+          prefetchFilesCalls: traceCounters.prefetchFilesCalls,
+          ensureDiffCalls: traceCounters.ensureDiffCalls,
+          ensureDiffForFileCalls: traceCounters.ensureDiffForFileCalls,
+          ensureDescriptionCalls: traceCounters.ensureDescriptionCalls,
+        },
+        timers: {
+          refreshDebounce: Boolean(refreshDebounceTimer),
+          selectedFiles: Boolean(selectedFilesTimer),
+          selectedDescription: Boolean(selectedDescriptionTimer),
+          nearbyFilesPrefetch: Boolean(nearbyFilesPrefetchTimer),
+          diffPrefetch: Boolean(diffPrefetchTimer),
+          logWindowAdjustInFlight,
+        },
+      };
+
+      void appendFile(TUI_MEM_TRACE_FILE, JSON.stringify(payload) + "\n").catch(() => {});
+    }, TUI_MEM_TRACE_INTERVAL_MS);
+  };
+
   createEffect(() => {
     const node = selectedNode();
     if (!node) return;
     if (state.viewMode !== "log") return;
-    // Skip if we already fetched for this changeId
-    if (node.changeId === _lastFilesChangeId) return;
-    _lastFilesChangeId = node.changeId;
-    void ensureFiles(node.changeId).catch(() => {
-      // Best-effort cache hydration for selected node details.
-    });
+    scheduleSelectedFilesHydration(node.changeId);
   });
 
   createEffect(() => {
     if (state.viewMode !== "log") return;
+    if (!getRuntimeConfig().tui.prefetchFilesInLog) return;
     const ids = collectNearbyChangeIds();
     if (ids.length === 0) return;
     const key = ids.join(",");
-    if (key === _lastFilesPrefetchKey) return;
-    _lastFilesPrefetchKey = key;
-    void prefetchFiles(ids, TUI_FILES_PREFETCH_MAX_AGE_MS, TUI_FILES_PREFETCH_CONCURRENCY).catch(() => {
-      // Keep prefetch best-effort to avoid noisy failures.
-    });
+    scheduleNearbyFilesPrefetch(ids, key);
   });
 
   createEffect(() => {
@@ -495,20 +715,34 @@ function App() {
     if (mode === "diff") {
       if (node.changeId === _lastDiffDirectChangeId) return;
       _lastDiffDirectChangeId = node.changeId;
-      queuedDiffPrefetchId = null;
+      queuedDiffPrefetch = null;
       if (diffPrefetchTimer) {
         clearTimeout(diffPrefetchTimer);
         diffPrefetchTimer = null;
       }
+      traceCounters.ensureDiffCalls += 1;
       void ensureDiff(node.changeId).catch(() => {
         // Best-effort prefetch for sidebar/full diff rendering.
       });
       return;
     }
     if (mode !== "log") return;
-    // Always keep selected commit diff available in log mode for sidebar preview.
-    // prefetchDiffInLog controls extra/background prefetch, not selected-item preview.
-    scheduleDiffPrefetch(node.changeId);
+    if (!getRuntimeConfig().tui.sidebarDiffPreview) return;
+    const files = state.filesCache.get(node.changeId)?.files || [];
+    if (files.length === 0) return;
+    const idx = Math.max(0, Math.min(tuiState.diffFileIndex, files.length - 1));
+    const path = files[idx]!.path;
+    const entry = state.diffCache.get(node.changeId);
+    const cached = entry?.files.find((f) => f.path === path)?.diff || "";
+    if (cached) return;
+    scheduleDiffPrefetch(node.changeId, path);
+  });
+
+  createEffect(() => {
+    const node = selectedNode();
+    if (!node) return;
+    if (state.viewMode !== "log") return;
+    scheduleSelectedDescriptionHydration(node.changeId);
   });
 
   createEffect(() => {
@@ -545,10 +779,79 @@ function App() {
 
   const refresh = async () => {
     try {
-      await refreshLog(TUI_LOG_LIMIT);
+      traceCounters.refreshCalls += 1;
+      await refreshLog(currentLogLimit);
     } catch (e) {
       console.error("Refresh error:", e);
     }
+  };
+
+  const maybeExpandLogWindow = (visibleRows: number) => {
+    if (state.viewMode !== "log") return;
+    if (logWindowAdjustInFlight) return;
+    const now = Date.now();
+    if (now - lastLogWindowAdjustAt < TUI_LOG_WINDOW_ADJUST_COOLDOWN_MS) return;
+    const total = state.totalNodeCount;
+    const loaded = state.nodes.length;
+    if (loaded <= 0) return;
+    if (total <= 0 || loaded >= total) return;
+
+    const idx = selectedIndex();
+    const threshold = Math.max(6, Math.floor(Math.max(1, visibleRows) * 0.35));
+    if (idx < loaded - threshold) return;
+
+    const nextLimit = Math.min(total, loaded + TUI_LOG_GROWTH_CHUNK);
+    if (nextLimit <= currentLogLimit) return;
+
+    logWindowAdjustInFlight = true;
+    lastLogWindowAdjustAt = now;
+    traceCounters.refreshExpandCalls += 1;
+    actions.setStatusMessage(`Loading more commits (${loaded}/${total})...`);
+    void refreshLog(nextLimit)
+      .then(() => {
+        currentLogLimit = nextLimit;
+      })
+      .catch((e) => {
+        actions.setStatusMessage(`Error: ${String(e)}`);
+      })
+      .finally(() => {
+        logWindowAdjustInFlight = false;
+      });
+  };
+
+  const maybeShrinkLogWindow = (visibleRows: number) => {
+    if (state.viewMode !== "log") return;
+    if (logWindowAdjustInFlight) return;
+    const total = state.totalNodeCount;
+    const loaded = state.nodes.length;
+    if (loaded <= TUI_LOG_LIMIT) return;
+    if (total > 0 && loaded >= total) {
+      // Loaded full history. Still allow shrinking when user returns upward.
+    }
+
+    const idx = selectedIndex();
+    const desired = Math.max(TUI_LOG_LIMIT, idx + Math.max(visibleRows, TUI_LOG_SHRINK_BUFFER_ROWS));
+    if (desired >= loaded - Math.max(visibleRows, 16)) return;
+
+    const nextLimit = Math.max(TUI_LOG_LIMIT, desired);
+    if (nextLimit >= currentLogLimit) return;
+
+    const now = Date.now();
+    if (now - lastLogWindowAdjustAt < TUI_LOG_WINDOW_ADJUST_COOLDOWN_MS) return;
+
+    logWindowAdjustInFlight = true;
+    lastLogWindowAdjustAt = now;
+    traceCounters.refreshShrinkCalls += 1;
+    void refreshLog(nextLimit)
+      .then(() => {
+        currentLogLimit = nextLimit;
+      })
+      .catch(() => {
+        // Ignore shrink errors; regular refresh/status paths will surface issues.
+      })
+      .finally(() => {
+        logWindowAdjustInFlight = false;
+      });
   };
 
   const ensureSelectedVisible = (visibleRows: number) => {
@@ -556,6 +859,8 @@ function App() {
     const offset = tuiState.scrollOffset;
     if (idx < offset) tuiActions.setScrollOffset(idx);
     else if (idx >= offset + visibleRows) tuiActions.setScrollOffset(Math.max(0, idx - visibleRows + 1));
+    maybeExpandLogWindow(visibleRows);
+    maybeShrinkLogWindow(visibleRows);
   };
 
   const ensureOpLogVisible = (visibleRows: number) => {
@@ -633,6 +938,49 @@ function App() {
     const step = mouseScrollSteps(event) * 3;
     tuiActions.setSidebarScroll(tuiState.sidebarScroll + dir * step);
     event.stopPropagation();
+  };
+
+  const handleGraphViewClick = (changeId: string) => {
+    actions.selectNode(changeId);
+  };
+
+  const handleFileClick = async (filePath: string) => {
+    if (!state.selectedId) {
+      actions.setStatusMessage("No commit selected");
+      return;
+    }
+    const selectedId = state.selectedId;
+    let filesEntry = state.filesCache.get(selectedId);
+    if (!filesEntry) {
+      try {
+        actions.setStatusMessage("Loading files...");
+        traceCounters.ensureFilesCalls += 1;
+        await ensureFiles(selectedId, 0);
+        filesEntry = state.filesCache.get(selectedId);
+      } catch (e) {
+        actions.setStatusMessage(`Error: ${String(e)}`);
+        return;
+      }
+    }
+    if (!filesEntry || filesEntry.files.length === 0) {
+      actions.setStatusMessage("No files for selected commit");
+      return;
+    }
+    const idx = filesEntry.files.findIndex((f) => f.path === filePath);
+    if (idx >= 0) {
+      try {
+        actions.setStatusMessage("Loading diff...");
+        traceCounters.ensureDiffForFileCalls += 1;
+        await ensureDiffForFile(selectedId, filePath, 0);
+      } catch (e) {
+        actions.setStatusMessage(`Error: ${String(e)}`);
+        return;
+      }
+      tuiActions.setDiffFileIndex(idx);
+      actions.setStatusMessage(`Showing diff: ${filePath}`);
+    } else {
+      actions.setStatusMessage(`File not found in diff: ${filePath}`);
+    }
   };
 
   const requestConfirmation = (message: string, run: () => Promise<void> | void) => {
@@ -1383,6 +1731,7 @@ function App() {
     const node = selectedNode();
     if (!node) return;
     try {
+      traceCounters.ensureDiffCalls += 1;
       await ensureDiff(node.changeId, 0);
       actions.setViewMode("diff");
       actions.setStatusMessage(`Diff view: ${node.changeId.slice(0, 8)}`);
@@ -1391,14 +1740,37 @@ function App() {
     }
   };
 
-  const cycleSidebarDiffFile = (dir: -1 | 1) => {
+  const cycleSidebarDiffFile = async (dir: -1 | 1) => {
     const node = selectedNode();
     if (!node) return;
-    const entry = state.diffCache.get(node.changeId);
-    const total = entry?.files.length || 0;
+
+    let filesEntry = state.filesCache.get(node.changeId);
+    if (!filesEntry) {
+      try {
+        traceCounters.ensureFilesCalls += 1;
+        await ensureFiles(node.changeId, 0);
+        filesEntry = state.filesCache.get(node.changeId);
+      } catch (e) {
+        actions.setStatusMessage(`Error: ${String(e)}`);
+        return;
+      }
+    }
+
+    const total = filesEntry?.files.length || 0;
     if (total <= 0) return;
     const next = (tuiState.diffFileIndex + dir + total) % total;
     tuiActions.setDiffFileIndex(next);
+
+    const nextPath = filesEntry!.files[next]!.path;
+    const cached = state.diffCache.get(node.changeId)?.files.find((f) => f.path === nextPath)?.diff || "";
+    if (cached.length > 0) return;
+
+    try {
+      traceCounters.ensureDiffForFileCalls += 1;
+      await ensureDiffForFile(node.changeId, nextPath, 0);
+    } catch (e) {
+      actions.setStatusMessage(`Error: ${String(e)}`);
+    }
   };
 
   const handleOpRestore = async () => {
@@ -1419,13 +1791,18 @@ function App() {
   };
 
   const sidebarDiffPreview = () => {
-    const entry = selectedDiffEntry();
-    if (!entry || entry.files.length === 0) return null;
-    const total = entry.files.length;
+    const node = selectedNode();
+    if (!node) return null;
+    const filesEntry = state.filesCache.get(node.changeId);
+    if (!filesEntry || filesEntry.files.length === 0) return null;
+    const total = filesEntry.files.length;
     const index = Math.max(0, Math.min(tuiState.diffFileIndex, total - 1));
-    const file = entry.files[index]!;
+    const path = filesEntry.files[index]!.path;
+    const entry = selectedDiffEntry();
+    const file = entry?.files.find((f) => f.path === path);
+    if (!file?.diff) return null;
     return {
-      path: file.path,
+      path,
       diff: file.diff,
       index,
       total,
@@ -1522,6 +1899,7 @@ function App() {
               mergeMode={tuiState.mergeMode}
               mergeSelectedIds={tuiState.mergeSelectedIds}
               themeVersion={tuiState.themeVersion}
+              onClick={handleGraphViewClick}
             />
           )}
           {state.viewMode === "oplog" && (
@@ -1591,9 +1969,10 @@ function App() {
                  obslogChangeId={state.obslogChangeId}
                  obslogSelected={state.obslogEntries[state.obslogSelectedIndex] || null}
                  diffPreview={sidebarDiffPreview()}
-                 collapsed={tuiState.sidebarCollapsed}
-                 keymap={keymapConfig()}
-               />
+                  collapsed={tuiState.sidebarCollapsed}
+                  keymap={keymapConfig()}
+                  onFileClick={handleFileClick}
+                />
             </box>
           )}
         </box>

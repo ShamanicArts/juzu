@@ -1,5 +1,5 @@
 import type { JJBackend } from "../core/backend";
-import { fetchJJLog, fetchTotalNodeCount, findJJRoot, jjAbandon, jjBookmarkDelete, jjBookmarkRename, jjBookmarkSet, jjBookmarkTrack, jjBookmarkUntrack, jjDescribe, jjDuplicate, jjEdit, jjGetDiff, jjGetFiles, jjGitFetch, jjGitPush, jjInsertAfter, jjMove, jjNew, jjRebase, jjRestore, jjSplit, jjSquashPaths, jjUndo, jjRedo, runCmdText, fetchOpLog, fetchObslog, jjRestoreOperation } from "../core/jj-api";
+import { fetchCommitDescription, fetchJJLog, fetchTotalNodeCount, findJJRoot, jjAbandon, jjBookmarkDelete, jjBookmarkRename, jjBookmarkSet, jjBookmarkTrack, jjBookmarkUntrack, jjDescribe, jjDuplicate, jjEdit, jjGetDiff, jjGetDiffForPath, jjGetFiles, jjGitFetch, jjGitPush, jjInsertAfter, jjMove, jjNew, jjRebase, jjRestore, jjSplit, jjSquashPaths, jjUndo, jjRedo, runCmdText, fetchOpLog, fetchObslog, jjRestoreOperation } from "../core/jj-api";
 
 export function createTuiBackend(): JJBackend {
   return {
@@ -7,8 +7,10 @@ export function createTuiBackend(): JJBackend {
 
     log: async ({ cwd, limit, revset }) => fetchJJLog(cwd, limit, revset),
     nodeCount: async ({ cwd, revset }) => fetchTotalNodeCount(cwd, revset),
+    description: async ({ cwd, changeId }) => fetchCommitDescription(cwd, changeId),
     files: async ({ cwd, changeId }) => jjGetFiles(changeId, cwd),
     diff: async ({ cwd, changeId }) => jjGetDiff(changeId, cwd),
+    diffFile: async ({ cwd, changeId, path }) => jjGetDiffForPath(changeId, path, cwd),
 
     new: async ({ cwd, parentId, parentIds }) => {
       if (parentIds && parentIds.length > 0) {

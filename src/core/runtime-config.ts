@@ -25,7 +25,11 @@ export interface JjVizRuntimeConfig {
     sidebarBreakpointWidth: number;
     sidebarMinHeight: number;
     stackedSidebarRatio: number;
+    sidebarDiffPreview: boolean;
     prefetchDiffInLog: boolean;
+    prefetchFilesInLog: boolean;
+    filesCacheMaxEntries: number;
+    filesCacheMaxBytes: number;
     clearDiffCacheWhenNotInDiff: boolean;
     keymap?: unknown;
   };
@@ -58,7 +62,11 @@ export const DEFAULT_RUNTIME_CONFIG: JjVizRuntimeConfig = {
     sidebarBreakpointWidth: 90,
     sidebarMinHeight: 16,
     stackedSidebarRatio: 0.5,
+    sidebarDiffPreview: false,
     prefetchDiffInLog: false,
+    prefetchFilesInLog: false,
+    filesCacheMaxEntries: 12,
+    filesCacheMaxBytes: 1_500_000,
     clearDiffCacheWhenNotInDiff: true,
     keymap: {},
   },

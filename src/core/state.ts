@@ -80,20 +80,7 @@ const initialState: SharedState = {
 export const [state, setState] = createStore<SharedState>(initialState);
 
 export const layoutResult = createMemo<LayoutResult>(() => {
-  const base = calculateLayout(state.layoutMode, state.nodes);
-  if (state.pinnedNodes.size === 0) return base;
-
-  const withPins = base.nodes.map((node) => {
-    const pinnedLane = state.pinnedNodes.get(node.changeId);
-    if (pinnedLane === undefined) return node;
-    return {
-      ...node,
-      lane: pinnedLane,
-      isPinned: true,
-    };
-  });
-
-  return calculateLayout(state.layoutMode, withPins);
+  return calculateLayout(state.layoutMode, state.nodes, {}, state.pinnedNodes);
 });
 
 // Cache a changeId→index lookup to avoid repeated linear scans.
@@ -127,11 +114,30 @@ export const actions = {
   setCwd: (cwd: string) => setState("cwd", cwd),
 
   setNodes: (nodes: CommitNode[]) => {
+    const prevDescriptionById = new Map<string, string>();
+    for (let i = 0; i < state.nodes.length; i++) {
+      const prev = state.nodes[i]!;
+      if (prev.descriptionFull) prevDescriptionById.set(prev.changeId, prev.descriptionFull);
+    }
+
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i]!;
+      if (node.descriptionFull) continue;
+      const prev = prevDescriptionById.get(node.changeId);
+      if (prev) node.descriptionFull = prev;
+    }
+
     setState("nodes", nodes);
     if (!state.selectedId && nodes.length > 0) {
       const wc = nodes.find((n) => n.isWorkingCopy);
       actions.selectNode(wc?.changeId || nodes[0]?.changeId || null);
     }
+  },
+
+  setNodeDescriptionFull: (changeId: string, descriptionFull: string) => {
+    const idx = state.nodes.findIndex((n) => n.changeId === changeId);
+    if (idx < 0) return;
+    setState("nodes", idx, "descriptionFull", descriptionFull);
   },
 
   setLayoutMode: (mode: LayoutMode) => setState("layoutMode", mode),

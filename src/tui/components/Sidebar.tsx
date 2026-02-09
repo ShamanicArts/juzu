@@ -36,6 +36,13 @@ function padLine(text: string, sidebarWidth: number): string {
   return truncateText(padded, sidebarWidth - 1);
 }
 
+interface SidebarLine {
+  text: string;
+  color: RGBA;
+  isFile?: boolean;
+  filePath?: string;
+}
+
 // Map file extensions to tree-sitter language identifiers
 function getLanguageFromPath(path: string): string | undefined {
   const ext = path.split('.').pop()?.toLowerCase();
@@ -85,6 +92,7 @@ interface SidebarProps {
   } | null;
   collapsed?: boolean;
   keymap?: TuiKeymapConfig;
+  onFileClick?: (filePath: string) => void;
 }
 
 export function Sidebar(props: SidebarProps) {
@@ -132,6 +140,7 @@ export function Sidebar(props: SidebarProps) {
 
   const showInlineDiff = createMemo(() => {
     if (isCollapsed()) return false;
+    if (!getRuntimeConfig().tui.sidebarDiffPreview) return false;
     if (!props.diffPreview) return false;
     if (props.viewMode && props.viewMode !== "log") return false;
     if (props.confirmPrompt) return false;
@@ -456,7 +465,12 @@ export function Sidebar(props: SidebarProps) {
       for (const f of filesToShow) {
         const fileColor = f.type === "A" ? GREEN : f.type === "D" ? RED : CYAN;
         const fileText = `${f.type} ${truncateText(f.path, maxFileWidth - 2)}`;
-        lines.push({ text: fileText, color: fileColor });
+        lines.push({ 
+          text: fileText, 
+          color: fileColor,
+          isFile: true,
+          filePath: f.path,
+        } as SidebarLine);
       }
       if (!props.filesExpanded && cached.files.length > filesToShow.length) {
         lines.push({ text: `... +${cached.files.length - filesToShow.length} more`, color: FG_DIM });
@@ -527,9 +541,26 @@ export function Sidebar(props: SidebarProps) {
             <text fg={borderFg()}>{"-".repeat(Math.max(0, props.width - 1))}</text>
             <For each={visibleLines().lines}>
               {(line) => (
-                <text fg={line.color}>
-                  {line.text || " "}
-                </text>
+                <Show
+                  when={(line as SidebarLine).isFile && props.onFileClick}
+                  fallback={
+                    <text fg={line.color}>
+                      {line.text || " "}
+                    </text>
+                  }
+                >
+                  <box onMouseUp={(event: any) => {
+                    event?.stopPropagation?.();
+                    const sl = line as SidebarLine;
+                    if (sl.filePath && props.onFileClick) {
+                      props.onFileClick(sl.filePath);
+                    }
+                  }}>
+                    <text fg={line.color}>
+                      {line.text || " "}
+                    </text>
+                  </box>
+                </Show>
               )}
             </For>
             <text fg={scrollFg()}>{scrollIndicator() || " "}</text>

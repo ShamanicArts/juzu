@@ -48,6 +48,7 @@ function makeBackend(overrides: Partial<JJBackend> = {}) {
     nodeCount: async () => {
       return nodes.length;
     },
+    description: async () => "",
     files: async () => {
       calls.files++;
       return [{ type: "M", path: "src/app.ts" }];
@@ -98,7 +99,7 @@ describe("usecases mutation wrappers", () => {
 
     expect(calls.edit).toBe(1);
     expect(calls.log).toBe(1);
-    expect(state.statusMessage).toBe("nodes:1");
+    expect(state.statusMessage).toBe("nodes:1/1");
     expect(state.isLoading).toBe(false);
     expect(state.nodes.length).toBe(1);
   });

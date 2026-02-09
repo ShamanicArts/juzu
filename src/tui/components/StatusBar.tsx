@@ -191,7 +191,7 @@ export function StatusBar(props: StatusBarProps) {
   const showStatusMessage = createMemo(() => {
     const msg = (state.statusMessage || "").trim();
     if (!msg) return false;
-    if (/^nodes:\d+$/i.test(msg)) return false;
+    if (/^nodes:\d+(?:\/\d+)?$/i.test(msg)) return false;
     if (msg === "Loading...") return false;
     if (msg.startsWith("Error")) return true;
     return !tuiState.activeLeaderMode;

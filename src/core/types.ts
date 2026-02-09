@@ -28,6 +28,7 @@ export type LayoutMode = 'chronological' | 'mainline' | 'bookmark-centric' | 'wc
 export interface FilesCacheEntry {
   atMs: number;
   files: Array<{ type: string; path: string }>;
+  bytes?: number;
 }
 
 export interface GraphConfig {
