@@ -66,6 +66,9 @@ export interface TuiKeymapConfig {
   commandLabels: Partial<Record<CommandId, string>>;
   statusContextLabels: Record<StatusContextId, string>;
   statusContexts: Record<StatusContextId, StatusHintItem[]>;
+  hideHintsForModes: LeaderModeId[];
+  hideHintsInIdle: boolean;
+  showMinimalHints: boolean;
 }
 
 const COMMAND_ID_SET = new Set<string>(COMMAND_IDS);
@@ -73,9 +76,9 @@ const LEADER_MODE_SET = new Set<string>(LEADER_MODE_IDS);
 const STATUS_CONTEXT_SET = new Set<string>(STATUS_CONTEXT_IDS);
 
 const DEFAULT_LEADERS: Record<LeaderModeId, string> = {
-  action: "ctrl+x",
+  action: "ctrl+a",
   ops: "ctrl+o",
-  view: "ctrl+l",
+  view: "ctrl+v",
   marks: "ctrl+b",
 };
 
@@ -83,14 +86,14 @@ const DEFAULT_LABELS: Record<LeaderModeId, string> = {
   action: "Actions",
   ops: "Operations",
   view: "View",
-  marks: "Marks",
+  marks: "Bookmarks",
 };
 
 const DEFAULT_BADGES: Record<LeaderModeId, string> = {
-  action: "ACT",
-  ops: "OPS",
-  view: "VIEW",
-  marks: "MARK",
+  action: "Act",
+  ops: "Ops",
+  view: "View",
+  marks: "Book",
 };
 
 const DEFAULT_MODE_BINDINGS: Record<LeaderModeId, BindingMap> = {
@@ -154,26 +157,26 @@ const DEFAULT_COMMAND_LABELS: Record<CommandId, string> = {
   redo: "Redo",
   "git-fetch": "Fetch",
   "git-push": "Push",
-  "bookmark-set": "BM Set",
-  "bookmark-delete": "BM Del",
-  "merge-mode": "Merge",
-  "theme-picker": "Theme",
-  oplog: "OpLog",
+  "bookmark-set": "Bookmark set",
+  "bookmark-delete": "Bookmark delete",
+  "merge-mode": "Merge mode",
+  "theme-picker": "Theme picker",
+  oplog: "Operation log",
   obslog: "Obslog",
   "back-log": "Back",
   restore: "Restore",
-  "layout-chronological": "Layout Chron",
-  "layout-mainline": "Layout Main",
-  "layout-bookmark-centric": "Layout BM",
-  "layout-wc-focused": "Layout WC",
-  "layout-topological": "Layout Topo",
-  "toggle-sidebar": "Sidebar",
+  "layout-chronological": "Layout chronological",
+  "layout-mainline": "Layout mainline",
+  "layout-bookmark-centric": "Layout bookmark",
+  "layout-wc-focused": "Layout wc",
+  "layout-topological": "Layout topological",
+  "toggle-sidebar": "Toggle sidebar",
   refresh: "Refresh",
-  "toggle-help": "Help",
-  "toggle-files": "Files",
-  "toggle-description": "Description",
-  revset: "Revset",
-  "diff-toggle": "Diff",
+  "toggle-help": "Toggle help",
+  "toggle-files": "Toggle files",
+  "toggle-description": "Toggle description",
+  revset: "Revset filter",
+  "diff-toggle": "Diff view",
 };
 
 const DEFAULT_STATUS_CONTEXTS: Record<StatusContextId, StatusHintItem[]> = {
@@ -269,6 +272,9 @@ const DEFAULT_CONFIG: TuiKeymapConfig = {
     revset: [...DEFAULT_STATUS_CONTEXTS.revset],
     themePicker: [...DEFAULT_STATUS_CONTEXTS.themePicker],
   },
+  hideHintsForModes: [],
+  hideHintsInIdle: false,
+  showMinimalHints: false,
 };
 
 function canonicalModeId(raw: string): LeaderModeId | null {
@@ -413,15 +419,18 @@ export function resolveTuiKeymapConfig(rawConfig: unknown): TuiKeymapConfig {
     commandLabels: { ...DEFAULT_CONFIG.commandLabels },
     statusContextLabels: { ...DEFAULT_CONFIG.statusContextLabels },
     statusContexts: {
-      oplog: [...DEFAULT_CONFIG.statusContexts.oplog],
-      obslog: [...DEFAULT_CONFIG.statusContexts.obslog],
-      diff: [...DEFAULT_CONFIG.statusContexts.diff],
-      merge: [...DEFAULT_CONFIG.statusContexts.merge],
-      rebase: [...DEFAULT_CONFIG.statusContexts.rebase],
-      describe: [...DEFAULT_CONFIG.statusContexts.describe],
-      revset: [...DEFAULT_CONFIG.statusContexts.revset],
-      themePicker: [...DEFAULT_CONFIG.statusContexts.themePicker],
+      oplog: [...DEFAULT_STATUS_CONTEXTS.oplog],
+      obslog: [...DEFAULT_STATUS_CONTEXTS.obslog],
+      diff: [...DEFAULT_STATUS_CONTEXTS.diff],
+      merge: [...DEFAULT_STATUS_CONTEXTS.merge],
+      rebase: [...DEFAULT_STATUS_CONTEXTS.rebase],
+      describe: [...DEFAULT_STATUS_CONTEXTS.describe],
+      revset: [...DEFAULT_STATUS_CONTEXTS.revset],
+      themePicker: [...DEFAULT_STATUS_CONTEXTS.themePicker],
     },
+    hideHintsForModes: [...DEFAULT_CONFIG.hideHintsForModes],
+    hideHintsInIdle: DEFAULT_CONFIG.hideHintsInIdle,
+    showMinimalHints: DEFAULT_CONFIG.showMinimalHints,
   };
 
   if (Array.isArray(raw.modeOrder)) {
@@ -513,6 +522,24 @@ export function resolveTuiKeymapConfig(rawConfig: unknown): TuiKeymapConfig {
     if (!context) continue;
     const parsed = readStatusHintItems(rawItems);
     if (parsed.length > 0) resolved.statusContexts[context] = parsed;
+  }
+
+  if (Array.isArray(raw.hideHintsForModes)) {
+    const modes: LeaderModeId[] = [];
+    for (const v of raw.hideHintsForModes) {
+      if (typeof v !== "string") continue;
+      const id = canonicalModeId(v);
+      if (id && !modes.includes(id)) modes.push(id);
+    }
+    resolved.hideHintsForModes = modes;
+  }
+
+  if (typeof raw.hideHintsInIdle === "boolean") {
+    resolved.hideHintsInIdle = raw.hideHintsInIdle;
+  }
+
+  if (typeof raw.showMinimalHints === "boolean") {
+    resolved.showMinimalHints = raw.showMinimalHints;
   }
 
   return resolved;

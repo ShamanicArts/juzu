@@ -189,18 +189,32 @@ See `config.example.toml` for all first-pass options.
 
 The TUI now defaults to persistent leader modes (no timeout):
 
-- Press a leader key (for example `Ctrl+x`) to enter that action category.
+- Press a leader key (for example `Ctrl+a`) to enter that action category.
 - The status bar shows mode badges for all leaders, with the active one highlighted.
 - In a leader mode, key actions stay active until you exit with `Esc` or `q`.
 
 Default mode leaders:
 
-- `Ctrl+x` -> Actions
-- `Ctrl+o` -> Operations
-- `Ctrl+l` -> View (layout/sidebar/theme)
-- `Ctrl+b` -> Marks
+- `Ctrl+a` -> Actions (new, edit, describe, rebase, etc.)
+- `Ctrl+o` -> Operations (undo, redo, fetch, push, oplog, obslog)
+- `Ctrl+v` -> View (layout, sidebar, theme, help, revset)
+- `Ctrl+b` -> Bookmarks (set, delete)
 
-You can customize leaders, mode order, mode bindings, badge labels, context priority/order, command labels, and optional idle single-key bindings via `[tui.keymap]` in config.
+You can customize leaders, mode order, mode bindings, badge labels, hint display, and command labels via `[tui.keymap]` in config.
+
+**Hint Display Control:**
+
+```toml
+[tui.keymap]
+# Hide hints for specific leader modes
+hideHintsForModes = ["marks"]
+
+# Hide hints in idle/base log view (cleaner interface)
+hideHintsInIdle = false
+
+# Show badges only (ACT OPS VIEW BOOK) instead of key hints (^a ACT ^o OPS ^v VIEW ^b BOOK)
+showMinimalHints = false
+```
 
 Status-context chips (oplog/obslog/diff/merge/etc.) are also configurable through `[tui.keymap.statusContexts.*]` and `[tui.keymap.statusContextLabels]`.
 

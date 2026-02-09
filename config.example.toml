@@ -33,11 +33,31 @@ modeOrder = ["action", "ops", "view", "marks"]
 statusContextOrder = ["oplog", "obslog", "diff", "merge", "rebase", "describe", "revset", "themePicker"]
 exitKeys = ["escape", "q"]
 
+# Hint display control
+# hideHintsForModes: Don't show hints for these specific leader modes (blacklist)
+# hideHintsInIdle: Don't show hints in idle/base log view
+# showMinimalHints: Show badges only (ACT OPS VIEW MARK) instead of ^a ACT ^o OPS
+hideHintsForModes = []
+hideHintsInIdle = false
+showMinimalHints = false
+
 [tui.keymap.leaders]
-action = "ctrl+x"
+action = "ctrl+a"
 ops = "ctrl+o"
-view = "ctrl+l"
+view = "ctrl+v"
 marks = "ctrl+b"
+
+[tui.keymap.labels]
+action = "Actions"
+ops = "Operations"
+view = "View"
+marks = "Bookmarks"
+
+[tui.keymap.badges]
+action = "Act"
+ops = "Ops"
+view = "View"
+marks = "Book"
 
 [tui.keymap.idleBindings]
 # Add optional single-key shortcuts in idle mode if desired.

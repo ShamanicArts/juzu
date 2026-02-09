@@ -131,24 +131,33 @@ export function StatusBar(props: { width: number; height: number; themeVersion?:
     const ctx = contextItems();
     if (ctx) return ctx;
 
+    const useMinimal = props.keymap.showMinimalHints;
+
     if (tuiState.activeLeaderMode) {
+      if (props.keymap.hideHintsForModes.includes(tuiState.activeLeaderMode)) {
+        return [];
+      }
       const tone = MODE_TONE[tuiState.activeLeaderMode] || "neutral";
       const modeItems = Object.entries(props.keymap.modeBindings[tuiState.activeLeaderMode]).map(([key, command]) => ({
-        key: formatKeyHint(key),
+        key: useMinimal ? "" : formatKeyHint(key),
         label: commandLabel(command, props.keymap.commandLabels),
         tone,
       }));
-      modeItems.push({ key: "Esc/q", label: "Exit", tone: "neutral" });
+      modeItems.push({ key: useMinimal ? "" : "Esc/q", label: "Exit", tone: "neutral" });
       return modeItems;
     }
 
+    if (props.keymap.hideHintsInIdle) {
+      return [];
+    }
+
     const modeItems: Item[] = props.keymap.modeOrder.map((mode) => ({
-      key: props.keymap.showLeaderTriggersInStatus ? formatKeyHint(props.keymap.leaders[mode]) : "",
+      key: useMinimal ? "" : formatKeyHint(props.keymap.leaders[mode]),
       label: props.keymap.badges[mode],
       tone: MODE_TONE[mode] || "neutral",
     }));
 
-    if (!props.keymap.showIdleBindingsInStatus) return modeItems;
+    if (!props.keymap.showIdleBindingsInStatus || useMinimal) return modeItems;
     const idleItems = Object.entries(props.keymap.idleBindings).map(([key, command]) => ({
       key: formatKeyHint(key),
       label: commandLabel(command, props.keymap.commandLabels),
