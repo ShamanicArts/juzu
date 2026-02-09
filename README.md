@@ -1,28 +1,36 @@
 # juzu
 
-A high-performance, interactive visualization tool for the [Jujutsu (jj)](https://github.com/martinvonz/jj) version control system.
+A high-performance interface for the [Jujutsu (jj)](https://github.com/jj-vcs/jj) version control system.
 
-Built with **Bun** and **HTML5 Canvas**, this tool provides a "Circuit Board" style visualization of your commit graph with inline actions for common workflows.
+Built with **Bun** and TypeScript, juzu provides a rich terminal UI (TUI) and web experience featuring a "Circuit Board" style visualization with powerful commit workflow tools.
 
 ## Features
 
-*   **Circuit Board Graph**: A clean, orthogonal layout for commit history with no line crossovers, making complex merges easy to follow.
+**Terminal UI (TUI)**
+
+*   **Rich Interactive Interface**: Full-featured terminal visualization with leader modes, keyboard-driven workflows, and live diff viewing.
+*   **Persistent Leader Modes**: Action categories (Actions, Operations, View, Bookmarks) that stay active until dismissed—no timeout pressure.
+*   **Complete Workflow Support**: New commits, edit revisions, describe changes, rebase operations, split/squash/move, abandon, duplicate, file operations, bookmarks, undo/redo, fetch/push.
+*   **Live Diffs**: View file changes directly in the terminal with syntax-aware coloring.
+*   **Oplog & Obslog**: Navigate and inspect operation logs and obscured revisions.
+*   **Merge & Conflict Resolution**: Interactive conflict handling with status context tracking.
 *   **5 Layout Modes**: Chronological, Mainline, Bookmark-centric, WC-focused, and Topological views.
+*   **Configurable Keymaps**: Customize leaders, mode order, bindings, and hint display via TOML config.
+*   **Theme Support**: Multiple bundled themes with full customization support.
+
+**Web UI**
+
+*   **Circuit Board Graph**: Clean, orthogonal layout for commit history with no line crossovers.
 *   **Drag-to-Pin**: Alt+Click+Drag commits between lanes to customize layout.
-*   **Inline Actions**: Perform operations directly from the graph view:
-    *   **Edit**: Switch working copy to any revision (checkout).
-    *   **New**: Create a new child commit from any node.
-    *   **Desc**: Edit commit description.
-    *   **Rebase**: Visual point-and-click rebase workflow.
-    *   **Files**: View changed files inline within the graph layout.
-*   **Shift Actions** (Hold Shift):
-    *   **Abandon**: Hide/Abandon the revision.
-    *   **Squash**: Squash changes into parent.
-    *   **Dupe**: Duplicate the revision.
-*   **Operation Modes**: Split, Squash, and Move operations with file selection.
-*   **Live Updates**: The graph automatically refreshes to reflect the current state of your repository.
-*   **Detailed Inspector**: Sidebar view showing full commit metadata, descriptions, and file diffs.
+*   **Inline Actions**: Edit checkout, create commits, describe changes, visual rebase, view files inline.
+*   **Live Updates**: Auto-refreshing graph reflecting repository state.
+*   **Detailed Inspector**: Sidebar with commit metadata and file diffs.
+
+**Shared Features**
+
+*   **Live Repository Detection**: Auto-detects JJ repository root from current working directory.
 *   **Working Copy Indicator**: Clearly marks your current checkout (`@`) in the graph.
+*   **Layered Configuration**: Global, repo, and local TOML config files with flexible precedence.
 
 ## Tech Stack
 
@@ -81,17 +89,18 @@ bun run ~/tools/juzu/cli.ts
 ## Usage
 
 ```bash
-# Start web UI (default; auto-detects port 3000, opens browser)
+# Start TUI (default; renders directly in your terminal)
 bun run cli.ts
 
+# Start web UI (opens browser on port 3000)
+bun run cli.ts --web
+
 # Custom port, don't open browser
-bun run cli.ts --port=8080 --no-open
+bun run cli.ts --web --port=8080 --no-open
 
-# Start TUI (renders the graph directly in your terminal)
-bun run cli.ts --tui
-
-# Or shorthand
-bun run cli.ts -p 8080 -n
+# Shorthands
+bun run cli.ts -p 8080 -n          # web with custom port
+bun run cli.ts --tui -t ember     # TUI with specific theme
 
 # Show help
 bun run cli.ts --help
@@ -101,8 +110,10 @@ bun run cli.ts --help
 
 | Option | Description |
 |--------|-------------|
-| `--port=<num>` | Port to run server on (default: 3000) |
-| `-n, --no-open` | Don't auto-open browser |
+| `--web` | Launch web UI instead of TUI |
+| `--tui` | Launch TUI (default) |
+| `--port=<num>` | Port to run web server on (default: 3000) |
+| `-n, --no-open` | Don't auto-open browser for web UI |
 | `--theme=<name>` | Select theme by name (`themes/<name>.toml`) |
 | `--config=<path>` | Use explicit TOML config file |
 | `-h, --help` | Show help message |
@@ -185,7 +196,7 @@ bun run cli.ts --tui --theme=ember
 
 See `config.example.toml` for all first-pass options.
 
-### TUI Leader Modes
+### TUI Details
 
 The TUI now defaults to persistent leader modes (no timeout):
 
@@ -238,6 +249,19 @@ contextContentBg = "#111318"
 
 ### Keyboard Shortcuts
 
+**TUI Leader Modes (default leaders):**
+
+| Leader | Mode | Description |
+|--------|------|-------------|
+| `Ctrl+a` | Actions | New, edit, describe, rebase, split/squash/move |
+| `Ctrl+o` | Operations | Undo, redo, fetch, push, oplog, obslog |
+| `Ctrl+v` | View | Layout, sidebar, theme, help, revset |
+| `Ctrl+b` | Bookmarks | Set, delete |
+
+Press a leader to enter the mode, then use the mode-specific keys. Press `Esc` or `q` to exit.
+
+**Web UI:**
+
 | Key | Action |
 |-----|--------|
 | `Shift` | Show alternate actions (Abandon, Squash, Dupe) |
@@ -248,10 +272,11 @@ contextContentBg = "#111318"
 
 ## Architecture
 
-The tool follows a "Game Loop" architecture:
-*   **State**: Graph topology calculated once per fetch.
-*   **Render**: Entire UI drawn on single `<canvas>` element.
-*   **Interaction**: Mouse events mapped to world coordinates for hit detection on virtual buttons.
+**TUI:** Terminal-native rendering with virtual button semantics, semantic tokens for themeability, and persistent leader mode state management.
+
+**Web UI:** "Game Loop" architecture with state-driven rendering on HTML5 Canvas, world coordinate hit detection, and interactive drag-to-pin workflows.
+
+**Shared:** Repository detection, graph topology calculation, commit management backend, and layered configuration system.
 
 ### Layout Strategies
 
@@ -269,13 +294,16 @@ cd juzu
 
 # Install dependencies (Bun handles this automatically)
 
-# Run development server
+# Run TUI (default)
 bun run cli.ts
 
-# The server will:
+# Run web UI
+bun run cli.ts --web
+
+# The tool will:
 # 1. Auto-detect the JJ repository root (walks up from CWD)
-# 2. Start on port 3000 (or specified port)
-# 3. Open your default browser
+# 2. Launch the selected interface
+# 3. Load configuration layers (global → repo → local)
 ```
 
 ## License
