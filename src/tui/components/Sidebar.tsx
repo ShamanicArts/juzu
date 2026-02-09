@@ -13,7 +13,10 @@ const CYAN = RGBA.fromHex(UI_TOKENS.semantic.info);
 const GREEN = RGBA.fromHex(UI_TOKENS.semantic.success);
 const RED = RGBA.fromHex(UI_TOKENS.semantic.error);
 const YELLOW = RGBA.fromHex(UI_TOKENS.semantic.warn);
+// Use textMuted directly instead of dimming further - much more legible
 const FG_DIM = RGBA.fromHex(UI_TOKENS.slate.textMuted);
+// Brighter label color for titles/headers (65% toward full text brightness)
+const FG_LABEL = RGBA.fromHex(mixHex(UI_TOKENS.slate.textMuted, UI_TOKENS.slate.text, 0.65));
 const FG = RGBA.fromHex(UI_TOKENS.slate.text);
 
 interface SidebarProps {
@@ -123,7 +126,10 @@ export function Sidebar(props: SidebarProps) {
     const GREEN = RGBA.fromHex(UI_TOKENS.semantic.success);
     const RED = RGBA.fromHex(UI_TOKENS.semantic.error);
     const YELLOW = RGBA.fromHex(UI_TOKENS.semantic.warn);
+    // Use textMuted directly instead of dimming further - much more legible
     const FG_DIM = RGBA.fromHex(UI_TOKENS.slate.textMuted);
+    // Brighter label color for titles/headers (65% toward full text brightness)
+    const FG_LABEL = RGBA.fromHex(mixHex(UI_TOKENS.slate.textMuted, UI_TOKENS.slate.text, 0.65));
     const FG = RGBA.fromHex(UI_TOKENS.slate.text);
 
     if (props.confirmPrompt) {
@@ -222,7 +228,7 @@ export function Sidebar(props: SidebarProps) {
       lines.push({ text: `User: ${entry.user}`, color: FG });
       lines.push({ text: `Current: ${entry.isCurrent ? "Yes" : "No"}`, color: entry.isCurrent ? GREEN : FG_DIM });
       lines.push({ text: "", color: FG_DIM });
-      lines.push({ text: "Description:", color: FG_DIM });
+      lines.push({ text: "Description:", color: FG_LABEL });
       const descLines = (entry.descriptionFull || entry.descriptionTitle || "").split("\n");
       for (const line of descLines.slice(0, 5)) {
         lines.push({ text: line || " ", color: FG });
@@ -235,7 +241,7 @@ export function Sidebar(props: SidebarProps) {
       const argsTag = entry.tags.find((t) => t.toLowerCase().startsWith("args:"));
       if (argsTag) {
         lines.push({ text: "", color: FG_DIM });
-        lines.push({ text: "Command:", color: FG_DIM });
+        lines.push({ text: "Command:", color: FG_LABEL });
         lines.push({ text: argsTag, color: YELLOW });
       }
       
@@ -243,7 +249,7 @@ export function Sidebar(props: SidebarProps) {
       const otherTags = entry.tags.filter(t => !t.toLowerCase().startsWith("args:"));
       if (otherTags.length > 0) {
         lines.push({ text: "", color: FG_DIM });
-        lines.push({ text: "Tags:", color: FG_DIM });
+        lines.push({ text: "Tags:", color: FG_LABEL });
         for (const tag of otherTags) {
           lines.push({ text: `  ${tag}`, color: YELLOW });
         }
@@ -264,7 +270,7 @@ export function Sidebar(props: SidebarProps) {
 
       if (entry) {
         lines.push({ text: "", color: FG_DIM });
-        lines.push({ text: `Commit: ${entry.commitId.slice(0, 12)}`, color: FG_DIM });
+        lines.push({ text: `Commit: ${entry.commitId.slice(0, 12)}`, color: FG_LABEL });
         
         // Status badges
         if (entry.isWorkingCopy) lines.push({ text: "@ working copy", color: GREEN });
@@ -278,7 +284,7 @@ export function Sidebar(props: SidebarProps) {
         lines.push({ text: `OpDur: ${entry.operationDuration}`, color: FG_DIM });
         const opLines = (entry.operationDescriptionFull || entry.operationDescription || "(no operation description)").split("\n");
         lines.push({ text: "", color: FG_DIM });
-        lines.push({ text: "Operation:", color: FG_DIM });
+        lines.push({ text: "Operation:", color: FG_LABEL });
         for (const line of opLines.slice(0, 4)) {
           lines.push({ text: line || " ", color: FG });
         }
@@ -288,7 +294,7 @@ export function Sidebar(props: SidebarProps) {
         const argsTag = entry.operationTags.find((t) => t.toLowerCase().startsWith("args:"));
         if (argsTag) {
           lines.push({ text: "", color: FG_DIM });
-          lines.push({ text: "Command:", color: FG_DIM });
+          lines.push({ text: "Command:", color: FG_LABEL });
           lines.push({ text: argsTag, color: YELLOW });
         }
         
@@ -296,17 +302,17 @@ export function Sidebar(props: SidebarProps) {
           const otherTags = entry.operationTags.filter(t => !t.toLowerCase().startsWith("args:"));
           if (otherTags.length > 0) {
             lines.push({ text: "", color: FG_DIM });
-            lines.push({ text: "Tags:", color: FG_DIM });
+            lines.push({ text: "Tags:", color: FG_LABEL });
             for (const tag of otherTags.slice(0, 4)) {
               lines.push({ text: tag, color: YELLOW });
             }
             if (otherTags.length > 4) lines.push({ text: "...", color: FG_DIM });
           }
         }
-        lines.push({ text: `Time: ${entry.time.slice(0, 19)}`, color: FG_DIM });
-        lines.push({ text: `Author: ${entry.author}`, color: FG_DIM });
+        lines.push({ text: `Time: ${entry.time.slice(0, 19)}`, color: FG_LABEL });
+        lines.push({ text: `Author: ${entry.author}`, color: FG_LABEL });
         lines.push({ text: "", color: FG_DIM });
-        lines.push({ text: "Description:", color: FG_DIM });
+        lines.push({ text: "Description:", color: FG_LABEL });
         const desc = (entry.descriptionFull || entry.descriptionTitle || "(no description)").split("\n");
         for (const line of desc.slice(0, 6)) {
           lines.push({ text: line || " ", color: FG });
@@ -352,13 +358,13 @@ export function Sidebar(props: SidebarProps) {
     }
 
     lines.push({ text: `Change: ${selected.changeId}${selected.isWorkingCopy ? " (@)" : ""}`, color: selected.isWorkingCopy ? GREEN : CYAN });
-    lines.push({ text: `Commit: ${selected.commitId}`, color: FG_DIM });
-    lines.push({ text: `Author: ${selected.author}`, color: FG_DIM });
-    lines.push({ text: `Time: ${selected.time}`, color: FG_DIM });
+    lines.push({ text: `Commit: ${selected.commitId}`, color: FG_LABEL });
+    lines.push({ text: `Author: ${selected.author}`, color: FG_LABEL });
+    lines.push({ text: `Time: ${selected.time}`, color: FG_LABEL });
     lines.push({ text: "", color: FG_DIM });
 
     if (selected.bookmarks.length > 0) {
-      lines.push({ text: "Bookmarks:", color: FG_DIM });
+      lines.push({ text: "Bookmarks:", color: FG_LABEL });
       const maxBookmarks = 4;
       for (const b of selected.bookmarks.slice(0, maxBookmarks)) {
         lines.push({ text: `  ${b}`, color: CYAN });
@@ -381,7 +387,7 @@ export function Sidebar(props: SidebarProps) {
       lines.push({ text: "", color: FG_DIM });
     }
 
-    lines.push({ text: props.descExpanded ? "Description:" : "Description (x expand):", color: FG_DIM });
+    lines.push({ text: props.descExpanded ? "Description:" : "Description (x expand):", color: FG_LABEL });
     const descText = selected.descriptionFull || selected.descriptionTitle || "(no description)";
     const maxDescLines = props.descExpanded ? 1000 : 2;
     let descLinesShown = 0;
@@ -403,7 +409,7 @@ export function Sidebar(props: SidebarProps) {
     }
     lines.push({ text: "", color: FG_DIM });
 
-    lines.push({ text: props.filesExpanded ? "Files (f collapse):" : "Files (f expand):", color: FG_DIM });
+    lines.push({ text: props.filesExpanded ? "Files (f collapse):" : "Files (f expand):", color: FG_LABEL });
     const cached = props.filesCache.get(selected.changeId);
     if (cached && cached.files.length > 0) {
       const filesToShow = props.filesExpanded ? cached.files : cached.files.slice(0, 8);

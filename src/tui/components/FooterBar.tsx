@@ -7,9 +7,12 @@ export function FooterBar(props: { themeVersion?: number }) {
   // Theme-aware color accessors
   const barBg = createMemo(() => { props.themeVersion; return RGBA.fromHex(UI_TOKENS.slate.panel); });
   const segmentBg = createMemo(() => { props.themeVersion; return RGBA.fromHex(UI_TOKENS.slate.bg2); });
-  const muted = createMemo(() => { props.themeVersion; return UI_TOKENS.slate.textMuted; });
   const wc = createMemo(() => { props.themeVersion; return UI_TOKENS.semantic.success; });
   const bookmark = createMemo(() => { props.themeVersion; return UI_TOKENS.semantic.info; });
+  // Highlighted colors for footer segments
+  const repoPathColor = createMemo(() => { props.themeVersion; return UI_TOKENS.semantic.info; });
+  const nodeCountColor = createMemo(() => { props.themeVersion; return UI_TOKENS.semantic.success; });
+  const layoutColor = createMemo(() => { props.themeVersion; return UI_TOKENS.slate.text; });
 
   // Get working copy info
   const workingCopy = createMemo(() => {
@@ -53,7 +56,7 @@ export function FooterBar(props: { themeVersion?: number }) {
     <box height={1} backgroundColor={barBg()} flexDirection="row">
       {/* Repo path */}
       <box backgroundColor={segmentBg()} paddingLeft={1} paddingRight={1}>
-        <text fg={muted()}>{repoPath()}</text>
+        <text fg={repoPathColor()}>{repoPath()}</text>
       </box>
 
       {/* Current bookmark if any */}
@@ -75,12 +78,12 @@ export function FooterBar(props: { themeVersion?: number }) {
 
       {/* Layout mode */}
       <box paddingRight={1}>
-        <text fg={muted()}>{layoutMode()}</text>
+        <text fg={layoutColor()}>{layoutMode()}</text>
       </box>
 
       {/* Node count */}
       <box backgroundColor={segmentBg()} paddingLeft={1} paddingRight={1}>
-        <text fg={muted()}>{nodeCount()} nodes</text>
+        <text fg={nodeCountColor()}>{nodeCount()} nodes</text>
       </box>
     </box>
   );
