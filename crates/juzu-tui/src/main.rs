@@ -46,6 +46,7 @@ struct App {
     files_by_change: HashMap<String, Vec<FileEntry>>,
     diffs_by_change: HashMap<String, DiffPreview>,
     selected: usize,
+    diff_scroll: usize,
 }
 
 fn main() -> Result<()> {
@@ -84,6 +85,7 @@ fn main() -> Result<()> {
         files_by_change,
         diffs_by_change,
         selected,
+        diff_scroll: 0,
     };
     ensure_selected_diff(&mut app);
 
@@ -109,11 +111,19 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
                     KeyCode::Char('q') | KeyCode::Esc => break,
                     KeyCode::Char('j') | KeyCode::Down => {
                         app.selected = (app.selected + 1).min(app.nodes.len().saturating_sub(1));
+                        app.diff_scroll = 0;
                         ensure_selected_diff(app);
                     }
                     KeyCode::Char('k') | KeyCode::Up => {
                         app.selected = app.selected.saturating_sub(1);
+                        app.diff_scroll = 0;
                         ensure_selected_diff(app);
+                    }
+                    KeyCode::PageDown | KeyCode::Char(']') => {
+                        app.diff_scroll = app.diff_scroll.saturating_add(10);
+                    }
+                    KeyCode::PageUp | KeyCode::Char('[') => {
+                        app.diff_scroll = app.diff_scroll.saturating_sub(10);
                     }
                     KeyCode::Char('1') => app.mode = LayoutMode::Chronological,
                     KeyCode::Char('2') => app.mode = LayoutMode::Mainline,
@@ -737,13 +747,22 @@ fn render_sidebar(
         } else if diff.rows.is_empty() {
             lines.push(Line::from("—"));
         } else {
-            for row in diff.rows.iter().take(14) {
+            let visible_count = 14usize;
+            let max_scroll = diff.rows.len().saturating_sub(visible_count);
+            let scroll = app.diff_scroll.min(max_scroll);
+            if scroll > 0 {
+                lines.push(Line::from(Span::styled(
+                    format!("↑ {scroll} rows above"),
+                    Style::default().fg(Color::DarkGray),
+                )));
+            }
+            for row in diff.rows.iter().skip(scroll).take(visible_count) {
                 lines.push(render_diff_row(row, area.width as usize - 4));
             }
-            if diff.rows.len() > 14 {
+            if diff.rows.len() > scroll + visible_count {
                 lines.push(Line::from(format!(
-                    "… {} more structured diff rows",
-                    diff.rows.len() - 14
+                    "↓ {} more structured diff rows",
+                    diff.rows.len() - scroll - visible_count
                 )));
             }
         }
@@ -795,7 +814,9 @@ fn render_footer(frame: &mut Frame, area: Rect) {
         Span::styled(" j/k ", Style::default().fg(Color::Black).bg(Color::Gray)),
         Span::raw(" select   "),
         Span::styled(" 1-5 ", Style::default().fg(Color::Black).bg(Color::Gray)),
-        Span::raw(" layout modes"),
+        Span::raw(" layout modes   "),
+        Span::styled(" [/] ", Style::default().fg(Color::Black).bg(Color::Gray)),
+        Span::raw(" diff scroll"),
     ]);
     frame.render_widget(
         Paragraph::new(line).block(Block::default().borders(Borders::TOP)),
