@@ -19,7 +19,7 @@ Under the hood it runs:
 
 ## Latest artifact
 
-`bench/results/rust-port/snapshot-parity/2026-06-13T20-14-22-341Z/snapshot-parity.html`
+`bench/results/rust-port/snapshot-parity/2026-06-13T20-16-07-966Z/snapshot-parity.html`
 
 Generated files in each run:
 
@@ -33,7 +33,7 @@ Generated files in each run:
 Current comparison:
 
 - commit identity by old short commit prefix vs native full commit id
-- parent identity, tracked separately because old JUZU emits parent change-id prefixes while native Rust emits parent commit ids
+- parent identity by old-compatible parent change-id prefixes
 - title: `descriptionTitle`
 - flags: `isEmpty`, `isConflict`, `isHidden`, `isRoot`, `isWorkingCopy`
 - normalized author email (`old@example.com` vs `Name <old@example.com>`)
@@ -67,13 +67,11 @@ Latest self-repo parity at limit 20:
 - timestamps: 100%
 - bookmarks: 95%
 - git refs: 90%
-- parent ids: 0% expected until Rust emits old-compatible parent change-id prefixes or parity gains an id translation table
-
+- parent ids: 100%
 ## Next expansion
 
 Add normalized comparison for:
 
-- old-compatible parent id mapping
 - old bookmark formatting edge cases (`master*`, remote aliases, `@git` vs `@origin`)
 - layout fields once Rust layout is ported
 - node count without walking all commits

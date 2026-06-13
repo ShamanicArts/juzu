@@ -123,7 +123,16 @@ impl JjBackend for NativeJjBackend {
                 .map(|t| t.to_rfc3339())
                 .unwrap_or_else(|_| String::new());
             let commit_id = commit.id().hex();
-            let change_id = commit.change_id().hex();
+            let change_id = commit.change_id().reverse_hex();
+            let parents = commit
+                .parents()
+                .await
+                .map_err(|err| {
+                    JuzuError::Backend(format!("failed to load native jj parent commits: {err}"))
+                })?
+                .into_iter()
+                .map(|parent| parent.change_id().reverse_hex())
+                .collect();
             let mut bookmarks: Vec<String> = repo
                 .view()
                 .local_bookmarks_for_commit(commit.id())
@@ -156,7 +165,7 @@ impl JjBackend for NativeJjBackend {
             nodes.push(CommitNode {
                 change_id,
                 commit_id,
-                parents: commit.parent_ids().iter().map(|id| id.hex()).collect(),
+                parents,
                 author: format!("{} <{}>", author.name, author.email),
                 time,
                 bookmarks,

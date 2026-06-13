@@ -1,0 +1,732 @@
+{
+  "schemaVersion": 1,
+  "oracle": "old-juzu",
+  "command": "snapshot",
+  "repo": "/home/shamanic/dev/juzu",
+  "revset": null,
+  "limit": 20,
+  "nodeCount": 122,
+  "returnedNodes": 20,
+  "layoutMode": "chronological",
+  "layout": {
+    "maxLane": 0,
+    "textColumnX": 134,
+    "totalHeight": 1780
+  },
+  "keymap": {
+    "stickyModes": true,
+    "showIdleBindingsInStatus": false,
+    "showLeaderTriggersInStatus": true,
+    "modeOrder": [
+      "action",
+      "ops",
+      "view",
+      "marks"
+    ],
+    "statusContextOrder": [
+      "oplog",
+      "obslog",
+      "diff",
+      "merge",
+      "rebase",
+      "describe",
+      "revset",
+      "themePicker"
+    ],
+    "exitKeys": [
+      "escape",
+      "q"
+    ],
+    "leaders": {
+      "action": "ctrl+a",
+      "ops": "ctrl+o",
+      "view": "ctrl+v",
+      "marks": "ctrl+b"
+    },
+    "labels": {
+      "action": "Actions",
+      "ops": "Operations",
+      "view": "View",
+      "marks": "Bookmarks"
+    },
+    "badges": {
+      "action": "Act",
+      "ops": "Ops",
+      "view": "View",
+      "marks": "Book"
+    },
+    "idleBindings": {
+      "h": "toggle-help",
+      "ctrl+d": "diff-toggle"
+    },
+    "modeBindings": {
+      "action": {
+        "n": "new",
+        "e": "edit",
+        "d": "describe",
+        "b": "rebase",
+        "i": "insert",
+        "a": "abandon",
+        "s": "squash",
+        "y": "duplicate",
+        "z": "restore",
+        "m": "merge-mode"
+      },
+      "ops": {
+        "u": "undo",
+        "r": "redo",
+        "f": "git-fetch",
+        "p": "git-push",
+        "o": "oplog",
+        "v": "obslog",
+        "g": "back-log"
+      },
+      "view": {
+        "1": "layout-chronological",
+        "2": "layout-mainline",
+        "3": "layout-bookmark-centric",
+        "4": "layout-wc-focused",
+        "5": "layout-topological",
+        "c": "toggle-sidebar",
+        "t": "theme-picker",
+        "r": "refresh",
+        "f": "toggle-files",
+        "x": "toggle-description",
+        "h": "toggle-help",
+        "/": "revset",
+        "ctrl+d": "diff-toggle"
+      },
+      "marks": {
+        "s": "bookmark-set",
+        "d": "bookmark-delete"
+      }
+    },
+    "commandLabels": {
+      "new": "New",
+      "edit": "Edit",
+      "describe": "Describe",
+      "rebase": "Rebase",
+      "insert": "Insert",
+      "abandon": "Abandon",
+      "squash": "Squash",
+      "duplicate": "Duplicate",
+      "undo": "Undo",
+      "redo": "Redo",
+      "git-fetch": "Fetch",
+      "git-push": "Push",
+      "bookmark-set": "Bookmark set",
+      "bookmark-delete": "Bookmark delete",
+      "merge-mode": "Merge mode",
+      "theme-picker": "Theme picker",
+      "oplog": "Operation log",
+      "obslog": "Obslog",
+      "back-log": "Back",
+      "restore": "Restore",
+      "layout-chronological": "Layout chronological",
+      "layout-mainline": "Layout mainline",
+      "layout-bookmark-centric": "Layout bookmark",
+      "layout-wc-focused": "Layout wc",
+      "layout-topological": "Layout topological",
+      "toggle-sidebar": "Toggle sidebar",
+      "refresh": "Refresh",
+      "toggle-help": "Toggle help",
+      "toggle-files": "Toggle files",
+      "toggle-description": "Toggle description",
+      "revset": "Revset filter",
+      "diff-toggle": "Diff view"
+    },
+    "statusContextLabels": {
+      "oplog": "OPLOG",
+      "obslog": "OBSLOG",
+      "diff": "DIFF",
+      "merge": "MERGE",
+      "rebase": "REBASE",
+      "describe": "DESCRIBE",
+      "revset": "REVSET",
+      "themePicker": "THEME"
+    },
+    "statusContexts": {
+      "oplog": [
+        {
+          "key": "r",
+          "label": "Restore",
+          "tone": "ops"
+        },
+        {
+          "key": "g",
+          "label": "Log",
+          "tone": "ops"
+        },
+        {
+          "key": "j/k",
+          "label": "Move",
+          "tone": "neutral"
+        },
+        {
+          "key": "Esc",
+          "label": "Exit",
+          "tone": "neutral"
+        }
+      ],
+      "obslog": [
+        {
+          "key": "g",
+          "label": "Log",
+          "tone": "ops"
+        },
+        {
+          "key": "j/k",
+          "label": "Move",
+          "tone": "neutral"
+        },
+        {
+          "key": "Esc",
+          "label": "Exit",
+          "tone": "neutral"
+        }
+      ],
+      "diff": [
+        {
+          "key": "^d",
+          "label": "Log",
+          "tone": "view"
+        },
+        {
+          "key": "[ ]",
+          "label": "File",
+          "tone": "view"
+        },
+        {
+          "key": "j/k",
+          "label": "Move",
+          "tone": "neutral"
+        },
+        {
+          "key": "Esc",
+          "label": "Exit",
+          "tone": "neutral"
+        }
+      ],
+      "merge": [
+        {
+          "key": "Space",
+          "label": "Select",
+          "tone": "action"
+        },
+        {
+          "key": "Enter",
+          "label": "Confirm",
+          "tone": "action"
+        },
+        {
+          "key": "Esc",
+          "label": "Cancel",
+          "tone": "neutral"
+        }
+      ],
+      "rebase": [
+        {
+          "key": "Enter",
+          "label": "Confirm",
+          "tone": "action"
+        },
+        {
+          "key": "Esc",
+          "label": "Cancel",
+          "tone": "neutral"
+        }
+      ],
+      "describe": [
+        {
+          "key": "Enter",
+          "label": "Apply",
+          "tone": "neutral"
+        },
+        {
+          "key": "Esc",
+          "label": "Cancel",
+          "tone": "neutral"
+        }
+      ],
+      "revset": [
+        {
+          "key": "Enter",
+          "label": "Apply",
+          "tone": "neutral"
+        },
+        {
+          "key": "Esc",
+          "label": "Cancel",
+          "tone": "neutral"
+        }
+      ],
+      "themePicker": [
+        {
+          "key": "j/k",
+          "label": "Select",
+          "tone": "view"
+        },
+        {
+          "key": "Enter",
+          "label": "Apply",
+          "tone": "view"
+        },
+        {
+          "key": "Esc",
+          "label": "Cancel",
+          "tone": "neutral"
+        }
+      ]
+    },
+    "hideHintsForModes": [],
+    "hideHintsInIdle": false,
+    "showMinimalHints": false
+  },
+  "nodes": [
+    {
+      "changeId": "vltwtkqwurnx",
+      "commitId": "b3cda249901f",
+      "parents": [
+        "pkqyvzyovvlm"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-06-13 21:16:08.011 +01:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": true,
+      "lane": 0,
+      "x": 50,
+      "y": 50,
+      "isPinned": false
+    },
+    {
+      "changeId": "pkqyvzyovvlm",
+      "commitId": "32cc289dd6a5",
+      "parents": [
+        "rzumrlxyxuzl"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-06-13 21:00:39.000 +01:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "expand juzu snapshot parity normalization",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 134,
+      "isPinned": false
+    },
+    {
+      "changeId": "rzumrlxyxuzl",
+      "commitId": "2b01dc361d63",
+      "parents": [
+        "qmnwqrkvlouv"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-06-13 20:56:12.000 +01:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "add native jj read-only log snapshot",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 218,
+      "isPinned": false
+    },
+    {
+      "changeId": "qmnwqrkvlouv",
+      "commitId": "c35adf149f82",
+      "parents": [
+        "skzslnrxvuxt"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-06-13 20:48:56.000 +01:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "wire native jj repo open spike",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 302,
+      "isPinned": false
+    },
+    {
+      "changeId": "skzslnrxvuxt",
+      "commitId": "8b55d7bfd9e1",
+      "parents": [
+        "osrquputmzwl"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-06-13 20:45:25.000 +01:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "scaffold juzu rust workspace",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 386,
+      "isPinned": false
+    },
+    {
+      "changeId": "osrquputmzwl",
+      "commitId": "a16315116e08",
+      "parents": [
+        "zvnnyzrsyywx"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-06-13 20:42:06.000 +01:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "add old juzu oracle emitters",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 470,
+      "isPinned": false
+    },
+    {
+      "changeId": "zvnnyzrsyywx",
+      "commitId": "3d8c89a6e418",
+      "parents": [
+        "vqwkrnuzoloy"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-06-13 20:39:49.000 +01:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "draft juzu rust target architecture",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 554,
+      "isPinned": false
+    },
+    {
+      "changeId": "vqwkrnuzoloy",
+      "commitId": "cf3be1183434",
+      "parents": [
+        "uqlttsnpuqpm"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-06-13 20:36:27.000 +01:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "capture juzu startup baseline benchmarks",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 638,
+      "isPinned": false
+    },
+    {
+      "changeId": "uqlttsnpuqpm",
+      "commitId": "f8bd645c0b80",
+      "parents": [
+        "mzrlwtvyvtpq"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-06-13 20:20:03.000 +01:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "document juzu rust port baseline architecture and benchmarks",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 722,
+      "isPinned": false
+    },
+    {
+      "changeId": "mzrlwtvyvtpq",
+      "commitId": "8c80c1b369b4",
+      "parents": [
+        "stzlxrpnmlpv"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-02-09 22:15:03.000 +00:00",
+      "bookmarks": [
+        "dev",
+        "master*"
+      ],
+      "gitBranches": [],
+      "descriptionTitle": "optimize TUI memory residency and add trace-guided diagnostics",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 806,
+      "isPinned": false
+    },
+    {
+      "changeId": "stzlxrpnmlpv",
+      "commitId": "b20008e93f98",
+      "parents": [
+        "ltzyqnzzpqst"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-02-09 22:15:03.000 +00:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "tweak local repo config for memory debugging",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 890,
+      "isPinned": false
+    },
+    {
+      "changeId": "ltzyqnzzpqst",
+      "commitId": "d127a85b44a4",
+      "parents": [
+        "tqqmnqlryzol"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-02-09 22:15:03.000 +00:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "add memory benchmarking tooling and planning artifacts",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 974,
+      "isPinned": false
+    },
+    {
+      "changeId": "tqqmnqlryzol",
+      "commitId": "8991d4481e45",
+      "parents": [
+        "mulylsmksvkk"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-02-09 17:45:45.000 +00:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "add memory architecture analysis notes and agent guidance",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 1058,
+      "isPinned": false
+    },
+    {
+      "changeId": "mulylsmksvkk",
+      "commitId": "2a1222434dd2",
+      "parents": [
+        "kuomrqkuuttm"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-02-09 06:59:12.000 +00:00",
+      "bookmarks": [
+        "master@origin"
+      ],
+      "gitBranches": [],
+      "descriptionTitle": "Update README to reflect TUI as primary interface",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 1142,
+      "isPinned": false
+    },
+    {
+      "changeId": "kuomrqkuuttm",
+      "commitId": "5686f76e8339",
+      "parents": [
+        "unsrkxqwmpls"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-02-09 06:11:52.000 +00:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "fix: display total node count from JJ instead of cap limit in TUI and web footer",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 1226,
+      "isPinned": false
+    },
+    {
+      "changeId": "unsrkxqwmpls",
+      "commitId": "880960a1fcff",
+      "parents": [
+        "lqotquxxynmw"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-02-09 02:42:41.000 +00:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "chore(local): update personal theme and layout defaults",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 1310,
+      "isPinned": false
+    },
+    {
+      "changeId": "lqotquxxynmw",
+      "commitId": "13af64c03326",
+      "parents": [
+        "pykorynnuzzz"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-02-09 02:42:41.000 +00:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "feat(tui): add sidebar padding and tree-sitter syntax highlighting for diffs",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 1394,
+      "isPinned": false
+    },
+    {
+      "changeId": "pykorynnuzzz",
+      "commitId": "51d8c10692e6",
+      "parents": [
+        "vxkzqykyuxzy"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-02-09 02:42:41.000 +00:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "style(tui): improve footer and sidebar color legibility",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 1478,
+      "isPinned": false
+    },
+    {
+      "changeId": "vxkzqykyuxzy",
+      "commitId": "c886548b16bf",
+      "parents": [
+        "trzlrznwnnzm"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-02-09 02:42:41.000 +00:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "chore(pkg): add root self-reference dependency",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 1562,
+      "isPinned": false
+    },
+    {
+      "changeId": "trzlrznwnnzm",
+      "commitId": "6c92b75e4658",
+      "parents": [
+        "tsxqluovlzxl"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-02-09 02:42:41.000 +00:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "feat(tui): add configurable status hint visibility options",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": false,
+      "lane": 0,
+      "x": 50,
+      "y": 1646,
+      "isPinned": false
+    }
+  ]
+}
