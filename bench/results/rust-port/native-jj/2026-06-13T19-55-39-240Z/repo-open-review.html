@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUZU Native JJ Repo-Open Spike</title>
+<style>
+:root { color-scheme: dark; --bg:#050816; --panel:#0f172a; --panel2:#111c33; --text:#e2e8f0; --muted:#94a3b8; --cyan:#67e8f9; --green:#86efac; --amber:#fbbf24; --line:#334155; }
+* { box-sizing:border-box }
+body { margin:0; background:radial-gradient(circle at 20% 0%, #12304a 0, transparent 38%), var(--bg); color:var(--text); font:16px/1.55 Inter, ui-sans-serif, system-ui, sans-serif; }
+main { max-width:1100px; margin:0 auto; padding:48px 24px; }
+.hero { border:1px solid var(--line); background:linear-gradient(135deg, rgba(15,23,42,.96), rgba(17,28,51,.94)); border-radius:28px; padding:34px; box-shadow:0 24px 90px rgba(0,0,0,.35); }
+h1 { margin:0 0 10px; font-size:42px; letter-spacing:-.04em; }
+.subtitle { color:var(--muted); font-size:18px; margin:0 0 28px; }
+.badges { display:flex; gap:12px; flex-wrap:wrap; margin:24px 0; }
+.badge { border:1px solid var(--line); background:#07111f; border-radius:999px; padding:8px 12px; color:var(--muted); }
+.badge strong { color:var(--green); }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:24px; }
+.card { border:1px solid var(--line); background:rgba(15,23,42,.78); border-radius:20px; padding:22px; }
+h2 { margin:0 0 14px; color:var(--cyan); font-size:21px; }
+ul { margin:0; padding-left:20px; }
+li { margin:8px 0; }
+table { width:100%; border-collapse:collapse; overflow:hidden; border-radius:14px; }
+th,td { border-bottom:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top; }
+th { width:210px; color:var(--muted); font-weight:600; }
+code, pre { font-family:'JetBrains Mono', ui-monospace, SFMono-Regular, monospace; }
+pre { background:#020617; border:1px solid var(--line); border-radius:16px; padding:16px; overflow:auto; }
+.status { color:var(--green); font-weight:800; }
+.warn { color:var(--amber); }
+footer { margin-top:24px; color:var(--muted); font-size:14px; }
+@media (max-width: 800px) { .grid { grid-template-columns:1fr; } h1 { font-size:32px; } }
+</style>
+</head>
+<body><main>
+<section class="hero">
+  <h1>JUZU Native JJ Repo-Open Spike</h1>
+  <p class="subtitle">HTML review artifact for infrastructure/parity work. No MP4: this is benchmark/test harness phase.</p>
+  <div class="badges">
+    <div class="badge">Backend: <strong>jj-lib</strong></div>
+    <div class="badge">Workspace: <strong>default</strong></div>
+    <div class="badge">Verification: <strong>cargo test --workspace passed</strong></div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <h2>What landed</h2>
+      <ul>
+        <li><code>juzu-jj</code> now uses <code>jj-lib</code> to load workspace metadata.</li>
+        <li><code>juzu-cli repo</code> emits machine-readable repo metadata.</li>
+        <li>The backend boundary remains in <code>juzu-core::JjBackend</code>.</li>
+        <li>Shell-out remains forbidden except future explicit fallback module.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Verification</h2>
+      <ul>
+        <li class="status">cargo fmt --all</li>
+        <li class="status">cargo test --workspace</li>
+        <li class="status">cargo run -q -p juzu-cli -- repo</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:20px">
+    <h2>Repo-open JSON</h2>
+    <table><tr><th>backend</th><td><code>jj-lib</code></td></tr><tr><th>command</th><td><code>repo</code></td></tr><tr><th>path</th><td><code>/home/shamanic/dev/juzu</code></td></tr><tr><th>repoPath</th><td><code>/home/shamanic/dev/juzu/.jj/repo</code></td></tr><tr><th>repoRoot</th><td><code>/home/shamanic/dev/juzu</code></td></tr><tr><th>schemaVersion</th><td><code>1</code></td></tr><tr><th>workspaceName</th><td><code>default</code></td></tr><tr><th>workspaceRoot</th><td><code>/home/shamanic/dev/juzu</code></td></tr></table>
+  </div>
+  <div class="card" style="margin-top:20px">
+    <h2>Next</h2>
+    <p class="warn">Wire native read-only log data, then compare Rust JSON against old oracle <code>snapshot.json</code>.</p>
+  </div>
+</section>
+<footer>Artifact directory: <code>bench/results/rust-port/native-jj/2026-06-13T19-55-39-240Z</code></footer>
+</main></body></html>

@@ -1,5 +1,4 @@
 use anyhow::Result;
-use juzu_core::JjBackend;
 use juzu_jj::NativeJjBackend;
 use serde_json::json;
 use std::path::PathBuf;
@@ -38,14 +37,18 @@ fn main() -> Result<()> {
                 .map(PathBuf::from)
                 .unwrap_or(std::env::current_dir()?);
             let backend = NativeJjBackend::new();
-            let root = futures_executor::block_on(backend.find_root(&path))?;
+            let info = backend.open_workspace_info(&path)?;
             println!(
                 "{}",
                 serde_json::to_string_pretty(&json!({
                     "schemaVersion": 1,
                     "command": "repo",
                     "path": path,
-                    "repoRoot": root,
+                    "repoRoot": info.workspace_root,
+                    "workspaceRoot": info.workspace_root,
+                    "repoPath": info.repo_path,
+                    "workspaceName": info.workspace_name,
+                    "backend": "jj-lib",
                 }))?
             );
             Ok(())
