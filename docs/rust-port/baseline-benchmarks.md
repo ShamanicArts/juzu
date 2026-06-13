@@ -117,6 +117,38 @@ Result:
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Bun web server | 88.66 MB | 88.53 MB | 44.90 MB | 44.77 MB | 1 |
 
+## Startup timing baseline
+
+Tool:
+
+```bash
+bun run bench:startup --runs 3 --timeout-ms 8000 \
+  --output-root bench/results/rust-port/startup
+```
+
+Artifact:
+
+`bench/results/rust-port/startup/2026-06-13T19-37-42-909Z/SUMMARY.md`
+
+Readiness definitions:
+
+- Web `stdoutReadyMs`: `server.ts` printed the Bun server ready line.
+- Web `httpReadyMs`: `/api/repo` returned HTTP 200 JSON.
+- TUI `firstBytesMs`: terminal capture emitted first bytes beyond the `script(1)` header.
+- TUI `alternateScreenMs`: OpenTUI entered the alternate screen.
+- TUI `firstHeaderTokenMs`: captured rendered JUZU header token (`LOG`, `OPLOG`, or `JUZU`).
+
+| Surface | Metric | Min | Median | Max | OK runs |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Web | first stdout | 257 ms | 260 ms | 279 ms | 3/3 |
+| Web | server stdout ready | 274 ms | 277 ms | 296 ms | 3/3 |
+| Web | `/api/repo` ready | 288 ms | 300 ms | 314 ms | 3/3 |
+| TUI | first terminal bytes | 285 ms | 286 ms | 290 ms | 3/3 |
+| TUI | alternate screen entered | 285 ms | 286 ms | 290 ms | 3/3 |
+| TUI | first rendered header token | 328 ms | 328 ms | 332 ms | 3/3 |
+
+Baseline implication: the Rust port should initially beat ~328 ms to first TUI header and ~300 ms to web `/api/repo` readiness while keeping behavior parity.
+
 ## Current headline baseline
 
 The Rust port should initially target these as “must beat” numbers:
@@ -126,6 +158,8 @@ The Rust port should initially target these as “must beat” numbers:
 | Core/TUI scenario RSS steady on JUZU repo | ~65.90 MB |
 | Live interactive TUI process-tree RSS steady | ~175.37 MB |
 | Live web server RSS steady | ~88.53 MB |
+| TUI startup to first rendered header median | ~328 ms |
+| Web startup to `/api/repo` ready median | ~300 ms |
 
 The more meaningful comparison for a Ratatui port is the live TUI process-tree number. The core/TUI scenario number is a lower-level regression guardrail.
 
@@ -139,6 +173,9 @@ The more meaningful comparison for a Ratatui port is the live TUI process-tree n
 - `bench/results/rust-port/2026-06-13T19-19-49-849Z/SUMMARY.md`
 - `bench/results/rust-port/pid/2026-06-13T19-20-16-494Z/PID-1426419.json`
 - `bench/results/rust-port/pid/2026-06-13T19-20-31-151Z/PID-1427505.json`
+- `bench/results/rust-port/startup/2026-06-13T19-37-42-909Z/startup-baseline.json`
+- `bench/results/rust-port/startup/2026-06-13T19-37-42-909Z/SUMMARY.md`
+- `bench/results/rust-port/startup/2026-06-13T19-37-42-909Z/tui-run-*.typescript.log`
 
 ## Review surface
 
@@ -155,11 +192,10 @@ Windows:
 
 ## Next benchmark work
 
-1. Add startup timing scripts for TUI and web readiness.
-2. Add one canonical large repo fixture.
-3. Add oracle snapshot commands in old JUZU:
+1. Add one canonical large repo fixture.
+2. Add oracle snapshot commands in old JUZU:
    - `snapshot`
    - `layout`
    - `sidebar`
    - `state-after-keys`
-4. Re-run baseline once stale tests/keymap expectations are resolved or explicitly accepted.
+3. Re-run baseline once stale tests/keymap expectations are resolved or explicitly accepted.
