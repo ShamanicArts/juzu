@@ -10,7 +10,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph, Row, Table},
+    widgets::{Block, Borders, Paragraph},
     DefaultTerminal, Frame,
 };
 use std::{io::stdout, path::PathBuf, time::Duration};
@@ -172,63 +172,165 @@ fn render_graph_table(
     app: &App,
     layout: &juzu_core::layout::LayoutResult,
 ) {
-    let height = area.height.saturating_sub(3) as usize;
+    let inner_height = area.height.saturating_sub(2) as usize;
+    let visible_nodes = (inner_height / 2).max(1);
     let selected = app.selected.min(layout.nodes.len().saturating_sub(1));
-    let start = selected.saturating_sub(height / 2);
-    let rows = layout
+    let start = selected.saturating_sub(visible_nodes / 2);
+    let end = (start + visible_nodes).min(layout.nodes.len());
+    let visible_count = end.saturating_sub(start);
+    let graph_width =
+        ((layout.max_lane + 1) * 4 + 2).min((area.width as usize).saturating_div(2).max(12));
+    let row_count = (visible_count * 2).max(1);
+    let mut grid = vec![vec![' '; graph_width]; row_count];
+    let all_index: std::collections::HashMap<_, _> = layout
         .nodes
         .iter()
         .enumerate()
-        .skip(start)
-        .take(height)
-        .map(|(idx, node)| {
-            let lane = node.lane.unwrap_or(0);
-            let graph = format!(
-                "{}{}●",
-                "  ".repeat(lane),
-                if node.is_working_copy { "@" } else { " " }
-            );
-            let refs = if node.bookmarks.is_empty() {
-                String::new()
-            } else {
-                format!(" [{}]", node.bookmarks.join(","))
-            };
-            let style = if idx == selected {
-                Style::default()
-                    .fg(Color::Black)
-                    .bg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD)
-            } else if node.is_working_copy {
-                Style::default().fg(Color::Green)
-            } else if node.is_conflict {
-                Style::default().fg(Color::Red)
-            } else {
-                Style::default().fg(Color::Gray)
-            };
-            Row::new(vec![
-                graph,
-                node.change_id.chars().take(10).collect::<String>(),
-                node.commit_id.chars().take(10).collect::<String>(),
-                format!("{}{}", node.description_title, refs),
-            ])
-            .style(style)
-        });
+        .map(|(idx, node)| (node.change_id.as_str(), idx))
+        .collect();
+    let visible_index: std::collections::HashMap<_, _> = (start..end)
+        .enumerate()
+        .map(|(local, global)| (global, local))
+        .collect();
+    let lane_x = |lane: usize| -> usize { (lane * 4 + 1).min(graph_width.saturating_sub(1)) };
+    let node_y = |local: usize| -> usize { local * 2 };
 
-    let table = Table::new(
-        rows,
-        [
-            Constraint::Length(22),
-            Constraint::Length(12),
-            Constraint::Length(12),
-            Constraint::Min(20),
-        ],
-    )
-    .header(
-        Row::new(vec!["graph", "change", "commit", "description"])
-            .style(Style::default().fg(Color::Yellow)),
-    )
-    .block(Block::default().title(" graph ").borders(Borders::ALL));
-    frame.render_widget(table, area);
+    for child_idx in start..end {
+        let child = &layout.nodes[child_idx];
+        let child_lane = child.lane.unwrap_or(0);
+        let x0 = lane_x(child_lane);
+        let y0 = node_y(visible_index[&child_idx]);
+        for parent_id in &child.parents {
+            let Some(parent_idx) = all_index.get(parent_id.as_str()).copied() else {
+                continue;
+            };
+            if parent_idx < start || parent_idx >= end {
+                continue;
+            }
+            let parent = &layout.nodes[parent_idx];
+            let parent_lane = parent.lane.unwrap_or(0);
+            let x1 = lane_x(parent_lane);
+            let y1 = node_y(visible_index[&parent_idx]);
+            if x0 == x1 {
+                for y in y0.min(y1) + 1..y0.max(y1) {
+                    put_grid(&mut grid, graph_width, x0, y, '│');
+                }
+                continue;
+            }
+            let connect_y = if child.parents.len() > 1 { y0 } else { y1 };
+            for x in x0.min(x1)..=x0.max(x1) {
+                put_grid(&mut grid, graph_width, x, connect_y, '─');
+            }
+            if child.parents.len() > 1 {
+                put_grid(
+                    &mut grid,
+                    graph_width,
+                    x0,
+                    connect_y,
+                    if x0 < x1 { '├' } else { '┤' },
+                );
+                put_grid(
+                    &mut grid,
+                    graph_width,
+                    x1,
+                    connect_y,
+                    if x0 < x1 { '┐' } else { '┌' },
+                );
+                for y in connect_y + 1..y1 {
+                    put_grid(&mut grid, graph_width, x1, y, '│');
+                }
+            } else {
+                put_grid(
+                    &mut grid,
+                    graph_width,
+                    x1,
+                    connect_y,
+                    if x0 < x1 { '├' } else { '┤' },
+                );
+                put_grid(
+                    &mut grid,
+                    graph_width,
+                    x0,
+                    connect_y,
+                    if x0 < x1 { '└' } else { '┘' },
+                );
+                for y in y0 + 1..connect_y {
+                    put_grid(&mut grid, graph_width, x0, y, '│');
+                }
+            }
+        }
+    }
+
+    for (local, global) in (start..end).enumerate() {
+        let node = &layout.nodes[global];
+        let x = lane_x(node.lane.unwrap_or(0));
+        let y = node_y(local);
+        let ch = if node.is_working_copy {
+            '@'
+        } else if node.is_conflict {
+            '!'
+        } else if global == selected {
+            'O'
+        } else {
+            'o'
+        };
+        put_grid(&mut grid, graph_width, x, y, ch);
+    }
+
+    let mut lines = Vec::new();
+    for (row, chars) in grid.into_iter().enumerate() {
+        let global = start + row / 2;
+        let mut text = chars.into_iter().collect::<String>();
+        if let Some(node) = layout.nodes.get(global) {
+            if row % 2 == 0 {
+                text.push_str("  ");
+                text.push_str(&node.change_id.chars().take(8).collect::<String>());
+                text.push(' ');
+                text.push_str(&node.commit_id.chars().take(8).collect::<String>());
+            } else {
+                let refs = if node.bookmarks.is_empty() {
+                    String::new()
+                } else {
+                    format!(" ({})", node.bookmarks.join(","))
+                };
+                text.push_str("  ");
+                text.push_str(&node.description_title);
+                text.push_str(&refs);
+            }
+        }
+        let style = if global == selected {
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD)
+        } else if layout
+            .nodes
+            .get(global)
+            .is_some_and(|node| node.is_working_copy)
+        {
+            Style::default().fg(Color::Green)
+        } else if layout
+            .nodes
+            .get(global)
+            .is_some_and(|node| node.is_conflict)
+        {
+            Style::default().fg(Color::Red)
+        } else {
+            Style::default().fg(Color::Gray)
+        };
+        lines.push(Line::styled(text, style));
+    }
+
+    frame.render_widget(
+        Paragraph::new(lines).block(Block::default().title(" dag graph ").borders(Borders::ALL)),
+        area,
+    );
+}
+
+fn put_grid(grid: &mut [Vec<char>], width: usize, x: usize, y: usize, ch: char) {
+    if y < grid.len() && x < width {
+        grid[y][x] = ch;
+    }
 }
 
 fn render_sidebar(
