@@ -42,6 +42,7 @@ struct App {
     mode: LayoutMode,
     nodes: Vec<juzu_core::CommitNode>,
     files_by_change: HashMap<String, Vec<FileEntry>>,
+    diffs_by_change: HashMap<String, String>,
     selected: usize,
 }
 
@@ -61,6 +62,7 @@ fn main() -> Result<()> {
         revset: None,
     }))?;
     let mut files_by_change = HashMap::new();
+    let diffs_by_change = HashMap::new();
     for node in &nodes {
         let files = futures_executor::block_on(backend.files(ChangeQuery {
             cwd: path.clone(),
@@ -78,8 +80,10 @@ fn main() -> Result<()> {
         mode,
         nodes,
         files_by_change,
+        diffs_by_change,
         selected,
     };
+    ensure_selected_diff(&mut app);
 
     enable_raw_mode()?;
     execute!(stdout(), EnterAlternateScreen)?;
@@ -103,9 +107,11 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
                     KeyCode::Char('q') | KeyCode::Esc => break,
                     KeyCode::Char('j') | KeyCode::Down => {
                         app.selected = (app.selected + 1).min(app.nodes.len().saturating_sub(1));
+                        ensure_selected_diff(app);
                     }
                     KeyCode::Char('k') | KeyCode::Up => {
                         app.selected = app.selected.saturating_sub(1);
+                        ensure_selected_diff(app);
                     }
                     KeyCode::Char('1') => app.mode = LayoutMode::Chronological,
                     KeyCode::Char('2') => app.mode = LayoutMode::Mainline,
@@ -118,6 +124,22 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn ensure_selected_diff(app: &mut App) {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return;
+    };
+    if app.diffs_by_change.contains_key(&node.change_id) {
+        return;
+    }
+    let backend = NativeJjBackend::new();
+    let diff = futures_executor::block_on(backend.diff(ChangeQuery {
+        cwd: app.path.clone(),
+        change_id: node.change_id.clone(),
+    }))
+    .unwrap_or_default();
+    app.diffs_by_change.insert(node.change_id.clone(), diff);
 }
 
 fn render(frame: &mut Frame, app: &App) {
@@ -663,6 +685,48 @@ fn render_sidebar(
         }
         if files.len() > 12 {
             lines.push(Line::from(format!("… {} more", files.len() - 12)));
+        }
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "Diff",
+        Style::default().fg(Color::Yellow),
+    )));
+    let diff = app
+        .diffs_by_change
+        .get(&node.change_id)
+        .map(String::as_str)
+        .unwrap_or("");
+    if diff.trim().is_empty() {
+        lines.push(Line::from("—"));
+    } else {
+        for raw in diff.lines().take(14) {
+            let style = if raw.starts_with("+++") || raw.starts_with("---") {
+                Style::default().fg(Color::Cyan)
+            } else if raw.starts_with('+') {
+                Style::default().fg(Color::Green)
+            } else if raw.starts_with('-') {
+                Style::default().fg(Color::Red)
+            } else if raw.starts_with("@@") {
+                Style::default().fg(Color::Magenta)
+            } else if raw.starts_with("diff --git") {
+                Style::default()
+                    .fg(Color::Blue)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::Gray)
+            };
+            lines.push(Line::from(Span::styled(
+                truncate(raw, area.width as usize - 4),
+                style,
+            )));
+        }
+        let total_lines = diff.lines().count();
+        if total_lines > 14 {
+            lines.push(Line::from(format!(
+                "… {} more diff lines",
+                total_lines - 14
+            )));
         }
     }
     frame.render_widget(

@@ -5,7 +5,8 @@
 //! slices have a real native backend anchor.
 
 use async_trait::async_trait;
-use futures::StreamExt;
+use futures::{io::AsyncReadExt, StreamExt};
+use jj_lib::backend::TreeValue;
 use jj_lib::config::StackedConfig;
 use jj_lib::matchers::EverythingMatcher;
 use jj_lib::object_id::ObjectId;
@@ -18,6 +19,7 @@ use juzu_core::{
     NodeCountQuery, ObslogEntry, ObslogQuery, OpLogEntry, OpLogQuery, Result,
 };
 use serde::{Deserialize, Serialize};
+use similar::TextDiff;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -91,6 +93,37 @@ impl NativeJjBackend {
             .await
             .map_err(|err| JuzuError::Backend(format!("failed to load jj repo head: {err}")))?;
         Ok((workspace_root, repo))
+    }
+
+    async fn read_tree_value_text(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        path: &jj_lib::repo_path::RepoPath,
+        value: Option<&TreeValue>,
+    ) -> Result<Option<String>> {
+        let Some(value) = value else {
+            return Ok(None);
+        };
+        match value {
+            TreeValue::File { id, .. } => {
+                let mut reader = repo.store().read_file(path, id).await.map_err(|err| {
+                    JuzuError::Backend(format!("failed to read native jj file content: {err}"))
+                })?;
+                let mut bytes = Vec::new();
+                reader.read_to_end(&mut bytes).await.map_err(|err| {
+                    JuzuError::Backend(format!("failed to stream native jj file content: {err}"))
+                })?;
+                Ok(Some(String::from_utf8_lossy(&bytes).into_owned()))
+            }
+            TreeValue::Symlink(id) => {
+                let target = repo.store().read_symlink(path, id).await.map_err(|err| {
+                    JuzuError::Backend(format!("failed to read native jj symlink content: {err}"))
+                })?;
+                Ok(Some(target))
+            }
+            TreeValue::GitSubmodule(id) => Ok(Some(format!("Subproject commit {}\n", id.hex()))),
+            TreeValue::Tree(_) => Ok(None),
+        }
     }
 
     async fn find_commit_by_change_or_commit_id(
@@ -282,8 +315,70 @@ impl JjBackend for NativeJjBackend {
         Ok(files)
     }
 
-    async fn diff(&self, _query: ChangeQuery) -> Result<String> {
-        Err(JuzuError::Unsupported("native jj diff is not wired yet"))
+    async fn diff(&self, query: ChangeQuery) -> Result<String> {
+        let (_workspace_root, repo) = self.open_repo_at_head(&query.cwd).await?;
+        let commit = self
+            .find_commit_by_change_or_commit_id(&repo, &query.change_id)
+            .await?;
+        let parents = commit.parents().await.map_err(|err| {
+            JuzuError::Backend(format!(
+                "failed to load native jj parent commits for diff: {err}"
+            ))
+        })?;
+        let Some(parent) = parents.first() else {
+            return Ok(String::new());
+        };
+        let parent_tree = parent.tree();
+        let commit_tree = commit.tree();
+        let mut stream = parent_tree.diff_stream(&commit_tree, &EverythingMatcher);
+        let mut output = String::new();
+        while let Some(entry) = stream.next().await {
+            let values = entry.values.map_err(|err| {
+                JuzuError::Backend(format!("failed to read native jj tree diff entry: {err}"))
+            })?;
+            let before_value = values.before.as_resolved().and_then(Option::as_ref);
+            let after_value = values.after.as_resolved().and_then(Option::as_ref);
+            let before_present = values.before.is_present();
+            let after_present = values.after.is_present();
+            let path = entry.path.as_internal_file_string().to_string();
+            let before_text = self
+                .read_tree_value_text(&repo, entry.path.as_ref(), before_value)
+                .await?
+                .unwrap_or_default();
+            let after_text = self
+                .read_tree_value_text(&repo, entry.path.as_ref(), after_value)
+                .await?
+                .unwrap_or_default();
+
+            output.push_str(&format!("diff --git a/{path} b/{path}\n"));
+            match (before_present, after_present) {
+                (false, true) => output.push_str("new file mode 100644\n"),
+                (true, false) => output.push_str("deleted file mode 100644\n"),
+                _ => {}
+            }
+            let diff = TextDiff::from_lines(&before_text, &after_text);
+            let old_header = if before_present {
+                format!("a/{path}")
+            } else {
+                "/dev/null".to_string()
+            };
+            let new_header = if after_present {
+                format!("b/{path}")
+            } else {
+                "/dev/null".to_string()
+            };
+            output.push_str(
+                &diff
+                    .unified_diff()
+                    .context_radius(3)
+                    .header(&old_header, &new_header)
+                    .to_string(),
+            );
+            if !output.ends_with('\n') {
+                output.push('\n');
+            }
+        }
+        Ok(output)
     }
 
     async fn op_log(&self, _query: OpLogQuery) -> Result<Vec<OpLogEntry>> {

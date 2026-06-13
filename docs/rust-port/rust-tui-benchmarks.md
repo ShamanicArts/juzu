@@ -29,19 +29,19 @@ The runner:
 
 ## Latest artifact
 
-`bench/results/rust-port/rust-tui-bench/2026-06-13T21-01-28-687Z/rust-tui-benchmark.html`
+`bench/results/rust-port/rust-tui-bench/2026-06-13T21-26-58-408Z/rust-tui-benchmark.html`
 
 ## Current headline
 
-Current benchmark is for the Rust TUI after native `files()` hydration is loaded into graph rows and the details sidebar.
+Current benchmark is for the Rust TUI after native `files()` hydration plus lazy selected-node native `diff()` hydration in the details sidebar.
 
 | Scenario | RSS peak | RSS steady median | PSS steady median | Header median |
 | --- | ---: | ---: | ---: | ---: |
-| `idle-mainline` | 11.28 MB | 10.80 MB | 9.05 MB | 120.08 ms |
-| `navigate-mainline` | 11.07 MB | 10.80 MB | 9.05 MB | 125.40 ms |
-| `layout-switching` | 10.79 MB | 10.70 MB | 8.96 MB | 118.47 ms |
+| `idle-mainline` | 11.89 MB | 11.86 MB | 10.12 MB | 130.96 ms |
+| `navigate-mainline` | 17.31 MB | 17.31 MB | 15.52 MB | 134.43 ms |
+| `layout-switching` | 17.20 MB | 16.99 MB | 15.24 MB | 130.43 ms |
 
-Compared to the previous graph-only pass, steady memory is still around ~11 MB RSS, but startup/header time now includes eager native file hydration across the loaded snapshot. That is acceptable for the slice, but it clearly marks the next optimization target: lazy/on-select file hydration or background hydration.
+A first eager-diff attempt pushed header time to ~350 ms; this was a bad direction, so diff hydration was changed to lazy/on-select. Header latency is back near the files-only range while navigation scenarios show the cost of loading large selected diffs. Next optimization target: cap/cache sidebar diff previews and/or background hydrate without blocking key handling.
 
 Use the HTML artifact as the source of truth for exact per-run values.
 

@@ -48,7 +48,11 @@ The Rust TUI now mirrors more of old `GraphView`'s presentation model:
 - lane-colored graph glyphs and id text, with selected node/connection emphasis
 - selected-row indicator behavior closer to old JUZU (`>` and working-copy `@` marker)
 
-File rows now use native `files()` hydration through `juzu-jj` for committed changes. The old placeholder has been replaced with compact file summaries in graph rows and typed file lists in the details sidebar. Working-copy dirty-file parity still needs the native snapshot path wired; current read-only `jj-lib` repo loading intentionally does not mutate/snapshot the working copy yet.
+File rows now use native `files()` hydration through `juzu-jj` for committed changes. The old placeholder has been replaced with compact file summaries in graph rows and typed file lists in the details sidebar.
+
+Diff preview now uses native `diff()` hydration through `juzu-jj` and renders colored git-style diff headers, hunks, additions, and removals in the details sidebar. The first parity gate compares old JUZU sidebar diff first-lines against Rust native output after normalizing jj object index lines.
+
+Working-copy dirty-file parity still needs the native snapshot path wired; current read-only `jj-lib` repo loading intentionally does not mutate/snapshot the working copy yet.
 
 ## Verification
 
@@ -64,4 +68,5 @@ cargo run -q -p juzu-tui -- --path /home/shamanic/dev/juzu --limit 30 --mode chr
 - port old color/theme tokens
 - add keyboard parity from old JUZU modes
 - wire safe native working-copy snapshot support so `@` dirty files match old `jj diff --summary`
-- hydrate sidebar diff/description through native backend
+- improve diff renderer parity beyond first-line/sidebar-visible checks
+- hydrate sidebar description through native backend
