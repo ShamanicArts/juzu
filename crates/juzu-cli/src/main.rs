@@ -1,5 +1,9 @@
 use anyhow::Result;
-use juzu_core::{layout::calculate_default_layout, ChangeQuery, JjBackend, LayoutMode, LogQuery};
+use juzu_core::{
+    diff::{collapsed_diff_rows, iter_diff_rows, parse_git_patch},
+    layout::calculate_default_layout,
+    ChangeQuery, JjBackend, LayoutMode, LogQuery,
+};
 use juzu_jj::NativeJjBackend;
 use serde_json::json;
 use std::path::PathBuf;
@@ -7,8 +11,8 @@ use std::path::PathBuf;
 fn print_help() {
     println!(
         "juzu-cli (Rust scaffold)\n\n\
-Usage:\n  juzu-cli --version\n  juzu-cli repo [--path <path>]\n  juzu-cli snapshot [--path <path>] [--limit <n>]\n  juzu-cli layout [--path <path>] [--limit <n>] [--mode <mode>]\n  juzu-cli files [--path <path>] --change <id>\n  juzu-cli diff [--path <path>] --change <id>\n\n\
-Commands:\n  repo       Resolve the JJ repo root using the scaffold backend.\n  snapshot   Emit Rust/native snapshot parity JSON.\n  layout     Emit Rust/core graph layout parity JSON.\n  files      Emit native jj diff --summary-style files for one change.\n  diff       Emit native jj git-style diff for one change.\n"
+Usage:\n  juzu-cli --version\n  juzu-cli repo [--path <path>]\n  juzu-cli snapshot [--path <path>] [--limit <n>]\n  juzu-cli layout [--path <path>] [--limit <n>] [--mode <mode>]\n  juzu-cli files [--path <path>] --change <id>\n  juzu-cli diff [--path <path>] --change <id>\n  juzu-cli diff-model [--path <path>] --change <id>\n\n\
+Commands:\n  repo        Resolve the JJ repo root using the scaffold backend.\n  snapshot    Emit Rust/native snapshot parity JSON.\n  layout      Emit Rust/core graph layout parity JSON.\n  files       Emit native jj diff --summary-style files for one change.\n  diff        Emit native jj git-style diff for one change.\n  diff-model  Parse native diff text into the Pierre-style Rust diff model.\n"
     );
 }
 
@@ -64,7 +68,7 @@ fn main() -> Result<()> {
             );
             Ok(())
         }
-        "files" | "diff" => {
+        "files" | "diff" | "diff-model" => {
             let command = args[0].as_str();
             let path = arg_value(&args, "--path")
                 .map(PathBuf::from)
@@ -73,11 +77,35 @@ fn main() -> Result<()> {
                 anyhow::bail!("{command} requires --change <id>");
             };
             let backend = NativeJjBackend::new();
-            if command == "diff" {
+            if command == "diff" || command == "diff-model" {
                 let diff = futures_executor::block_on(backend.diff(ChangeQuery {
                     cwd: path.clone(),
                     change_id: change_id.clone(),
                 }))?;
+                if command == "diff-model" {
+                    let model = parse_git_patch(&diff)?;
+                    let rows = iter_diff_rows(&model);
+                    let collapsed_rows = collapsed_diff_rows(&model, 3);
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&json!({
+                            "schemaVersion": 1,
+                            "command": "diff-model",
+                            "backend": "juzu-core",
+                            "sourceBackend": "jj-lib",
+                            "path": path,
+                            "changeId": change_id,
+                            "rawLineCount": diff.lines().count(),
+                            "fileCount": model.files.len(),
+                            "rowCount": rows.len(),
+                            "collapsedRowCount": collapsed_rows.len(),
+                            "files": model.files,
+                            "rows": rows,
+                            "collapsedRows": collapsed_rows,
+                        }))?
+                    );
+                    return Ok(());
+                }
                 println!(
                     "{}",
                     serde_json::to_string_pretty(&json!({

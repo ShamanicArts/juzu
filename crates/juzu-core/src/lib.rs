@@ -3,6 +3,7 @@
 //! This crate intentionally has no terminal, HTTP, or native-JJ dependency. UI and
 //! server adapters talk to the outside world through the [`JjBackend`] trait.
 
+pub mod diff;
 pub mod layout;
 
 use async_trait::async_trait;
@@ -11,6 +12,10 @@ use std::path::{Path, PathBuf};
 
 pub mod prelude {
     pub use crate::{
+        diff::{
+            collapsed_diff_rows, diff_window_rows, iter_diff_rows, parse_git_patch, DiffDocument,
+            DiffFile, DiffFileKind, DiffHunk, DiffLine, DiffLineKind, DiffRow, DiffRowKind,
+        },
         layout::{calculate_default_layout, calculate_layout, GraphLayoutConfig, LayoutResult},
         ChangeQuery, CommitNode, FileEntry, JjBackend, JuzuError, LayoutMode, LogQuery, Mutation,
         MutationResult, NodeCountQuery, ObslogEntry, ObslogQuery, OpLogEntry, OpLogQuery, Result,
