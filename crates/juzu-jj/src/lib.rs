@@ -126,6 +126,96 @@ impl NativeJjBackend {
         }
     }
 
+    pub async fn diff_preview(&self, query: ChangeQuery, max_lines: usize) -> Result<String> {
+        self.diff_with_line_limit(query, Some(max_lines)).await
+    }
+
+    async fn diff_with_line_limit(
+        &self,
+        query: ChangeQuery,
+        max_lines: Option<usize>,
+    ) -> Result<String> {
+        let (_workspace_root, repo) = self.open_repo_at_head(&query.cwd).await?;
+        let commit = self
+            .find_commit_by_change_or_commit_id(&repo, &query.change_id)
+            .await?;
+        let parents = commit.parents().await.map_err(|err| {
+            JuzuError::Backend(format!(
+                "failed to load native jj parent commits for diff: {err}"
+            ))
+        })?;
+        let Some(parent) = parents.first() else {
+            return Ok(String::new());
+        };
+        let parent_tree = parent.tree();
+        let commit_tree = commit.tree();
+        let mut stream = parent_tree.diff_stream(&commit_tree, &EverythingMatcher);
+        let mut output = String::new();
+        let mut line_count = 0usize;
+        let mut truncated = false;
+        while let Some(entry) = stream.next().await {
+            if max_lines.is_some_and(|limit| line_count >= limit) {
+                truncated = true;
+                break;
+            }
+            let values = entry.values.map_err(|err| {
+                JuzuError::Backend(format!("failed to read native jj tree diff entry: {err}"))
+            })?;
+            let before_value = values.before.as_resolved().and_then(Option::as_ref);
+            let after_value = values.after.as_resolved().and_then(Option::as_ref);
+            let before_present = values.before.is_present();
+            let after_present = values.after.is_present();
+            let path = entry.path.as_internal_file_string().to_string();
+            let before_text = self
+                .read_tree_value_text(&repo, entry.path.as_ref(), before_value)
+                .await?
+                .unwrap_or_default();
+            let after_text = self
+                .read_tree_value_text(&repo, entry.path.as_ref(), after_value)
+                .await?
+                .unwrap_or_default();
+
+            let mut file_output = String::new();
+            file_output.push_str(&format!("diff --git a/{path} b/{path}\n"));
+            match (before_present, after_present) {
+                (false, true) => file_output.push_str("new file mode 100644\n"),
+                (true, false) => file_output.push_str("deleted file mode 100644\n"),
+                _ => {}
+            }
+            let diff = TextDiff::from_lines(&before_text, &after_text);
+            let old_header = if before_present {
+                format!("a/{path}")
+            } else {
+                "/dev/null".to_string()
+            };
+            let new_header = if after_present {
+                format!("b/{path}")
+            } else {
+                "/dev/null".to_string()
+            };
+            file_output.push_str(
+                &diff
+                    .unified_diff()
+                    .context_radius(3)
+                    .header(&old_header, &new_header)
+                    .to_string(),
+            );
+            for line in file_output.lines() {
+                if max_lines.is_some_and(|limit| line_count >= limit) {
+                    truncated = true;
+                    break;
+                }
+                output.push_str(line);
+                output.push('\n');
+                line_count += 1;
+            }
+        }
+        if truncated {
+            output.push_str("… diff preview truncated; open full diff for complete patch\n");
+        }
+        Ok(output)
+    }
+
     async fn find_commit_by_change_or_commit_id(
         &self,
         repo: &Arc<ReadonlyRepo>,
@@ -316,69 +406,7 @@ impl JjBackend for NativeJjBackend {
     }
 
     async fn diff(&self, query: ChangeQuery) -> Result<String> {
-        let (_workspace_root, repo) = self.open_repo_at_head(&query.cwd).await?;
-        let commit = self
-            .find_commit_by_change_or_commit_id(&repo, &query.change_id)
-            .await?;
-        let parents = commit.parents().await.map_err(|err| {
-            JuzuError::Backend(format!(
-                "failed to load native jj parent commits for diff: {err}"
-            ))
-        })?;
-        let Some(parent) = parents.first() else {
-            return Ok(String::new());
-        };
-        let parent_tree = parent.tree();
-        let commit_tree = commit.tree();
-        let mut stream = parent_tree.diff_stream(&commit_tree, &EverythingMatcher);
-        let mut output = String::new();
-        while let Some(entry) = stream.next().await {
-            let values = entry.values.map_err(|err| {
-                JuzuError::Backend(format!("failed to read native jj tree diff entry: {err}"))
-            })?;
-            let before_value = values.before.as_resolved().and_then(Option::as_ref);
-            let after_value = values.after.as_resolved().and_then(Option::as_ref);
-            let before_present = values.before.is_present();
-            let after_present = values.after.is_present();
-            let path = entry.path.as_internal_file_string().to_string();
-            let before_text = self
-                .read_tree_value_text(&repo, entry.path.as_ref(), before_value)
-                .await?
-                .unwrap_or_default();
-            let after_text = self
-                .read_tree_value_text(&repo, entry.path.as_ref(), after_value)
-                .await?
-                .unwrap_or_default();
-
-            output.push_str(&format!("diff --git a/{path} b/{path}\n"));
-            match (before_present, after_present) {
-                (false, true) => output.push_str("new file mode 100644\n"),
-                (true, false) => output.push_str("deleted file mode 100644\n"),
-                _ => {}
-            }
-            let diff = TextDiff::from_lines(&before_text, &after_text);
-            let old_header = if before_present {
-                format!("a/{path}")
-            } else {
-                "/dev/null".to_string()
-            };
-            let new_header = if after_present {
-                format!("b/{path}")
-            } else {
-                "/dev/null".to_string()
-            };
-            output.push_str(
-                &diff
-                    .unified_diff()
-                    .context_radius(3)
-                    .header(&old_header, &new_header)
-                    .to_string(),
-            );
-            if !output.ends_with('\n') {
-                output.push('\n');
-            }
-        }
-        Ok(output)
+        self.diff_with_line_limit(query, None).await
     }
 
     async fn op_log(&self, _query: OpLogQuery) -> Result<Vec<OpLogEntry>> {

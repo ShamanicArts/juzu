@@ -134,10 +134,13 @@ fn ensure_selected_diff(app: &mut App) {
         return;
     }
     let backend = NativeJjBackend::new();
-    let diff = futures_executor::block_on(backend.diff(ChangeQuery {
-        cwd: app.path.clone(),
-        change_id: node.change_id.clone(),
-    }))
+    let diff = futures_executor::block_on(backend.diff_preview(
+        ChangeQuery {
+            cwd: app.path.clone(),
+            change_id: node.change_id.clone(),
+        },
+        90,
+    ))
     .unwrap_or_default();
     app.diffs_by_change.insert(node.change_id.clone(), diff);
 }
