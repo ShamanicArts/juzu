@@ -1,5 +1,5 @@
 use anyhow::Result;
-use juzu_core::{layout::calculate_default_layout, JjBackend, LayoutMode, LogQuery};
+use juzu_core::{layout::calculate_default_layout, ChangeQuery, JjBackend, LayoutMode, LogQuery};
 use juzu_jj::NativeJjBackend;
 use serde_json::json;
 use std::path::PathBuf;
@@ -7,8 +7,8 @@ use std::path::PathBuf;
 fn print_help() {
     println!(
         "juzu-cli (Rust scaffold)\n\n\
-Usage:\n  juzu-cli --version\n  juzu-cli repo [--path <path>]\n  juzu-cli snapshot [--path <path>] [--limit <n>]\n  juzu-cli layout [--path <path>] [--limit <n>] [--mode <mode>]\n\n\
-Commands:\n  repo       Resolve the JJ repo root using the scaffold backend.\n  snapshot   Emit Rust/native snapshot parity JSON.\n  layout     Emit Rust/core graph layout parity JSON.\n"
+Usage:\n  juzu-cli --version\n  juzu-cli repo [--path <path>]\n  juzu-cli snapshot [--path <path>] [--limit <n>]\n  juzu-cli layout [--path <path>] [--limit <n>] [--mode <mode>]\n  juzu-cli files [--path <path>] --change <id>\n\n\
+Commands:\n  repo       Resolve the JJ repo root using the scaffold backend.\n  snapshot   Emit Rust/native snapshot parity JSON.\n  layout     Emit Rust/core graph layout parity JSON.\n  files      Emit native jj diff --summary-style files for one change.\n"
     );
 }
 
@@ -60,6 +60,31 @@ fn main() -> Result<()> {
                     "repoPath": info.repo_path,
                     "workspaceName": info.workspace_name,
                     "backend": "jj-lib",
+                }))?
+            );
+            Ok(())
+        }
+        "files" => {
+            let path = arg_value(&args, "--path")
+                .map(PathBuf::from)
+                .unwrap_or(std::env::current_dir()?);
+            let Some(change_id) = arg_value(&args, "--change") else {
+                anyhow::bail!("files requires --change <id>");
+            };
+            let backend = NativeJjBackend::new();
+            let files = futures_executor::block_on(backend.files(ChangeQuery {
+                cwd: path.clone(),
+                change_id: change_id.clone(),
+            }))?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&json!({
+                    "schemaVersion": 1,
+                    "command": "files",
+                    "backend": "jj-lib",
+                    "path": path,
+                    "changeId": change_id,
+                    "files": files,
                 }))?
             );
             Ok(())

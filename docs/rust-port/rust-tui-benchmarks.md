@@ -29,17 +29,19 @@ The runner:
 
 ## Latest artifact
 
-`bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/rust-tui-benchmark.html`
+`bench/results/rust-port/rust-tui-bench/2026-06-13T21-01-28-687Z/rust-tui-benchmark.html`
 
 ## Current headline
 
-Current benchmark is for the Rust TUI after the four-line DAG row rhythm and lane-colored connector pass.
+Current benchmark is for the Rust TUI after native `files()` hydration is loaded into graph rows and the details sidebar.
 
 | Scenario | RSS peak | RSS steady median | PSS steady median | Header median |
 | --- | ---: | ---: | ---: | ---: |
-| `idle-mainline` | 10.43 MB | 10.35 MB | 8.59 MB | 5.16 ms |
-| `navigate-mainline` | 10.48 MB | 10.42 MB | 8.66 MB | 5.59 ms |
-| `layout-switching` | 10.61 MB | 10.45 MB | 8.69 MB | 5.09 ms |
+| `idle-mainline` | 11.28 MB | 10.80 MB | 9.05 MB | 120.08 ms |
+| `navigate-mainline` | 11.07 MB | 10.80 MB | 9.05 MB | 125.40 ms |
+| `layout-switching` | 10.79 MB | 10.70 MB | 8.96 MB | 118.47 ms |
+
+Compared to the previous graph-only pass, steady memory is still around ~11 MB RSS, but startup/header time now includes eager native file hydration across the loaded snapshot. That is acceptable for the slice, but it clearly marks the next optimization target: lazy/on-select file hydration or background hydration.
 
 Use the HTML artifact as the source of truth for exact per-run values.
 

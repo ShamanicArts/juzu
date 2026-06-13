@@ -4,7 +4,9 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use juzu_core::{layout::calculate_default_layout, JjBackend, LayoutMode, LogQuery};
+use juzu_core::{
+    layout::calculate_default_layout, ChangeQuery, FileEntry, JjBackend, LayoutMode, LogQuery,
+};
 use juzu_jj::NativeJjBackend;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -13,7 +15,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     DefaultTerminal, Frame,
 };
-use std::{io::stdout, path::PathBuf, time::Duration};
+use std::{collections::HashMap, io::stdout, path::PathBuf, time::Duration};
 
 fn arg_value(args: &[String], key: &str) -> Option<String> {
     args.windows(2).find_map(|pair| {
@@ -39,6 +41,7 @@ struct App {
     path: PathBuf,
     mode: LayoutMode,
     nodes: Vec<juzu_core::CommitNode>,
+    files_by_change: HashMap<String, Vec<FileEntry>>,
     selected: usize,
 }
 
@@ -57,6 +60,15 @@ fn main() -> Result<()> {
         limit,
         revset: None,
     }))?;
+    let mut files_by_change = HashMap::new();
+    for node in &nodes {
+        let files = futures_executor::block_on(backend.files(ChangeQuery {
+            cwd: path.clone(),
+            change_id: node.change_id.clone(),
+        }))
+        .unwrap_or_default();
+        files_by_change.insert(node.change_id.clone(), files);
+    }
     let selected = nodes
         .iter()
         .position(|node| node.is_working_copy)
@@ -65,6 +77,7 @@ fn main() -> Result<()> {
         path,
         mode,
         nodes,
+        files_by_change,
         selected,
     };
 
@@ -429,15 +442,23 @@ fn render_graph_table(
                 },
             );
         }
+        let files = app
+            .files_by_change
+            .get(&node.change_id)
+            .map(Vec::as_slice)
+            .unwrap_or(&[]);
+        let file_summary = format_file_summary(files, width.saturating_sub(text_x + 1));
         put_text(
             &mut cells,
             text_x,
             y + 2,
-            "files pending native hydration",
-            if is_selected {
+            &file_summary,
+            if files.is_empty() {
+                Color::DarkGray
+            } else if is_selected {
                 Color::LightBlue
             } else {
-                Color::DarkGray
+                Color::Blue
             },
         );
     }
@@ -552,6 +573,32 @@ fn truncate(s: &str, max_len: usize) -> String {
     out
 }
 
+fn file_type_color(file_type: &str) -> Color {
+    match file_type {
+        "A" => Color::Green,
+        "D" => Color::Red,
+        "M" => Color::Yellow,
+        "R" => Color::Magenta,
+        _ => Color::Gray,
+    }
+}
+
+fn format_file_summary(files: &[FileEntry], max_len: usize) -> String {
+    if files.is_empty() {
+        return "no file changes".to_string();
+    }
+    let parts = files
+        .iter()
+        .take(3)
+        .map(|file| format!("{} {}", file.r#type, file.path))
+        .collect::<Vec<_>>();
+    let mut summary = parts.join("  ");
+    if files.len() > 3 {
+        summary.push_str(&format!("  +{}", files.len() - 3));
+    }
+    truncate(&summary, max_len)
+}
+
 fn render_sidebar(
     frame: &mut Frame,
     area: Rect,
@@ -593,7 +640,31 @@ fn render_sidebar(
         Line::from(""),
         Line::from(Span::styled("Title", Style::default().fg(Color::Yellow))),
         Line::from(node.description_title.clone()),
+        Line::from(""),
+        Line::from(Span::styled("Files", Style::default().fg(Color::Yellow))),
     ];
+    let mut lines = lines;
+    let files = app
+        .files_by_change
+        .get(&node.change_id)
+        .map(Vec::as_slice)
+        .unwrap_or(&[]);
+    if files.is_empty() {
+        lines.push(Line::from("—"));
+    } else {
+        for file in files.iter().take(12) {
+            lines.push(Line::from(vec![
+                Span::styled(
+                    format!("{} ", file.r#type),
+                    Style::default().fg(file_type_color(&file.r#type)),
+                ),
+                Span::raw(file.path.clone()),
+            ]));
+        }
+        if files.len() > 12 {
+            lines.push(Line::from(format!("… {} more", files.len() - 12)));
+        }
+    }
     frame.render_widget(
         Paragraph::new(lines).block(Block::default().title(" details ").borders(Borders::ALL)),
         area,

@@ -1,0 +1,280 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>JUZU Rust files parity</title>
+<style>
+:root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #07111f; color: #d8e3f2; }
+body { margin: 0; padding: 28px; }
+h1 { margin: 0 0 6px; }
+.summary { display: flex; gap: 14px; margin: 20px 0; flex-wrap: wrap; }
+.card { background: #0d1b2d; border: 1px solid #233854; border-radius: 14px; padding: 14px 18px; box-shadow: 0 10px 30px #0005; }
+.card .num { font-size: 28px; font-weight: 800; color: #7dd3fc; }
+table { width: 100%; border-collapse: collapse; background: #0d1b2d; border-radius: 14px; overflow: hidden; }
+th, td { border-bottom: 1px solid #233854; padding: 10px; vertical-align: top; }
+th { text-align: left; color: #93c5fd; background: #10223a; }
+tr.pass td:first-child { color: #86efac; }
+tr.fail td:first-child { color: #fca5a5; }
+pre { margin: 0; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #cbd5e1; }
+code { color: #fde68a; }
+.small { color: #94a3b8; }
+</style>
+</head>
+<body>
+<h1>JUZU Rust native files() parity</h1>
+<div class="small">Repo: <code>/home/shamanic/dev/juzu</code> · generated 2026-06-13T21:03:38.502194+00:00</div>
+<div class="summary">
+  <div class="card"><div class="num">8/8</div><div>matched cases</div></div>
+  <div class="card"><div class="num">1</div><div>skipped working-copy/root cases</div></div>
+  <div class="card"><div class="num">20</div><div>snapshot limit</div></div>
+</div>
+<table>
+<thead><tr><th>Status</th><th>Change</th><th>Old</th><th>Rust</th><th>Old oracle files</th><th>Rust native files</th></tr></thead>
+<tbody>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>ozponwlmuuqy</code><br>benchmark rust tui rendering performance</td>
+          <td>26</td>
+          <td>26</td>
+          <td><pre>A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/layout-parity-report.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/layout-parity.html
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/old-layout-bookmark-centric.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/old-layout-chronological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/old-layout-mainline.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/old-layout-topological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/old-layout-wc-focused.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/rust-layout-bookmark-centric.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/rust-layout-chronological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/rust-layout-mainline.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/rust-layout-topological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/rust-layout-wc-focused.json
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/idle-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/idle-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/idle-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/layout-switching-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/layout-switching-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/layout-switching-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/navigate-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/navigate-mainline-run-2-capture.txt</pre></td>
+          <td><pre>A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/layout-parity-report.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/layout-parity.html
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/old-layout-bookmark-centric.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/old-layout-chronological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/old-layout-mainline.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/old-layout-topological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/old-layout-wc-focused.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/rust-layout-bookmark-centric.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/rust-layout-chronological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/rust-layout-mainline.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/rust-layout-topological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/rust-layout-wc-focused.json
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/idle-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/idle-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/idle-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/layout-switching-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/layout-switching-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/layout-switching-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/navigate-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-13T20-40-04-770Z/navigate-mainline-run-2-capture.txt</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>uxpvuzprnxvw</code><br>improve rust tui dag presentation parity</td>
+          <td>20</td>
+          <td>20</td>
+          <td><pre>A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/layout-parity-report.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/layout-parity.html
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/old-layout-bookmark-centric.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/old-layout-chronological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/old-layout-mainline.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/old-layout-topological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/old-layout-wc-focused.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/rust-layout-bookmark-centric.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/rust-layout-chronological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/rust-layout-mainline.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/rust-layout-topological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/rust-layout-wc-focused.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-36-40-955Z/old-oracle-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-36-40-955Z/parity-report.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-36-40-955Z/rust-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-36-40-955Z/snapshot-parity.html
+A bench/results/rust-port/tui-review/2026-06-13T20-36-20-894Z/rust-tui-dag-capture.txt
+A bench/results/rust-port/tui-review/2026-06-13T20-36-20-894Z/rust-tui-dag-review.html
+M crates/juzu-tui/src/main.rs
+M docs/rust-port/read-only-tui.md</pre></td>
+          <td><pre>A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/layout-parity-report.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/layout-parity.html
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/old-layout-bookmark-centric.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/old-layout-chronological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/old-layout-mainline.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/old-layout-topological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/old-layout-wc-focused.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/rust-layout-bookmark-centric.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/rust-layout-chronological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/rust-layout-mainline.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/rust-layout-topological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/rust-layout-wc-focused.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-36-40-955Z/old-oracle-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-36-40-955Z/parity-report.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-36-40-955Z/rust-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-36-40-955Z/snapshot-parity.html
+A bench/results/rust-port/tui-review/2026-06-13T20-36-20-894Z/rust-tui-dag-capture.txt
+A bench/results/rust-port/tui-review/2026-06-13T20-36-20-894Z/rust-tui-dag-review.html
+M crates/juzu-tui/src/main.rs
+M docs/rust-port/read-only-tui.md</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>nyyyopnmspws</code><br>render dag connector glyphs in rust tui</td>
+          <td>4</td>
+          <td>4</td>
+          <td><pre>A bench/results/rust-port/tui-review/2026-06-13T20-29-36-580Z/rust-tui-dag-capture.txt
+A bench/results/rust-port/tui-review/2026-06-13T20-29-36-580Z/rust-tui-dag-review.html
+M crates/juzu-tui/src/main.rs
+M docs/rust-port/read-only-tui.md</pre></td>
+          <td><pre>A bench/results/rust-port/tui-review/2026-06-13T20-29-36-580Z/rust-tui-dag-capture.txt
+A bench/results/rust-port/tui-review/2026-06-13T20-29-36-580Z/rust-tui-dag-review.html
+M crates/juzu-tui/src/main.rs
+M docs/rust-port/read-only-tui.md</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>swwxpvnmunvm</code><br>add read-only rust tui graph review surface</td>
+          <td>7</td>
+          <td>7</td>
+          <td><pre>M Cargo.lock
+M Cargo.toml
+A bench/results/rust-port/tui-review/2026-06-13T20-23-11-384Z/rust-tui-capture.txt
+A bench/results/rust-port/tui-review/2026-06-13T20-23-11-384Z/rust-tui-review.html
+M crates/juzu-tui/Cargo.toml
+M crates/juzu-tui/src/main.rs
+A docs/rust-port/read-only-tui.md</pre></td>
+          <td><pre>M Cargo.lock
+M Cargo.toml
+A bench/results/rust-port/tui-review/2026-06-13T20-23-11-384Z/rust-tui-capture.txt
+A bench/results/rust-port/tui-review/2026-06-13T20-23-11-384Z/rust-tui-review.html
+M crates/juzu-tui/Cargo.toml
+M crates/juzu-tui/src/main.rs
+A docs/rust-port/read-only-tui.md</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>owsqnruwvtpy</code><br>port graph layout algorithm to rust core</td>
+          <td>18</td>
+          <td>18</td>
+          <td><pre>A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/layout-parity-report.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/layout-parity.html
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/old-layout-bookmark-centric.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/old-layout-chronological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/old-layout-mainline.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/old-layout-topological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/old-layout-wc-focused.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/rust-layout-bookmark-centric.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/rust-layout-chronological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/rust-layout-mainline.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/rust-layout-topological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/rust-layout-wc-focused.json
+M crates/juzu-cli/src/main.rs
+A crates/juzu-core/src/layout.rs
+M crates/juzu-core/src/lib.rs
+A docs/rust-port/layout-parity.md
+M package.json
+A scripts/rust-port-layout-parity.py</pre></td>
+          <td><pre>A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/layout-parity-report.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/layout-parity.html
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/old-layout-bookmark-centric.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/old-layout-chronological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/old-layout-mainline.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/old-layout-topological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/old-layout-wc-focused.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/rust-layout-bookmark-centric.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/rust-layout-chronological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/rust-layout-mainline.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/rust-layout-topological.json
+A bench/results/rust-port/layout-parity/2026-06-13T20-19-57-458Z/rust-layout-wc-focused.json
+M crates/juzu-cli/src/main.rs
+A crates/juzu-core/src/layout.rs
+M crates/juzu-core/src/lib.rs
+A docs/rust-port/layout-parity.md
+M package.json
+A scripts/rust-port-layout-parity.py</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>vltwtkqwurnx</code><br>emit old-compatible native jj change ids</td>
+          <td>6</td>
+          <td>6</td>
+          <td><pre>A bench/results/rust-port/snapshot-parity/2026-06-13T20-16-07-966Z/old-oracle-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-16-07-966Z/parity-report.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-16-07-966Z/rust-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-16-07-966Z/snapshot-parity.html
+M crates/juzu-jj/src/lib.rs
+M docs/rust-port/snapshot-parity-tooling.md</pre></td>
+          <td><pre>A bench/results/rust-port/snapshot-parity/2026-06-13T20-16-07-966Z/old-oracle-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-16-07-966Z/parity-report.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-16-07-966Z/rust-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-16-07-966Z/snapshot-parity.html
+M crates/juzu-jj/src/lib.rs
+M docs/rust-port/snapshot-parity-tooling.md</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>pkqyvzyovvlm</code><br>expand juzu snapshot parity normalization</td>
+          <td>12</td>
+          <td>12</td>
+          <td><pre>A bench/results/rust-port/snapshot-parity/2026-06-13T20-01-43-283Z/old-oracle-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-01-43-283Z/parity-report.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-01-43-283Z/rust-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-01-43-283Z/snapshot-parity.html
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-14-22-341Z/old-oracle-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-14-22-341Z/parity-report.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-14-22-341Z/rust-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-14-22-341Z/snapshot-parity.html
+M crates/juzu-jj/src/lib.rs
+A docs/rust-port/snapshot-parity-tooling.md
+M package.json
+A scripts/rust-port-snapshot-parity.py</pre></td>
+          <td><pre>A bench/results/rust-port/snapshot-parity/2026-06-13T20-01-43-283Z/old-oracle-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-01-43-283Z/parity-report.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-01-43-283Z/rust-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-01-43-283Z/snapshot-parity.html
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-14-22-341Z/old-oracle-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-14-22-341Z/parity-report.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-14-22-341Z/rust-snapshot.json
+A bench/results/rust-port/snapshot-parity/2026-06-13T20-14-22-341Z/snapshot-parity.html
+M crates/juzu-jj/src/lib.rs
+A docs/rust-port/snapshot-parity-tooling.md
+M package.json
+A scripts/rust-port-snapshot-parity.py</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>rzumrlxyxuzl</code><br>add native jj read-only log snapshot</td>
+          <td>11</td>
+          <td>11</td>
+          <td><pre>M Cargo.lock
+A bench/results/rust-port/native-log/2026-06-13T19-59-50-346Z/native-log-parity.html
+A bench/results/rust-port/native-log/2026-06-13T19-59-50-346Z/old-oracle-snapshot.json
+A bench/results/rust-port/native-log/2026-06-13T19-59-50-346Z/parity-report.json
+A bench/results/rust-port/native-log/2026-06-13T19-59-50-346Z/rust-snapshot.json
+M crates/juzu-cli/Cargo.toml
+M crates/juzu-cli/src/main.rs
+M crates/juzu-core/src/lib.rs
+M crates/juzu-jj/Cargo.toml
+M crates/juzu-jj/src/lib.rs
+A docs/rust-port/native-log-snapshot.md</pre></td>
+          <td><pre>M Cargo.lock
+A bench/results/rust-port/native-log/2026-06-13T19-59-50-346Z/native-log-parity.html
+A bench/results/rust-port/native-log/2026-06-13T19-59-50-346Z/old-oracle-snapshot.json
+A bench/results/rust-port/native-log/2026-06-13T19-59-50-346Z/parity-report.json
+A bench/results/rust-port/native-log/2026-06-13T19-59-50-346Z/rust-snapshot.json
+M crates/juzu-cli/Cargo.toml
+M crates/juzu-cli/src/main.rs
+M crates/juzu-core/src/lib.rs
+M crates/juzu-jj/Cargo.toml
+M crates/juzu-jj/src/lib.rs
+A docs/rust-port/native-log-snapshot.md</pre></td>
+        </tr></tbody>
+</table>
+</body>
+</html>

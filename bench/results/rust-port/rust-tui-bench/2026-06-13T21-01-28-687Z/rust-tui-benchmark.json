@@ -1,0 +1,3812 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-06-13T21:01:28.687624+00:00",
+  "repo": "/home/shamanic/dev/juzu",
+  "limit": 80,
+  "binary": "/home/shamanic/dev/juzu/target/release/juzu-tui",
+  "terminal": {
+    "cols": 120,
+    "rows": 36
+  },
+  "sampleIntervalMs": 100,
+  "scenarios": [
+    {
+      "id": "idle-mainline",
+      "note": "steady-state render loop on mainline layout",
+      "mode": "mainline",
+      "summary": {
+        "okCount": 3,
+        "runCount": 3,
+        "rssMbPeak": 11.28,
+        "rssMbSteadyMedian": 10.8,
+        "pssMbPeak": 9.53,
+        "pssMbSteadyMedian": 9.05,
+        "firstHeaderMsMedian": 120.08,
+        "keyWriteMsP95Median": 0.0,
+        "bytesCapturedMax": 7881
+      },
+      "runs": [
+        {
+          "run": 1,
+          "scenario": "idle-mainline",
+          "mode": "mainline",
+          "ok": true,
+          "returnCode": 0,
+          "durationMs": 5002.79,
+          "firstBytesMs": 130.23,
+          "firstHeaderMs": 131.12,
+          "keysSent": 0,
+          "keyWriteMsP50": 0.0,
+          "keyWriteMsP95": 0.0,
+          "bytesCaptured": 7881,
+          "capturePath": "/home/shamanic/dev/juzu/bench/results/rust-port/rust-tui-bench/2026-06-13T21-01-28-687Z/idle-mainline-run-1-capture.txt",
+          "sampleCount": 48,
+          "rssMbPeak": 10.72,
+          "rssMbSteady": 10.72,
+          "pssMbPeak": 8.96,
+          "pssMbSteady": 8.96,
+          "samples": [
+            {
+              "uptimeMs": 0.0,
+              "rssMb": 0.26,
+              "pssMb": 0.04,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 100.68,
+              "rssMb": 10.44,
+              "pssMb": 8.68,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 211.87,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 312.82,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 422.56,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 523.49,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 624.4,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 733.78,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 834.69,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 944.48,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1045.41,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1155.06,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1255.97,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1356.78,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1466.21,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1567.07,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1677.17,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1778.09,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1879.06,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1988.53,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2089.97,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2199.51,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2300.5,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2410.44,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2511.77,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2612.74,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2721.61,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2822.63,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2932.51,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3035.55,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3136.73,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3243.94,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3344.88,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3455.53,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3556.66,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3665.82,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3766.94,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3868.02,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3976.98,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4077.9,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4187.71,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4288.95,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4390.0,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4498.6,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4599.5,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4709.5,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4810.41,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4920.35,
+              "rssMb": 10.72,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "scenario": "idle-mainline",
+          "mode": "mainline",
+          "ok": true,
+          "returnCode": 0,
+          "durationMs": 5013.12,
+          "firstBytesMs": 118.69,
+          "firstHeaderMs": 119.79,
+          "keysSent": 0,
+          "keyWriteMsP50": 0.0,
+          "keyWriteMsP95": 0.0,
+          "bytesCaptured": 7881,
+          "capturePath": "/home/shamanic/dev/juzu/bench/results/rust-port/rust-tui-bench/2026-06-13T21-01-28-687Z/idle-mainline-run-2-capture.txt",
+          "sampleCount": 48,
+          "rssMbPeak": 11.28,
+          "rssMbSteady": 10.8,
+          "pssMbPeak": 9.53,
+          "pssMbSteady": 9.05,
+          "samples": [
+            {
+              "uptimeMs": 0.0,
+              "rssMb": 0.26,
+              "pssMb": 0.04,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 100.69,
+              "rssMb": 11.28,
+              "pssMb": 9.53,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 220.59,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 323.64,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 431.25,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 532.11,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 642.07,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 743.16,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 844.22,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 953.35,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1054.27,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1164.01,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1264.96,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1365.89,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1475.04,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1575.93,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1685.72,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1786.54,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1896.53,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1997.46,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2098.42,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2207.74,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2308.74,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2418.94,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2519.95,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2620.83,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2730.0,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2831.05,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2940.75,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3041.75,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3151.5,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3252.46,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3353.46,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3462.65,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3563.46,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3673.28,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3774.17,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3874.95,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3984.46,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4085.36,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4195.46,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4296.4,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4406.15,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4507.04,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4608.0,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4717.32,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4818.22,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4928.4,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "scenario": "idle-mainline",
+          "mode": "mainline",
+          "ok": true,
+          "returnCode": 0,
+          "durationMs": 5013.01,
+          "firstBytesMs": 119.12,
+          "firstHeaderMs": 120.08,
+          "keysSent": 0,
+          "keyWriteMsP50": 0.0,
+          "keyWriteMsP95": 0.0,
+          "bytesCaptured": 7881,
+          "capturePath": "/home/shamanic/dev/juzu/bench/results/rust-port/rust-tui-bench/2026-06-13T21-01-28-687Z/idle-mainline-run-3-capture.txt",
+          "sampleCount": 48,
+          "rssMbPeak": 10.84,
+          "rssMbSteady": 10.84,
+          "pssMbPeak": 9.08,
+          "pssMbSteady": 9.08,
+          "samples": [
+            {
+              "uptimeMs": 0.0,
+              "rssMb": 0.03,
+              "pssMb": 0.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 100.6,
+              "rssMb": 10.44,
+              "pssMb": 8.69,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 200.74,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 301.75,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 411.52,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 512.4,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 613.24,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 722.62,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 823.56,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 933.48,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1034.36,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1144.23,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1245.1,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1345.99,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1455.4,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1556.33,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1666.16,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1767.08,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1868.0,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1977.09,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2078.0,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2187.9,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2288.9,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2398.8,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2499.82,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2600.76,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2710.01,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2811.06,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2920.72,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3021.79,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3122.77,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3232.05,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3333.09,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3442.68,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3543.56,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3653.52,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3754.61,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3855.55,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3964.72,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4065.9,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4175.63,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4276.73,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4377.73,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4486.86,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4587.78,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4697.51,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4798.47,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4908.32,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "navigate-mainline",
+      "note": "selection movement through the DAG rows",
+      "mode": "mainline",
+      "summary": {
+        "okCount": 3,
+        "runCount": 3,
+        "rssMbPeak": 11.07,
+        "rssMbSteadyMedian": 10.8,
+        "pssMbPeak": 9.31,
+        "pssMbSteadyMedian": 9.05,
+        "firstHeaderMsMedian": 125.4,
+        "keyWriteMsP95Median": 0.01,
+        "bytesCapturedMax": 309294
+      },
+      "runs": [
+        {
+          "run": 1,
+          "scenario": "navigate-mainline",
+          "mode": "mainline",
+          "ok": true,
+          "returnCode": 0,
+          "durationMs": 8010.23,
+          "firstBytesMs": 124.51,
+          "firstHeaderMs": 125.4,
+          "keysSent": 165,
+          "keyWriteMsP50": 0.01,
+          "keyWriteMsP95": 0.01,
+          "bytesCaptured": 309294,
+          "capturePath": "/home/shamanic/dev/juzu/bench/results/rust-port/rust-tui-bench/2026-06-13T21-01-28-687Z/navigate-mainline-run-1-capture.txt",
+          "sampleCount": 74,
+          "rssMbPeak": 10.77,
+          "rssMbSteady": 10.77,
+          "pssMbPeak": 9.01,
+          "pssMbSteady": 9.01,
+          "samples": [
+            {
+              "uptimeMs": 0.0,
+              "rssMb": 0.03,
+              "pssMb": 0.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 100.61,
+              "rssMb": 10.39,
+              "pssMb": 8.63,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 206.05,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 307.03,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 416.86,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 517.79,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 621.33,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 724.43,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 829.09,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 932.59,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1037.88,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1142.26,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1249.08,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1353.64,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1461.13,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1566.64,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1675.54,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1781.59,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1890.53,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1997.09,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2107.48,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2215.74,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2328.91,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2437.78,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2550.44,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2659.43,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2771.96,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2881.84,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2996.91,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3110.25,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3225.41,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3334.0,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3449.68,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3560.79,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3677.27,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3786.87,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3902.28,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4012.35,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4122.41,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4230.27,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4340.41,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4447.39,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4564.41,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4676.63,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4777.72,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4890.86,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5005.01,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5105.69,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5217.9,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5331.83,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5450.1,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5562.38,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5665.0,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5777.17,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5892.43,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5992.94,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6094.49,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6212.98,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6331.95,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6432.73,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6549.85,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6667.3,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6768.62,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6888.71,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7003.73,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7110.01,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7212.67,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7332.57,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7451.68,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7555.57,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7659.31,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7759.46,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7860.22,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7974.44,
+              "rssMb": 10.77,
+              "pssMb": 9.01,
+              "swapMb": 0.0
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "scenario": "navigate-mainline",
+          "mode": "mainline",
+          "ok": true,
+          "returnCode": 0,
+          "durationMs": 8013.9,
+          "firstBytesMs": 127.36,
+          "firstHeaderMs": 128.25,
+          "keysSent": 165,
+          "keyWriteMsP50": 0.01,
+          "keyWriteMsP95": 0.01,
+          "bytesCaptured": 309294,
+          "capturePath": "/home/shamanic/dev/juzu/bench/results/rust-port/rust-tui-bench/2026-06-13T21-01-28-687Z/navigate-mainline-run-2-capture.txt",
+          "sampleCount": 74,
+          "rssMbPeak": 11.07,
+          "rssMbSteady": 10.84,
+          "pssMbPeak": 9.31,
+          "pssMbSteady": 9.08,
+          "samples": [
+            {
+              "uptimeMs": 0.0,
+              "rssMb": 0.03,
+              "pssMb": 0.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 100.68,
+              "rssMb": 11.07,
+              "pssMb": 9.31,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 209.04,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 310.08,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 419.78,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 521.86,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 624.34,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 728.34,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 831.62,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 936.31,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1040.65,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1147.11,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1252.13,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1359.66,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1464.66,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1571.94,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1677.51,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1785.95,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1891.97,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2001.11,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2108.69,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2218.12,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2326.19,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2435.7,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2543.33,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2655.21,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2763.74,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2876.32,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2984.88,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3098.76,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3208.88,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3324.02,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3433.72,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3548.01,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3657.94,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3774.22,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3884.96,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3996.74,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4103.91,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4214.04,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4321.19,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4435.13,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4544.57,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4657.18,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4767.31,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4885.49,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4997.98,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5116.3,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5228.29,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5328.32,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5441.96,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5556.29,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5656.8,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5768.13,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5882.64,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6001.29,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6116.38,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6218.79,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6334.31,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6449.62,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6553.17,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6670.24,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6787.99,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6889.13,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6990.59,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7090.69,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7210.12,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7327.35,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7428.99,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7530.66,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7649.36,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7768.59,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7872.47,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7987.06,
+              "rssMb": 10.84,
+              "pssMb": 9.08,
+              "swapMb": 0.0
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "scenario": "navigate-mainline",
+          "mode": "mainline",
+          "ok": true,
+          "returnCode": 0,
+          "durationMs": 8028.08,
+          "firstBytesMs": 120.91,
+          "firstHeaderMs": 121.82,
+          "keysSent": 165,
+          "keyWriteMsP50": 0.01,
+          "keyWriteMsP95": 0.01,
+          "bytesCaptured": 309294,
+          "capturePath": "/home/shamanic/dev/juzu/bench/results/rust-port/rust-tui-bench/2026-06-13T21-01-28-687Z/navigate-mainline-run-3-capture.txt",
+          "sampleCount": 73,
+          "rssMbPeak": 10.8,
+          "rssMbSteady": 10.8,
+          "pssMbPeak": 9.05,
+          "pssMbSteady": 9.05,
+          "samples": [
+            {
+              "uptimeMs": 0.0,
+              "rssMb": 0.11,
+              "pssMb": 0.04,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 100.65,
+              "rssMb": 10.41,
+              "pssMb": 8.66,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 202.44,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 303.52,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 413.07,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 514.04,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 617.55,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 720.83,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 825.93,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 929.73,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1035.56,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1140.5,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1248.63,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1354.27,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1463.02,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1569.76,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1677.85,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1784.5,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1893.49,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2001.35,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2112.05,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2220.72,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2331.82,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2439.58,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2551.24,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2659.1,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2770.96,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2879.61,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2992.58,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3099.93,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3213.23,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3321.04,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3434.57,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3544.2,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3657.29,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3768.22,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3883.67,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3992.76,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4102.8,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4210.2,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4319.56,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4426.13,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4542.44,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4654.48,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4771.25,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4883.5,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5001.38,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5115.0,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5234.38,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5347.57,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5467.09,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5580.42,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5700.43,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5814.52,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5915.26,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6030.44,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6146.37,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6246.85,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6366.88,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6482.93,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6583.76,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6703.11,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6820.16,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6922.8,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7024.07,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7141.49,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7259.24,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7359.31,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7461.48,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7563.71,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7682.86,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7802.23,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7905.81,
+              "rssMb": 10.8,
+              "pssMb": 9.05,
+              "swapMb": 0.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "layout-switching",
+      "note": "layout mode switches plus navigation",
+      "mode": "chronological",
+      "summary": {
+        "okCount": 3,
+        "runCount": 3,
+        "rssMbPeak": 10.79,
+        "rssMbSteadyMedian": 10.7,
+        "pssMbPeak": 9.03,
+        "pssMbSteadyMedian": 8.96,
+        "firstHeaderMsMedian": 118.47,
+        "keyWriteMsP95Median": 0.01,
+        "bytesCapturedMax": 218266
+      },
+      "runs": [
+        {
+          "run": 1,
+          "scenario": "layout-switching",
+          "mode": "chronological",
+          "ok": true,
+          "returnCode": 0,
+          "durationMs": 8005.55,
+          "firstBytesMs": 117.6,
+          "firstHeaderMs": 118.47,
+          "keysSent": 123,
+          "keyWriteMsP50": 0.01,
+          "keyWriteMsP95": 0.01,
+          "bytesCaptured": 197738,
+          "capturePath": "/home/shamanic/dev/juzu/bench/results/rust-port/rust-tui-bench/2026-06-13T21-01-28-687Z/layout-switching-run-1-capture.txt",
+          "sampleCount": 76,
+          "rssMbPeak": 10.7,
+          "rssMbSteady": 10.7,
+          "pssMbPeak": 8.96,
+          "pssMbSteady": 8.96,
+          "samples": [
+            {
+              "uptimeMs": 0.0,
+              "rssMb": 0.02,
+              "pssMb": 0.02,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 100.64,
+              "rssMb": 10.36,
+              "pssMb": 8.63,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 219.21,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 320.12,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 429.94,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 531.59,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 633.25,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 735.64,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 838.19,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 939.87,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1042.67,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1146.2,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1248.07,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1351.59,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1455.2,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1557.67,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1662.03,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1766.8,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1869.03,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1973.3,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2078.05,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2181.3,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2286.8,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2392.63,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2495.16,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2600.48,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2705.86,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2809.5,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2916.11,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3023.3,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3126.19,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3233.13,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3340.23,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3444.77,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3552.77,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3660.76,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3763.75,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3871.03,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3978.65,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4083.56,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4193.0,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4302.63,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4406.13,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4513.88,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4622.11,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4731.75,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4836.96,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4947.71,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5056.35,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5164.21,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5277.19,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5386.16,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5495.26,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5604.53,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5711.44,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5818.56,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5923.19,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6031.31,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6142.6,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6252.64,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6360.04,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6464.11,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6571.69,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6681.77,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6792.59,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6900.62,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7004.85,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7112.73,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7220.63,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7331.35,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7442.54,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7546.92,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7654.85,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7763.21,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7867.75,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7976.04,
+              "rssMb": 10.7,
+              "pssMb": 8.96,
+              "swapMb": 0.0
+            }
+          ]
+        },
+        {
+          "run": 2,
+          "scenario": "layout-switching",
+          "mode": "chronological",
+          "ok": true,
+          "returnCode": 0,
+          "durationMs": 8022.82,
+          "firstBytesMs": 117.98,
+          "firstHeaderMs": 118.84,
+          "keysSent": 123,
+          "keyWriteMsP50": 0.01,
+          "keyWriteMsP95": 0.01,
+          "bytesCaptured": 197738,
+          "capturePath": "/home/shamanic/dev/juzu/bench/results/rust-port/rust-tui-bench/2026-06-13T21-01-28-687Z/layout-switching-run-2-capture.txt",
+          "sampleCount": 76,
+          "rssMbPeak": 10.79,
+          "rssMbSteady": 10.79,
+          "pssMbPeak": 9.03,
+          "pssMbSteady": 9.03,
+          "samples": [
+            {
+              "uptimeMs": 0.0,
+              "rssMb": 0.02,
+              "pssMb": 0.02,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 100.5,
+              "rssMb": 10.33,
+              "pssMb": 8.57,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 219.54,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 320.7,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 430.36,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 532.23,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 634.31,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 737.31,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 840.67,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 942.61,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1046.58,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1150.29,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1252.21,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1355.88,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1459.72,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1561.97,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1665.96,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1770.77,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1872.97,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1977.39,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2082.57,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2185.85,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2291.33,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2397.01,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2499.5,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2604.58,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2710.15,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2814.9,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2922.75,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3031.43,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3137.44,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3240.73,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3346.99,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3454.9,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3559.41,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3667.35,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3774.42,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3877.62,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3984.67,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4094.2,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4205.08,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4312.93,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4418.19,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4524.57,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4634.3,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4744.12,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4854.56,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4965.28,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5072.26,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5183.49,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5291.78,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5396.66,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5506.19,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5615.49,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5722.77,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5830.45,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5935.09,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6044.4,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6156.28,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6264.28,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6368.79,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6477.5,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6586.21,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6697.76,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6808.08,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6912.51,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7021.4,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7129.22,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7233.36,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7344.87,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7455.9,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7564.25,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7672.71,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7777.43,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7886.13,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7995.54,
+              "rssMb": 10.79,
+              "pssMb": 9.03,
+              "swapMb": 0.0
+            }
+          ]
+        },
+        {
+          "run": 3,
+          "scenario": "layout-switching",
+          "mode": "chronological",
+          "ok": true,
+          "returnCode": 0,
+          "durationMs": 8017.6,
+          "firstBytesMs": 117.17,
+          "firstHeaderMs": 118.05,
+          "keysSent": 137,
+          "keyWriteMsP50": 0.01,
+          "keyWriteMsP95": 0.1,
+          "bytesCaptured": 218266,
+          "capturePath": "/home/shamanic/dev/juzu/bench/results/rust-port/rust-tui-bench/2026-06-13T21-01-28-687Z/layout-switching-run-3-capture.txt",
+          "sampleCount": 74,
+          "rssMbPeak": 10.69,
+          "rssMbSteady": 10.69,
+          "pssMbPeak": 8.94,
+          "pssMbSteady": 8.94,
+          "samples": [
+            {
+              "uptimeMs": 0.0,
+              "rssMb": 0.22,
+              "pssMb": 0.04,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 100.64,
+              "rssMb": 10.38,
+              "pssMb": 8.63,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 218.85,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 320.87,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 430.23,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 532.71,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 634.68,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 737.93,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 841.4,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 944.18,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1047.82,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1152.32,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1256.32,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1362.38,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1467.1,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1571.71,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1678.22,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1784.95,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1888.78,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 1995.31,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2104.03,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2215.62,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2326.62,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2435.76,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2545.82,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2656.97,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2767.62,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2881.49,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 2987.9,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3104.72,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3218.63,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3334.67,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3444.51,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3561.28,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3663.31,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3781.87,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 3897.57,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4015.54,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4129.51,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4244.01,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4348.64,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4465.08,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4577.33,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4677.77,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4797.85,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 4914.12,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5015.05,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5128.29,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5235.04,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5352.28,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5466.42,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5585.99,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5688.3,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5791.05,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 5892.39,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6000.67,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6113.38,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6222.21,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6330.13,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6434.47,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6545.13,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6655.78,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6763.78,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6871.96,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 6978.17,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7087.66,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7196.47,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7306.66,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7415.28,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7520.25,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7632.28,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7744.0,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7844.08,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            },
+            {
+              "uptimeMs": 7944.7,
+              "rssMb": 10.69,
+              "pssMb": 8.94,
+              "swapMb": 0.0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -7,8 +7,9 @@
 use async_trait::async_trait;
 use futures::StreamExt;
 use jj_lib::config::StackedConfig;
+use jj_lib::matchers::EverythingMatcher;
 use jj_lib::object_id::ObjectId;
-use jj_lib::repo::{Repo, StoreFactories};
+use jj_lib::repo::{ReadonlyRepo, Repo, StoreFactories};
 use jj_lib::revset::{RevsetExpression, RevsetStreamExt};
 use jj_lib::settings::UserSettings;
 use jj_lib::workspace::{default_working_copy_factories, Workspace};
@@ -18,6 +19,7 @@ use juzu_core::{
 };
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -76,6 +78,45 @@ impl NativeJjBackend {
                 return None;
             }
         }
+    }
+
+    async fn open_repo_at_head(&self, cwd: &Path) -> Result<(PathBuf, Arc<ReadonlyRepo>)> {
+        let workspace_root = self
+            .find_root_blocking(cwd)
+            .ok_or_else(|| JuzuError::RepoNotFound(cwd.to_path_buf()))?;
+        let workspace = self.open_workspace(&workspace_root)?;
+        let repo = workspace
+            .repo_loader()
+            .load_at_head()
+            .await
+            .map_err(|err| JuzuError::Backend(format!("failed to load jj repo head: {err}")))?;
+        Ok((workspace_root, repo))
+    }
+
+    async fn find_commit_by_change_or_commit_id(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        id_prefix: &str,
+    ) -> Result<jj_lib::commit::Commit> {
+        let revset = RevsetExpression::all()
+            .evaluate(repo.as_ref())
+            .map_err(|err| {
+                JuzuError::Backend(format!("failed to evaluate native jj revset: {err}"))
+            })?;
+        let mut stream = revset.stream().commits(repo.store()).boxed_local();
+        while let Some(commit_result) = stream.next().await {
+            let commit = commit_result.map_err(|err| {
+                JuzuError::Backend(format!("failed to stream native jj commit: {err}"))
+            })?;
+            if commit.change_id().reverse_hex().starts_with(id_prefix)
+                || commit.id().hex().starts_with(id_prefix)
+            {
+                return Ok(commit);
+            }
+        }
+        Err(JuzuError::Backend(format!(
+            "native jj commit not found for id prefix {id_prefix}"
+        )))
     }
 }
 
@@ -204,8 +245,41 @@ impl JjBackend for NativeJjBackend {
         ))
     }
 
-    async fn files(&self, _query: ChangeQuery) -> Result<Vec<FileEntry>> {
-        Err(JuzuError::Unsupported("native jj files is not wired yet"))
+    async fn files(&self, query: ChangeQuery) -> Result<Vec<FileEntry>> {
+        let (_workspace_root, repo) = self.open_repo_at_head(&query.cwd).await?;
+        let commit = self
+            .find_commit_by_change_or_commit_id(&repo, &query.change_id)
+            .await?;
+        let parents = commit.parents().await.map_err(|err| {
+            JuzuError::Backend(format!(
+                "failed to load native jj parent commits for files: {err}"
+            ))
+        })?;
+        let Some(parent) = parents.first() else {
+            return Ok(Vec::new());
+        };
+        let parent_tree = parent.tree();
+        let commit_tree = commit.tree();
+        let mut stream = parent_tree.diff_stream(&commit_tree, &EverythingMatcher);
+        let mut files = Vec::new();
+        while let Some(entry) = stream.next().await {
+            let values = entry.values.map_err(|err| {
+                JuzuError::Backend(format!("failed to read native jj tree diff entry: {err}"))
+            })?;
+            let before_present = values.before.is_present();
+            let after_present = values.after.is_present();
+            let file_type = match (before_present, after_present) {
+                (false, true) => "A",
+                (true, false) => "D",
+                _ => "M",
+            };
+            files.push(FileEntry {
+                r#type: file_type.to_string(),
+                path: entry.path.as_internal_file_string().to_string(),
+            });
+        }
+        files.sort_by(|a, b| a.path.cmp(&b.path).then(a.r#type.cmp(&b.r#type)));
+        Ok(files)
     }
 
     async fn diff(&self, _query: ChangeQuery) -> Result<String> {
