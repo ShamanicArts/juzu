@@ -173,7 +173,7 @@ pub struct MutationResult {
     pub message: String,
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 pub trait JjBackend: Send + Sync {
     async fn find_root(&self, start: &Path) -> Result<Option<PathBuf>>;
     async fn log(&self, query: LogQuery) -> Result<Vec<CommitNode>>;

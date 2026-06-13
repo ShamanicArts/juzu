@@ -1,4 +1,5 @@
 use anyhow::Result;
+use juzu_core::{JjBackend, LogQuery};
 use juzu_jj::NativeJjBackend;
 use serde_json::json;
 use std::path::PathBuf;
@@ -54,13 +55,28 @@ fn main() -> Result<()> {
             Ok(())
         }
         "snapshot" => {
+            let path = arg_value(&args, "--path")
+                .map(PathBuf::from)
+                .unwrap_or(std::env::current_dir()?);
+            let limit = arg_value(&args, "--limit")
+                .and_then(|raw| raw.parse::<usize>().ok())
+                .unwrap_or(50);
+            let backend = NativeJjBackend::new();
+            let nodes = futures_executor::block_on(backend.log(LogQuery {
+                cwd: path.clone(),
+                limit,
+                revset: None,
+            }))?;
             println!(
                 "{}",
                 serde_json::to_string_pretty(&json!({
                     "schemaVersion": 1,
                     "command": "snapshot",
-                    "status": "reserved",
-                    "message": "Rust snapshot parity emitter will land after native jj log wiring"
+                    "backend": "jj-lib",
+                    "path": path,
+                    "limit": limit,
+                    "returnedNodes": nodes.len(),
+                    "nodes": nodes,
                 }))?
             );
             Ok(())
