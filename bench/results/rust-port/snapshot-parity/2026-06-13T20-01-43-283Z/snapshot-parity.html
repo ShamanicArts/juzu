@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang='en'>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>JUZU Snapshot Parity Report</title>
+<style>
+:root {--bg:#050816;--panel:#0f172a;--line:#334155;--text:#e2e8f0;--muted:#94a3b8;--cyan:#67e8f9;--green:#86efac;--red:#fca5a5;--amber:#fbbf24}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 30% -10%,#14375f 0,transparent 38%),var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,sans-serif}main{max-width:1300px;margin:auto;padding:44px 24px}.shell{border:1px solid var(--line);border-radius:28px;background:rgba(15,23,42,.94);padding:32px;box-shadow:0 24px 90px rgba(0,0,0,.35)}h1{font-size:40px;margin:0 0 8px;letter-spacing:-.04em}p{color:var(--muted)}.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:24px 0}.metric{background:#07111f;border:1px solid var(--line);border-radius:18px;padding:16px}.metric b{display:block;font-size:30px;color:var(--green)}.metric span{color:var(--muted)}table{width:100%;border-collapse:collapse;margin-top:22px}th,td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}th{background:#08111f;color:var(--cyan)}tr.ok td:nth-child(2),tr.ok td:nth-child(3),tr.ok td:nth-child(4){color:var(--green);font-weight:900}tr.bad td:nth-child(2),tr.bad td:nth-child(3),tr.bad td:nth-child(4){color:var(--red);font-weight:900}code{font-family:'JetBrains Mono',ui-monospace,monospace;color:#bfdbfe}.note{border:1px solid var(--line);border-radius:16px;background:#07111f;padding:14px 16px;color:var(--muted)}@media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><main><section class='shell'>
+<h1>JUZU Snapshot Parity Report</h1>
+<p>Reusable HTML artifact comparing old Bun oracle snapshot against Rust <code>jj-lib</code> snapshot.</p>
+<div class='metrics'>
+  <div class='metric'><b>0.0%</b><span>identity</span></div>
+  <div class='metric'><b>100.0%</b><span>titles</span></div>
+  <div class='metric'><b>100.0%</b><span>flags</span></div>
+  <div class='metric'><b>20</b><span>old nodes</span></div>
+  <div class='metric'><b>20</b><span>Rust nodes</span></div>
+</div>
+<div class='note'>Repo: <code>/home/shamanic/dev/juzu</code> · Limit: <code>20</code> · Output: <code>/home/shamanic/dev/juzu/bench/results/rust-port/snapshot-parity/2026-06-13T20-01-43-283Z</code></div>
+<table><thead><tr><th>#</th><th>ID</th><th>Title</th><th>Flags</th><th>Old change</th><th>Rust change</th><th>Old title</th><th>Rust title</th></tr></thead><tbody>
+        <tr class='bad'>
+          <td>1</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>pkqyvzyovvlm</code></td>
+          <td><code>af91401b44ed</code></td>
+          <td>add rust port snapshot parity script</td>
+          <td>add rust port snapshot parity script</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>2</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>rzumrlxyxuzl</code></td>
+          <td><code>805d8e21250e</code></td>
+          <td>add native jj read-only log snapshot</td>
+          <td>add native jj read-only log snapshot</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>3</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>qmnwqrkvlouv</code></td>
+          <td><code>9dc398f4eb54</code></td>
+          <td>wire native jj repo open spike</td>
+          <td>wire native jj repo open spike</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>4</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>skzslnrxvuxt</code></td>
+          <td><code>7f07ec824526</code></td>
+          <td>scaffold juzu rust workspace</td>
+          <td>scaffold juzu rust workspace</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>5</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>osrquputmzwl</code></td>
+          <td><code>b7895a56d03e</code></td>
+          <td>add old juzu oracle emitters</td>
+          <td>add old juzu oracle emitters</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>6</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>zvnnyzrsyywx</code></td>
+          <td><code>04cc10871132</code></td>
+          <td>draft juzu rust target architecture</td>
+          <td>draft juzu rust target architecture</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>7</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>vqwkrnuzoloy</code></td>
+          <td><code>493f8c50beb1</code></td>
+          <td>capture juzu startup baseline benchmarks</td>
+          <td>capture juzu startup baseline benchmarks</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>8</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>uqlttsnpuqpm</code></td>
+          <td><code>59e667ca59ad</code></td>
+          <td>document juzu rust port baseline architecture and benchmarks</td>
+          <td>document juzu rust port baseline architecture and benchmarks</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>9</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>mzrlwtvyvtpq</code></td>
+          <td><code>d08e364146a9</code></td>
+          <td>optimize TUI memory residency and add trace-guided diagnostics</td>
+          <td>optimize TUI memory residency and add trace-guided diagnostics</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>10</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>stzlxrpnmlpv</code></td>
+          <td><code>760e28acdea4</code></td>
+          <td>tweak local repo config for memory debugging</td>
+          <td>tweak local repo config for memory debugging</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>11</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>ltzyqnzzpqst</code></td>
+          <td><code>e6019c00a976</code></td>
+          <td>add memory benchmarking tooling and planning artifacts</td>
+          <td>add memory benchmarking tooling and planning artifacts</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>12</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>tqqmnqlryzol</code></td>
+          <td><code>699dc9e810be</code></td>
+          <td>add memory architecture analysis notes and agent guidance</td>
+          <td>add memory architecture analysis notes and agent guidance</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>13</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>mulylsmksvkk</code></td>
+          <td><code>d5e1e7df74ff</code></td>
+          <td>Update README to reflect TUI as primary interface</td>
+          <td>Update README to reflect TUI as primary interface</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>14</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>kuomrqkuuttm</code></td>
+          <td><code>f5bd89f5566d</code></td>
+          <td>fix: display total node count from JJ instead of cap limit in TUI and web footer</td>
+          <td>fix: display total node count from JJ instead of cap limit in TUI and web footer</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>15</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>unsrkxqwmpls</code></td>
+          <td><code>5c78f293dae7</code></td>
+          <td>chore(local): update personal theme and layout defaults</td>
+          <td>chore(local): update personal theme and layout defaults</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>16</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>lqotquxxynmw</code></td>
+          <td><code>e9b695221cd3</code></td>
+          <td>feat(tui): add sidebar padding and tree-sitter syntax highlighting for diffs</td>
+          <td>feat(tui): add sidebar padding and tree-sitter syntax highlighting for diffs</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>17</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>pykorynnuzzz</code></td>
+          <td><code>a1fb81cc5000</code></td>
+          <td>style(tui): improve footer and sidebar color legibility</td>
+          <td>style(tui): improve footer and sidebar color legibility</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>18</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>vxkzqykyuxzy</code></td>
+          <td><code>42f091f15201</code></td>
+          <td>chore(pkg): add root self-reference dependency</td>
+          <td>chore(pkg): add root self-reference dependency</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>19</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>trzlrznwnnzm</code></td>
+          <td><code>680e80c3cc0d</code></td>
+          <td>feat(tui): add configurable status hint visibility options</td>
+          <td>feat(tui): add configurable status hint visibility options</td>
+        </tr>
+        
+        <tr class='bad'>
+          <td>20</td>
+          <td>✕</td>
+          <td>✓</td>
+          <td>✓</td>
+          <td><code>tsxqluovlzxl</code></td>
+          <td><code>6729e5b4e02e</code></td>
+          <td>fix(theme): keep diff context backgrounds theme-aware</td>
+          <td>fix(theme): keep diff context backgrounds theme-aware</td>
+        </tr>
+        </tbody></table>
+</section></main></body></html>

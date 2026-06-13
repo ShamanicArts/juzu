@@ -124,11 +124,22 @@ impl JjBackend for NativeJjBackend {
                 .unwrap_or_else(|_| String::new());
             let commit_id = commit.id().hex();
             let change_id = commit.change_id().hex();
-            let bookmarks = repo
+            let mut bookmarks: Vec<String> = repo
                 .view()
                 .local_bookmarks_for_commit(commit.id())
                 .map(|(name, _target)| name.as_str().to_string())
                 .collect();
+            bookmarks.extend(
+                repo.view()
+                    .all_remote_bookmarks()
+                    .filter(|(_symbol, remote_ref)| {
+                        remote_ref.target.added_ids().any(|id| id == commit.id())
+                    })
+                    .map(|(symbol, _remote_ref)| {
+                        format!("{}@{}", symbol.name.as_str(), symbol.remote.as_str())
+                    }),
+            );
+            bookmarks.sort();
             let git_branches = repo
                 .view()
                 .git_refs()
