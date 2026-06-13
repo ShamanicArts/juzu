@@ -5,7 +5,9 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use juzu_core::{
-    layout::calculate_default_layout, ChangeQuery, FileEntry, JjBackend, LayoutMode, LogQuery,
+    diff::{collapsed_diff_rows, parse_git_patch, DiffRow, DiffRowKind},
+    layout::calculate_default_layout,
+    ChangeQuery, FileEntry, JjBackend, LayoutMode, LogQuery,
 };
 use juzu_jj::NativeJjBackend;
 use ratatui::{
@@ -42,7 +44,7 @@ struct App {
     mode: LayoutMode,
     nodes: Vec<juzu_core::CommitNode>,
     files_by_change: HashMap<String, Vec<FileEntry>>,
-    diffs_by_change: HashMap<String, String>,
+    diffs_by_change: HashMap<String, DiffPreview>,
     selected: usize,
 }
 
@@ -134,15 +136,38 @@ fn ensure_selected_diff(app: &mut App) {
         return;
     }
     let backend = NativeJjBackend::new();
-    let diff = futures_executor::block_on(backend.diff_preview(
-        ChangeQuery {
-            cwd: app.path.clone(),
-            change_id: node.change_id.clone(),
-        },
-        90,
-    ))
+    let diff = futures_executor::block_on(backend.diff(ChangeQuery {
+        cwd: app.path.clone(),
+        change_id: node.change_id.clone(),
+    }))
     .unwrap_or_default();
-    app.diffs_by_change.insert(node.change_id.clone(), diff);
+    let preview = parse_git_patch(&diff)
+        .map(|document| {
+            let rows = collapsed_diff_rows(&document, 3);
+            DiffPreview {
+                raw_line_count: diff.lines().count(),
+                file_count: document.files.len(),
+                row_count: rows.len(),
+                rows,
+                parse_error: None,
+            }
+        })
+        .unwrap_or_else(|err| DiffPreview {
+            raw_line_count: diff.lines().count(),
+            file_count: 0,
+            row_count: 0,
+            rows: Vec::new(),
+            parse_error: Some(err.to_string()),
+        });
+    app.diffs_by_change.insert(node.change_id.clone(), preview);
+}
+
+struct DiffPreview {
+    raw_line_count: usize,
+    file_count: usize,
+    row_count: usize,
+    rows: Vec<DiffRow>,
+    parse_error: Option<String>,
 }
 
 fn render(frame: &mut Frame, app: &App) {
@@ -695,47 +720,72 @@ fn render_sidebar(
         "Diff",
         Style::default().fg(Color::Yellow),
     )));
-    let diff = app
-        .diffs_by_change
-        .get(&node.change_id)
-        .map(String::as_str)
-        .unwrap_or("");
-    if diff.trim().is_empty() {
-        lines.push(Line::from("—"));
-    } else {
-        for raw in diff.lines().take(14) {
-            let style = if raw.starts_with("+++") || raw.starts_with("---") {
-                Style::default().fg(Color::Cyan)
-            } else if raw.starts_with('+') {
-                Style::default().fg(Color::Green)
-            } else if raw.starts_with('-') {
-                Style::default().fg(Color::Red)
-            } else if raw.starts_with("@@") {
-                Style::default().fg(Color::Magenta)
-            } else if raw.starts_with("diff --git") {
-                Style::default()
-                    .fg(Color::Blue)
-                    .add_modifier(Modifier::BOLD)
-            } else {
-                Style::default().fg(Color::Gray)
-            };
+    let diff = app.diffs_by_change.get(&node.change_id);
+    if let Some(diff) = diff {
+        lines.push(Line::from(Span::styled(
+            format!(
+                "{} files · {} raw lines · {} model rows",
+                diff.file_count, diff.raw_line_count, diff.row_count
+            ),
+            Style::default().fg(Color::DarkGray),
+        )));
+        if let Some(error) = &diff.parse_error {
             lines.push(Line::from(Span::styled(
-                truncate(raw, area.width as usize - 4),
-                style,
+                truncate(error, area.width as usize - 4),
+                Style::default().fg(Color::Red),
             )));
+        } else if diff.rows.is_empty() {
+            lines.push(Line::from("—"));
+        } else {
+            for row in diff.rows.iter().take(14) {
+                lines.push(render_diff_row(row, area.width as usize - 4));
+            }
+            if diff.rows.len() > 14 {
+                lines.push(Line::from(format!(
+                    "… {} more structured diff rows",
+                    diff.rows.len() - 14
+                )));
+            }
         }
-        let total_lines = diff.lines().count();
-        if total_lines > 14 {
-            lines.push(Line::from(format!(
-                "… {} more diff lines",
-                total_lines - 14
-            )));
-        }
+    } else {
+        lines.push(Line::from("—"));
     }
     frame.render_widget(
         Paragraph::new(lines).block(Block::default().title(" details ").borders(Borders::ALL)),
         area,
     );
+}
+
+fn render_diff_row(row: &DiffRow, max_len: usize) -> Line<'static> {
+    let old_line = row
+        .old_line
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| " ".to_string());
+    let new_line = row
+        .new_line
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| " ".to_string());
+    let gutter = format!("{old_line:>4} {new_line:>4} ");
+    let (marker, style) = match row.kind {
+        DiffRowKind::FileHeader => (
+            "◆ ",
+            Style::default()
+                .fg(Color::Blue)
+                .add_modifier(Modifier::BOLD),
+        ),
+        DiffRowKind::Metadata => ("  ", Style::default().fg(Color::DarkGray)),
+        DiffRowKind::HunkHeader => ("╭ ", Style::default().fg(Color::Magenta)),
+        DiffRowKind::Context => ("  ", Style::default().fg(Color::Gray)),
+        DiffRowKind::Add => ("+ ", Style::default().fg(Color::Green)),
+        DiffRowKind::Remove => ("- ", Style::default().fg(Color::Red)),
+        DiffRowKind::Collapse => ("⋯ ", Style::default().fg(Color::Yellow)),
+    };
+    let text_budget = max_len.saturating_sub(gutter.len() + marker.len());
+    Line::from(vec![
+        Span::styled(gutter, Style::default().fg(Color::DarkGray)),
+        Span::styled(marker.to_string(), style),
+        Span::styled(truncate(&row.text, text_budget), style),
+    ])
 }
 
 fn render_footer(frame: &mut Frame, area: Rect) {
