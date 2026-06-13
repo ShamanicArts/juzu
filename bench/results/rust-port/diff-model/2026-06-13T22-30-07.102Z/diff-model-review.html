@@ -1,0 +1,1814 @@
+<!doctype html>
+<html><head><meta charset=utf-8><title>JUZU Rust diff model review</title>
+<style>
+body { background:#0f172a; color:#e5e7eb; font-family:Inter,system-ui,sans-serif; margin:32px; }
+h1 { margin-bottom:4px; } .meta { color:#94a3b8; margin-bottom:24px; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+.card { background:#111827; border:1px solid #334155; border-radius:14px; padding:16px 18px; margin-bottom:16px; }
+.statbar { display:flex; gap:12px; margin:18px 0; flex-wrap:wrap; }
+.stat { background:#172033; border:1px solid #334155; border-radius:999px; padding:8px 12px; }
+pre { white-space:pre-wrap; font-family:'JetBrains Mono',monospace; font-size:12px; color:#cbd5e1; overflow:auto; }
+code { font-family:'JetBrains Mono',monospace; }
+table { width:100%; border-collapse:collapse; font-family:'JetBrains Mono',monospace; font-size:12px; }
+th { text-align:left; color:#93c5fd; border-bottom:1px solid #334155; padding:8px; }
+td { border-bottom:1px solid #1e293b; padding:6px 8px; vertical-align:top; }
+.file_header td { color:#c4b5fd; background:#1e1b4b; } .metadata td { color:#94a3b8; } .hunk_header td { color:#93c5fd; background:#172554; }
+.add td { color:#bbf7d0; background:#052e16; } .remove td { color:#fecaca; background:#450a0a; } .context td { color:#cbd5e1; } .collapse td { color:#facc15; background:#422006; text-align:center; }
+</style></head><body>
+<h1>JUZU Rust Pierre-style diff model review</h1>
+<div class=meta>Repo: /home/shamanic/dev/juzu · Change: moxspvmx · Generated: 2026-06-13T22:30:09.177172+00:00</div>
+<div class=statbar>
+  <div class=stat><strong>11352</strong> raw diff lines</div>
+  <div class=stat><strong>32</strong> parsed files</div>
+  <div class=stat><strong>11384</strong> terminal rows</div>
+  <div class=stat><strong>11384</strong> collapsed rows</div>
+</div>
+<div class=grid>
+  <section class=card><h2>Raw diff first section</h2><pre>diff --git a/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json b/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json
+@@ -0,0 +1,316 @@
++{
++  &quot;schemaVersion&quot;: 1,
++  &quot;repo&quot;: &quot;/home/shamanic/dev/juzu&quot;,
++  &quot;generatedAt&quot;: &quot;2026-06-13T21:37:24.562287+00:00&quot;,
++  &quot;limit&quot;: 20,
++  &quot;totalCases&quot;: 6,
++  &quot;matchedCases&quot;: 6,
++  &quot;cases&quot;: [
++    {
++      &quot;changeId&quot;: &quot;moxspvmxrpow&quot;,
++      &quot;title&quot;: &quot;&quot;,
++      &quot;matched&quot;: true,
++      &quot;oldLines&quot;: 195,
++      &quot;rustLines&quot;: 193,
++      &quot;oldBytes&quot;: 7773,
++      &quot;rustBytes&quot;: 7701,
++      &quot;oldFirstLines&quot;: [
++        &quot;diff --git a/crates/juzu-jj/src/lib.rs b/crates/juzu-jj/src/lib.rs&quot;,
++        &quot;--- a/crates/juzu-jj/src/lib.rs&quot;,
++        &quot;+++ b/crates/juzu-jj/src/lib.rs&quot;,
++        &quot;@@ -126,6 +126,96 @@&quot;,
++        &quot;         }&quot;,
++        &quot;     }&quot;,
++        &quot;+    pub async fn diff_preview(&amp;self, query: ChangeQuery, max_lines: usize) -&gt; Result&lt;String&gt; {&quot;,
++        &quot;+        self.diff_with_line_limit(query, Some(max_lines)).await&quot;,
++        &quot;+    }&quot;,
++        &quot;+&quot;,
++        &quot;+    async fn diff_with_line_limit(&quot;,
++        &quot;+        &amp;self,&quot;,
++        &quot;+        query: ChangeQuery,&quot;,
++        &quot;+        max_lines: Option&lt;usize&gt;,&quot;,
++        &quot;+    ) -&gt; Result&lt;String&gt; {&quot;,
++        &quot;+        let (_workspace_root, repo) = self.open_repo_at_head(&amp;query.cwd).await?;&quot;,
++        &quot;+        let commit = self&quot;,
++        &quot;+            .find_commit_by_change_or_commit_id(&amp;repo, &amp;query.change_id)&quot;
++      ],
++      &quot;rustFirstLines&quot;: [
++        &quot;diff --git a/crates/juzu-jj/src/lib.rs b/crates/juzu-jj/src/lib.rs&quot;,
++        &quot;--- a/crates/juzu-jj/src/lib.rs&quot;,
++        &quot;+++ b/crates/juzu-jj/src/lib.rs&quot;,
++        &quot;@@ -126,6 +126,96 @@&quot;,
++        &quot;         }&quot;,
++        &quot;     }&quot;,
++        &quot;+    pub async fn diff_preview(&amp;self, query: ChangeQuery, max_lines: usize) -&gt; Result&lt;String&gt; {&quot;,
++        &quot;+        self.diff_with_line_limit(query, Some(max_lines)).await&quot;,
++        &quot;+    }&quot;,
++        &quot;+&quot;,
++        &quot;+    async fn diff_with_line_limit(&quot;,
++        &quot;+        &amp;self,&quot;,
++        &quot;+        query: ChangeQuery,&quot;,
++        &quot;+        max_lines: Option&lt;usize&gt;,&quot;,
++        &quot;+    ) -&gt; Result&lt;String&gt; {&quot;,
++        &quot;+        let (_workspace_root, repo) = self.open_repo_at_head(&amp;query.cwd).await?;&quot;,
++        &quot;+        let commit = self&quot;,
++        &quot;+            .find_commit_by_change_or_commit_id(&amp;repo, &amp;query.change_id)&quot;,
++        &quot;+            .await?;&quot;
++      ]
++    },
++    {
++      &quot;changeId&quot;: &quot;skxuumlruzrn&quot;,
++      &quot;title&quot;: &quot;hydrate rust tui sidebar diffs from native jj&quot;,
++      &quot;matched&quot;: true,
++      &quot;oldLines&quot;: 11633,
++      &quot;rustLines&quot;: 11596,
++      &quot;oldBytes&quot;: 1167441,
++      &quot;rustBytes&quot;: 1166274,
++      &quot;oldFirstLines&quot;: [
++        &quot;diff --git a/Cargo.lock b/Cargo.lock&quot;,
++        &quot;--- a/Cargo.lock&quot;,
++        &quot;+++ b/Cargo.lock&quot;,
++        &quot;@@ -1611,6 +1611,7 @@&quot;,
++        &quot;  \&quot;jj-lib\&quot;,&quot;,
++        &quot;  \&quot;juzu-core\&quot;,&quot;,
++        &quot;  \&quot;serde\&quot;,&quot;,
++        &quot;+ \&quot;similar\&quot;,&quot;,</pre></section>
+  <section><h2>Parsed files + hunks</h2>
+<section class=card>
+  <h3>added: bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json</h3>
+  <pre>diff --git a/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json b/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json</pre>
+  <ul><li><code>@@ -0,0 +1,316 @@</code> · old 0,0 → new 1,316 · 316 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity.html</h3>
+  <pre>diff --git a/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity.html b/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity.html
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity.html
+++++ b/crates/juzu-jj/src/lib.rs
+++++ b/crates/juzu-jj/src/lib.rs
+++++ b/Cargo.lock
+++++ b/Cargo.lock
+++++ b/bench/results/rust-port/files-parity/2026-06-13T21-03-35.740Z/files-parity-report.json
+++++ b/bench/results/rust-port/files-parity/2026-06-13T21-03-35.740Z/files-parity-report.json
+++++ b/bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/layout-parity-report.json
+++++ b/bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/layout-parity-report.json
+++++ b/bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/layout-parity-report.json
+++++ b/bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z/layout-parity-report.json
+++++ b/bench/results/rust-port/tui-review/2026-06-13T20-29-36-580Z/rust-tui-dag-capture.txt
+++++ b/bench/results/rust-port/tui-review/2026-06-13T20-29-36-580Z/rust-tui-dag-capture.txt</pre>
+  <ul><li><code>@@ -0,0 +1,288 @@</code> · old 0,0 → new 1,288 · 276 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/files-parity/2026-06-13T21-38-46.182Z/files-parity-report.json</h3>
+  <pre>diff --git a/bench/results/rust-port/files-parity/2026-06-13T21-38-46.182Z/files-parity-report.json b/bench/results/rust-port/files-parity/2026-06-13T21-38-46.182Z/files-parity-report.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/files-parity/2026-06-13T21-38-46.182Z/files-parity-report.json</pre>
+  <ul><li><code>@@ -0,0 +1,1110 @@</code> · old 0,0 → new 1,1110 · 1110 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/files-parity/2026-06-13T21-38-46.182Z/files-parity.html</h3>
+  <pre>diff --git a/bench/results/rust-port/files-parity/2026-06-13T21-38-46.182Z/files-parity.html b/bench/results/rust-port/files-parity/2026-06-13T21-38-46.182Z/files-parity.html
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/files-parity/2026-06-13T21-38-46.182Z/files-parity.html</pre>
+  <ul><li><code>@@ -0,0 +1,254 @@</code> · old 0,0 → new 1,254 · 254 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/layout-parity-report.json</h3>
+  <pre>diff --git a/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/layout-parity-report.json b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/layout-parity-report.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/layout-parity-report.json</pre>
+  <ul><li><code>@@ -0,0 +1,2147 @@</code> · old 0,0 → new 1,2147 · 2147 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/layout-parity.html</h3>
+  <pre>diff --git a/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/layout-parity.html b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/layout-parity.html
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/layout-parity.html</pre>
+  <ul><li><code>@@ -0,0 +1,643 @@</code> · old 0,0 → new 1,643 · 643 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-bookmark-centric.json</h3>
+  <pre>diff --git a/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-bookmark-centric.json b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-bookmark-centric.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-bookmark-centric.json</pre>
+  <ul><li><code>@@ -0,0 +1,234 @@</code> · old 0,0 → new 1,234 · 234 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-chronological.json</h3>
+  <pre>diff --git a/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-chronological.json b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-chronological.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-chronological.json</pre>
+  <ul><li><code>@@ -0,0 +1,234 @@</code> · old 0,0 → new 1,234 · 234 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-mainline.json</h3>
+  <pre>diff --git a/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-mainline.json b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-mainline.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-mainline.json</pre>
+  <ul><li><code>@@ -0,0 +1,234 @@</code> · old 0,0 → new 1,234 · 234 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-topological.json</h3>
+  <pre>diff --git a/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-topological.json b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-topological.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-topological.json</pre>
+  <ul><li><code>@@ -0,0 +1,234 @@</code> · old 0,0 → new 1,234 · 234 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-wc-focused.json</h3>
+  <pre>diff --git a/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-wc-focused.json b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-wc-focused.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/old-layout-wc-focused.json</pre>
+  <ul><li><code>@@ -0,0 +1,234 @@</code> · old 0,0 → new 1,234 · 234 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-bookmark-centric.json</h3>
+  <pre>diff --git a/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-bookmark-centric.json b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-bookmark-centric.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-bookmark-centric.json</pre>
+  <ul><li><code>@@ -0,0 +1,235 @@</code> · old 0,0 → new 1,235 · 235 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-chronological.json</h3>
+  <pre>diff --git a/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-chronological.json b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-chronological.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-chronological.json</pre>
+  <ul><li><code>@@ -0,0 +1,235 @@</code> · old 0,0 → new 1,235 · 235 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-mainline.json</h3>
+  <pre>diff --git a/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-mainline.json b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-mainline.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-mainline.json</pre>
+  <ul><li><code>@@ -0,0 +1,235 @@</code> · old 0,0 → new 1,235 · 235 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-topological.json</h3>
+  <pre>diff --git a/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-topological.json b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-topological.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-topological.json</pre>
+  <ul><li><code>@@ -0,0 +1,235 @@</code> · old 0,0 → new 1,235 · 235 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-wc-focused.json</h3>
+  <pre>diff --git a/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-wc-focused.json b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-wc-focused.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/layout-parity/2026-06-13T21-38-48-437Z/rust-layout-wc-focused.json</pre>
+  <ul><li><code>@@ -0,0 +1,235 @@</code> · old 0,0 → new 1,235 · 235 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/idle-mainline-run-1-capture.txt</h3>
+  <pre>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/idle-mainline-run-1-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/idle-mainline-run-1-capture.txt
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/idle-mainline-run-1-capture.txt</pre>
+  <ul><li><code>@@ -0,0 +1 @@</code> · old 0,0 → new 1,1 · 1 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/idle-mainline-run-2-capture.txt</h3>
+  <pre>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/idle-mainline-run-2-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/idle-mainline-run-2-capture.txt
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/idle-mainline-run-2-capture.txt</pre>
+  <ul><li><code>@@ -0,0 +1 @@</code> · old 0,0 → new 1,1 · 1 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/idle-mainline-run-3-capture.txt</h3>
+  <pre>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/idle-mainline-run-3-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/idle-mainline-run-3-capture.txt
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/idle-mainline-run-3-capture.txt</pre>
+  <ul><li><code>@@ -0,0 +1 @@</code> · old 0,0 → new 1,1 · 1 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/layout-switching-run-1-capture.txt</h3>
+  <pre>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/layout-switching-run-1-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/layout-switching-run-1-capture.txt
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/layout-switching-run-1-capture.txt</pre>
+  <ul><li><code>@@ -0,0 +1 @@</code> · old 0,0 → new 1,1 · 1 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/layout-switching-run-2-capture.txt</h3>
+  <pre>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/layout-switching-run-2-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/layout-switching-run-2-capture.txt
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/layout-switching-run-2-capture.txt</pre>
+  <ul><li><code>@@ -0,0 +1 @@</code> · old 0,0 → new 1,1 · 1 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/layout-switching-run-3-capture.txt</h3>
+  <pre>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/layout-switching-run-3-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/layout-switching-run-3-capture.txt
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/layout-switching-run-3-capture.txt</pre>
+  <ul><li><code>@@ -0,0 +1 @@</code> · old 0,0 → new 1,1 · 1 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/navigate-mainline-run-1-capture.txt</h3>
+  <pre>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/navigate-mainline-run-1-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/navigate-mainline-run-1-capture.txt
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/navigate-mainline-run-1-capture.txt</pre>
+  <ul><li><code>@@ -0,0 +1 @@</code> · old 0,0 → new 1,1 · 1 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/navigate-mainline-run-2-capture.txt</h3>
+  <pre>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/navigate-mainline-run-2-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/navigate-mainline-run-2-capture.txt
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/navigate-mainline-run-2-capture.txt</pre>
+  <ul><li><code>@@ -0,0 +1 @@</code> · old 0,0 → new 1,1 · 1 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/navigate-mainline-run-3-capture.txt</h3>
+  <pre>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/navigate-mainline-run-3-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/navigate-mainline-run-3-capture.txt
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/navigate-mainline-run-3-capture.txt</pre>
+  <ul><li><code>@@ -0,0 +1 @@</code> · old 0,0 → new 1,1 · 1 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/rust-tui-benchmark.html</h3>
+  <pre>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/rust-tui-benchmark.html b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/rust-tui-benchmark.html
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/rust-tui-benchmark.html</pre>
+  <ul><li><code>@@ -0,0 +1,39 @@</code> · old 0,0 → new 1,39 · 39 lines</li></ul>
+</section>
+<section class=card>
+  <h3>added: bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/rust-tui-benchmark.json</h3>
+  <pre>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/rust-tui-benchmark.json b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/rust-tui-benchmark.json
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/rust-tui-benchmark.json</pre>
+  <ul><li><code>@@ -0,0 +1,3794 @@</code> · old 0,0 → new 1,3794 · 3794 lines</li></ul>
+</section>
+<section class=card>
+  <h3>modified: crates/juzu-jj/src/lib.rs</h3>
+  <pre>diff --git a/crates/juzu-jj/src/lib.rs b/crates/juzu-jj/src/lib.rs
+--- a/crates/juzu-jj/src/lib.rs
++++ b/crates/juzu-jj/src/lib.rs</pre>
+  <ul><li><code>@@ -126,6 +126,96 @@</code> · old 126,6 → new 126,96 · 96 lines</li><li><code>@@ -316,69 +406,7 @@</code> · old 316,69 → new 406,7 · 70 lines</li></ul>
+</section>
+<section class=card>
+  <h3>modified: crates/juzu-tui/src/main.rs</h3>
+  <pre>diff --git a/crates/juzu-tui/src/main.rs b/crates/juzu-tui/src/main.rs
+--- a/crates/juzu-tui/src/main.rs
++++ b/crates/juzu-tui/src/main.rs</pre>
+  <ul><li><code>@@ -134,10 +134,13 @@</code> · old 134,10 → new 134,13 · 17 lines</li></ul>
+</section>
+<section class=card>
+  <h3>modified: docs/rust-port/native-diff-hydration.md</h3>
+  <pre>diff --git a/docs/rust-port/native-diff-hydration.md b/docs/rust-port/native-diff-hydration.md
+--- a/docs/rust-port/native-diff-hydration.md
++++ b/docs/rust-port/native-diff-hydration.md</pre>
+  <ul><li><code>@@ -8,13 +8,15 @@</code> · old 8,13 → new 8,15 · 16 lines</li></ul>
+</section>
+<section class=card>
+  <h3>modified: docs/rust-port/read-only-tui.md</h3>
+  <pre>diff --git a/docs/rust-port/read-only-tui.md b/docs/rust-port/read-only-tui.md
+--- a/docs/rust-port/read-only-tui.md
++++ b/docs/rust-port/read-only-tui.md</pre>
+  <ul><li><code>@@ -50,7 +50,7 @@</code> · old 50,7 → new 50,7 · 8 lines</li><li><code>@@ -68,5 +68,5 @@</code> · old 68,5 → new 68,5 · 6 lines</li></ul>
+</section>
+<section class=card>
+  <h3>modified: docs/rust-port/rust-tui-benchmarks.md</h3>
+  <pre>diff --git a/docs/rust-port/rust-tui-benchmarks.md b/docs/rust-port/rust-tui-benchmarks.md
+--- a/docs/rust-port/rust-tui-benchmarks.md
++++ b/docs/rust-port/rust-tui-benchmarks.md</pre>
+  <ul><li><code>@@ -29,19 +29,19 @@</code> · old 29,19 → new 29,19 · 25 lines</li></ul>
+</section></section>
+</div>
+<section class=card><h2>Generated terminal row preview</h2><table><thead><tr><th>Kind</th><th>Old</th><th>New</th><th>Text</th></tr></thead><tbody>
+<tr class="file_header">
+  <td>file-header</td>
+  <td></td>
+  <td></td>
+  <td><code>Added bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json</code></td>
+</tr>
+<tr class="metadata">
+  <td>metadata</td>
+  <td></td>
+  <td></td>
+  <td><code>diff --git a/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json b/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json</code></td>
+</tr>
+<tr class="metadata">
+  <td>metadata</td>
+  <td></td>
+  <td></td>
+  <td><code>new file mode 100644</code></td>
+</tr>
+<tr class="metadata">
+  <td>metadata</td>
+  <td></td>
+  <td></td>
+  <td><code>--- /dev/null</code></td>
+</tr>
+<tr class="metadata">
+  <td>metadata</td>
+  <td></td>
+  <td></td>
+  <td><code>+++ b/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json</code></td>
+</tr>
+<tr class="hunk_header">
+  <td>hunk-header</td>
+  <td></td>
+  <td></td>
+  <td><code>@@ -0,0 +1,316 @@</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>1</td>
+  <td><code>+{</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>2</td>
+  <td><code>+  &quot;schemaVersion&quot;: 1,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>3</td>
+  <td><code>+  &quot;repo&quot;: &quot;/home/shamanic/dev/juzu&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>4</td>
+  <td><code>+  &quot;generatedAt&quot;: &quot;2026-06-13T21:37:24.562287+00:00&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>5</td>
+  <td><code>+  &quot;limit&quot;: 20,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>6</td>
+  <td><code>+  &quot;totalCases&quot;: 6,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>7</td>
+  <td><code>+  &quot;matchedCases&quot;: 6,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>8</td>
+  <td><code>+  &quot;cases&quot;: [</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>9</td>
+  <td><code>+    {</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>10</td>
+  <td><code>+      &quot;changeId&quot;: &quot;moxspvmxrpow&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>11</td>
+  <td><code>+      &quot;title&quot;: &quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>12</td>
+  <td><code>+      &quot;matched&quot;: true,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>13</td>
+  <td><code>+      &quot;oldLines&quot;: 195,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>14</td>
+  <td><code>+      &quot;rustLines&quot;: 193,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>15</td>
+  <td><code>+      &quot;oldBytes&quot;: 7773,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>16</td>
+  <td><code>+      &quot;rustBytes&quot;: 7701,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>17</td>
+  <td><code>+      &quot;oldFirstLines&quot;: [</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>18</td>
+  <td><code>+        &quot;diff --git a/crates/juzu-jj/src/lib.rs b/crates/juzu-jj/src/lib.rs&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>19</td>
+  <td><code>+        &quot;--- a/crates/juzu-jj/src/lib.rs&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>20</td>
+  <td><code>+        &quot;+++ b/crates/juzu-jj/src/lib.rs&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>21</td>
+  <td><code>+        &quot;@@ -126,6 +126,96 @@&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>22</td>
+  <td><code>+        &quot;         }&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>23</td>
+  <td><code>+        &quot;     }&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>24</td>
+  <td><code>+        &quot;+    pub async fn diff_preview(&amp;self, query: ChangeQuery, max_lines: usize) -&gt; Result&lt;String&gt; {&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>25</td>
+  <td><code>+        &quot;+        self.diff_with_line_limit(query, Some(max_lines)).await&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>26</td>
+  <td><code>+        &quot;+    }&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>27</td>
+  <td><code>+        &quot;+&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>28</td>
+  <td><code>+        &quot;+    async fn diff_with_line_limit(&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>29</td>
+  <td><code>+        &quot;+        &amp;self,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>30</td>
+  <td><code>+        &quot;+        query: ChangeQuery,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>31</td>
+  <td><code>+        &quot;+        max_lines: Option&lt;usize&gt;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>32</td>
+  <td><code>+        &quot;+    ) -&gt; Result&lt;String&gt; {&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>33</td>
+  <td><code>+        &quot;+        let (_workspace_root, repo) = self.open_repo_at_head(&amp;query.cwd).await?;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>34</td>
+  <td><code>+        &quot;+        let commit = self&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>35</td>
+  <td><code>+        &quot;+            .find_commit_by_change_or_commit_id(&amp;repo, &amp;query.change_id)&quot;</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>36</td>
+  <td><code>+      ],</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>37</td>
+  <td><code>+      &quot;rustFirstLines&quot;: [</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>38</td>
+  <td><code>+        &quot;diff --git a/crates/juzu-jj/src/lib.rs b/crates/juzu-jj/src/lib.rs&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>39</td>
+  <td><code>+        &quot;--- a/crates/juzu-jj/src/lib.rs&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>40</td>
+  <td><code>+        &quot;+++ b/crates/juzu-jj/src/lib.rs&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>41</td>
+  <td><code>+        &quot;@@ -126,6 +126,96 @@&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>42</td>
+  <td><code>+        &quot;         }&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>43</td>
+  <td><code>+        &quot;     }&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>44</td>
+  <td><code>+        &quot;+    pub async fn diff_preview(&amp;self, query: ChangeQuery, max_lines: usize) -&gt; Result&lt;String&gt; {&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>45</td>
+  <td><code>+        &quot;+        self.diff_with_line_limit(query, Some(max_lines)).await&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>46</td>
+  <td><code>+        &quot;+    }&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>47</td>
+  <td><code>+        &quot;+&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>48</td>
+  <td><code>+        &quot;+    async fn diff_with_line_limit(&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>49</td>
+  <td><code>+        &quot;+        &amp;self,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>50</td>
+  <td><code>+        &quot;+        query: ChangeQuery,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>51</td>
+  <td><code>+        &quot;+        max_lines: Option&lt;usize&gt;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>52</td>
+  <td><code>+        &quot;+    ) -&gt; Result&lt;String&gt; {&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>53</td>
+  <td><code>+        &quot;+        let (_workspace_root, repo) = self.open_repo_at_head(&amp;query.cwd).await?;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>54</td>
+  <td><code>+        &quot;+        let commit = self&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>55</td>
+  <td><code>+        &quot;+            .find_commit_by_change_or_commit_id(&amp;repo, &amp;query.change_id)&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>56</td>
+  <td><code>+        &quot;+            .await?;&quot;</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>57</td>
+  <td><code>+      ]</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>58</td>
+  <td><code>+    },</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>59</td>
+  <td><code>+    {</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>60</td>
+  <td><code>+      &quot;changeId&quot;: &quot;skxuumlruzrn&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>61</td>
+  <td><code>+      &quot;title&quot;: &quot;hydrate rust tui sidebar diffs from native jj&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>62</td>
+  <td><code>+      &quot;matched&quot;: true,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>63</td>
+  <td><code>+      &quot;oldLines&quot;: 11633,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>64</td>
+  <td><code>+      &quot;rustLines&quot;: 11596,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>65</td>
+  <td><code>+      &quot;oldBytes&quot;: 1167441,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>66</td>
+  <td><code>+      &quot;rustBytes&quot;: 1166274,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>67</td>
+  <td><code>+      &quot;oldFirstLines&quot;: [</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>68</td>
+  <td><code>+        &quot;diff --git a/Cargo.lock b/Cargo.lock&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>69</td>
+  <td><code>+        &quot;--- a/Cargo.lock&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>70</td>
+  <td><code>+        &quot;+++ b/Cargo.lock&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>71</td>
+  <td><code>+        &quot;@@ -1611,6 +1611,7 @@&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>72</td>
+  <td><code>+        &quot;  \&quot;jj-lib\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>73</td>
+  <td><code>+        &quot;  \&quot;juzu-core\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>74</td>
+  <td><code>+        &quot;  \&quot;serde\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>75</td>
+  <td><code>+        &quot;+ \&quot;similar\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>76</td>
+  <td><code>+        &quot; ]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>77</td>
+  <td><code>+        &quot; [[package]]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>78</td>
+  <td><code>+        &quot;@@ -2297,6 +2298,12 @@&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>79</td>
+  <td><code>+        &quot; ]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>80</td>
+  <td><code>+        &quot; [[package]]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>81</td>
+  <td><code>+        &quot;+name = \&quot;similar\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>82</td>
+  <td><code>+        &quot;+version = \&quot;2.7.0\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>83</td>
+  <td><code>+        &quot;+source = \&quot;registry+https://github.com/rust-lang/crates.io-index\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>84</td>
+  <td><code>+        &quot;+checksum = \&quot;bbbb5d9659141646ae647b42fe094daf6c6192d1620870b449d9557f748b2daa\&quot;&quot;</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>85</td>
+  <td><code>+      ],</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>86</td>
+  <td><code>+      &quot;rustFirstLines&quot;: [</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>87</td>
+  <td><code>+        &quot;diff --git a/Cargo.lock b/Cargo.lock&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>88</td>
+  <td><code>+        &quot;--- a/Cargo.lock&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>89</td>
+  <td><code>+        &quot;+++ b/Cargo.lock&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>90</td>
+  <td><code>+        &quot;@@ -1611,6 +1611,7 @@&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>91</td>
+  <td><code>+        &quot;  \&quot;jj-lib\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>92</td>
+  <td><code>+        &quot;  \&quot;juzu-core\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>93</td>
+  <td><code>+        &quot;  \&quot;serde\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>94</td>
+  <td><code>+        &quot;+ \&quot;similar\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>95</td>
+  <td><code>+        &quot; ]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>96</td>
+  <td><code>+        &quot; [[package]]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>97</td>
+  <td><code>+        &quot;@@ -2297,6 +2298,12 @@&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>98</td>
+  <td><code>+        &quot; ]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>99</td>
+  <td><code>+        &quot; [[package]]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>100</td>
+  <td><code>+        &quot;+name = \&quot;similar\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>101</td>
+  <td><code>+        &quot;+version = \&quot;2.7.0\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>102</td>
+  <td><code>+        &quot;+source = \&quot;registry+https://github.com/rust-lang/crates.io-index\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>103</td>
+  <td><code>+        &quot;+checksum = \&quot;bbbb5d9659141646ae647b42fe094daf6c6192d1620870b449d9557f748b2daa\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>104</td>
+  <td><code>+        &quot;+&quot;</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>105</td>
+  <td><code>+      ]</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>106</td>
+  <td><code>+    },</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>107</td>
+  <td><code>+    {</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>108</td>
+  <td><code>+      &quot;changeId&quot;: &quot;rznpmznluunv&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>109</td>
+  <td><code>+      &quot;title&quot;: &quot;hydrate rust tui file rows from native jj&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>110</td>
+  <td><code>+      &quot;matched&quot;: true,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>111</td>
+  <td><code>+      &quot;oldLines&quot;: 10944,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>112</td>
+  <td><code>+      &quot;rustLines&quot;: 10910,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>113</td>
+  <td><code>+      &quot;oldBytes&quot;: 1023464,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>114</td>
+  <td><code>+      &quot;rustBytes&quot;: 1022416,</code></td>
+</tr><tr class=collapse><td colspan=4>⋯ 11264 more rows omitted from review artifact</td></tr></tbody></table></section>
+<section class=card><h2>Collapsed context preview</h2><table><thead><tr><th>Kind</th><th>Old</th><th>New</th><th>Text</th></tr></thead><tbody>
+<tr class="file_header">
+  <td>file-header</td>
+  <td></td>
+  <td></td>
+  <td><code>Added bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json</code></td>
+</tr>
+<tr class="metadata">
+  <td>metadata</td>
+  <td></td>
+  <td></td>
+  <td><code>diff --git a/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json b/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json</code></td>
+</tr>
+<tr class="metadata">
+  <td>metadata</td>
+  <td></td>
+  <td></td>
+  <td><code>new file mode 100644</code></td>
+</tr>
+<tr class="metadata">
+  <td>metadata</td>
+  <td></td>
+  <td></td>
+  <td><code>--- /dev/null</code></td>
+</tr>
+<tr class="metadata">
+  <td>metadata</td>
+  <td></td>
+  <td></td>
+  <td><code>+++ b/bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parity-report.json</code></td>
+</tr>
+<tr class="hunk_header">
+  <td>hunk-header</td>
+  <td></td>
+  <td></td>
+  <td><code>@@ -0,0 +1,316 @@</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>1</td>
+  <td><code>+{</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>2</td>
+  <td><code>+  &quot;schemaVersion&quot;: 1,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>3</td>
+  <td><code>+  &quot;repo&quot;: &quot;/home/shamanic/dev/juzu&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>4</td>
+  <td><code>+  &quot;generatedAt&quot;: &quot;2026-06-13T21:37:24.562287+00:00&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>5</td>
+  <td><code>+  &quot;limit&quot;: 20,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>6</td>
+  <td><code>+  &quot;totalCases&quot;: 6,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>7</td>
+  <td><code>+  &quot;matchedCases&quot;: 6,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>8</td>
+  <td><code>+  &quot;cases&quot;: [</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>9</td>
+  <td><code>+    {</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>10</td>
+  <td><code>+      &quot;changeId&quot;: &quot;moxspvmxrpow&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>11</td>
+  <td><code>+      &quot;title&quot;: &quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>12</td>
+  <td><code>+      &quot;matched&quot;: true,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>13</td>
+  <td><code>+      &quot;oldLines&quot;: 195,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>14</td>
+  <td><code>+      &quot;rustLines&quot;: 193,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>15</td>
+  <td><code>+      &quot;oldBytes&quot;: 7773,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>16</td>
+  <td><code>+      &quot;rustBytes&quot;: 7701,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>17</td>
+  <td><code>+      &quot;oldFirstLines&quot;: [</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>18</td>
+  <td><code>+        &quot;diff --git a/crates/juzu-jj/src/lib.rs b/crates/juzu-jj/src/lib.rs&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>19</td>
+  <td><code>+        &quot;--- a/crates/juzu-jj/src/lib.rs&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>20</td>
+  <td><code>+        &quot;+++ b/crates/juzu-jj/src/lib.rs&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>21</td>
+  <td><code>+        &quot;@@ -126,6 +126,96 @@&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>22</td>
+  <td><code>+        &quot;         }&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>23</td>
+  <td><code>+        &quot;     }&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>24</td>
+  <td><code>+        &quot;+    pub async fn diff_preview(&amp;self, query: ChangeQuery, max_lines: usize) -&gt; Result&lt;String&gt; {&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>25</td>
+  <td><code>+        &quot;+        self.diff_with_line_limit(query, Some(max_lines)).await&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>26</td>
+  <td><code>+        &quot;+    }&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>27</td>
+  <td><code>+        &quot;+&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>28</td>
+  <td><code>+        &quot;+    async fn diff_with_line_limit(&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>29</td>
+  <td><code>+        &quot;+        &amp;self,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>30</td>
+  <td><code>+        &quot;+        query: ChangeQuery,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>31</td>
+  <td><code>+        &quot;+        max_lines: Option&lt;usize&gt;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>32</td>
+  <td><code>+        &quot;+    ) -&gt; Result&lt;String&gt; {&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>33</td>
+  <td><code>+        &quot;+        let (_workspace_root, repo) = self.open_repo_at_head(&amp;query.cwd).await?;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>34</td>
+  <td><code>+        &quot;+        let commit = self&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>35</td>
+  <td><code>+        &quot;+            .find_commit_by_change_or_commit_id(&amp;repo, &amp;query.change_id)&quot;</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>36</td>
+  <td><code>+      ],</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>37</td>
+  <td><code>+      &quot;rustFirstLines&quot;: [</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>38</td>
+  <td><code>+        &quot;diff --git a/crates/juzu-jj/src/lib.rs b/crates/juzu-jj/src/lib.rs&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>39</td>
+  <td><code>+        &quot;--- a/crates/juzu-jj/src/lib.rs&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>40</td>
+  <td><code>+        &quot;+++ b/crates/juzu-jj/src/lib.rs&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>41</td>
+  <td><code>+        &quot;@@ -126,6 +126,96 @@&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>42</td>
+  <td><code>+        &quot;         }&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>43</td>
+  <td><code>+        &quot;     }&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>44</td>
+  <td><code>+        &quot;+    pub async fn diff_preview(&amp;self, query: ChangeQuery, max_lines: usize) -&gt; Result&lt;String&gt; {&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>45</td>
+  <td><code>+        &quot;+        self.diff_with_line_limit(query, Some(max_lines)).await&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>46</td>
+  <td><code>+        &quot;+    }&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>47</td>
+  <td><code>+        &quot;+&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>48</td>
+  <td><code>+        &quot;+    async fn diff_with_line_limit(&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>49</td>
+  <td><code>+        &quot;+        &amp;self,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>50</td>
+  <td><code>+        &quot;+        query: ChangeQuery,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>51</td>
+  <td><code>+        &quot;+        max_lines: Option&lt;usize&gt;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>52</td>
+  <td><code>+        &quot;+    ) -&gt; Result&lt;String&gt; {&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>53</td>
+  <td><code>+        &quot;+        let (_workspace_root, repo) = self.open_repo_at_head(&amp;query.cwd).await?;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>54</td>
+  <td><code>+        &quot;+        let commit = self&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>55</td>
+  <td><code>+        &quot;+            .find_commit_by_change_or_commit_id(&amp;repo, &amp;query.change_id)&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>56</td>
+  <td><code>+        &quot;+            .await?;&quot;</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>57</td>
+  <td><code>+      ]</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>58</td>
+  <td><code>+    },</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>59</td>
+  <td><code>+    {</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>60</td>
+  <td><code>+      &quot;changeId&quot;: &quot;skxuumlruzrn&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>61</td>
+  <td><code>+      &quot;title&quot;: &quot;hydrate rust tui sidebar diffs from native jj&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>62</td>
+  <td><code>+      &quot;matched&quot;: true,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>63</td>
+  <td><code>+      &quot;oldLines&quot;: 11633,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>64</td>
+  <td><code>+      &quot;rustLines&quot;: 11596,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>65</td>
+  <td><code>+      &quot;oldBytes&quot;: 1167441,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>66</td>
+  <td><code>+      &quot;rustBytes&quot;: 1166274,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>67</td>
+  <td><code>+      &quot;oldFirstLines&quot;: [</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>68</td>
+  <td><code>+        &quot;diff --git a/Cargo.lock b/Cargo.lock&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>69</td>
+  <td><code>+        &quot;--- a/Cargo.lock&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>70</td>
+  <td><code>+        &quot;+++ b/Cargo.lock&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>71</td>
+  <td><code>+        &quot;@@ -1611,6 +1611,7 @@&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>72</td>
+  <td><code>+        &quot;  \&quot;jj-lib\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>73</td>
+  <td><code>+        &quot;  \&quot;juzu-core\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>74</td>
+  <td><code>+        &quot;  \&quot;serde\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>75</td>
+  <td><code>+        &quot;+ \&quot;similar\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>76</td>
+  <td><code>+        &quot; ]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>77</td>
+  <td><code>+        &quot; [[package]]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>78</td>
+  <td><code>+        &quot;@@ -2297,6 +2298,12 @@&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>79</td>
+  <td><code>+        &quot; ]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>80</td>
+  <td><code>+        &quot; [[package]]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>81</td>
+  <td><code>+        &quot;+name = \&quot;similar\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>82</td>
+  <td><code>+        &quot;+version = \&quot;2.7.0\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>83</td>
+  <td><code>+        &quot;+source = \&quot;registry+https://github.com/rust-lang/crates.io-index\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>84</td>
+  <td><code>+        &quot;+checksum = \&quot;bbbb5d9659141646ae647b42fe094daf6c6192d1620870b449d9557f748b2daa\&quot;&quot;</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>85</td>
+  <td><code>+      ],</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>86</td>
+  <td><code>+      &quot;rustFirstLines&quot;: [</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>87</td>
+  <td><code>+        &quot;diff --git a/Cargo.lock b/Cargo.lock&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>88</td>
+  <td><code>+        &quot;--- a/Cargo.lock&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>89</td>
+  <td><code>+        &quot;+++ b/Cargo.lock&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>90</td>
+  <td><code>+        &quot;@@ -1611,6 +1611,7 @@&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>91</td>
+  <td><code>+        &quot;  \&quot;jj-lib\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>92</td>
+  <td><code>+        &quot;  \&quot;juzu-core\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>93</td>
+  <td><code>+        &quot;  \&quot;serde\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>94</td>
+  <td><code>+        &quot;+ \&quot;similar\&quot;,&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>95</td>
+  <td><code>+        &quot; ]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>96</td>
+  <td><code>+        &quot; [[package]]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>97</td>
+  <td><code>+        &quot;@@ -2297,6 +2298,12 @@&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>98</td>
+  <td><code>+        &quot; ]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>99</td>
+  <td><code>+        &quot; [[package]]&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>100</td>
+  <td><code>+        &quot;+name = \&quot;similar\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>101</td>
+  <td><code>+        &quot;+version = \&quot;2.7.0\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>102</td>
+  <td><code>+        &quot;+source = \&quot;registry+https://github.com/rust-lang/crates.io-index\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>103</td>
+  <td><code>+        &quot;+checksum = \&quot;bbbb5d9659141646ae647b42fe094daf6c6192d1620870b449d9557f748b2daa\&quot;&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>104</td>
+  <td><code>+        &quot;+&quot;</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>105</td>
+  <td><code>+      ]</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>106</td>
+  <td><code>+    },</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>107</td>
+  <td><code>+    {</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>108</td>
+  <td><code>+      &quot;changeId&quot;: &quot;rznpmznluunv&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>109</td>
+  <td><code>+      &quot;title&quot;: &quot;hydrate rust tui file rows from native jj&quot;,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>110</td>
+  <td><code>+      &quot;matched&quot;: true,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>111</td>
+  <td><code>+      &quot;oldLines&quot;: 10944,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>112</td>
+  <td><code>+      &quot;rustLines&quot;: 10910,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>113</td>
+  <td><code>+      &quot;oldBytes&quot;: 1023464,</code></td>
+</tr>
+<tr class="add">
+  <td>add</td>
+  <td></td>
+  <td>114</td>
+  <td><code>+      &quot;rustBytes&quot;: 1022416,</code></td>
+</tr><tr class=collapse><td colspan=4>⋯ 11264 more rows omitted from review artifact</td></tr></tbody></table></section>
+</body></html>
