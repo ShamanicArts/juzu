@@ -34,9 +34,21 @@ tmux attach -t juzu
 
 ## Latest review artifact
 
-`bench/results/rust-port/tui-review/2026-06-13T20-29-36-580Z/rust-tui-dag-review.html`
+`bench/results/rust-port/tui-review/2026-06-13T20-36-20-894Z/rust-tui-dag-review.html`
 
 This is a static tmux capture converted into HTML. The live review surface is the tmux window.
+
+## DAG presentation parity progress
+
+The Rust TUI now mirrors more of old `GraphView`'s presentation model:
+
+- four-line row rhythm per visible commit (`id`, description, files/status, spacer)
+- edge rendering across the full graph, clipped into the viewport, so off-screen vertical lanes continue
+- mainline-mode bus spans only across connected branch/merge lanes
+- lane-colored graph glyphs and id text, with selected node/connection emphasis
+- selected-row indicator behavior closer to old JUZU (`>` and working-copy `@` marker)
+
+File rows currently show an explicit native-hydration placeholder. The next backend slice should replace that placeholder with real `files()` data.
 
 ## Verification
 

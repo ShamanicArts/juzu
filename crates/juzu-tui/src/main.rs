@@ -172,165 +172,384 @@ fn render_graph_table(
     app: &App,
     layout: &juzu_core::layout::LayoutResult,
 ) {
-    let inner_height = area.height.saturating_sub(2) as usize;
-    let visible_nodes = (inner_height / 2).max(1);
+    let block = Block::default().title(" dag graph ").borders(Borders::ALL);
+    let inner = block.inner(area);
+    let width = inner.width as usize;
+    let height = inner.height as usize;
     let selected = app.selected.min(layout.nodes.len().saturating_sub(1));
-    let start = selected.saturating_sub(visible_nodes / 2);
-    let end = (start + visible_nodes).min(layout.nodes.len());
-    let visible_count = end.saturating_sub(start);
-    let graph_width =
-        ((layout.max_lane + 1) * 4 + 2).min((area.width as usize).saturating_div(2).max(12));
-    let row_count = (visible_count * 2).max(1);
-    let mut grid = vec![vec![' '; graph_width]; row_count];
+    let row_stride = 4usize;
+    let visible_rows = ((height.saturating_sub(2)) / row_stride).max(1);
+    let start = selected.saturating_sub(visible_rows / 2);
+    let end = (start + visible_rows).min(layout.nodes.len());
+
+    let mut cells = vec![vec![GraphCell::default(); width]; height.max(1)];
     let all_index: std::collections::HashMap<_, _> = layout
         .nodes
         .iter()
         .enumerate()
         .map(|(idx, node)| (node.change_id.as_str(), idx))
         .collect();
-    let visible_index: std::collections::HashMap<_, _> = (start..end)
-        .enumerate()
-        .map(|(local, global)| (global, local))
-        .collect();
-    let lane_x = |lane: usize| -> usize { (lane * 4 + 1).min(graph_width.saturating_sub(1)) };
-    let node_y = |local: usize| -> usize { local * 2 };
+    let children_by_id = build_children_by_id(&layout.nodes);
 
-    for child_idx in start..end {
+    let max_lane = layout.max_lane;
+    let left_pad = 2usize;
+    let text_gap = 3usize;
+    let min_text_w = 28usize;
+    let available_for_lanes = width.saturating_sub(left_pad + text_gap + min_text_w);
+    let lane_width = (available_for_lanes / (max_lane + 1)).clamp(2, 4);
+    let lanes_w = (max_lane + 1) * lane_width;
+    let text_x = (left_pad + lanes_w + text_gap).min(width.saturating_sub(1));
+    let lane_x = |lane: usize| -> usize {
+        (left_pad + (max_lane.saturating_sub(lane)) * lane_width).min(width.saturating_sub(1))
+    };
+    let row_y_abs =
+        |global: usize| -> isize { 1 + (global as isize - start as isize) * row_stride as isize };
+
+    let mut bus_by_y: std::collections::HashMap<isize, (usize, usize)> =
+        std::collections::HashMap::new();
+    if matches!(app.mode, LayoutMode::Mainline) && max_lane > 0 {
+        for idx in start..end {
+            let node = &layout.nodes[idx];
+            if node.lane.unwrap_or(0) != 0 {
+                continue;
+            }
+            let mut connected_lanes = Vec::new();
+            if let Some(children) = children_by_id.get(node.change_id.as_str()) {
+                for child_idx in children {
+                    let lane = layout.nodes[*child_idx].lane.unwrap_or(0);
+                    if lane != 0 {
+                        connected_lanes.push(lane);
+                    }
+                }
+            }
+            if node.parents.len() > 1 {
+                for parent_id in &node.parents {
+                    if let Some(parent_idx) = all_index.get(parent_id.as_str()) {
+                        let lane = layout.nodes[*parent_idx].lane.unwrap_or(0);
+                        if lane != 0 {
+                            connected_lanes.push(lane);
+                        }
+                    }
+                }
+            }
+            let Some(furthest_lane) = connected_lanes.into_iter().max() else {
+                continue;
+            };
+            let x0 = lane_x(0);
+            let x1 = lane_x(furthest_lane);
+            bus_by_y.insert(row_y_abs(idx), (x0.min(x1), x0.max(x1)));
+        }
+        for (y, (x0, x1)) in &bus_by_y {
+            for x in *x0..=*x1 {
+                put_cell(&mut cells, x, *y, '─', lane_color(0));
+            }
+        }
+    }
+
+    let view_top = 0isize;
+    let view_bottom = height.saturating_sub(1) as isize;
+    for child_idx in 0..layout.nodes.len() {
         let child = &layout.nodes[child_idx];
         let child_lane = child.lane.unwrap_or(0);
         let x0 = lane_x(child_lane);
-        let y0 = node_y(visible_index[&child_idx]);
+        let y0 = row_y_abs(child_idx);
+        let child_color = lane_color(child_lane);
+
         for parent_id in &child.parents {
             let Some(parent_idx) = all_index.get(parent_id.as_str()).copied() else {
                 continue;
             };
-            if parent_idx < start || parent_idx >= end {
-                continue;
-            }
             let parent = &layout.nodes[parent_idx];
             let parent_lane = parent.lane.unwrap_or(0);
             let x1 = lane_x(parent_lane);
-            let y1 = node_y(visible_index[&parent_idx]);
-            if x0 == x1 {
-                for y in y0.min(y1) + 1..y0.max(y1) {
-                    put_grid(&mut grid, graph_width, x0, y, '│');
-                }
+            let y1 = row_y_abs(parent_idx);
+            if y0.max(y1) < view_top || y0.min(y1) > view_bottom {
                 continue;
             }
-            let connect_y = if child.parents.len() > 1 { y0 } else { y1 };
-            for x in x0.min(x1)..=x0.max(x1) {
-                put_grid(&mut grid, graph_width, x, connect_y, '─');
-            }
-            if child.parents.len() > 1 {
-                put_grid(
-                    &mut grid,
-                    graph_width,
-                    x0,
-                    connect_y,
-                    if x0 < x1 { '├' } else { '┤' },
-                );
-                put_grid(
-                    &mut grid,
-                    graph_width,
-                    x1,
-                    connect_y,
-                    if x0 < x1 { '┐' } else { '┌' },
-                );
-                for y in connect_y + 1..y1 {
-                    put_grid(&mut grid, graph_width, x1, y, '│');
-                }
+            let parent_color = lane_color(parent_lane);
+            let connection_selected = child_idx == selected || parent_idx == selected;
+            let line_color = if connection_selected {
+                Color::White
             } else {
-                put_grid(
-                    &mut grid,
-                    graph_width,
-                    x1,
-                    connect_y,
-                    if x0 < x1 { '├' } else { '┤' },
-                );
-                put_grid(
-                    &mut grid,
-                    graph_width,
-                    x0,
-                    connect_y,
-                    if x0 < x1 { '└' } else { '┘' },
-                );
-                for y in y0 + 1..connect_y {
-                    put_grid(&mut grid, graph_width, x0, y, '│');
+                parent_color
+            };
+
+            if child_lane == parent_lane {
+                draw_vert(&mut cells, x0, y0 + 1, y1 - 1, '│', line_color);
+                continue;
+            }
+
+            let is_merge_commit = child.parents.len() > 1;
+            let connect_y = if is_merge_commit { y0 } else { y1 };
+            let seg_min = x0.min(x1);
+            let seg_max = x0.max(x1);
+            let bus_covers = matches!(app.mode, LayoutMode::Mainline)
+                && (child_lane == 0 || parent_lane == 0)
+                && bus_by_y
+                    .get(&connect_y)
+                    .is_some_and(|(min, max)| seg_min >= *min && seg_max <= *max);
+            if !bus_covers {
+                draw_horz(&mut cells, x0, x1, connect_y, '─', line_color);
+            }
+
+            if is_merge_commit {
+                let selected_child_color = if child_idx == selected {
+                    Color::White
+                } else {
+                    child_color
+                };
+                if x0 < x1 {
+                    put_cell(&mut cells, x0, connect_y, '├', selected_child_color);
+                    put_cell(&mut cells, x1, connect_y, '┐', line_color);
+                } else {
+                    put_cell(&mut cells, x0, connect_y, '┤', selected_child_color);
+                    put_cell(&mut cells, x1, connect_y, '┌', line_color);
                 }
+                draw_vert(&mut cells, x1, connect_y + 1, y1 - 1, '│', line_color);
+            } else {
+                let selected_child_color = if child_idx == selected {
+                    Color::White
+                } else {
+                    child_color
+                };
+                if x0 < x1 {
+                    put_cell(&mut cells, x1, connect_y, '├', line_color);
+                    put_cell(&mut cells, x0, connect_y, '└', selected_child_color);
+                } else {
+                    put_cell(&mut cells, x1, connect_y, '┤', line_color);
+                    put_cell(&mut cells, x0, connect_y, '┘', selected_child_color);
+                }
+                draw_vert(
+                    &mut cells,
+                    x0,
+                    y0 + 1,
+                    connect_y - 1,
+                    '│',
+                    selected_child_color,
+                );
             }
         }
     }
 
-    for (local, global) in (start..end).enumerate() {
+    for global in start..end {
         let node = &layout.nodes[global];
-        let x = lane_x(node.lane.unwrap_or(0));
-        let y = node_y(local);
-        let ch = if node.is_working_copy {
+        let lane = node.lane.unwrap_or(0);
+        let x = lane_x(lane);
+        let y = row_y_abs(global);
+        let is_selected = global == selected;
+        let color = lane_color(lane);
+        let node_ch = if node.is_working_copy {
             '@'
         } else if node.is_conflict {
             '!'
-        } else if global == selected {
+        } else if node.is_empty && is_selected {
+            '0'
+        } else if is_selected {
             'O'
         } else {
             'o'
         };
-        put_grid(&mut grid, graph_width, x, y, ch);
-    }
-
-    let mut lines = Vec::new();
-    for (row, chars) in grid.into_iter().enumerate() {
-        let global = start + row / 2;
-        let mut text = chars.into_iter().collect::<String>();
-        if let Some(node) = layout.nodes.get(global) {
-            if row % 2 == 0 {
-                text.push_str("  ");
-                text.push_str(&node.change_id.chars().take(8).collect::<String>());
-                text.push(' ');
-                text.push_str(&node.commit_id.chars().take(8).collect::<String>());
-            } else {
-                let refs = if node.bookmarks.is_empty() {
-                    String::new()
-                } else {
-                    format!(" ({})", node.bookmarks.join(","))
-                };
-                text.push_str("  ");
-                text.push_str(&node.description_title);
-                text.push_str(&refs);
-            }
-        }
-        let style = if global == selected {
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::Cyan)
-                .add_modifier(Modifier::BOLD)
-        } else if layout
-            .nodes
-            .get(global)
-            .is_some_and(|node| node.is_working_copy)
-        {
-            Style::default().fg(Color::Green)
-        } else if layout
-            .nodes
-            .get(global)
-            .is_some_and(|node| node.is_conflict)
-        {
-            Style::default().fg(Color::Red)
+        let node_color = if is_selected && !node.is_working_copy && !node.is_conflict {
+            Color::White
+        } else if node.is_working_copy {
+            Color::Green
+        } else if node.is_conflict {
+            Color::Red
         } else {
-            Style::default().fg(Color::Gray)
+            color
         };
-        lines.push(Line::styled(text, style));
+        for cx in x + 1..text_x.saturating_sub(1).min(width) {
+            put_cell(&mut cells, cx, y, '.', color);
+        }
+        put_cell(&mut cells, x, y, node_ch, node_color);
+
+        let change_short: String = node.change_id.chars().take(8).collect();
+        let commit_short: String = node.commit_id.chars().take(8).collect();
+        let desc = truncate(&node.description_title, width.saturating_sub(text_x + 2));
+        let indicator_x = text_x.saturating_sub(2);
+        if node.is_working_copy && is_selected {
+            put_text(
+                &mut cells,
+                indicator_x.saturating_sub(1),
+                y,
+                "@",
+                Color::Green,
+            );
+            put_text(&mut cells, indicator_x, y, ">", Color::White);
+        } else if node.is_working_copy {
+            put_text(&mut cells, indicator_x, y, "@", Color::Green);
+        } else if is_selected {
+            put_text(&mut cells, indicator_x, y, ">", Color::White);
+        }
+        put_text(
+            &mut cells,
+            text_x,
+            y,
+            &change_short,
+            if is_selected { Color::White } else { color },
+        );
+        put_text(
+            &mut cells,
+            text_x + 9,
+            y,
+            &commit_short,
+            if is_selected {
+                Color::White
+            } else {
+                Color::DarkGray
+            },
+        );
+        put_text(
+            &mut cells,
+            text_x,
+            y + 1,
+            if desc.is_empty() {
+                "(no description)"
+            } else {
+                &desc
+            },
+            if is_selected {
+                Color::White
+            } else {
+                Color::Gray
+            },
+        );
+        if !node.bookmarks.is_empty() {
+            let bm = format!(" ({})", node.bookmarks.join(","));
+            let desc_len = desc.len().min(width.saturating_sub(text_x));
+            put_text(
+                &mut cells,
+                text_x + desc_len,
+                y + 1,
+                &truncate(&bm, width.saturating_sub(text_x + desc_len + 1)),
+                if is_selected {
+                    Color::LightYellow
+                } else {
+                    Color::Yellow
+                },
+            );
+        }
+        put_text(
+            &mut cells,
+            text_x,
+            y + 2,
+            "files pending native hydration",
+            if is_selected {
+                Color::LightBlue
+            } else {
+                Color::DarkGray
+            },
+        );
     }
 
-    frame.render_widget(
-        Paragraph::new(lines).block(Block::default().title(" dag graph ").borders(Borders::ALL)),
-        area,
-    );
+    let lines = cells
+        .into_iter()
+        .map(|row| {
+            Line::from(
+                row.into_iter()
+                    .map(|cell| Span::styled(cell.ch.to_string(), Style::default().fg(cell.fg)))
+                    .collect::<Vec<_>>(),
+            )
+        })
+        .collect::<Vec<_>>();
+    frame.render_widget(Paragraph::new(lines).block(block), area);
 }
 
-fn put_grid(grid: &mut [Vec<char>], width: usize, x: usize, y: usize, ch: char) {
-    if y < grid.len() && x < width {
-        grid[y][x] = ch;
+#[derive(Debug, Clone, Copy)]
+struct GraphCell {
+    ch: char,
+    fg: Color,
+}
+
+impl Default for GraphCell {
+    fn default() -> Self {
+        Self {
+            ch: ' ',
+            fg: Color::Gray,
+        }
     }
+}
+
+fn lane_color(lane: usize) -> Color {
+    const COLORS: [Color; 8] = [
+        Color::Cyan,
+        Color::Magenta,
+        Color::Yellow,
+        Color::Green,
+        Color::Blue,
+        Color::LightRed,
+        Color::LightCyan,
+        Color::LightMagenta,
+    ];
+    COLORS[lane % COLORS.len()]
+}
+
+fn build_children_by_id(
+    nodes: &[juzu_core::CommitNode],
+) -> std::collections::HashMap<&str, Vec<usize>> {
+    let mut children: std::collections::HashMap<&str, Vec<usize>> =
+        std::collections::HashMap::new();
+    for (idx, child) in nodes.iter().enumerate() {
+        for parent_id in &child.parents {
+            children.entry(parent_id.as_str()).or_default().push(idx);
+        }
+    }
+    children
+}
+
+fn put_cell(cells: &mut [Vec<GraphCell>], x: usize, y: isize, ch: char, fg: Color) {
+    if y >= 0 {
+        if let Some(row) = cells.get_mut(y as usize) {
+            if let Some(cell) = row.get_mut(x) {
+                *cell = GraphCell { ch, fg };
+            }
+        }
+    }
+}
+
+fn put_text(cells: &mut [Vec<GraphCell>], x: usize, y: isize, text: &str, fg: Color) {
+    for (offset, ch) in text.chars().enumerate() {
+        put_cell(cells, x + offset, y, ch, fg);
+    }
+}
+
+fn draw_vert(cells: &mut [Vec<GraphCell>], x: usize, y_a: isize, y_b: isize, ch: char, fg: Color) {
+    let from = y_a.min(y_b).max(0);
+    let to = y_a.max(y_b).min(cells.len().saturating_sub(1) as isize);
+    if from > to {
+        return;
+    }
+    for y in from..=to {
+        put_cell(cells, x, y, ch, fg);
+    }
+}
+
+fn draw_horz(cells: &mut [Vec<GraphCell>], x_a: usize, x_b: usize, y: isize, ch: char, fg: Color) {
+    let Some(width) = cells.first().map(Vec::len) else {
+        return;
+    };
+    if y < 0 || y >= cells.len() as isize {
+        return;
+    }
+    for x in x_a.min(x_b)..=x_a.max(x_b).min(width.saturating_sub(1)) {
+        put_cell(cells, x, y, ch, fg);
+    }
+}
+
+fn truncate(s: &str, max_len: usize) -> String {
+    if max_len == 0 {
+        return String::new();
+    }
+    let char_count = s.chars().count();
+    if char_count <= max_len {
+        return s.to_string();
+    }
+    if max_len <= 3 {
+        return "…".repeat(max_len);
+    }
+    let mut out = s.chars().take(max_len - 3).collect::<String>();
+    out.push_str("...");
+    out
 }
 
 fn render_sidebar(

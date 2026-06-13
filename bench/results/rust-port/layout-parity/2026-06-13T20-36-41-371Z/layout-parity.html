@@ -1,0 +1,643 @@
+<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>JUZU Layout Parity</title>
+<style>:root{--bg:#050816;--panel:#0f172a;--line:#334155;--text:#e2e8f0;--muted:#94a3b8;--green:#86efac;--red:#fca5a5;--cyan:#67e8f9}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 30% -10%,#14375f 0,transparent 38%),var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,sans-serif}main{max-width:1400px;margin:auto;padding:44px 24px}.shell{border:1px solid var(--line);border-radius:28px;background:rgba(15,23,42,.94);padding:32px;box-shadow:0 24px 90px rgba(0,0,0,.35)}h1{font-size:40px;margin:0 0 8px;letter-spacing:-.04em}p,small{color:var(--muted)}.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:24px 0}.metric{background:#07111f;border:1px solid var(--line);border-radius:18px;padding:16px}.metric b{display:block;font-size:22px;color:var(--cyan)}.metric.ok b{color:var(--green)}.metric.bad b{color:var(--red)}table{width:100%;border-collapse:collapse;margin:12px 0 28px}th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:#08111f;color:var(--cyan)}tr.ok td:nth-child(n+2):nth-child(-n+6){color:var(--green);font-weight:900}tr.bad td:nth-child(n+2):nth-child(-n+6){color:var(--red);font-weight:900}code{font-family:'JetBrains Mono',ui-monospace,monospace;color:#bfdbfe}.note{border:1px solid var(--line);border-radius:16px;background:#07111f;padding:14px 16px;color:var(--muted)}@media(max-width:900px){.metrics{grid-template-columns:1fr}}</style></head>
+<body><main><section class='shell'><h1>JUZU Layout Parity</h1><p>Old Bun layout oracle vs Rust <code>juzu-core</code> layout port across all modes.</p><div class='note'>Repo: <code>/home/shamanic/dev/juzu</code> · Limit: <code>20</code> · Output: <code>/home/shamanic/dev/juzu/bench/results/rust-port/layout-parity/2026-06-13T20-36-41-371Z</code></div><div class='metrics'>
+        <div class='metric ok'><b>chronological</b>
+          <span>lane 100.0% · x 100.0% · y 100.0%</span>
+          <small>maxLane ✓ · textX ✓ · height ✓</small>
+        </div>
+        
+        <div class='metric ok'><b>mainline</b>
+          <span>lane 100.0% · x 100.0% · y 100.0%</span>
+          <small>maxLane ✓ · textX ✓ · height ✓</small>
+        </div>
+        
+        <div class='metric ok'><b>bookmark-centric</b>
+          <span>lane 100.0% · x 100.0% · y 100.0%</span>
+          <small>maxLane ✓ · textX ✓ · height ✓</small>
+        </div>
+        
+        <div class='metric ok'><b>wc-focused</b>
+          <span>lane 100.0% · x 100.0% · y 100.0%</span>
+          <small>maxLane ✓ · textX ✓ · height ✓</small>
+        </div>
+        
+        <div class='metric ok'><b>topological</b>
+          <span>lane 100.0% · x 100.0% · y 100.0%</span>
+          <small>maxLane ✓ · textX ✓ · height ✓</small>
+        </div>
+        </div>
+        <h2>chronological</h2>
+        <table><thead><tr><th>#</th><th>ID</th><th>Lane</th><th>X</th><th>Y</th><th>Pin</th><th>Old</th><th>Rust</th><th>Lane</th><th>X</th><th>Y</th></tr></thead><tbody>
+          <tr class='bad'>
+            <td>1</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>uxpvuzprnxvw</code></td><td><code>uxpvuzprnxvw</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>50 / 50</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>2</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>nyyyopnmspws</code></td><td><code>nyyyopnmspws</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>134 / 134</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>3</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>swwxpvnmunvm</code></td><td><code>swwxpvnmunvm</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>218 / 218</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>4</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>owsqnruwvtpy</code></td><td><code>owsqnruwvtpy</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>302 / 302</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>5</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>vltwtkqwurnx</code></td><td><code>vltwtkqwurnx</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>386 / 386</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>6</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>pkqyvzyovvlm</code></td><td><code>pkqyvzyovvlm</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>470 / 470</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>7</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>rzumrlxyxuzl</code></td><td><code>rzumrlxyxuzl</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>554 / 554</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>8</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>qmnwqrkvlouv</code></td><td><code>qmnwqrkvlouv</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>638 / 638</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>9</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>skzslnrxvuxt</code></td><td><code>skzslnrxvuxt</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>722 / 722</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>10</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>osrquputmzwl</code></td><td><code>osrquputmzwl</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>806 / 806</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>11</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>zvnnyzrsyywx</code></td><td><code>zvnnyzrsyywx</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>890 / 890</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>12</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>vqwkrnuzoloy</code></td><td><code>vqwkrnuzoloy</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>974 / 974</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>13</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>uqlttsnpuqpm</code></td><td><code>uqlttsnpuqpm</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1058 / 1058</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>14</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>mzrlwtvyvtpq</code></td><td><code>mzrlwtvyvtpq</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1142 / 1142</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>15</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>stzlxrpnmlpv</code></td><td><code>stzlxrpnmlpv</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1226 / 1226</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>16</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>ltzyqnzzpqst</code></td><td><code>ltzyqnzzpqst</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1310 / 1310</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>17</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>tqqmnqlryzol</code></td><td><code>tqqmnqlryzol</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1394 / 1394</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>18</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>mulylsmksvkk</code></td><td><code>mulylsmksvkk</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1478 / 1478</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>19</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>kuomrqkuuttm</code></td><td><code>kuomrqkuuttm</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1562 / 1562</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>20</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>unsrkxqwmpls</code></td><td><code>unsrkxqwmpls</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1646 / 1646</td>
+          </tr>
+        </tbody></table>
+        
+        <h2>mainline</h2>
+        <table><thead><tr><th>#</th><th>ID</th><th>Lane</th><th>X</th><th>Y</th><th>Pin</th><th>Old</th><th>Rust</th><th>Lane</th><th>X</th><th>Y</th></tr></thead><tbody>
+          <tr class='bad'>
+            <td>1</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>uxpvuzprnxvw</code></td><td><code>uxpvuzprnxvw</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>50 / 50</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>2</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>nyyyopnmspws</code></td><td><code>nyyyopnmspws</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>134 / 134</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>3</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>swwxpvnmunvm</code></td><td><code>swwxpvnmunvm</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>218 / 218</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>4</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>owsqnruwvtpy</code></td><td><code>owsqnruwvtpy</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>302 / 302</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>5</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>vltwtkqwurnx</code></td><td><code>vltwtkqwurnx</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>386 / 386</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>6</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>pkqyvzyovvlm</code></td><td><code>pkqyvzyovvlm</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>470 / 470</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>7</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>rzumrlxyxuzl</code></td><td><code>rzumrlxyxuzl</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>554 / 554</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>8</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>qmnwqrkvlouv</code></td><td><code>qmnwqrkvlouv</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>638 / 638</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>9</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>skzslnrxvuxt</code></td><td><code>skzslnrxvuxt</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>722 / 722</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>10</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>osrquputmzwl</code></td><td><code>osrquputmzwl</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>806 / 806</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>11</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>zvnnyzrsyywx</code></td><td><code>zvnnyzrsyywx</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>890 / 890</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>12</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>vqwkrnuzoloy</code></td><td><code>vqwkrnuzoloy</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>974 / 974</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>13</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>uqlttsnpuqpm</code></td><td><code>uqlttsnpuqpm</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1058 / 1058</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>14</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>mzrlwtvyvtpq</code></td><td><code>mzrlwtvyvtpq</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1142 / 1142</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>15</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>stzlxrpnmlpv</code></td><td><code>stzlxrpnmlpv</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1226 / 1226</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>16</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>ltzyqnzzpqst</code></td><td><code>ltzyqnzzpqst</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1310 / 1310</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>17</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>tqqmnqlryzol</code></td><td><code>tqqmnqlryzol</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1394 / 1394</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>18</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>mulylsmksvkk</code></td><td><code>mulylsmksvkk</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1478 / 1478</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>19</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>kuomrqkuuttm</code></td><td><code>kuomrqkuuttm</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1562 / 1562</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>20</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>unsrkxqwmpls</code></td><td><code>unsrkxqwmpls</code></td>
+            <td>0 / 0</td><td>50 / 50</td><td>1646 / 1646</td>
+          </tr>
+        </tbody></table>
+        
+        <h2>bookmark-centric</h2>
+        <table><thead><tr><th>#</th><th>ID</th><th>Lane</th><th>X</th><th>Y</th><th>Pin</th><th>Old</th><th>Rust</th><th>Lane</th><th>X</th><th>Y</th></tr></thead><tbody>
+          <tr class='bad'>
+            <td>1</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>uxpvuzprnxvw</code></td><td><code>uxpvuzprnxvw</code></td>
+            <td>2 / 2</td><td>410 / 410</td><td>50 / 50</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>2</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>nyyyopnmspws</code></td><td><code>nyyyopnmspws</code></td>
+            <td>3 / 3</td><td>386 / 386</td><td>134 / 134</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>3</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>swwxpvnmunvm</code></td><td><code>swwxpvnmunvm</code></td>
+            <td>4 / 4</td><td>362 / 362</td><td>218 / 218</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>4</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>owsqnruwvtpy</code></td><td><code>owsqnruwvtpy</code></td>
+            <td>5 / 5</td><td>338 / 338</td><td>302 / 302</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>5</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>vltwtkqwurnx</code></td><td><code>vltwtkqwurnx</code></td>
+            <td>6 / 6</td><td>314 / 314</td><td>386 / 386</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>6</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>pkqyvzyovvlm</code></td><td><code>pkqyvzyovvlm</code></td>
+            <td>7 / 7</td><td>290 / 290</td><td>470 / 470</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>7</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>rzumrlxyxuzl</code></td><td><code>rzumrlxyxuzl</code></td>
+            <td>8 / 8</td><td>266 / 266</td><td>554 / 554</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>8</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>qmnwqrkvlouv</code></td><td><code>qmnwqrkvlouv</code></td>
+            <td>9 / 9</td><td>242 / 242</td><td>638 / 638</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>9</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>skzslnrxvuxt</code></td><td><code>skzslnrxvuxt</code></td>
+            <td>10 / 10</td><td>218 / 218</td><td>722 / 722</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>10</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>osrquputmzwl</code></td><td><code>osrquputmzwl</code></td>
+            <td>11 / 11</td><td>194 / 194</td><td>806 / 806</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>11</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>zvnnyzrsyywx</code></td><td><code>zvnnyzrsyywx</code></td>
+            <td>12 / 12</td><td>170 / 170</td><td>890 / 890</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>12</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>vqwkrnuzoloy</code></td><td><code>vqwkrnuzoloy</code></td>
+            <td>13 / 13</td><td>146 / 146</td><td>974 / 974</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>13</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>uqlttsnpuqpm</code></td><td><code>uqlttsnpuqpm</code></td>
+            <td>0 / 0</td><td>458 / 458</td><td>1058 / 1058</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>14</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>mzrlwtvyvtpq</code></td><td><code>mzrlwtvyvtpq</code></td>
+            <td>0 / 0</td><td>458 / 458</td><td>1142 / 1142</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>15</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>stzlxrpnmlpv</code></td><td><code>stzlxrpnmlpv</code></td>
+            <td>14 / 14</td><td>122 / 122</td><td>1226 / 1226</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>16</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>ltzyqnzzpqst</code></td><td><code>ltzyqnzzpqst</code></td>
+            <td>15 / 15</td><td>98 / 98</td><td>1310 / 1310</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>17</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>tqqmnqlryzol</code></td><td><code>tqqmnqlryzol</code></td>
+            <td>1 / 1</td><td>434 / 434</td><td>1394 / 1394</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>18</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>mulylsmksvkk</code></td><td><code>mulylsmksvkk</code></td>
+            <td>1 / 1</td><td>434 / 434</td><td>1478 / 1478</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>19</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>kuomrqkuuttm</code></td><td><code>kuomrqkuuttm</code></td>
+            <td>16 / 16</td><td>74 / 74</td><td>1562 / 1562</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>20</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>unsrkxqwmpls</code></td><td><code>unsrkxqwmpls</code></td>
+            <td>17 / 17</td><td>50 / 50</td><td>1646 / 1646</td>
+          </tr>
+        </tbody></table>
+        
+        <h2>wc-focused</h2>
+        <table><thead><tr><th>#</th><th>ID</th><th>Lane</th><th>X</th><th>Y</th><th>Pin</th><th>Old</th><th>Rust</th><th>Lane</th><th>X</th><th>Y</th></tr></thead><tbody>
+          <tr class='bad'>
+            <td>1</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>uxpvuzprnxvw</code></td><td><code>uxpvuzprnxvw</code></td>
+            <td>0 / 0</td><td>506 / 506</td><td>50 / 50</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>2</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>nyyyopnmspws</code></td><td><code>nyyyopnmspws</code></td>
+            <td>1 / 1</td><td>482 / 482</td><td>134 / 134</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>3</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>swwxpvnmunvm</code></td><td><code>swwxpvnmunvm</code></td>
+            <td>2 / 2</td><td>458 / 458</td><td>218 / 218</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>4</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>owsqnruwvtpy</code></td><td><code>owsqnruwvtpy</code></td>
+            <td>3 / 3</td><td>434 / 434</td><td>302 / 302</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>5</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>vltwtkqwurnx</code></td><td><code>vltwtkqwurnx</code></td>
+            <td>4 / 4</td><td>410 / 410</td><td>386 / 386</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>6</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>pkqyvzyovvlm</code></td><td><code>pkqyvzyovvlm</code></td>
+            <td>5 / 5</td><td>386 / 386</td><td>470 / 470</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>7</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>rzumrlxyxuzl</code></td><td><code>rzumrlxyxuzl</code></td>
+            <td>6 / 6</td><td>362 / 362</td><td>554 / 554</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>8</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>qmnwqrkvlouv</code></td><td><code>qmnwqrkvlouv</code></td>
+            <td>7 / 7</td><td>338 / 338</td><td>638 / 638</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>9</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>skzslnrxvuxt</code></td><td><code>skzslnrxvuxt</code></td>
+            <td>8 / 8</td><td>314 / 314</td><td>722 / 722</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>10</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>osrquputmzwl</code></td><td><code>osrquputmzwl</code></td>
+            <td>9 / 9</td><td>290 / 290</td><td>806 / 806</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>11</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>zvnnyzrsyywx</code></td><td><code>zvnnyzrsyywx</code></td>
+            <td>10 / 10</td><td>266 / 266</td><td>890 / 890</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>12</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>vqwkrnuzoloy</code></td><td><code>vqwkrnuzoloy</code></td>
+            <td>11 / 11</td><td>242 / 242</td><td>974 / 974</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>13</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>uqlttsnpuqpm</code></td><td><code>uqlttsnpuqpm</code></td>
+            <td>12 / 12</td><td>218 / 218</td><td>1058 / 1058</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>14</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>mzrlwtvyvtpq</code></td><td><code>mzrlwtvyvtpq</code></td>
+            <td>13 / 13</td><td>194 / 194</td><td>1142 / 1142</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>15</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>stzlxrpnmlpv</code></td><td><code>stzlxrpnmlpv</code></td>
+            <td>14 / 14</td><td>170 / 170</td><td>1226 / 1226</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>16</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>ltzyqnzzpqst</code></td><td><code>ltzyqnzzpqst</code></td>
+            <td>15 / 15</td><td>146 / 146</td><td>1310 / 1310</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>17</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>tqqmnqlryzol</code></td><td><code>tqqmnqlryzol</code></td>
+            <td>16 / 16</td><td>122 / 122</td><td>1394 / 1394</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>18</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>mulylsmksvkk</code></td><td><code>mulylsmksvkk</code></td>
+            <td>17 / 17</td><td>98 / 98</td><td>1478 / 1478</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>19</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>kuomrqkuuttm</code></td><td><code>kuomrqkuuttm</code></td>
+            <td>18 / 18</td><td>74 / 74</td><td>1562 / 1562</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>20</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>unsrkxqwmpls</code></td><td><code>unsrkxqwmpls</code></td>
+            <td>19 / 19</td><td>50 / 50</td><td>1646 / 1646</td>
+          </tr>
+        </tbody></table>
+        
+        <h2>topological</h2>
+        <table><thead><tr><th>#</th><th>ID</th><th>Lane</th><th>X</th><th>Y</th><th>Pin</th><th>Old</th><th>Rust</th><th>Lane</th><th>X</th><th>Y</th></tr></thead><tbody>
+          <tr class='bad'>
+            <td>1</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>uxpvuzprnxvw</code></td><td><code>uxpvuzprnxvw</code></td>
+            <td>19 / 19</td><td>50 / 50</td><td>50 / 50</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>2</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>nyyyopnmspws</code></td><td><code>nyyyopnmspws</code></td>
+            <td>18 / 18</td><td>74 / 74</td><td>134 / 134</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>3</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>swwxpvnmunvm</code></td><td><code>swwxpvnmunvm</code></td>
+            <td>17 / 17</td><td>98 / 98</td><td>218 / 218</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>4</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>owsqnruwvtpy</code></td><td><code>owsqnruwvtpy</code></td>
+            <td>16 / 16</td><td>122 / 122</td><td>302 / 302</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>5</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>vltwtkqwurnx</code></td><td><code>vltwtkqwurnx</code></td>
+            <td>15 / 15</td><td>146 / 146</td><td>386 / 386</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>6</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>pkqyvzyovvlm</code></td><td><code>pkqyvzyovvlm</code></td>
+            <td>14 / 14</td><td>170 / 170</td><td>470 / 470</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>7</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>rzumrlxyxuzl</code></td><td><code>rzumrlxyxuzl</code></td>
+            <td>13 / 13</td><td>194 / 194</td><td>554 / 554</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>8</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>qmnwqrkvlouv</code></td><td><code>qmnwqrkvlouv</code></td>
+            <td>12 / 12</td><td>218 / 218</td><td>638 / 638</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>9</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>skzslnrxvuxt</code></td><td><code>skzslnrxvuxt</code></td>
+            <td>11 / 11</td><td>242 / 242</td><td>722 / 722</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>10</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>osrquputmzwl</code></td><td><code>osrquputmzwl</code></td>
+            <td>10 / 10</td><td>266 / 266</td><td>806 / 806</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>11</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>zvnnyzrsyywx</code></td><td><code>zvnnyzrsyywx</code></td>
+            <td>9 / 9</td><td>290 / 290</td><td>890 / 890</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>12</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>vqwkrnuzoloy</code></td><td><code>vqwkrnuzoloy</code></td>
+            <td>8 / 8</td><td>314 / 314</td><td>974 / 974</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>13</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>uqlttsnpuqpm</code></td><td><code>uqlttsnpuqpm</code></td>
+            <td>7 / 7</td><td>338 / 338</td><td>1058 / 1058</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>14</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>mzrlwtvyvtpq</code></td><td><code>mzrlwtvyvtpq</code></td>
+            <td>6 / 6</td><td>362 / 362</td><td>1142 / 1142</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>15</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>stzlxrpnmlpv</code></td><td><code>stzlxrpnmlpv</code></td>
+            <td>5 / 5</td><td>386 / 386</td><td>1226 / 1226</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>16</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>ltzyqnzzpqst</code></td><td><code>ltzyqnzzpqst</code></td>
+            <td>4 / 4</td><td>410 / 410</td><td>1310 / 1310</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>17</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>tqqmnqlryzol</code></td><td><code>tqqmnqlryzol</code></td>
+            <td>3 / 3</td><td>434 / 434</td><td>1394 / 1394</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>18</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>mulylsmksvkk</code></td><td><code>mulylsmksvkk</code></td>
+            <td>2 / 2</td><td>458 / 458</td><td>1478 / 1478</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>19</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>kuomrqkuuttm</code></td><td><code>kuomrqkuuttm</code></td>
+            <td>1 / 1</td><td>482 / 482</td><td>1562 / 1562</td>
+          </tr>
+        
+          <tr class='bad'>
+            <td>20</td><td>✕</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td>
+            <td><code>unsrkxqwmpls</code></td><td><code>unsrkxqwmpls</code></td>
+            <td>0 / 0</td><td>506 / 506</td><td>1646 / 1646</td>
+          </tr>
+        </tbody></table>
+        </section></main></body></html>
