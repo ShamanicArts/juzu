@@ -1108,12 +1108,24 @@ fn render_sidebar(
         }
     }
     lines.push(Line::from(""));
-    lines.push(Line::from(Span::styled(
-        "Diff",
-        Style::default()
-            .fg(Color::Yellow)
-            .add_modifier(Modifier::BOLD),
-    )));
+    if app.view_mode == ViewMode::Diff {
+        lines.push(Line::from(vec![
+            Span::styled(
+                "Current file preview",
+                Style::default()
+                    .fg(Color::LightCyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled("  secondary", Style::default().fg(Color::DarkGray)),
+        ]));
+    } else {
+        lines.push(Line::from(Span::styled(
+            "Diff",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )));
+    }
     render_diff_preview_lines(&mut lines, app, node, area.width as usize, 14);
     frame.render_widget(
         Paragraph::new(lines).block(Block::default().title(" details ").borders(Borders::ALL)),

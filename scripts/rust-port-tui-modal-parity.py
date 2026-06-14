@@ -212,6 +212,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff, "Exit", "old diff status hint labels escape as Exit", failures)
         assert_not_contains(diff, "dag graph", "diff replaces graph pane", failures)
         assert_contains(diff, "details", "diff mode keeps sidebar", failures)
+        assert_contains(diff, "Current file preview", "diff mode sidebar labels preview as current-file context", failures)
         assert_details_split_matches_old(diff, width, failures)
         assert_diff_title_contract(diff, width, failures)
         assert_diff_footer_contract(diff, width, failures)
@@ -242,6 +243,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_not_contains(diff_next_file, "diff rows 1-0 of 0", "File 2 is not an empty rendered diff", failures)
         assert_contains(diff_next_file, "Change: nqmmukmt", "] in diff mode does not move DAG selection", failures)
         assert_contains(diff_next_file, "▶", "diff mode sidebar visibly marks selected diff file", failures)
+        assert_contains(diff_next_file, "Current file preview", "diff mode sidebar remains scoped to current file after file cycling", failures)
 
         send(session, "[")
         diff_prev_file = wait_for(session, "File 1/")
