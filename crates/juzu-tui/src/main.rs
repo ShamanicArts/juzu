@@ -1033,13 +1033,30 @@ fn render_sidebar(
             .get(&node.change_id)
             .is_some_and(|diff| !diff.rows.is_empty());
         let file_preview_limit = if diff_is_available { 4 } else { 12 };
-        for file in files.iter().take(file_preview_limit) {
+        for (idx, file) in files.iter().take(file_preview_limit).enumerate() {
+            let is_selected_diff_file =
+                app.view_mode == ViewMode::Diff && idx == app.diff_file_index;
             lines.push(Line::from(vec![
+                Span::styled(
+                    if is_selected_diff_file { "▶ " } else { "  " },
+                    Style::default()
+                        .fg(Color::LightCyan)
+                        .add_modifier(Modifier::BOLD),
+                ),
                 Span::styled(
                     format!("{} ", file.r#type),
                     Style::default().fg(file_type_color(&file.r#type)),
                 ),
-                Span::raw(file.path.clone()),
+                Span::styled(
+                    file.path.clone(),
+                    if is_selected_diff_file {
+                        Style::default()
+                            .fg(Color::White)
+                            .add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default()
+                    },
+                ),
             ]));
         }
         if files.len() > file_preview_limit {

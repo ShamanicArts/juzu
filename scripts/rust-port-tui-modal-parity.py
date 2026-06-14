@@ -207,6 +207,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff_next_file, "diff rows 1-", "File 2 renders diff rows", failures)
         assert_not_contains(diff_next_file, "diff rows 1-0 of 0", "File 2 is not an empty rendered diff", failures)
         assert_contains(diff_next_file, "Change: nqmmukmt", "] in diff mode does not move DAG selection", failures)
+        assert_contains(diff_next_file, "▶", "diff mode sidebar visibly marks selected diff file", failures)
 
         send(session, "[")
         diff_prev_file = wait_for(session, "File 1/")
