@@ -264,25 +264,41 @@ fn selected_diff(app: &App) -> Option<&DiffPreview> {
     app.diffs_by_change.get(&node.change_id)
 }
 
-fn cap_diff_preview_rows(mut rows: Vec<DiffRow>, cap: usize) -> Vec<DiffRow> {
+fn cap_diff_preview_rows(rows: Vec<DiffRow>, cap: usize) -> Vec<DiffRow> {
     if rows.len() <= cap {
         return rows;
     }
-    let omitted = rows.len() - cap;
-    rows.truncate(cap);
-    let (file_index, hunk_index) = rows
-        .last()
-        .map(|row| (row.file_index, row.hunk_index))
-        .unwrap_or((0, None));
-    rows.push(DiffRow {
-        kind: DiffRowKind::Collapse,
-        file_index,
-        hunk_index,
-        old_line: None,
-        new_line: None,
-        text: format!("preview capped · {omitted} additional rows omitted"),
-    });
-    rows
+    let file_count = rows
+        .iter()
+        .map(|row| row.file_index)
+        .max()
+        .map(|idx| idx + 1)
+        .unwrap_or(1);
+    let per_file_cap = (cap / file_count.max(1)).max(8);
+    let mut capped = Vec::new();
+    for file_index in 0..file_count {
+        let file_rows = rows
+            .iter()
+            .filter(|row| row.file_index == file_index)
+            .cloned()
+            .collect::<Vec<_>>();
+        if file_rows.len() <= per_file_cap {
+            capped.extend(file_rows);
+            continue;
+        }
+        capped.extend(file_rows.iter().take(per_file_cap).cloned());
+        let omitted = file_rows.len() - per_file_cap;
+        let hunk_index = capped.last().and_then(|row| row.hunk_index);
+        capped.push(DiffRow {
+            kind: DiffRowKind::Collapse,
+            file_index,
+            hunk_index,
+            old_line: None,
+            new_line: None,
+            text: format!("preview capped · {omitted} additional rows omitted for this file"),
+        });
+    }
+    capped
 }
 
 fn jump_selected_diff(app: &mut App, jump: DiffJump) {

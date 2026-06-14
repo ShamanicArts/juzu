@@ -35,7 +35,7 @@ def tmux(*args: str, check: bool = True) -> str:
 
 
 def capture(session: str) -> str:
-    return tmux("capture-pane", "-p", "-t", session, "-S", "-200")
+    return tmux("capture-pane", "-p", "-t", session)
 
 
 def wait_for(session: str, needle: str, timeout: float = 5.0) -> str:
@@ -67,6 +67,20 @@ def assert_not_contains(text: str, needle: str, label: str, failures: list[str])
         failures.append(f"{label}: expected screen not to contain {needle!r}")
 
 
+def select_change_prefix(session: str, change_prefix: str, max_steps: int = 16) -> str:
+    needle = f"Change: {change_prefix}"
+    screen = capture(session)
+    if needle in screen:
+        return screen
+    for _ in range(max_steps):
+        send(session, "j")
+        time.sleep(0.15)
+        screen = capture(session)
+        if needle in screen:
+            return screen
+    return screen
+
+
 def run_case(args: argparse.Namespace) -> dict[str, Any]:
     subprocess.run(["cargo", "build", "--release", "-p", "juzu-tui"], cwd=ROOT, check=True)
     session = f"juzu-modal-parity-{os.getpid()}"
@@ -80,9 +94,7 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         captures["initial"] = initial
         assert_contains(initial, "dag graph", "initial log mode", failures)
 
-        send(session, "j")
-        send(session, "j")
-        selected = wait_for(session, "cap rust tui structured diff preview rows")
+        selected = select_change_prefix(session, "nqmmukmt")
         captures["afterSelectChange"] = selected
         assert_contains(selected, "Files", "selected non-empty change details", failures)
 
@@ -94,7 +106,7 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         assert_contains(diff, "[ / ] next/prev", "diff file cycling hint", failures)
         assert_not_contains(diff, "dag graph", "diff replaces graph pane", failures)
         assert_contains(diff, "details", "diff mode keeps sidebar", failures)
-        assert_contains(diff, "cap rust tui structured diff pre", "diff mode keeps selected commit", failures)
+        assert_contains(diff, "Change: nqmmukmt", "diff mode keeps selected commit", failures)
         if "JUZU" not in diff:
             failures.append("after Ctrl+D: screen no longer shows JUZU, app likely exited")
 
@@ -102,25 +114,41 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         diff_scroll_down = wait_for(session, "diff rows 2-")
         captures["afterDiffJ"] = diff_scroll_down
         assert_contains(diff_scroll_down, "diff rows 2-", "j scrolls diff rows in diff mode", failures)
-        assert_contains(diff_scroll_down, "cap rust tui structured diff pre", "j in diff mode does not move DAG selection", failures)
+        assert_contains(diff_scroll_down, "Change: nqmmukmt", "j in diff mode does not move DAG selection", failures)
 
         send(session, "k")
         diff_scroll_up = wait_for(session, "diff rows 1-")
         captures["afterDiffK"] = diff_scroll_up
         assert_contains(diff_scroll_up, "diff rows 1-", "k scrolls diff rows up in diff mode", failures)
-        assert_contains(diff_scroll_up, "cap rust tui structured diff pre", "k in diff mode does not move DAG selection", failures)
+        assert_contains(diff_scroll_up, "Change: nqmmukmt", "k in diff mode does not move DAG selection", failures)
 
         send(session, "]")
         diff_next_file = wait_for(session, "File 2/")
         captures["afterDiffNextFile"] = diff_next_file
         assert_contains(diff_next_file, "File 2/", "] cycles to next diff file in diff mode", failures)
-        assert_contains(diff_next_file, "cap rust tui structured diff pre", "] in diff mode does not move DAG selection", failures)
+        assert_contains(diff_next_file, "diff rows 1-", "File 2 renders diff rows", failures)
+        assert_not_contains(diff_next_file, "diff rows 1-0 of 0", "File 2 is not an empty rendered diff", failures)
+        assert_contains(diff_next_file, "Change: nqmmukmt", "] in diff mode does not move DAG selection", failures)
 
         send(session, "[")
         diff_prev_file = wait_for(session, "File 1/")
         captures["afterDiffPrevFile"] = diff_prev_file
         assert_contains(diff_prev_file, "File 1/", "[ cycles to previous diff file in diff mode", failures)
-        assert_contains(diff_prev_file, "cap rust tui structured diff pre", "[ in diff mode does not move DAG selection", failures)
+        assert_contains(diff_prev_file, "Change: nqmmukmt", "[ in diff mode does not move DAG selection", failures)
+
+        send(session, "[")
+        diff_last_file = wait_for(session, "File 16/")
+        captures["afterDiffLastFile"] = diff_last_file
+        assert_contains(diff_last_file, "File 16/", "[ from first file wraps to last diff file", failures)
+        assert_contains(diff_last_file, "diff rows 1-", "Last file renders diff rows", failures)
+        assert_not_contains(diff_last_file, "File 16/16: Diff", "Last file title is not generic/missing rows", failures)
+        assert_not_contains(diff_last_file, "diff rows 0/0", "Last file is not an empty rendered diff", failures)
+        assert_contains(diff_last_file, "Change: nqmmukmt", "last file navigation does not move DAG selection", failures)
+
+        send(session, "]")
+        diff_back_first_file = wait_for(session, "File 1/")
+        captures["afterDiffLastToFirstFile"] = diff_back_first_file
+        assert_contains(diff_back_first_file, "File 1/", "] from last file wraps back to first diff file", failures)
 
         send(session, "q")
         back = wait_for(session, "dag graph")
