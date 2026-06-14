@@ -29,19 +29,19 @@ The runner:
 
 ## Latest artifact
 
-`bench/results/rust-port/rust-tui-bench/2026-06-13T21-37-33-315Z/rust-tui-benchmark.html`
+`bench/results/rust-port/rust-tui-bench/2026-06-14T02-05-05-424Z/rust-tui-benchmark.html`
 
 ## Current headline
 
-Current benchmark is for the Rust TUI after native `files()` hydration plus lazy selected-node native `diff()` preview hydration capped to 90 lines in the details sidebar.
+Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, and the Pierre/JUZU-style structured diff sidebar renderer.
 
 | Scenario | RSS peak | RSS steady median | PSS steady median | Header median |
 | --- | ---: | ---: | ---: | ---: |
-| `idle-mainline` | 11.36 MB | 11.27 MB | 9.53 MB | 129.36 ms |
-| `navigate-mainline` | 12.24 MB | 12.12 MB | 10.35 MB | 126.53 ms |
-| `layout-switching` | 12.29 MB | 12.08 MB | 10.31 MB | 127.70 ms |
+| `idle-mainline` | 19.47 MB | 19.43 MB | 17.68 MB | 159.92 ms |
+| `navigate-mainline` | 40.06 MB | 40.05 MB | 38.26 MB | 154.95 ms |
+| `layout-switching` | 38.96 MB | 38.44 MB | 36.65 MB | 151.51 ms |
 
-A first eager-diff attempt pushed header time to ~350 ms; changing diff hydration to lazy/on-select brought header latency back near the files-only range. Capping cached sidebar previews then cut navigation peak RSS from ~17.31 MB to ~12.24 MB while preserving full `juzu-cli diff` for parity and future full-diff surfaces.
+This run is against the live working copy containing generated review artifacts, so selected-node diff hydration is much heavier than the previous capped-diff run. The headline is still far below the old live Bun/OpenTUI TUI (~175 MB RSS steady), but this confirms the next performance task: keep the crafted renderer while avoiding large patch rows staying resident during navigation.
 
 Use the HTML artifact as the source of truth for exact per-run values.
 

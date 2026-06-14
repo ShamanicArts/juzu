@@ -728,54 +728,141 @@ fn render_sidebar(
     lines.push(Line::from(""));
     lines.push(Line::from(Span::styled(
         "Diff",
-        Style::default().fg(Color::Yellow),
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD),
     )));
-    let diff = app.diffs_by_change.get(&node.change_id);
-    if let Some(diff) = diff {
-        lines.push(Line::from(Span::styled(
-            format!(
-                "{} files · {} raw lines · {} model rows",
-                diff.file_count, diff.raw_line_count, diff.row_count
-            ),
-            Style::default().fg(Color::DarkGray),
-        )));
-        if let Some(error) = &diff.parse_error {
-            lines.push(Line::from(Span::styled(
-                truncate(error, area.width as usize - 4),
-                Style::default().fg(Color::Red),
-            )));
-        } else if diff.rows.is_empty() {
-            lines.push(Line::from("—"));
-        } else {
-            let visible_count = 14usize;
-            let max_scroll = diff.rows.len().saturating_sub(visible_count);
-            let scroll = app.diff_scroll.min(max_scroll);
-            if scroll > 0 {
-                lines.push(Line::from(Span::styled(
-                    format!("↑ {scroll} rows above"),
-                    Style::default().fg(Color::DarkGray),
-                )));
-            }
-            for row in diff.rows.iter().skip(scroll).take(visible_count) {
-                lines.push(render_diff_row(row, area.width as usize - 4));
-            }
-            if diff.rows.len() > scroll + visible_count {
-                lines.push(Line::from(format!(
-                    "↓ {} more structured diff rows",
-                    diff.rows.len() - scroll - visible_count
-                )));
-            }
-        }
-    } else {
-        lines.push(Line::from("—"));
-    }
+    render_diff_preview_lines(&mut lines, app, node, area.width as usize, 14);
     frame.render_widget(
         Paragraph::new(lines).block(Block::default().title(" details ").borders(Borders::ALL)),
         area,
     );
 }
 
+fn render_diff_preview_lines(
+    lines: &mut Vec<Line<'static>>,
+    app: &App,
+    node: &juzu_core::CommitNode,
+    sidebar_width: usize,
+    visible_count: usize,
+) {
+    let Some(diff) = app.diffs_by_change.get(&node.change_id) else {
+        lines.push(Line::from(Span::styled(
+            "  waiting for native diff",
+            Style::default().fg(Color::DarkGray),
+        )));
+        return;
+    };
+
+    lines.push(render_diff_metadata(
+        &format!(
+            "{} files · {} raw · {} rows",
+            diff.file_count, diff.raw_line_count, diff.row_count
+        ),
+        sidebar_width.saturating_sub(4),
+    ));
+    if let Some(error) = &diff.parse_error {
+        lines.push(Line::from(Span::styled(
+            truncate(error, sidebar_width.saturating_sub(4)),
+            Style::default().fg(Color::Red),
+        )));
+        return;
+    }
+    if diff.rows.is_empty() {
+        lines.push(render_diff_metadata(
+            "clean patch",
+            sidebar_width.saturating_sub(4),
+        ));
+        return;
+    }
+
+    let max_scroll = diff.rows.len().saturating_sub(visible_count);
+    let scroll = app.diff_scroll.min(max_scroll);
+    let end = (scroll + visible_count).min(diff.rows.len());
+    lines.push(render_diff_scroll_range(
+        scroll,
+        end,
+        diff.rows.len(),
+        sidebar_width.saturating_sub(4),
+    ));
+    for row in diff.rows.iter().skip(scroll).take(visible_count) {
+        lines.push(render_diff_row(row, sidebar_width.saturating_sub(4)));
+    }
+    if diff.rows.len() > end {
+        lines.push(render_diff_collapse_row(
+            &format!("{} more rows below", diff.rows.len() - end),
+            sidebar_width.saturating_sub(4),
+        ));
+    }
+}
+
 fn render_diff_row(row: &DiffRow, max_len: usize) -> Line<'static> {
+    match row.kind {
+        DiffRowKind::FileHeader => render_diff_file_header(row, max_len),
+        DiffRowKind::Metadata => render_diff_metadata(&row.text, max_len),
+        DiffRowKind::HunkHeader => render_diff_hunk_header(row, max_len),
+        DiffRowKind::Context | DiffRowKind::Add | DiffRowKind::Remove => {
+            render_diff_code_row(row, max_len)
+        }
+        DiffRowKind::Collapse => render_diff_collapse_row(&row.text, max_len),
+    }
+}
+
+fn render_diff_file_header(row: &DiffRow, max_len: usize) -> Line<'static> {
+    let text = truncate(&format!("◆ {}", row.text), max_len.saturating_sub(2));
+    Line::from(vec![
+        Span::styled(
+            "╭",
+            Style::default()
+                .fg(Color::LightBlue)
+                .bg(Color::Rgb(17, 24, 39)),
+        ),
+        Span::styled(
+            format!(" {:<width$}", text, width = max_len.saturating_sub(2)),
+            Style::default()
+                .fg(Color::LightCyan)
+                .bg(Color::Rgb(17, 24, 39))
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            "╮",
+            Style::default()
+                .fg(Color::LightBlue)
+                .bg(Color::Rgb(17, 24, 39)),
+        ),
+    ])
+}
+
+fn render_diff_metadata(text: &str, max_len: usize) -> Line<'static> {
+    Line::from(vec![
+        Span::styled("  · ", Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            truncate(text, max_len.saturating_sub(4)),
+            Style::default().fg(Color::DarkGray),
+        ),
+    ])
+}
+
+fn render_diff_hunk_header(row: &DiffRow, max_len: usize) -> Line<'static> {
+    let text = truncate(&row.text, max_len.saturating_sub(4));
+    Line::from(vec![
+        Span::styled(
+            "╭─ ",
+            Style::default()
+                .fg(Color::LightMagenta)
+                .bg(Color::Rgb(30, 27, 75)),
+        ),
+        Span::styled(
+            format!("{:<width$}", text, width = max_len.saturating_sub(4)),
+            Style::default()
+                .fg(Color::LightBlue)
+                .bg(Color::Rgb(30, 27, 75))
+                .add_modifier(Modifier::BOLD),
+        ),
+    ])
+}
+
+fn render_diff_code_row(row: &DiffRow, max_len: usize) -> Line<'static> {
     let old_line = row
         .old_line
         .map(|value| value.to_string())
@@ -784,27 +871,80 @@ fn render_diff_row(row: &DiffRow, max_len: usize) -> Line<'static> {
         .new_line
         .map(|value| value.to_string())
         .unwrap_or_else(|| " ".to_string());
-    let gutter = format!("{old_line:>4} {new_line:>4} ");
-    let (marker, style) = match row.kind {
-        DiffRowKind::FileHeader => (
-            "◆ ",
-            Style::default()
-                .fg(Color::Blue)
-                .add_modifier(Modifier::BOLD),
-        ),
-        DiffRowKind::Metadata => ("  ", Style::default().fg(Color::DarkGray)),
-        DiffRowKind::HunkHeader => ("╭ ", Style::default().fg(Color::Magenta)),
-        DiffRowKind::Context => ("  ", Style::default().fg(Color::Gray)),
-        DiffRowKind::Add => ("+ ", Style::default().fg(Color::Green)),
-        DiffRowKind::Remove => ("- ", Style::default().fg(Color::Red)),
-        DiffRowKind::Collapse => ("⋯ ", Style::default().fg(Color::Yellow)),
+    let gutter = format!("{old_line:>4} {new_line:>4}");
+    let sign = match row.kind {
+        DiffRowKind::Add => "+",
+        DiffRowKind::Remove => "-",
+        _ => " ",
     };
-    let text_budget = max_len.saturating_sub(gutter.len() + marker.len());
+    let (gutter_style, sign_style, text_style) = match row.kind {
+        DiffRowKind::Add => (
+            Style::default()
+                .fg(Color::Rgb(134, 239, 172))
+                .bg(Color::Rgb(5, 46, 22)),
+            Style::default()
+                .fg(Color::Rgb(187, 247, 208))
+                .bg(Color::Rgb(20, 83, 45))
+                .add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Rgb(187, 247, 208))
+                .bg(Color::Rgb(5, 46, 22)),
+        ),
+        DiffRowKind::Remove => (
+            Style::default()
+                .fg(Color::Rgb(252, 165, 165))
+                .bg(Color::Rgb(69, 10, 10)),
+            Style::default()
+                .fg(Color::Rgb(254, 202, 202))
+                .bg(Color::Rgb(127, 29, 29))
+                .add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Rgb(254, 202, 202))
+                .bg(Color::Rgb(69, 10, 10)),
+        ),
+        _ => (
+            Style::default().fg(Color::DarkGray),
+            Style::default().fg(Color::DarkGray),
+            Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
+        ),
+    };
+    let text_budget = max_len.saturating_sub(gutter.len() + 3);
+    let content = row.text.strip_prefix(['+', '-', ' ']).unwrap_or(&row.text);
     Line::from(vec![
-        Span::styled(gutter, Style::default().fg(Color::DarkGray)),
-        Span::styled(marker.to_string(), style),
-        Span::styled(truncate(&row.text, text_budget), style),
+        Span::styled(gutter, gutter_style),
+        Span::styled(" ", Style::default().fg(Color::DarkGray)),
+        Span::styled(sign.to_string(), sign_style),
+        Span::styled(truncate(content, text_budget), text_style),
     ])
+}
+
+fn render_diff_collapse_row(text: &str, max_len: usize) -> Line<'static> {
+    let label = format!(" ⋯ {} ", text.trim_start_matches('⋯').trim());
+    let clipped = truncate(&label, max_len);
+    let left = max_len.saturating_sub(clipped.len()) / 2;
+    let right = max_len.saturating_sub(clipped.len() + left);
+    Line::from(vec![
+        Span::styled("─".repeat(left), Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            clipped,
+            Style::default().fg(Color::Yellow).bg(Color::Rgb(66, 32, 6)),
+        ),
+        Span::styled("─".repeat(right), Style::default().fg(Color::DarkGray)),
+    ])
+}
+
+fn render_diff_scroll_range(
+    scroll: usize,
+    end: usize,
+    total: usize,
+    max_len: usize,
+) -> Line<'static> {
+    let label = if total == 0 {
+        "diff rows 0/0".to_string()
+    } else {
+        format!("diff rows {}-{} of {}", scroll + 1, end, total)
+    };
+    render_diff_metadata(&truncate(&label, max_len), max_len)
 }
 
 fn render_footer(frame: &mut Frame, area: Rect) {
