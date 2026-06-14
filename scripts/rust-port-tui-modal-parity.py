@@ -81,6 +81,7 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         assert_contains(initial, "dag graph", "initial log mode", failures)
 
         send(session, "j")
+        send(session, "j")
         selected = wait_for(session, "cap rust tui structured diff preview rows")
         captures["afterSelectChange"] = selected
         assert_contains(selected, "Files", "selected non-empty change details", failures)
@@ -93,15 +94,53 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         assert_contains(diff, "[ / ] next/prev", "diff file cycling hint", failures)
         assert_not_contains(diff, "dag graph", "diff replaces graph pane", failures)
         assert_contains(diff, "details", "diff mode keeps sidebar", failures)
+        assert_contains(diff, "cap rust tui structured diff pre", "diff mode keeps selected commit", failures)
         if "JUZU" not in diff:
             failures.append("after Ctrl+D: screen no longer shows JUZU, app likely exited")
+
+        send(session, "j")
+        diff_scroll_down = wait_for(session, "diff rows 2-")
+        captures["afterDiffJ"] = diff_scroll_down
+        assert_contains(diff_scroll_down, "diff rows 2-", "j scrolls diff rows in diff mode", failures)
+        assert_contains(diff_scroll_down, "cap rust tui structured diff pre", "j in diff mode does not move DAG selection", failures)
+
+        send(session, "k")
+        diff_scroll_up = wait_for(session, "diff rows 1-")
+        captures["afterDiffK"] = diff_scroll_up
+        assert_contains(diff_scroll_up, "diff rows 1-", "k scrolls diff rows up in diff mode", failures)
+        assert_contains(diff_scroll_up, "cap rust tui structured diff pre", "k in diff mode does not move DAG selection", failures)
+
+        send(session, "]")
+        diff_next_file = wait_for(session, "File 2/")
+        captures["afterDiffNextFile"] = diff_next_file
+        assert_contains(diff_next_file, "File 2/", "] cycles to next diff file in diff mode", failures)
+        assert_contains(diff_next_file, "cap rust tui structured diff pre", "] in diff mode does not move DAG selection", failures)
+
+        send(session, "[")
+        diff_prev_file = wait_for(session, "File 1/")
+        captures["afterDiffPrevFile"] = diff_prev_file
+        assert_contains(diff_prev_file, "File 1/", "[ cycles to previous diff file in diff mode", failures)
+        assert_contains(diff_prev_file, "cap rust tui structured diff pre", "[ in diff mode does not move DAG selection", failures)
 
         send(session, "q")
         back = wait_for(session, "dag graph")
         captures["afterDiffQ"] = back
         assert_contains(back, "dag graph", "q returns to log", failures)
+        assert_contains(back, "cap rust tui structured diff preview rows", "q returns with same selected commit", failures)
         if "JUZU" not in back:
             failures.append("after q in diff mode: screen no longer shows JUZU, app likely exited")
+
+        send(session, "PageDown")
+        sidebar_scroll_down = wait_for(session, "diff rows 11-")
+        captures["afterLogDiffPageDown"] = sidebar_scroll_down
+        assert_contains(sidebar_scroll_down, "diff rows 11-", "PageDown scrolls sidebar diff preview in log mode", failures)
+        assert_contains(sidebar_scroll_down, "cap rust tui structured diff preview rows", "PageDown diff scroll does not move DAG selection", failures)
+
+        send(session, "PageUp")
+        sidebar_scroll_up = wait_for(session, "diff rows 1-")
+        captures["afterLogDiffPageUp"] = sidebar_scroll_up
+        assert_contains(sidebar_scroll_up, "diff rows 1-", "PageUp scrolls sidebar diff preview in log mode", failures)
+        assert_contains(sidebar_scroll_up, "cap rust tui structured diff preview rows", "PageUp diff scroll does not move DAG selection", failures)
 
         send(session, "C-d")
         diff_again = wait_for(session, "Ctrl+d back")

@@ -133,6 +133,12 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
                         app.diff_scroll = 0;
                     }
                     KeyCode::Char('q') | KeyCode::Esc => break,
+                    KeyCode::Char('j') | KeyCode::Down if app.view_mode == ViewMode::Diff => {
+                        app.diff_scroll = app.diff_scroll.saturating_add(1);
+                    }
+                    KeyCode::Char('k') | KeyCode::Up if app.view_mode == ViewMode::Diff => {
+                        app.diff_scroll = app.diff_scroll.saturating_sub(1);
+                    }
                     KeyCode::Char('j') | KeyCode::Down => {
                         app.selected = (app.selected + 1).min(app.nodes.len().saturating_sub(1));
                         app.diff_scroll = 0;
@@ -939,7 +945,12 @@ fn render_sidebar(
     if files.is_empty() {
         lines.push(Line::from("—"));
     } else {
-        for file in files.iter().take(12) {
+        let diff_is_available = app
+            .diffs_by_change
+            .get(&node.change_id)
+            .is_some_and(|diff| !diff.rows.is_empty());
+        let file_preview_limit = if diff_is_available { 4 } else { 12 };
+        for file in files.iter().take(file_preview_limit) {
             lines.push(Line::from(vec![
                 Span::styled(
                     format!("{} ", file.r#type),
@@ -948,8 +959,11 @@ fn render_sidebar(
                 Span::raw(file.path.clone()),
             ]));
         }
-        if files.len() > 12 {
-            lines.push(Line::from(format!("… {} more", files.len() - 12)));
+        if files.len() > file_preview_limit {
+            lines.push(Line::from(format!(
+                "… {} more",
+                files.len() - file_preview_limit
+            )));
         }
     }
     lines.push(Line::from(""));
