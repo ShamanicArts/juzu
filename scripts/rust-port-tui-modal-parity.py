@@ -134,10 +134,28 @@ def assert_diff_panel_contract(text: str, width: int, failures: list[str]) -> No
         failures.append(f"diff panel at {width} cols: title should live inside the diff panel surface")
     if "VIEWPORT" not in text:
         failures.append(f"diff panel at {width} cols: missing full-width viewport/status bar")
+    if "SCROLL" not in text:
+        failures.append(f"diff panel at {width} cols: missing visual scroll handle")
     if "◆" not in text:
         failures.append(f"diff panel at {width} cols: missing file header bar glyph")
     if "@@" not in text:
         failures.append(f"diff panel at {width} cols: missing hunk header bar")
+
+
+def scroll_indicator_line(text: str) -> str:
+    for line in text.splitlines():
+        if "SCROLL" in line:
+            return line
+    return ""
+
+
+def assert_scroll_indicator_changes(before: str, after: str, width: int, failures: list[str]) -> None:
+    before_line = scroll_indicator_line(before)
+    after_line = scroll_indicator_line(after)
+    if not before_line or not after_line:
+        failures.append(f"diff scroll handle at {width} cols: missing before/after indicator line")
+    elif before_line == after_line:
+        failures.append(f"diff scroll handle at {width} cols: indicator did not change after scrolling")
 
 
 def assert_debug_state_contract(label: str, state: dict[str, Any], failures: list[str]) -> None:
@@ -208,6 +226,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         captures["afterDiffJ"] = diff_scroll_down
         assert_contains(diff_scroll_down, "diff rows 2-", "j scrolls diff rows in diff mode", failures)
         assert_contains(diff_scroll_down, "Change: nqmmukmt", "j in diff mode does not move DAG selection", failures)
+        assert_scroll_indicator_changes(diff, diff_scroll_down, width, failures)
 
         send(session, "k")
         diff_scroll_up = wait_for(session, "diff rows 1-")

@@ -1334,11 +1334,13 @@ fn render_diff_viewport_bar(
     total: usize,
     max_len: usize,
 ) -> Line<'static> {
-    let label = if total == 0 {
-        "VIEWPORT diff rows 0/0".to_string()
+    let range = if total == 0 {
+        "diff rows 0/0".to_string()
     } else {
-        format!("VIEWPORT diff rows {}-{} of {}", scroll + 1, end, total)
+        format!("diff rows {}-{} of {}", scroll + 1, end, total)
     };
+    let handle = render_scroll_handle(scroll, end, total, 10);
+    let label = format!("VIEWPORT {range}   SCROLL {handle}");
     let clipped = truncate(&label, max_len.saturating_sub(2));
     Line::from(vec![Span::styled(
         format!(" {:<width$}", clipped, width = max_len.saturating_sub(1)),
@@ -1347,6 +1349,31 @@ fn render_diff_viewport_bar(
             .bg(Color::Rgb(30, 41, 59))
             .add_modifier(Modifier::BOLD),
     )])
+}
+
+fn render_scroll_handle(scroll: usize, end: usize, total: usize, slots: usize) -> String {
+    if total <= 1 || slots == 0 {
+        return "█".repeat(slots.max(1));
+    }
+    let visible = end.saturating_sub(scroll).max(1);
+    let handle_len = ((visible * slots) / total).clamp(1, slots);
+    let max_start = slots.saturating_sub(handle_len);
+    let start = if total <= visible {
+        0
+    } else {
+        (scroll * max_start) / total.saturating_sub(visible).max(1)
+    };
+    let mut out = String::with_capacity(slots + 2);
+    out.push('[');
+    for idx in 0..slots {
+        if idx >= start && idx < start + handle_len {
+            out.push('█');
+        } else {
+            out.push('░');
+        }
+    }
+    out.push(']');
+    out
 }
 
 fn render_diff_scroll_range(
