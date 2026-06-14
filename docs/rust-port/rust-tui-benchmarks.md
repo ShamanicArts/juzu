@@ -29,7 +29,7 @@ The runner:
 
 ## Latest artifact
 
-`bench/results/rust-port/rust-tui-bench/2026-06-14T02-05-05-424Z/rust-tui-benchmark.html`
+`bench/results/rust-port/rust-tui-bench/2026-06-14T02-09-31-569Z/rust-tui-benchmark.html`
 
 ## Current headline
 
@@ -37,11 +37,11 @@ Current benchmark is for the Rust TUI after native `files()` hydration, lazy sel
 
 | Scenario | RSS peak | RSS steady median | PSS steady median | Header median |
 | --- | ---: | ---: | ---: | ---: |
-| `idle-mainline` | 19.47 MB | 19.43 MB | 17.68 MB | 159.92 ms |
-| `navigate-mainline` | 40.06 MB | 40.05 MB | 38.26 MB | 154.95 ms |
-| `layout-switching` | 38.96 MB | 38.44 MB | 36.65 MB | 151.51 ms |
+| `idle-mainline` | 10.94 MB | 10.71 MB | 8.96 MB | 131.64 ms |
+| `navigate-mainline` | 35.81 MB | 35.79 MB | 34.03 MB | 131.32 ms |
+| `layout-switching` | 34.66 MB | 33.95 MB | 32.20 MB | 130.78 ms |
 
-This run is against the live working copy containing generated review artifacts, so selected-node diff hydration is much heavier than the previous capped-diff run. The headline is still far below the old live Bun/OpenTUI TUI (~175 MB RSS steady), but this confirms the next performance task: keep the crafted renderer while avoiding large patch rows staying resident during navigation.
+The visual renderer itself keeps idle memory close to the earlier capped-diff baseline. Navigation/layout scenarios are heavier because selected-node diff hydration retains structured rows for large patches. The headline is still far below the old live Bun/OpenTUI TUI (~175 MB RSS steady), but this confirms the next performance task: keep the crafted renderer while avoiding large patch rows staying resident during navigation.
 
 Use the HTML artifact as the source of truth for exact per-run values.
 

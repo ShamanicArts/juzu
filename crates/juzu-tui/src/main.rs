@@ -125,6 +125,8 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
                     KeyCode::PageUp | KeyCode::Char('[') => {
                         app.diff_scroll = app.diff_scroll.saturating_sub(10);
                     }
+                    KeyCode::Char('}') => jump_selected_diff(app, DiffJump::NextHunk),
+                    KeyCode::Char('{') => jump_selected_diff(app, DiffJump::PreviousHunk),
                     KeyCode::Char('1') => app.mode = LayoutMode::Chronological,
                     KeyCode::Char('2') => app.mode = LayoutMode::Mainline,
                     KeyCode::Char('3') => app.mode = LayoutMode::BookmarkCentric,
@@ -178,6 +180,46 @@ struct DiffPreview {
     row_count: usize,
     rows: Vec<DiffRow>,
     parse_error: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy)]
+enum DiffJump {
+    PreviousHunk,
+    NextHunk,
+}
+
+fn jump_selected_diff(app: &mut App, jump: DiffJump) {
+    ensure_selected_diff(app);
+    let Some(node) = app.nodes.get(app.selected) else {
+        return;
+    };
+    let Some(diff) = app.diffs_by_change.get(&node.change_id) else {
+        return;
+    };
+    if diff.rows.is_empty() {
+        app.diff_scroll = 0;
+        return;
+    }
+    let target = match jump {
+        DiffJump::NextHunk => diff
+            .rows
+            .iter()
+            .enumerate()
+            .skip(app.diff_scroll.saturating_add(1))
+            .find(|(_, row)| row.kind == DiffRowKind::HunkHeader)
+            .map(|(idx, _)| idx),
+        DiffJump::PreviousHunk => diff
+            .rows
+            .iter()
+            .enumerate()
+            .take(app.diff_scroll)
+            .rev()
+            .find(|(_, row)| row.kind == DiffRowKind::HunkHeader)
+            .map(|(idx, _)| idx),
+    };
+    if let Some(target) = target {
+        app.diff_scroll = target;
+    }
 }
 
 fn render(frame: &mut Frame, app: &App) {
@@ -785,6 +827,11 @@ fn render_diff_preview_lines(
         diff.rows.len(),
         sidebar_width.saturating_sub(4),
     ));
+    if let Some(anchor) =
+        render_diff_anchor_label(&diff.rows, scroll, sidebar_width.saturating_sub(4))
+    {
+        lines.push(anchor);
+    }
     for row in diff.rows.iter().skip(scroll).take(visible_count) {
         lines.push(render_diff_row(row, sidebar_width.saturating_sub(4)));
     }
@@ -947,6 +994,41 @@ fn render_diff_scroll_range(
     render_diff_metadata(&truncate(&label, max_len), max_len)
 }
 
+fn render_diff_anchor_label(
+    rows: &[DiffRow],
+    scroll: usize,
+    max_len: usize,
+) -> Option<Line<'static>> {
+    let upto = rows.len().min(scroll.saturating_add(1));
+    if upto == 0 {
+        return None;
+    }
+    let mut file = None;
+    let mut hunk = None;
+    for row in rows.iter().take(upto) {
+        match row.kind {
+            DiffRowKind::FileHeader => file = Some(row.text.as_str()),
+            DiffRowKind::HunkHeader => hunk = Some(row.text.as_str()),
+            _ => {}
+        }
+    }
+    let label = match (file, hunk) {
+        (Some(file), Some(hunk)) => format!("pinned {file} · {hunk}"),
+        (Some(file), None) => format!("pinned {file}"),
+        (None, Some(hunk)) => format!("pinned {hunk}"),
+        (None, None) => return None,
+    };
+    Some(Line::from(vec![
+        Span::styled("  ◌ ", Style::default().fg(Color::LightMagenta)),
+        Span::styled(
+            truncate(&label, max_len.saturating_sub(4)),
+            Style::default()
+                .fg(Color::LightBlue)
+                .add_modifier(Modifier::DIM),
+        ),
+    ]))
+}
+
 fn render_footer(frame: &mut Frame, area: Rect) {
     let line = Line::from(vec![
         Span::styled(" q/esc ", Style::default().fg(Color::Black).bg(Color::Gray)),
@@ -956,7 +1038,9 @@ fn render_footer(frame: &mut Frame, area: Rect) {
         Span::styled(" 1-5 ", Style::default().fg(Color::Black).bg(Color::Gray)),
         Span::raw(" layout modes   "),
         Span::styled(" [/] ", Style::default().fg(Color::Black).bg(Color::Gray)),
-        Span::raw(" diff scroll"),
+        Span::raw(" diff scroll   "),
+        Span::styled(" {/} ", Style::default().fg(Color::Black).bg(Color::Gray)),
+        Span::raw(" hunk jump"),
     ]);
     frame.render_widget(
         Paragraph::new(line).block(Block::default().borders(Borders::TOP)),
