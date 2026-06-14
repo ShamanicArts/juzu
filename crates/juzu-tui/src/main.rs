@@ -1,6 +1,6 @@
 use anyhow::Result;
 use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind},
+    event::{self, Event, KeyCode, KeyEventKind, KeyModifiers},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -41,14 +41,22 @@ fn parse_layout_mode(raw: Option<String>) -> LayoutMode {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ViewMode {
+    Log,
+    Diff,
+}
+
 struct App {
     path: PathBuf,
     mode: LayoutMode,
+    view_mode: ViewMode,
     nodes: Vec<juzu_core::CommitNode>,
     files_by_change: HashMap<String, Vec<FileEntry>>,
     diffs_by_change: HashMap<String, DiffPreview>,
     selected: usize,
     diff_scroll: usize,
+    diff_file_index: usize,
 }
 
 fn main() -> Result<()> {
@@ -83,11 +91,13 @@ fn main() -> Result<()> {
     let mut app = App {
         path,
         mode,
+        view_mode: ViewMode::Log,
         nodes,
         files_by_change,
         diffs_by_change,
         selected,
         diff_scroll: 0,
+        diff_file_index: 0,
     };
     ensure_selected_diff(&mut app);
 
@@ -109,7 +119,19 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
                 if key.kind == KeyEventKind::Release {
                     continue;
                 }
+                if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && matches!(key.code, KeyCode::Char('d'))
+                {
+                    toggle_diff_view(app);
+                    continue;
+                }
                 match key.code {
+                    KeyCode::Char('g') | KeyCode::Char('q') | KeyCode::Esc
+                        if app.view_mode == ViewMode::Diff =>
+                    {
+                        app.view_mode = ViewMode::Log;
+                        app.diff_scroll = 0;
+                    }
                     KeyCode::Char('q') | KeyCode::Esc => break,
                     KeyCode::Char('j') | KeyCode::Down => {
                         app.selected = (app.selected + 1).min(app.nodes.len().saturating_sub(1));
@@ -120,6 +142,18 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
                         app.selected = app.selected.saturating_sub(1);
                         app.diff_scroll = 0;
                         ensure_selected_diff(app);
+                    }
+                    KeyCode::PageDown if app.view_mode == ViewMode::Diff => {
+                        app.diff_scroll = app.diff_scroll.saturating_add(10);
+                    }
+                    KeyCode::PageUp if app.view_mode == ViewMode::Diff => {
+                        app.diff_scroll = app.diff_scroll.saturating_sub(10);
+                    }
+                    KeyCode::Char(']') if app.view_mode == ViewMode::Diff => {
+                        cycle_diff_file(app, 1);
+                    }
+                    KeyCode::Char('[') if app.view_mode == ViewMode::Diff => {
+                        cycle_diff_file(app, -1);
                     }
                     KeyCode::PageDown | KeyCode::Char(']') => {
                         app.diff_scroll = app.diff_scroll.saturating_add(10);
@@ -190,6 +224,38 @@ struct DiffPreview {
 enum DiffJump {
     PreviousHunk,
     NextHunk,
+}
+
+fn toggle_diff_view(app: &mut App) {
+    if app.view_mode == ViewMode::Diff {
+        app.view_mode = ViewMode::Log;
+        app.diff_scroll = 0;
+        return;
+    }
+    ensure_selected_diff(app);
+    app.view_mode = ViewMode::Diff;
+    app.diff_scroll = 0;
+    app.diff_file_index = 0;
+}
+
+fn cycle_diff_file(app: &mut App, dir: isize) {
+    ensure_selected_diff(app);
+    let Some(diff) = selected_diff(app) else {
+        return;
+    };
+    if diff.file_count == 0 {
+        app.diff_file_index = 0;
+        app.diff_scroll = 0;
+        return;
+    }
+    let total = diff.file_count as isize;
+    app.diff_file_index = (app.diff_file_index as isize + dir).rem_euclid(total) as usize;
+    app.diff_scroll = 0;
+}
+
+fn selected_diff(app: &App) -> Option<&DiffPreview> {
+    let node = app.nodes.get(app.selected)?;
+    app.diffs_by_change.get(&node.change_id)
 }
 
 fn cap_diff_preview_rows(mut rows: Vec<DiffRow>, cap: usize) -> Vec<DiffRow> {
@@ -278,7 +344,11 @@ fn render_header(
         ),
         Span::raw("  Rust read-only graph  "),
         Span::styled(
-            format!("{:?}", app.mode),
+            if app.view_mode == ViewMode::Diff {
+                "DIFF".to_string()
+            } else {
+                format!("{:?}", app.mode)
+            },
             Style::default().fg(Color::Yellow),
         ),
         Span::raw(format!(
@@ -302,8 +372,98 @@ fn render_body(frame: &mut Frame, area: Rect, app: &App, layout: &juzu_core::lay
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(72), Constraint::Percentage(28)])
         .split(area);
-    render_graph_table(frame, chunks[0], app, layout);
+    if app.view_mode == ViewMode::Diff {
+        render_diff_pane(frame, chunks[0], app, layout);
+    } else {
+        render_graph_table(frame, chunks[0], app, layout);
+    }
     render_sidebar(frame, chunks[1], app, layout);
+}
+
+fn render_diff_pane(
+    frame: &mut Frame,
+    area: Rect,
+    app: &App,
+    layout: &juzu_core::layout::LayoutResult,
+) {
+    let selected = app.selected.min(layout.nodes.len().saturating_sub(1));
+    let Some(node) = layout.nodes.get(selected) else {
+        return;
+    };
+    let block = Block::default().borders(Borders::NONE);
+    let width = area.width as usize;
+    let height = area.height as usize;
+    let mut lines = Vec::new();
+    let diff = selected_diff(app);
+    let title = diff
+        .and_then(|preview| diff_file_title(preview, app.diff_file_index))
+        .unwrap_or_else(|| "Diff".to_string());
+    lines.push(Line::from(Span::styled(
+        title,
+        Style::default().fg(Color::DarkGray),
+    )));
+    if let Some(diff) = diff {
+        if let Some(error) = &diff.parse_error {
+            lines.push(Line::from(Span::styled(
+                truncate(error, width),
+                Style::default().fg(Color::Red),
+            )));
+        } else if diff.rows.is_empty() {
+            lines.push(render_diff_metadata(
+                "No diff available for selected change",
+                width,
+            ));
+        } else {
+            let rows = rows_for_diff_file(diff, app.diff_file_index);
+            let visible_count = height.saturating_sub(lines.len() + 2).max(1);
+            let max_scroll = rows.len().saturating_sub(visible_count);
+            let scroll = app.diff_scroll.min(max_scroll);
+            let end = (scroll + visible_count).min(rows.len());
+            lines.push(render_diff_scroll_range(scroll, end, rows.len(), width));
+            if let Some(anchor) = render_diff_anchor_label(&rows, scroll, width) {
+                lines.push(anchor);
+            }
+            for row in rows.iter().skip(scroll).take(visible_count) {
+                lines.push(render_diff_row(row, width));
+            }
+        }
+    } else {
+        lines.push(render_diff_metadata(
+            "No diff available for selected change",
+            width,
+        ));
+    }
+    let _ = node;
+    frame.render_widget(Paragraph::new(lines).block(block), area);
+}
+
+fn diff_file_title(diff: &DiffPreview, file_index: usize) -> Option<String> {
+    let total = diff.file_count.max(1);
+    let index = file_index.min(total.saturating_sub(1));
+    let path = diff
+        .rows
+        .iter()
+        .find(|row| row.kind == DiffRowKind::FileHeader && row.file_index == index)
+        .map(|row| row.text.clone())
+        .unwrap_or_else(|| "Diff".to_string());
+    Some(format!(
+        "File {}/{}: {}   [ / ] next/prev   Ctrl+d back",
+        index + 1,
+        total,
+        path
+    ))
+}
+
+fn rows_for_diff_file(diff: &DiffPreview, file_index: usize) -> Vec<DiffRow> {
+    if diff.file_count == 0 {
+        return diff.rows.clone();
+    }
+    let index = file_index.min(diff.file_count.saturating_sub(1));
+    diff.rows
+        .iter()
+        .filter(|row| row.file_index == index)
+        .cloned()
+        .collect()
 }
 
 fn render_graph_table(
