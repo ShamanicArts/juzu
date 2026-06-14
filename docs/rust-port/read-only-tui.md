@@ -34,7 +34,7 @@ tmux attach -t juzu
 
 ## Latest review artifact
 
-`bench/results/rust-port/tui-review/2026-06-13T20-36-20-894Z/rust-tui-dag-review.html`
+`bench/results/rust-port/tui-modal-parity/2026-06-14T04-04-09-049Z/modal-status-footer-parity-review.html`
 
 This is a static tmux capture converted into HTML. The live review surface is the tmux window.
 
@@ -52,7 +52,7 @@ File rows now use native `files()` hydration through `juzu-jj` for committed cha
 
 Diff preview now uses native `diff()` hydration through `juzu-jj` and a structured Pierre/JUZU-style TUI renderer instead of raw line coloring. The sidebar renders strong file section dividers, compact blue/purple hunk bands, dim aligned old/new gutters, tinted add/remove rows, and centered collapsed-context separators. In log mode the sidebar preview shows a visible diff row range plus pinned file/hunk context, supports `{ / }` previous/next hunk jumps, and keeps retained structured preview rows capped so navigation does not keep huge full patches resident.
 
-The old Bun/OpenTUI full diff behavior is now covered by `parity:tui-modal` before implementation changes: `Ctrl+D` swaps the graph pane for a diff pane while keeping the details sidebar, `[ / ]` cycles files in diff mode, `j/k` scroll diff rows without moving DAG selection, and `q`/`Esc`/`g`/`Ctrl+D` return to the log instead of quitting. Log/sidebar mode now keeps the diff preview reachable by reserving sidebar space, and `PageDown/PageUp` scroll the sidebar diff preview without moving DAG selection. The structured row cap preserves a per-file slice, so navigating beyond the first diff file renders real rows instead of an empty `File N/N: Diff` pane. This explicitly replaces the bad abandoned fullscreen attempt.
+The old Bun/OpenTUI full diff behavior is now covered by `parity:tui-modal` before implementation changes: `Ctrl+D` swaps the graph pane for a diff pane while keeping the details sidebar, `[ / ]` cycles files in diff mode, `j/k` scroll diff rows without moving DAG selection, and `q`/`Esc`/`g`/`Ctrl+D` return to the log instead of quitting. Diff mode now also exposes old-style status/footer hints (`^d Log`, `[ ] File`, `j/k Move`, `Esc Exit`) instead of the generic log-mode footer. Log/sidebar mode keeps the diff preview reachable by reserving sidebar space, and `PageDown/PageUp` scroll the sidebar diff preview without moving DAG selection. The structured row cap preserves a per-file slice, so navigating beyond the first diff file renders real rows instead of an empty `File N/N: Diff` pane. This explicitly replaces the bad abandoned fullscreen attempt.
 
 Working-copy dirty-file parity still needs the native snapshot path wired; current read-only `jj-lib` repo loading intentionally does not mutate/snapshot the working copy yet.
 

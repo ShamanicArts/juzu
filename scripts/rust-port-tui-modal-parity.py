@@ -104,6 +104,13 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         assert_contains(diff, "File ", "diff mode title", failures)
         assert_contains(diff, "Ctrl+d back", "diff mode title", failures)
         assert_contains(diff, "[ / ] next/prev", "diff file cycling hint", failures)
+        assert_contains(diff, "^d", "old diff status hint shows ctrl-d log shortcut", failures)
+        assert_contains(diff, "Log", "old diff status hint labels ctrl-d as Log", failures)
+        assert_contains(diff, "[ ]", "old diff status hint shows file cycling keys", failures)
+        assert_contains(diff, "j/k", "old diff status hint shows movement keys", failures)
+        assert_contains(diff, "Move", "old diff status hint labels j/k as Move", failures)
+        assert_contains(diff, "Esc", "old diff status hint shows exit key", failures)
+        assert_contains(diff, "Exit", "old diff status hint labels escape as Exit", failures)
         assert_not_contains(diff, "dag graph", "diff replaces graph pane", failures)
         assert_contains(diff, "details", "diff mode keeps sidebar", failures)
         assert_contains(diff, "Change: nqmmukmt", "diff mode keeps selected commit", failures)
@@ -180,6 +187,28 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         assert_contains(back_ctrl, "dag graph", "Ctrl+D returns to log", failures)
         if "JUZU" not in back_ctrl:
             failures.append("after Ctrl+D in diff mode: screen no longer shows JUZU, app likely exited")
+
+        send(session, "C-d")
+        diff_before_esc = wait_for(session, "Ctrl+d back")
+        captures["afterThirdCtrlD"] = diff_before_esc
+        send(session, "Escape")
+        back_esc = wait_for(session, "dag graph")
+        captures["afterDiffEsc"] = back_esc
+        assert_contains(back_esc, "dag graph", "Esc returns to log", failures)
+        assert_contains(back_esc, "cap rust tui structured diff preview rows", "Esc returns with same selected commit", failures)
+        if "JUZU" not in back_esc:
+            failures.append("after Esc in diff mode: screen no longer shows JUZU, app likely exited")
+
+        send(session, "C-d")
+        diff_before_g = wait_for(session, "Ctrl+d back")
+        captures["afterFourthCtrlD"] = diff_before_g
+        send(session, "g")
+        back_g = wait_for(session, "dag graph")
+        captures["afterDiffG"] = back_g
+        assert_contains(back_g, "dag graph", "g returns to log", failures)
+        assert_contains(back_g, "cap rust tui structured diff preview rows", "g returns with same selected commit", failures)
+        if "JUZU" not in back_g:
+            failures.append("after g in diff mode: screen no longer shows JUZU, app likely exited")
     finally:
         tmux("kill-session", "-t", session, check=False)
     return {

@@ -347,7 +347,7 @@ fn render(frame: &mut Frame, app: &App) {
         .split(frame.area());
     render_header(frame, chunks[0], app, &layout);
     render_body(frame, chunks[1], app, &layout);
-    render_footer(frame, chunks[2]);
+    render_footer(frame, chunks[2], app);
 }
 
 fn render_header(
@@ -1247,19 +1247,37 @@ fn render_diff_anchor_label(
     ]))
 }
 
-fn render_footer(frame: &mut Frame, area: Rect) {
-    let line = Line::from(vec![
-        Span::styled(" q/esc ", Style::default().fg(Color::Black).bg(Color::Gray)),
-        Span::raw(" quit   "),
-        Span::styled(" j/k ", Style::default().fg(Color::Black).bg(Color::Gray)),
-        Span::raw(" select   "),
-        Span::styled(" 1-5 ", Style::default().fg(Color::Black).bg(Color::Gray)),
-        Span::raw(" layout modes   "),
-        Span::styled(" [/] ", Style::default().fg(Color::Black).bg(Color::Gray)),
-        Span::raw(" diff scroll   "),
-        Span::styled(" {/} ", Style::default().fg(Color::Black).bg(Color::Gray)),
-        Span::raw(" hunk jump"),
-    ]);
+fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
+    let line = if app.view_mode == ViewMode::Diff {
+        Line::from(vec![
+            Span::styled(
+                " DIFF ",
+                Style::default().fg(Color::Black).bg(Color::Yellow),
+            ),
+            Span::raw("  "),
+            Span::styled(" ^d ", Style::default().fg(Color::Black).bg(Color::Gray)),
+            Span::raw(" Log   "),
+            Span::styled(" [ ] ", Style::default().fg(Color::Black).bg(Color::Gray)),
+            Span::raw(" File   "),
+            Span::styled(" j/k ", Style::default().fg(Color::Black).bg(Color::Gray)),
+            Span::raw(" Move   "),
+            Span::styled(" Esc ", Style::default().fg(Color::Black).bg(Color::Gray)),
+            Span::raw(" Exit"),
+        ])
+    } else {
+        Line::from(vec![
+            Span::styled(" q/esc ", Style::default().fg(Color::Black).bg(Color::Gray)),
+            Span::raw(" quit   "),
+            Span::styled(" j/k ", Style::default().fg(Color::Black).bg(Color::Gray)),
+            Span::raw(" select   "),
+            Span::styled(" 1-5 ", Style::default().fg(Color::Black).bg(Color::Gray)),
+            Span::raw(" layout modes   "),
+            Span::styled(" [/] ", Style::default().fg(Color::Black).bg(Color::Gray)),
+            Span::raw(" diff scroll   "),
+            Span::styled(" {/} ", Style::default().fg(Color::Black).bg(Color::Gray)),
+            Span::raw(" hunk jump"),
+        ])
+    };
     frame.render_widget(
         Paragraph::new(line).block(Block::default().borders(Borders::TOP)),
         area,
