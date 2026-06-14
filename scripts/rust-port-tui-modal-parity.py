@@ -100,18 +100,18 @@ def assert_details_split_matches_old(text: str, width: int, failures: list[str])
 
 def assert_diff_title_contract(text: str, width: int, failures: list[str]) -> None:
     for line in text.splitlines():
-        if line.startswith("File "):
+        if "File " in line and "Ctrl+d back" in line:
             if "Ctrl+d back" not in line:
                 failures.append(f"diff title at {width} cols: Ctrl+d back hint was truncated away")
             if "[ / ] next/prev" not in line:
                 failures.append(f"diff title at {width} cols: file cycling hint was truncated away")
             details_col = line.find("┌ details")
-            if details_col == -1:
-                failures.append(f"diff title at {width} cols: sidebar details border not visible on title row")
-            else:
+            if details_col != -1:
                 title_segment = line[:details_col]
                 if not title_segment.endswith("  "):
                     failures.append(f"diff title at {width} cols: missing two-column buffer before sidebar")
+            elif "┌ diff " not in text:
+                failures.append(f"diff title at {width} cols: sidebar details border not visible on title row or paired with diff panel border")
             return
     failures.append(f"diff title at {width} cols: no File N/N title row found")
 
@@ -125,6 +125,19 @@ def assert_diff_footer_contract(text: str, width: int, failures: list[str]) -> N
     for needle in ["DIFF", "^d", "Log", "[ ]", "File", "j/k", "Move", "Esc", "Exit"]:
         if needle not in footer:
             failures.append(f"diff footer at {width} cols: missing {needle!r}")
+
+
+def assert_diff_panel_contract(text: str, width: int, failures: list[str]) -> None:
+    if "┌ diff " not in text:
+        failures.append(f"diff panel at {width} cols: missing bordered full diff panel title bar")
+    if "│ File " not in text:
+        failures.append(f"diff panel at {width} cols: title should live inside the diff panel surface")
+    if "VIEWPORT" not in text:
+        failures.append(f"diff panel at {width} cols: missing full-width viewport/status bar")
+    if "◆" not in text:
+        failures.append(f"diff panel at {width} cols: missing file header bar glyph")
+    if "@@" not in text:
+        failures.append(f"diff panel at {width} cols: missing hunk header bar")
 
 
 def assert_debug_state_contract(label: str, state: dict[str, Any], failures: list[str]) -> None:
@@ -184,6 +197,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_details_split_matches_old(diff, width, failures)
         assert_diff_title_contract(diff, width, failures)
         assert_diff_footer_contract(diff, width, failures)
+        assert_diff_panel_contract(diff, width, failures)
         assert_contains(diff, "Change: nqmmukmt", "diff mode keeps selected commit", failures)
         assert_not_contains(diff, "preview capped", "full diff pane should not show sidebar preview cap rows", failures)
         if "JUZU" not in diff:

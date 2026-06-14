@@ -488,18 +488,26 @@ fn render_diff_pane(
     let Some(node) = layout.nodes.get(selected) else {
         return;
     };
-    let block = Block::default().borders(Borders::NONE);
-    let width = area.width as usize;
-    let height = area.height as usize;
+    let block = Block::default()
+        .title(" diff ")
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Rgb(71, 85, 105)))
+        .style(Style::default().bg(Color::Rgb(3, 7, 18)));
+    let width = area.width.saturating_sub(2) as usize;
+    let height = area.height.saturating_sub(2) as usize;
     let mut lines = Vec::new();
     let diff = selected_diff(app);
     let title = diff
-        .and_then(|preview| diff_file_title(preview, app.diff_file_index, width))
+        .and_then(|preview| diff_file_title(preview, app.diff_file_index, width.saturating_sub(1)))
         .unwrap_or_else(|| "Diff".to_string());
-    lines.push(Line::from(Span::styled(
-        title,
-        Style::default().fg(Color::DarkGray),
-    )));
+    let title_bar = format!(" {title}");
+    lines.push(Line::from(vec![Span::styled(
+        format!("{:<width$}", title_bar, width = width),
+        Style::default()
+            .fg(Color::LightCyan)
+            .bg(Color::Rgb(15, 23, 42))
+            .add_modifier(Modifier::BOLD),
+    )]));
     if let Some(diff) = diff {
         if let Some(error) = &diff.parse_error {
             lines.push(Line::from(Span::styled(
@@ -517,7 +525,7 @@ fn render_diff_pane(
             let max_scroll = rows.len().saturating_sub(visible_count);
             let scroll = app.diff_scroll.min(max_scroll);
             let end = (scroll + visible_count).min(rows.len());
-            lines.push(render_diff_scroll_range(scroll, end, rows.len(), width));
+            lines.push(render_diff_viewport_bar(scroll, end, rows.len(), width));
             if let Some(anchor) = render_diff_anchor_label(&rows, scroll, width) {
                 lines.push(anchor);
             }
@@ -1318,6 +1326,27 @@ fn render_diff_collapse_row(text: &str, max_len: usize) -> Line<'static> {
         ),
         Span::styled("─".repeat(right), Style::default().fg(Color::DarkGray)),
     ])
+}
+
+fn render_diff_viewport_bar(
+    scroll: usize,
+    end: usize,
+    total: usize,
+    max_len: usize,
+) -> Line<'static> {
+    let label = if total == 0 {
+        "VIEWPORT diff rows 0/0".to_string()
+    } else {
+        format!("VIEWPORT diff rows {}-{} of {}", scroll + 1, end, total)
+    };
+    let clipped = truncate(&label, max_len.saturating_sub(2));
+    Line::from(vec![Span::styled(
+        format!(" {:<width$}", clipped, width = max_len.saturating_sub(1)),
+        Style::default()
+            .fg(Color::Rgb(203, 213, 225))
+            .bg(Color::Rgb(30, 41, 59))
+            .add_modifier(Modifier::BOLD),
+    )])
 }
 
 fn render_diff_scroll_range(
