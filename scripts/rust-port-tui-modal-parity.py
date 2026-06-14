@@ -57,6 +57,19 @@ def send(session: str, *keys: str) -> None:
     tmux("send-keys", "-t", session, *keys)
 
 
+def run_debug_state(args: argparse.Namespace, keys: str) -> dict[str, Any]:
+    proc = run([
+        "cargo", "run", "-q", "-p", "juzu-tui", "--",
+        "--path", str(Path(args.repo).resolve()),
+        "--limit", str(args.limit),
+        "--mode", "mainline",
+        "--debug-state",
+        "--select-prefix", "nqmmukmt",
+        "--keys", keys,
+    ])
+    return json.loads(proc.stdout)
+
+
 def assert_contains(text: str, needle: str, label: str, failures: list[str]) -> None:
     if needle not in text:
         failures.append(f"{label}: expected screen to contain {needle!r}")
@@ -83,11 +96,26 @@ def select_change_prefix(session: str, change_prefix: str, max_steps: int = 16) 
 
 def run_case(args: argparse.Namespace) -> dict[str, Any]:
     subprocess.run(["cargo", "build", "--release", "-p", "juzu-tui"], cwd=ROOT, check=True)
+    debug_states: dict[str, Any] = {}
+    failures: list[str] = []
+    try:
+        debug_states["enterScrollFileExit"] = run_debug_state(args, "C-d,j,],Esc")
+        state = debug_states["enterScrollFileExit"]
+        if state.get("viewMode") != "Log":
+            failures.append("debug-state C-d,j,],Esc should return to Log")
+        if state.get("selectedChange", "")[:8] != "nqmmukmt":
+            failures.append("debug-state diff scrolling should not move selected change from target commit")
+        if state.get("diffScroll") != 0:
+            failures.append("debug-state Esc from diff should reset diff scroll")
+        if state.get("diffFileIndex") != 1:
+            failures.append("debug-state ] in diff should cycle to file index 1 before exit")
+    except Exception as exc:
+        failures.append(f"debug-state emitter failed: {exc}")
+
     session = f"juzu-modal-parity-{os.getpid()}"
     cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {Path(args.repo).resolve()} --limit {args.limit} --mode mainline"
     tmux("new-session", "-d", "-s", session, "-x", "206", "-y", "36")
     captures: dict[str, str] = {}
-    failures: list[str] = []
     try:
         send(session, cmd, "Enter")
         initial = wait_for(session, "dag graph")
@@ -217,6 +245,7 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         "passed": not failures,
         "failures": failures,
         "captures": captures,
+        "debugStates": debug_states,
     }
 
 

@@ -29,17 +29,17 @@ The runner:
 
 ## Latest artifact
 
-`bench/results/rust-port/rust-tui-bench/2026-06-14T04-04-15-012Z/rust-tui-benchmark.html`
+`bench/results/rust-port/rust-tui-bench/2026-06-14T04-08-43-040Z/rust-tui-benchmark.html`
 
 ## Current headline
 
-Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, the Pierre/JUZU-style structured diff sidebar renderer, the TDD-rebuilt old-style diff pane toggle, fixed diff navigation parity in both diff-pane and log/sidebar views, per-file retained diff row capping so later files render, and old-style diff-mode footer/status hints.
+Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, the Pierre/JUZU-style structured diff sidebar renderer, the TDD-rebuilt old-style diff pane toggle, fixed diff navigation parity in both diff-pane and log/sidebar views, per-file retained diff row capping so later files render, old-style diff-mode footer/status hints, and the Rust `--debug-state` modal state emitter.
 
 | Scenario | RSS peak | RSS steady median | PSS steady median | Header median |
 | --- | ---: | ---: | ---: | ---: |
-| `idle-mainline` | 11.25 MB | 10.72 MB | 8.96 MB | 134.33 ms |
-| `navigate-mainline` | 26.97 MB | 26.51 MB | 24.75 MB | 196.00 ms |
-| `layout-switching` | 26.70 MB | 26.70 MB | 24.94 MB | 137.61 ms |
+| `idle-mainline` | 11.12 MB | 10.64 MB | 8.88 MB | 144.09 ms |
+| `navigate-mainline` | 27.98 MB | 27.90 MB | 26.15 MB | 140.13 ms |
+| `layout-switching` | 27.95 MB | 27.88 MB | 26.12 MB | 140.90 ms |
 
 The visual renderer itself keeps idle memory close to the earlier capped-diff baseline. Hard-capping retained structured preview rows dropped navigation peak RSS from 35.81 MB to 28.52 MB and layout-switching peak RSS from 34.66 MB to 28.02 MB while preserving the crafted sidebar preview. The headline remains far below the old live Bun/OpenTUI TUI (~175 MB RSS steady).
 

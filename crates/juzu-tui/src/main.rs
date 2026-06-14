@@ -84,9 +84,13 @@ fn main() -> Result<()> {
         .unwrap_or_default();
         files_by_change.insert(node.change_id.clone(), files);
     }
-    let selected = nodes
-        .iter()
-        .position(|node| node.is_working_copy)
+    let selected = arg_value(&args, "--select-prefix")
+        .and_then(|prefix| {
+            nodes.iter().position(|node| {
+                node.change_id.starts_with(&prefix) || node.commit_id.starts_with(&prefix)
+            })
+        })
+        .or_else(|| nodes.iter().position(|node| node.is_working_copy))
         .unwrap_or(0);
     let mut app = App {
         path,
@@ -100,6 +104,11 @@ fn main() -> Result<()> {
         diff_file_index: 0,
     };
     ensure_selected_diff(&mut app);
+
+    if args.iter().any(|arg| arg == "--debug-state") {
+        emit_debug_state(&mut app, arg_value(&args, "--keys"))?;
+        return Ok(());
+    }
 
     enable_raw_mode()?;
     execute!(stdout(), EnterAlternateScreen)?;
@@ -119,66 +128,117 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
                 if key.kind == KeyEventKind::Release {
                     continue;
                 }
-                if key.modifiers.contains(KeyModifiers::CONTROL)
-                    && matches!(key.code, KeyCode::Char('d'))
-                {
-                    toggle_diff_view(app);
-                    continue;
-                }
-                match key.code {
-                    KeyCode::Char('g') | KeyCode::Char('q') | KeyCode::Esc
-                        if app.view_mode == ViewMode::Diff =>
-                    {
-                        app.view_mode = ViewMode::Log;
-                        app.diff_scroll = 0;
-                    }
-                    KeyCode::Char('q') | KeyCode::Esc => break,
-                    KeyCode::Char('j') | KeyCode::Down if app.view_mode == ViewMode::Diff => {
-                        app.diff_scroll = app.diff_scroll.saturating_add(1);
-                    }
-                    KeyCode::Char('k') | KeyCode::Up if app.view_mode == ViewMode::Diff => {
-                        app.diff_scroll = app.diff_scroll.saturating_sub(1);
-                    }
-                    KeyCode::Char('j') | KeyCode::Down => {
-                        app.selected = (app.selected + 1).min(app.nodes.len().saturating_sub(1));
-                        app.diff_scroll = 0;
-                        ensure_selected_diff(app);
-                    }
-                    KeyCode::Char('k') | KeyCode::Up => {
-                        app.selected = app.selected.saturating_sub(1);
-                        app.diff_scroll = 0;
-                        ensure_selected_diff(app);
-                    }
-                    KeyCode::PageDown if app.view_mode == ViewMode::Diff => {
-                        app.diff_scroll = app.diff_scroll.saturating_add(10);
-                    }
-                    KeyCode::PageUp if app.view_mode == ViewMode::Diff => {
-                        app.diff_scroll = app.diff_scroll.saturating_sub(10);
-                    }
-                    KeyCode::Char(']') if app.view_mode == ViewMode::Diff => {
-                        cycle_diff_file(app, 1);
-                    }
-                    KeyCode::Char('[') if app.view_mode == ViewMode::Diff => {
-                        cycle_diff_file(app, -1);
-                    }
-                    KeyCode::PageDown | KeyCode::Char(']') => {
-                        app.diff_scroll = app.diff_scroll.saturating_add(10);
-                    }
-                    KeyCode::PageUp | KeyCode::Char('[') => {
-                        app.diff_scroll = app.diff_scroll.saturating_sub(10);
-                    }
-                    KeyCode::Char('}') => jump_selected_diff(app, DiffJump::NextHunk),
-                    KeyCode::Char('{') => jump_selected_diff(app, DiffJump::PreviousHunk),
-                    KeyCode::Char('1') => app.mode = LayoutMode::Chronological,
-                    KeyCode::Char('2') => app.mode = LayoutMode::Mainline,
-                    KeyCode::Char('3') => app.mode = LayoutMode::BookmarkCentric,
-                    KeyCode::Char('4') => app.mode = LayoutMode::WcFocused,
-                    KeyCode::Char('5') => app.mode = LayoutMode::Topological,
-                    _ => {}
+                if handle_key(app, key.code, key.modifiers) {
+                    break;
                 }
             }
         }
     }
+    Ok(())
+}
+
+fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
+    if modifiers.contains(KeyModifiers::CONTROL) && matches!(code, KeyCode::Char('d')) {
+        toggle_diff_view(app);
+        return false;
+    }
+    match code {
+        KeyCode::Char('g') | KeyCode::Char('q') | KeyCode::Esc
+            if app.view_mode == ViewMode::Diff =>
+        {
+            app.view_mode = ViewMode::Log;
+            app.diff_scroll = 0;
+        }
+        KeyCode::Char('q') | KeyCode::Esc => return true,
+        KeyCode::Char('j') | KeyCode::Down if app.view_mode == ViewMode::Diff => {
+            app.diff_scroll = app.diff_scroll.saturating_add(1);
+        }
+        KeyCode::Char('k') | KeyCode::Up if app.view_mode == ViewMode::Diff => {
+            app.diff_scroll = app.diff_scroll.saturating_sub(1);
+        }
+        KeyCode::Char('j') | KeyCode::Down => {
+            app.selected = (app.selected + 1).min(app.nodes.len().saturating_sub(1));
+            app.diff_scroll = 0;
+            ensure_selected_diff(app);
+        }
+        KeyCode::Char('k') | KeyCode::Up => {
+            app.selected = app.selected.saturating_sub(1);
+            app.diff_scroll = 0;
+            ensure_selected_diff(app);
+        }
+        KeyCode::PageDown if app.view_mode == ViewMode::Diff => {
+            app.diff_scroll = app.diff_scroll.saturating_add(10);
+        }
+        KeyCode::PageUp if app.view_mode == ViewMode::Diff => {
+            app.diff_scroll = app.diff_scroll.saturating_sub(10);
+        }
+        KeyCode::Char(']') if app.view_mode == ViewMode::Diff => {
+            cycle_diff_file(app, 1);
+        }
+        KeyCode::Char('[') if app.view_mode == ViewMode::Diff => {
+            cycle_diff_file(app, -1);
+        }
+        KeyCode::PageDown | KeyCode::Char(']') => {
+            app.diff_scroll = app.diff_scroll.saturating_add(10);
+        }
+        KeyCode::PageUp | KeyCode::Char('[') => {
+            app.diff_scroll = app.diff_scroll.saturating_sub(10);
+        }
+        KeyCode::Char('}') => jump_selected_diff(app, DiffJump::NextHunk),
+        KeyCode::Char('{') => jump_selected_diff(app, DiffJump::PreviousHunk),
+        KeyCode::Char('1') => app.mode = LayoutMode::Chronological,
+        KeyCode::Char('2') => app.mode = LayoutMode::Mainline,
+        KeyCode::Char('3') => app.mode = LayoutMode::BookmarkCentric,
+        KeyCode::Char('4') => app.mode = LayoutMode::WcFocused,
+        KeyCode::Char('5') => app.mode = LayoutMode::Topological,
+        _ => {}
+    }
+    false
+}
+
+fn parse_debug_key(raw: &str) -> Option<(KeyCode, KeyModifiers)> {
+    match raw {
+        "C-d" | "Ctrl+D" | "ctrl+d" => Some((KeyCode::Char('d'), KeyModifiers::CONTROL)),
+        "Esc" | "Escape" => Some((KeyCode::Esc, KeyModifiers::NONE)),
+        "PageDown" => Some((KeyCode::PageDown, KeyModifiers::NONE)),
+        "PageUp" => Some((KeyCode::PageUp, KeyModifiers::NONE)),
+        "Down" => Some((KeyCode::Down, KeyModifiers::NONE)),
+        "Up" => Some((KeyCode::Up, KeyModifiers::NONE)),
+        value if value.chars().count() == 1 => {
+            Some((KeyCode::Char(value.chars().next()?), KeyModifiers::NONE))
+        }
+        _ => None,
+    }
+}
+
+fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
+    for raw in keys
+        .unwrap_or_default()
+        .split(',')
+        .filter(|key| !key.is_empty())
+    {
+        if let Some((code, modifiers)) = parse_debug_key(raw.trim()) {
+            if handle_key(app, code, modifiers) {
+                break;
+            }
+        }
+    }
+    ensure_selected_diff(app);
+    let selected = app.nodes.get(app.selected);
+    let diff = selected_diff(app);
+    let payload = serde_json::json!({
+        "viewMode": match app.view_mode { ViewMode::Log => "Log", ViewMode::Diff => "Diff" },
+        "layoutMode": format!("{:?}", app.mode),
+        "selectedIndex": app.selected,
+        "selectedChange": selected.map(|node| node.change_id.as_str()).unwrap_or(""),
+        "selectedCommit": selected.map(|node| node.commit_id.as_str()).unwrap_or(""),
+        "diffScroll": app.diff_scroll,
+        "diffFileIndex": app.diff_file_index,
+        "diffFileCount": diff.map(|preview| preview.file_count).unwrap_or(0),
+        "diffRows": diff.map(|preview| preview.rows.len()).unwrap_or(0),
+        "hasParseError": diff.and_then(|preview| preview.parse_error.as_ref()).is_some(),
+    });
+    println!("{}", serde_json::to_string_pretty(&payload)?);
     Ok(())
 }
 
