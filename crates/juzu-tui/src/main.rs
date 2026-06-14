@@ -103,7 +103,7 @@ fn main() -> Result<()> {
         diff_scroll: 0,
         diff_file_index: 0,
     };
-    ensure_selected_diff(&mut app);
+    ensure_selected_diff(&mut app, false);
 
     if args.iter().any(|arg| arg == "--debug-state") {
         emit_debug_state(&mut app, arg_value(&args, "--keys"))?;
@@ -159,12 +159,12 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
         KeyCode::Char('j') | KeyCode::Down => {
             app.selected = (app.selected + 1).min(app.nodes.len().saturating_sub(1));
             app.diff_scroll = 0;
-            ensure_selected_diff(app);
+            ensure_selected_diff(app, false);
         }
         KeyCode::Char('k') | KeyCode::Up => {
             app.selected = app.selected.saturating_sub(1);
             app.diff_scroll = 0;
-            ensure_selected_diff(app);
+            ensure_selected_diff(app, false);
         }
         KeyCode::PageDown if app.view_mode == ViewMode::Diff => {
             app.diff_scroll = app.diff_scroll.saturating_add(10);
@@ -223,7 +223,7 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
             }
         }
     }
-    ensure_selected_diff(app);
+    ensure_selected_diff(app, app.view_mode == ViewMode::Diff);
     let selected = app.nodes.get(app.selected);
     let diff = selected_diff(app);
     let payload = serde_json::json!({
@@ -235,18 +235,24 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "diffScroll": app.diff_scroll,
         "diffFileIndex": app.diff_file_index,
         "diffFileCount": diff.map(|preview| preview.file_count).unwrap_or(0),
-        "diffRows": diff.map(|preview| preview.rows.len()).unwrap_or(0),
+        "diffRows": diff.map(|preview| preview.row_count).unwrap_or(0),
         "hasParseError": diff.and_then(|preview| preview.parse_error.as_ref()).is_some(),
     });
     println!("{}", serde_json::to_string_pretty(&payload)?);
     Ok(())
 }
 
-fn ensure_selected_diff(app: &mut App) {
+fn ensure_selected_diff(app: &mut App, include_full_rows: bool) {
     let Some(node) = app.nodes.get(app.selected) else {
         return;
     };
-    if app.diffs_by_change.contains_key(&node.change_id) {
+    if app
+        .diffs_by_change
+        .get(&node.change_id)
+        .is_some_and(|diff| {
+            !include_full_rows || diff.full_rows.is_some() || diff.parse_error.is_some()
+        })
+    {
         return;
     }
     let backend = NativeJjBackend::new();
@@ -259,12 +265,13 @@ fn ensure_selected_diff(app: &mut App) {
         .map(|document| {
             let rows = collapsed_diff_rows(&document, 3);
             let row_count = rows.len();
-            let rows = cap_diff_preview_rows(rows, DIFF_PREVIEW_ROW_CAP);
+            let preview_rows = cap_diff_preview_rows(rows.clone(), DIFF_PREVIEW_ROW_CAP);
             DiffPreview {
                 raw_line_count: diff.lines().count(),
                 file_count: document.files.len(),
                 row_count,
-                rows,
+                full_rows: include_full_rows.then_some(rows),
+                preview_rows,
                 parse_error: None,
             }
         })
@@ -272,7 +279,8 @@ fn ensure_selected_diff(app: &mut App) {
             raw_line_count: diff.lines().count(),
             file_count: 0,
             row_count: 0,
-            rows: Vec::new(),
+            full_rows: None,
+            preview_rows: Vec::new(),
             parse_error: Some(err.to_string()),
         });
     app.diffs_by_change.insert(node.change_id.clone(), preview);
@@ -282,7 +290,8 @@ struct DiffPreview {
     raw_line_count: usize,
     file_count: usize,
     row_count: usize,
-    rows: Vec<DiffRow>,
+    full_rows: Option<Vec<DiffRow>>,
+    preview_rows: Vec<DiffRow>,
     parse_error: Option<String>,
 }
 
@@ -298,14 +307,14 @@ fn toggle_diff_view(app: &mut App) {
         app.diff_scroll = 0;
         return;
     }
-    ensure_selected_diff(app);
+    ensure_selected_diff(app, true);
     app.view_mode = ViewMode::Diff;
     app.diff_scroll = 0;
     app.diff_file_index = 0;
 }
 
 fn cycle_diff_file(app: &mut App, dir: isize) {
-    ensure_selected_diff(app);
+    ensure_selected_diff(app, true);
     let Some(diff) = selected_diff(app) else {
         return;
     };
@@ -362,27 +371,30 @@ fn cap_diff_preview_rows(rows: Vec<DiffRow>, cap: usize) -> Vec<DiffRow> {
 }
 
 fn jump_selected_diff(app: &mut App, jump: DiffJump) {
-    ensure_selected_diff(app);
+    ensure_selected_diff(app, app.view_mode == ViewMode::Diff);
     let Some(node) = app.nodes.get(app.selected) else {
         return;
     };
     let Some(diff) = app.diffs_by_change.get(&node.change_id) else {
         return;
     };
-    if diff.rows.is_empty() {
+    let rows = if app.view_mode == ViewMode::Diff {
+        full_diff_rows(diff)
+    } else {
+        &diff.preview_rows
+    };
+    if rows.is_empty() {
         app.diff_scroll = 0;
         return;
     }
     let target = match jump {
-        DiffJump::NextHunk => diff
-            .rows
+        DiffJump::NextHunk => rows
             .iter()
             .enumerate()
             .skip(app.diff_scroll.saturating_add(1))
             .find(|(_, row)| row.kind == DiffRowKind::HunkHeader)
             .map(|(idx, _)| idx),
-        DiffJump::PreviousHunk => diff
-            .rows
+        DiffJump::PreviousHunk => rows
             .iter()
             .enumerate()
             .take(app.diff_scroll)
@@ -494,7 +506,7 @@ fn render_diff_pane(
                 truncate(error, width),
                 Style::default().fg(Color::Red),
             )));
-        } else if diff.rows.is_empty() {
+        } else if full_diff_rows(diff).is_empty() {
             lines.push(render_diff_metadata(
                 "No diff available for selected change",
                 width,
@@ -526,8 +538,7 @@ fn render_diff_pane(
 fn diff_file_title(diff: &DiffPreview, file_index: usize, max_len: usize) -> Option<String> {
     let total = diff.file_count.max(1);
     let index = file_index.min(total.saturating_sub(1));
-    let path = diff
-        .rows
+    let path = full_diff_rows(diff)
         .iter()
         .find(|row| row.kind == DiffRowKind::FileHeader && row.file_index == index)
         .map(|row| row.text.clone())
@@ -543,13 +554,17 @@ fn diff_file_title(diff: &DiffPreview, file_index: usize, max_len: usize) -> Opt
     ))
 }
 
+fn full_diff_rows(diff: &DiffPreview) -> &[DiffRow] {
+    diff.full_rows.as_deref().unwrap_or(&diff.preview_rows)
+}
+
 fn rows_for_diff_file(diff: &DiffPreview, file_index: usize) -> Vec<DiffRow> {
+    let rows = full_diff_rows(diff);
     if diff.file_count == 0 {
-        return diff.rows.clone();
+        return rows.to_vec();
     }
     let index = file_index.min(diff.file_count.saturating_sub(1));
-    diff.rows
-        .iter()
+    rows.iter()
         .filter(|row| row.file_index == index)
         .cloned()
         .collect()
@@ -1031,7 +1046,7 @@ fn render_sidebar(
         let diff_is_available = app
             .diffs_by_change
             .get(&node.change_id)
-            .is_some_and(|diff| !diff.rows.is_empty());
+            .is_some_and(|diff| !diff.preview_rows.is_empty());
         let file_preview_limit = if diff_is_available { 4 } else { 12 };
         let selected_file_index = if app.view_mode == ViewMode::Diff {
             Some(app.diff_file_index.min(files.len().saturating_sub(1)))
@@ -1119,7 +1134,7 @@ fn render_diff_preview_lines(
             diff.file_count,
             diff.raw_line_count,
             diff.row_count,
-            diff.rows.len()
+            diff.preview_rows.len()
         ),
         sidebar_width.saturating_sub(4),
     ));
@@ -1130,7 +1145,7 @@ fn render_diff_preview_lines(
         )));
         return;
     }
-    if diff.rows.is_empty() {
+    if diff.preview_rows.is_empty() {
         lines.push(render_diff_metadata(
             "clean patch",
             sidebar_width.saturating_sub(4),
@@ -1138,26 +1153,26 @@ fn render_diff_preview_lines(
         return;
     }
 
-    let max_scroll = diff.rows.len().saturating_sub(visible_count);
+    let max_scroll = diff.preview_rows.len().saturating_sub(visible_count);
     let scroll = app.diff_scroll.min(max_scroll);
-    let end = (scroll + visible_count).min(diff.rows.len());
+    let end = (scroll + visible_count).min(diff.preview_rows.len());
     lines.push(render_diff_scroll_range(
         scroll,
         end,
-        diff.rows.len(),
+        diff.preview_rows.len(),
         sidebar_width.saturating_sub(4),
     ));
     if let Some(anchor) =
-        render_diff_anchor_label(&diff.rows, scroll, sidebar_width.saturating_sub(4))
+        render_diff_anchor_label(&diff.preview_rows, scroll, sidebar_width.saturating_sub(4))
     {
         lines.push(anchor);
     }
-    for row in diff.rows.iter().skip(scroll).take(visible_count) {
+    for row in diff.preview_rows.iter().skip(scroll).take(visible_count) {
         lines.push(render_diff_row(row, sidebar_width.saturating_sub(4)));
     }
-    if diff.rows.len() > end {
+    if diff.preview_rows.len() > end {
         lines.push(render_diff_collapse_row(
-            &format!("{} more rows below", diff.rows.len() - end),
+            &format!("{} more rows below", diff.preview_rows.len() - end),
             sidebar_width.saturating_sub(4),
         ));
     }

@@ -185,6 +185,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_diff_title_contract(diff, width, failures)
         assert_diff_footer_contract(diff, width, failures)
         assert_contains(diff, "Change: nqmmukmt", "diff mode keeps selected commit", failures)
+        assert_not_contains(diff, "preview capped", "full diff pane should not show sidebar preview cap rows", failures)
         if "JUZU" not in diff:
             failures.append("after Ctrl+D: screen no longer shows JUZU, app likely exited")
 
@@ -222,6 +223,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff_last_file, "diff rows 1-", "Last file renders diff rows", failures)
         assert_not_contains(diff_last_file, "File 16/16: Diff", "Last file title is not generic/missing rows", failures)
         assert_not_contains(diff_last_file, "diff rows 0/0", "Last file is not an empty rendered diff", failures)
+        assert_not_contains(diff_last_file, "preview capped", "wrapped full diff pane should not show sidebar preview cap rows", failures)
         assert_contains(diff_last_file, "Change: nqmmukmt", "last file navigation does not move DAG selection", failures)
         assert_contains(diff_last_file, "▶", "wrapped last diff file remains visibly selected in sidebar", failures)
 
