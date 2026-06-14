@@ -1033,9 +1033,30 @@ fn render_sidebar(
             .get(&node.change_id)
             .is_some_and(|diff| !diff.rows.is_empty());
         let file_preview_limit = if diff_is_available { 4 } else { 12 };
-        for (idx, file) in files.iter().take(file_preview_limit).enumerate() {
-            let is_selected_diff_file =
-                app.view_mode == ViewMode::Diff && idx == app.diff_file_index;
+        let selected_file_index = if app.view_mode == ViewMode::Diff {
+            Some(app.diff_file_index.min(files.len().saturating_sub(1)))
+        } else {
+            None
+        };
+        let mut file_start = 0usize;
+        if let Some(selected_file_index) = selected_file_index {
+            if selected_file_index >= file_preview_limit {
+                file_start = selected_file_index
+                    .saturating_add(1)
+                    .saturating_sub(file_preview_limit);
+            }
+        }
+        let file_end = (file_start + file_preview_limit).min(files.len());
+        if file_start > 0 {
+            lines.push(Line::from(format!("… {} before", file_start)));
+        }
+        for (idx, file) in files
+            .iter()
+            .enumerate()
+            .skip(file_start)
+            .take(file_end.saturating_sub(file_start))
+        {
+            let is_selected_diff_file = selected_file_index == Some(idx);
             lines.push(Line::from(vec![
                 Span::styled(
                     if is_selected_diff_file { "▶ " } else { "  " },
@@ -1059,11 +1080,8 @@ fn render_sidebar(
                 ),
             ]));
         }
-        if files.len() > file_preview_limit {
-            lines.push(Line::from(format!(
-                "… {} more",
-                files.len() - file_preview_limit
-            )));
+        if files.len() > file_end {
+            lines.push(Line::from(format!("… {} more", files.len() - file_end)));
         }
     }
     lines.push(Line::from(""));
