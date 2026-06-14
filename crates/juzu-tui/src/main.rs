@@ -1145,7 +1145,12 @@ fn render_diff_preview_lines(
         )));
         return;
     }
-    if diff.preview_rows.is_empty() {
+    let active_rows = if app.view_mode == ViewMode::Diff {
+        rows_for_diff_file(diff, app.diff_file_index)
+    } else {
+        diff.preview_rows.clone()
+    };
+    if active_rows.is_empty() {
         lines.push(render_diff_metadata(
             "clean patch",
             sidebar_width.saturating_sub(4),
@@ -1153,26 +1158,26 @@ fn render_diff_preview_lines(
         return;
     }
 
-    let max_scroll = diff.preview_rows.len().saturating_sub(visible_count);
+    let max_scroll = active_rows.len().saturating_sub(visible_count);
     let scroll = app.diff_scroll.min(max_scroll);
-    let end = (scroll + visible_count).min(diff.preview_rows.len());
+    let end = (scroll + visible_count).min(active_rows.len());
     lines.push(render_diff_scroll_range(
         scroll,
         end,
-        diff.preview_rows.len(),
+        active_rows.len(),
         sidebar_width.saturating_sub(4),
     ));
     if let Some(anchor) =
-        render_diff_anchor_label(&diff.preview_rows, scroll, sidebar_width.saturating_sub(4))
+        render_diff_anchor_label(&active_rows, scroll, sidebar_width.saturating_sub(4))
     {
         lines.push(anchor);
     }
-    for row in diff.preview_rows.iter().skip(scroll).take(visible_count) {
+    for row in active_rows.iter().skip(scroll).take(visible_count) {
         lines.push(render_diff_row(row, sidebar_width.saturating_sub(4)));
     }
-    if diff.preview_rows.len() > end {
+    if active_rows.len() > end {
         lines.push(render_diff_collapse_row(
-            &format!("{} more rows below", diff.preview_rows.len() - end),
+            &format!("{} more rows below", active_rows.len() - end),
             sidebar_width.saturating_sub(4),
         ));
     }

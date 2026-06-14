@@ -226,6 +226,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_not_contains(diff_last_file, "preview capped", "wrapped full diff pane should not show sidebar preview cap rows", failures)
         assert_contains(diff_last_file, "Change: nqmmukmt", "last file navigation does not move DAG selection", failures)
         assert_contains(diff_last_file, "▶", "wrapped last diff file remains visibly selected in sidebar", failures)
+        assert_not_contains(diff_last_file, "pinned Added bench/results/rust-port/diff-render", "wrapped full diff sidebar preview should not stay pinned to first file", failures)
 
         send(session, "]")
         diff_back_first_file = wait_for(session, "File 1/")
