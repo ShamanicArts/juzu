@@ -80,6 +80,19 @@ def assert_not_contains(text: str, needle: str, label: str, failures: list[str])
         failures.append(f"{label}: expected screen not to contain {needle!r}")
 
 
+def assert_details_split_matches_old(text: str, failures: list[str]) -> None:
+    for line in text.splitlines():
+        marker = "┌ details"
+        if marker in line:
+            column = line.index(marker)
+            if not (118 <= column <= 130):
+                failures.append(
+                    f"old diff pane/sidebar split: details pane should start near column 124, got {column}"
+                )
+            return
+    failures.append("old diff pane/sidebar split: details pane border not found")
+
+
 def select_change_prefix(session: str, change_prefix: str, max_steps: int = 16) -> str:
     needle = f"Change: {change_prefix}"
     screen = capture(session)
@@ -141,6 +154,7 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         assert_contains(diff, "Exit", "old diff status hint labels escape as Exit", failures)
         assert_not_contains(diff, "dag graph", "diff replaces graph pane", failures)
         assert_contains(diff, "details", "diff mode keeps sidebar", failures)
+        assert_details_split_matches_old(diff, failures)
         assert_contains(diff, "Change: nqmmukmt", "diff mode keeps selected commit", failures)
         if "JUZU" not in diff:
             failures.append("after Ctrl+D: screen no longer shows JUZU, app likely exited")

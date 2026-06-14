@@ -452,10 +452,14 @@ fn render_header(
 fn render_body(frame: &mut Frame, area: Rect, app: &App, layout: &juzu_core::layout::LayoutResult) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(72), Constraint::Percentage(28)])
+        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
         .split(area);
     if app.view_mode == ViewMode::Diff {
-        render_diff_pane(frame, chunks[0], app, layout);
+        let diff_area = Rect {
+            width: chunks[0].width.saturating_sub(2).max(1),
+            ..chunks[0]
+        };
+        render_diff_pane(frame, diff_area, app, layout);
     } else {
         render_graph_table(frame, chunks[0], app, layout);
     }
@@ -478,7 +482,7 @@ fn render_diff_pane(
     let mut lines = Vec::new();
     let diff = selected_diff(app);
     let title = diff
-        .and_then(|preview| diff_file_title(preview, app.diff_file_index))
+        .and_then(|preview| diff_file_title(preview, app.diff_file_index, width))
         .unwrap_or_else(|| "Diff".to_string());
     lines.push(Line::from(Span::styled(
         title,
@@ -519,7 +523,7 @@ fn render_diff_pane(
     frame.render_widget(Paragraph::new(lines).block(block), area);
 }
 
-fn diff_file_title(diff: &DiffPreview, file_index: usize) -> Option<String> {
+fn diff_file_title(diff: &DiffPreview, file_index: usize, max_len: usize) -> Option<String> {
     let total = diff.file_count.max(1);
     let index = file_index.min(total.saturating_sub(1));
     let path = diff
@@ -528,11 +532,14 @@ fn diff_file_title(diff: &DiffPreview, file_index: usize) -> Option<String> {
         .find(|row| row.kind == DiffRowKind::FileHeader && row.file_index == index)
         .map(|row| row.text.clone())
         .unwrap_or_else(|| "Diff".to_string());
+    let prefix = format!("File {}/{}: ", index + 1, total);
+    let suffix = "   [ / ] next/prev   Ctrl+d back";
+    let path_budget = max_len.saturating_sub(prefix.len() + suffix.len()).max(8);
     Some(format!(
-        "File {}/{}: {}   [ / ] next/prev   Ctrl+d back",
-        index + 1,
-        total,
-        path
+        "{}{}{}",
+        prefix,
+        truncate(&path, path_budget),
+        suffix
     ))
 }
 
