@@ -1433,20 +1433,19 @@ fn render_diff_anchor_label(
         }
     }
     let label = match (file, hunk) {
-        (Some(file), Some(hunk)) => format!("pinned {file} · {hunk}"),
-        (Some(file), None) => format!("pinned {file}"),
-        (None, Some(hunk)) => format!("pinned {hunk}"),
+        (Some(file), Some(hunk)) => format!("STICKY ▸ {hunk} · {file}"),
+        (Some(file), None) => format!("STICKY ▸ top · {file}"),
+        (None, Some(hunk)) => format!("STICKY ▸ {hunk}"),
         (None, None) => return None,
     };
-    Some(Line::from(vec![
-        Span::styled("  ◌ ", Style::default().fg(Color::LightMagenta)),
-        Span::styled(
-            truncate(&label, max_len.saturating_sub(4)),
-            Style::default()
-                .fg(Color::LightBlue)
-                .add_modifier(Modifier::DIM),
-        ),
-    ]))
+    let clipped = truncate(&label, max_len.saturating_sub(2));
+    Some(Line::from(vec![Span::styled(
+        format!(" {:<width$}", clipped, width = max_len.saturating_sub(1)),
+        Style::default()
+            .fg(Color::Rgb(191, 219, 254))
+            .bg(Color::Rgb(15, 23, 42))
+            .add_modifier(Modifier::BOLD),
+    )]))
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, app: &App) {

@@ -166,6 +166,13 @@ def assert_scroll_indicator_changes(before: str, after: str, width: int, failure
         failures.append(f"diff scroll handle at {width} cols: indicator did not change after scrolling")
 
 
+def assert_sticky_context_contract(text: str, width: int, failures: list[str]) -> None:
+    if "STICKY" not in text:
+        failures.append(f"sticky context at {width} cols: missing explicit sticky file/hunk bar")
+    if "▸" not in text:
+        failures.append(f"sticky context at {width} cols: missing file-to-hunk separator")
+
+
 def assert_debug_state_contract(label: str, state: dict[str, Any], failures: list[str]) -> None:
     if state.get("viewMode") != "Log":
         failures.append(f"debug-state {label}: should end in Log mode")
@@ -175,7 +182,7 @@ def assert_debug_state_contract(label: str, state: dict[str, Any], failures: lis
         failures.append(f"debug-state {label}: should reset diff scroll on exit")
 
 
-def select_change_prefix(session: str, change_prefix: str, max_steps: int = 16) -> str:
+def select_change_prefix(session: str, change_prefix: str, max_steps: int = 32) -> str:
     needle = f"Change: {change_prefix}"
     screen = capture(session)
     if needle in screen:
@@ -237,6 +244,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff_scroll_down, "diff rows 2-", "j scrolls diff rows in diff mode", failures)
         assert_contains(diff_scroll_down, "Change: nqmmukmt", "j in diff mode does not move DAG selection", failures)
         assert_scroll_indicator_changes(diff, diff_scroll_down, width, failures)
+        assert_sticky_context_contract(diff_scroll_down, width, failures)
 
         send(session, "k")
         diff_scroll_up = wait_for(session, "diff rows 1-")
