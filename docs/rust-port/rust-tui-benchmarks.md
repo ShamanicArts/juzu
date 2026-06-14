@@ -29,17 +29,17 @@ The runner:
 
 ## Latest artifact
 
-`bench/results/rust-port/rust-tui-bench/2026-06-14T04-12-18-527Z/rust-tui-benchmark.html`
+`bench/results/rust-port/rust-tui-bench/2026-06-14T04-25-37-059Z/rust-tui-benchmark.html`
 
 ## Current headline
 
-Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, the Pierre/JUZU-style structured diff sidebar renderer, the TDD-rebuilt old-style diff pane toggle, fixed diff navigation parity in both diff-pane and log/sidebar views, per-file retained diff row capping so later files render, old-style diff-mode footer/status hints, the Rust `--debug-state` modal state emitter, and old JUZU 60/40 pane split parity.
+Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, the Pierre/JUZU-style structured diff sidebar renderer, the TDD-rebuilt old-style diff pane toggle, fixed diff navigation parity in both diff-pane and log/sidebar views, per-file retained diff row capping so later files render, old-style diff-mode footer/status hints, the Rust `--debug-state` modal state emitter, old JUZU 60/40 pane split parity, and width-variant modal parity coverage at 120/160/206 columns.
 
 | Scenario | RSS peak | RSS steady median | PSS steady median | Header median |
 | --- | ---: | ---: | ---: | ---: |
-| `idle-mainline` | 10.80 MB | 10.77 MB | 9.02 MB | 159.25 ms |
-| `navigate-mainline` | 29.20 MB | 28.93 MB | 27.17 MB | 141.82 ms |
-| `layout-switching` | 28.94 MB | 28.72 MB | 26.97 MB | 139.78 ms |
+| `idle-mainline` | 10.92 MB | 10.77 MB | 5.49 MB | 145.22 ms |
+| `navigate-mainline` | 30.17 MB | 30.01 MB | 24.75 MB | 134.74 ms |
+| `layout-switching` | 29.89 MB | 29.79 MB | 24.51 MB | 150.49 ms |
 
 The visual renderer itself keeps idle memory close to the earlier capped-diff baseline. Hard-capping retained structured preview rows dropped navigation peak RSS from 35.81 MB to 28.52 MB and layout-switching peak RSS from 34.66 MB to 28.02 MB while preserving the crafted sidebar preview. The headline remains far below the old live Bun/OpenTUI TUI (~175 MB RSS steady).
 

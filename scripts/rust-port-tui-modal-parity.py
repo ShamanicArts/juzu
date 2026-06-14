@@ -13,6 +13,7 @@ cursor movement and partial redraws. tmux is the real review surface here.
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import os
 import subprocess
@@ -80,17 +81,59 @@ def assert_not_contains(text: str, needle: str, label: str, failures: list[str])
         failures.append(f"{label}: expected screen not to contain {needle!r}")
 
 
-def assert_details_split_matches_old(text: str, failures: list[str]) -> None:
+def assert_details_split_matches_old(text: str, width: int, failures: list[str]) -> None:
+    # Old JUZU keeps details/sidebar visible beside the diff pane with a 60/40 split.
+    # Rust also leaves a two-column buffer before the sidebar so long diff titles do
+    # not visually crash into the details pane.
+    expected = int(width * 0.60)
     for line in text.splitlines():
         marker = "┌ details"
         if marker in line:
             column = line.index(marker)
-            if not (118 <= column <= 130):
+            if not (expected - 4 <= column <= expected + 6):
                 failures.append(
-                    f"old diff pane/sidebar split: details pane should start near column 124, got {column}"
+                    f"old diff pane/sidebar split at {width} cols: details pane should start near column {expected}, got {column}"
                 )
             return
-    failures.append("old diff pane/sidebar split: details pane border not found")
+    failures.append(f"old diff pane/sidebar split at {width} cols: details pane border not found")
+
+
+def assert_diff_title_contract(text: str, width: int, failures: list[str]) -> None:
+    for line in text.splitlines():
+        if line.startswith("File "):
+            if "Ctrl+d back" not in line:
+                failures.append(f"diff title at {width} cols: Ctrl+d back hint was truncated away")
+            if "[ / ] next/prev" not in line:
+                failures.append(f"diff title at {width} cols: file cycling hint was truncated away")
+            details_col = line.find("┌ details")
+            if details_col == -1:
+                failures.append(f"diff title at {width} cols: sidebar details border not visible on title row")
+            else:
+                title_segment = line[:details_col]
+                if not title_segment.endswith("  "):
+                    failures.append(f"diff title at {width} cols: missing two-column buffer before sidebar")
+            return
+    failures.append(f"diff title at {width} cols: no File N/N title row found")
+
+
+def assert_diff_footer_contract(text: str, width: int, failures: list[str]) -> None:
+    footer_lines = [line for line in text.splitlines() if "^d" in line and "Esc" in line]
+    if not footer_lines:
+        failures.append(f"diff footer at {width} cols: footer hint row not found")
+        return
+    footer = footer_lines[-1]
+    for needle in ["DIFF", "^d", "Log", "[ ]", "File", "j/k", "Move", "Esc", "Exit"]:
+        if needle not in footer:
+            failures.append(f"diff footer at {width} cols: missing {needle!r}")
+
+
+def assert_debug_state_contract(label: str, state: dict[str, Any], failures: list[str]) -> None:
+    if state.get("viewMode") != "Log":
+        failures.append(f"debug-state {label}: should end in Log mode")
+    if state.get("selectedChange", "")[:8] != "nqmmukmt":
+        failures.append(f"debug-state {label}: should preserve selected target commit")
+    if state.get("diffScroll") != 0:
+        failures.append(f"debug-state {label}: should reset diff scroll on exit")
 
 
 def select_change_prefix(session: str, change_prefix: str, max_steps: int = 16) -> str:
@@ -107,28 +150,12 @@ def select_change_prefix(session: str, change_prefix: str, max_steps: int = 16) 
     return screen
 
 
-def run_case(args: argparse.Namespace) -> dict[str, Any]:
-    subprocess.run(["cargo", "build", "--release", "-p", "juzu-tui"], cwd=ROOT, check=True)
-    debug_states: dict[str, Any] = {}
-    failures: list[str] = []
-    try:
-        debug_states["enterScrollFileExit"] = run_debug_state(args, "C-d,j,],Esc")
-        state = debug_states["enterScrollFileExit"]
-        if state.get("viewMode") != "Log":
-            failures.append("debug-state C-d,j,],Esc should return to Log")
-        if state.get("selectedChange", "")[:8] != "nqmmukmt":
-            failures.append("debug-state diff scrolling should not move selected change from target commit")
-        if state.get("diffScroll") != 0:
-            failures.append("debug-state Esc from diff should reset diff scroll")
-        if state.get("diffFileIndex") != 1:
-            failures.append("debug-state ] in diff should cycle to file index 1 before exit")
-    except Exception as exc:
-        failures.append(f"debug-state emitter failed: {exc}")
-
-    session = f"juzu-modal-parity-{os.getpid()}"
+def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
+    session = f"juzu-modal-parity-{os.getpid()}-{width}"
     cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {Path(args.repo).resolve()} --limit {args.limit} --mode mainline"
-    tmux("new-session", "-d", "-s", session, "-x", "206", "-y", "36")
+    tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", "36")
     captures: dict[str, str] = {}
+    failures: list[str] = []
     try:
         send(session, cmd, "Enter")
         initial = wait_for(session, "dag graph")
@@ -154,7 +181,9 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         assert_contains(diff, "Exit", "old diff status hint labels escape as Exit", failures)
         assert_not_contains(diff, "dag graph", "diff replaces graph pane", failures)
         assert_contains(diff, "details", "diff mode keeps sidebar", failures)
-        assert_details_split_matches_old(diff, failures)
+        assert_details_split_matches_old(diff, width, failures)
+        assert_diff_title_contract(diff, width, failures)
+        assert_diff_footer_contract(diff, width, failures)
         assert_contains(diff, "Change: nqmmukmt", "diff mode keeps selected commit", failures)
         if "JUZU" not in diff:
             failures.append("after Ctrl+D: screen no longer shows JUZU, app likely exited")
@@ -254,26 +283,114 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
     finally:
         tmux("kill-session", "-t", session, check=False)
     return {
+        "width": width,
         "session": session,
         "command": cmd,
         "passed": not failures,
         "failures": failures,
         "captures": captures,
+    }
+
+
+def run_case(args: argparse.Namespace) -> dict[str, Any]:
+    subprocess.run(["cargo", "build", "--release", "-p", "juzu-tui"], cwd=ROOT, check=True)
+    debug_states: dict[str, Any] = {}
+    failures: list[str] = []
+    scenarios = {
+        "enterScrollFileExit": "C-d,j,],Esc",
+        "quitReturnsLog": "C-d,q",
+        "gReturnsLog": "C-d,g",
+        "ctrlDTogglesLog": "C-d,C-d",
+        "doubleNextFileEsc": "C-d,],],Esc",
+        "pageScrollResetEsc": "C-d,PageDown,PageUp,Esc",
+    }
+    try:
+        for label, keys in scenarios.items():
+            state = run_debug_state(args, keys)
+            debug_states[label] = state
+            assert_debug_state_contract(keys, state, failures)
+        if debug_states["enterScrollFileExit"].get("diffFileIndex") != 1:
+            failures.append("debug-state C-d,j,],Esc should cycle to file index 1 before exit")
+        if debug_states["doubleNextFileEsc"].get("diffFileIndex") != 2:
+            failures.append("debug-state C-d,],],Esc should cycle to file index 2 before exit")
+    except Exception as exc:
+        failures.append(f"debug-state emitter failed: {exc}")
+
+    width_reports = [run_width_case(args, width) for width in args.widths]
+    for width_report in width_reports:
+        failures.extend(width_report["failures"])
+
+    return {
+        "passed": not failures,
+        "failures": failures,
+        "widths": args.widths,
+        "widthReports": width_reports,
         "debugStates": debug_states,
     }
+
+
+def render_html_report(report: dict[str, Any]) -> str:
+    def sample_capture(width_report: dict[str, Any]) -> str:
+        captures = width_report.get("captures", {})
+        return captures.get("afterCtrlD") or next(iter(captures.values()), "")
+
+    cards = []
+    for width_report in report.get("widthReports", []):
+        width = width_report["width"]
+        status = "PASS" if width_report["passed"] else "FAIL"
+        failures = "".join(f"<li>{html.escape(f)}</li>" for f in width_report.get("failures", [])) or "<li>none</li>"
+        cards.append(f"""
+<section class='card'>
+  <h2>{width} cols · {status}</h2>
+  <ul>{failures}</ul>
+  <pre>{html.escape(sample_capture(width_report))}</pre>
+</section>""")
+    debug_rows = []
+    for label, state in report.get("debugStates", {}).items():
+        debug_rows.append(
+            f"<tr><td>{html.escape(label)}</td><td>{html.escape(state.get('viewMode', ''))}</td><td>{html.escape(str(state.get('diffFileIndex', '')))}</td><td>{html.escape(str(state.get('diffScroll', '')))}</td><td><code>{html.escape(state.get('selectedChange', '')[:12])}</code></td></tr>"
+        )
+    failures = "".join(f"<li>{html.escape(f)}</li>" for f in report.get("failures", [])) or "<li>none</li>"
+    return f"""<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust TUI modal parity</title>
+<style>
+:root {{ color-scheme: dark; --bg:#07111f; --panel:#0f172a; --line:#334155; --text:#dbeafe; --muted:#94a3b8; --cyan:#67e8f9; --green:#86efac; --red:#fca5a5; }}
+body {{ margin:32px; background:radial-gradient(circle at top left,#12233f 0,#07111f 45rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }}
+h1 {{ margin:0 0 8px; }} .meta {{ color:var(--muted); margin-bottom:20px; }} .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:16px; }}
+.card {{ border:1px solid var(--line); background:rgba(15,23,42,.94); border-radius:16px; padding:16px; box-shadow:0 18px 60px rgba(0,0,0,.25); }}
+h2 {{ color:var(--cyan); font-size:16px; margin:0 0 12px; }} pre {{ background:#020617; border:1px solid #1e293b; border-radius:12px; padding:12px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; }}
+table {{ width:100%; border-collapse:collapse; margin-bottom:16px; }} td, th {{ border-bottom:1px solid #1e293b; padding:8px; text-align:left; }} th {{ color:var(--cyan); }} .pass {{ color:var(--green); }} .fail {{ color:var(--red); }}
+</style></head><body>
+<h1>JUZU Rust TUI modal parity</h1>
+<div class='meta'>Width variants, footer/title/sidebar contract, and debug-state exit scenarios.</div>
+<section class='card'><h2>Overall: <span class='{ 'pass' if report.get('passed') else 'fail' }'>{'PASS' if report.get('passed') else 'FAIL'}</span></h2><ul>{failures}</ul></section>
+<section class='card'><h2>Debug-state scenarios</h2><table><thead><tr><th>Scenario</th><th>Mode</th><th>File</th><th>Scroll</th><th>Selected</th></tr></thead><tbody>{''.join(debug_rows)}</tbody></table></section>
+<div class='grid'>{''.join(cards)}</div>
+</body></html>"""
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", default=str(ROOT))
     parser.add_argument("--limit", type=int, default=40)
+    parser.add_argument("--widths", default="120,160,206")
     parser.add_argument("--write-report")
     args = parser.parse_args()
+    args.widths = [int(raw.strip()) for raw in args.widths.split(",") if raw.strip()]
     report = run_case(args)
-    printable = {k: v for k, v in report.items() if k != "captures"}
+    printable = {k: v for k, v in report.items() if k != "widthReports"}
+    printable["widthReports"] = [
+        {k: v for k, v in width_report.items() if k != "captures"}
+        for width_report in report["widthReports"]
+    ]
     print(json.dumps(printable, indent=2))
     if args.write_report:
-        Path(args.write_report).write_text(json.dumps(report, indent=2) + "\n")
+        report_path = Path(args.write_report)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(report, indent=2) + "\n")
+        html_path = report_path.with_suffix(".html")
+        html_path.write_text(render_html_report(report))
+        print(f"file://{html_path}")
     if not report["passed"]:
         raise SystemExit(1)
 
