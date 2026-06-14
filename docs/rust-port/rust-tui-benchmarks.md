@@ -29,17 +29,17 @@ The runner:
 
 ## Latest artifact
 
-`bench/results/rust-port/rust-tui-bench/2026-06-14T05-29-49-735Z/rust-tui-benchmark.html`
+`bench/results/rust-port/rust-tui-bench/2026-06-14T05-32-52-468Z/rust-tui-benchmark.html`
 
 ## Current headline
 
-Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, the Pierre/JUZU-style structured diff sidebar renderer, the TDD-rebuilt old-style diff pane toggle, fixed diff navigation parity in both diff-pane and log/sidebar views, per-file retained diff row capping so later files render, old-style diff-mode footer/status hints, the Rust `--debug-state` modal state emitter, old JUZU 60/40 pane split parity, width-variant modal parity coverage at 120/160/206 columns, selected diff-file marking/windowing in the sidebar, lazy uncapped full-row loading only for the active diff pane, diff-mode sidebar preview following the selected file, the full diff pane's bordered panel/title/viewport status surface with an updating `SCROLL` handle, and diff-mode sidebar labeling as a secondary current-file preview.
+Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, the Pierre/JUZU-style structured diff sidebar renderer, the TDD-rebuilt old-style diff pane toggle, fixed diff navigation parity in both diff-pane and log/sidebar views, per-file retained diff row capping so later files render, old-style diff-mode footer/status hints, the Rust `--debug-state` modal state emitter, old JUZU 60/40 pane split parity, width-variant modal parity coverage at 120/160/206 columns, selected diff-file marking/windowing in the sidebar, lazy uncapped full-row loading only for the active diff pane, diff-mode sidebar preview following the selected file, the full diff pane's bordered panel/title/viewport status surface with an updating `SCROLL` handle, diff-mode sidebar labeling as a secondary current-file preview, and right-capped hunk bars.
 
 | Scenario | RSS peak | RSS steady median | PSS steady median | Header median |
 | --- | ---: | ---: | ---: | ---: |
-| `idle-mainline` | 10.83 MB | 10.76 MB | 9.01 MB | 131.54 ms |
-| `navigate-mainline` | 38.38 MB | 37.77 MB | 36.02 MB | 130.84 ms |
-| `layout-switching` | 38.21 MB | 37.97 MB | 36.22 MB | 130.01 ms |
+| `idle-mainline` | 11.00 MB | 10.89 MB | 9.14 MB | 129.13 ms |
+| `navigate-mainline` | 38.82 MB | 38.69 MB | 36.94 MB | 129.60 ms |
+| `layout-switching` | 39.09 MB | 38.97 MB | 37.22 MB | 131.06 ms |
 
 The visual renderer itself keeps idle memory close to the earlier capped-diff baseline. Hard-capping retained structured preview rows dropped navigation peak RSS from 35.81 MB to 28.52 MB and layout-switching peak RSS from 34.66 MB to 28.02 MB while preserving the crafted sidebar preview. The headline remains far below the old live Bun/OpenTUI TUI (~175 MB RSS steady).
 

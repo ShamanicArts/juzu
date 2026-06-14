@@ -138,8 +138,11 @@ def assert_diff_panel_contract(text: str, width: int, failures: list[str]) -> No
         failures.append(f"diff panel at {width} cols: missing visual scroll handle")
     if "◆" not in text:
         failures.append(f"diff panel at {width} cols: missing file header bar glyph")
-    if "@@" not in text:
+    hunk_lines = [line for line in text.splitlines() if "@@" in line]
+    if not hunk_lines:
         failures.append(f"diff panel at {width} cols: missing hunk header bar")
+    elif not any("╮" in line for line in hunk_lines):
+        failures.append(f"diff panel at {width} cols: hunk header bar should span to a right cap")
 
 
 def scroll_indicator_line(text: str) -> str:

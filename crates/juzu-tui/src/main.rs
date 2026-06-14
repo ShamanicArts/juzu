@@ -1251,7 +1251,7 @@ fn render_diff_metadata(text: &str, max_len: usize) -> Line<'static> {
 }
 
 fn render_diff_hunk_header(row: &DiffRow, max_len: usize) -> Line<'static> {
-    let text = truncate(&row.text, max_len.saturating_sub(4));
+    let text = truncate(&row.text, max_len.saturating_sub(5));
     Line::from(vec![
         Span::styled(
             "╭─ ",
@@ -1260,11 +1260,17 @@ fn render_diff_hunk_header(row: &DiffRow, max_len: usize) -> Line<'static> {
                 .bg(Color::Rgb(30, 27, 75)),
         ),
         Span::styled(
-            format!("{:<width$}", text, width = max_len.saturating_sub(4)),
+            format!("{:<width$}", text, width = max_len.saturating_sub(5)),
             Style::default()
                 .fg(Color::LightBlue)
                 .bg(Color::Rgb(30, 27, 75))
                 .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            " ╮",
+            Style::default()
+                .fg(Color::LightMagenta)
+                .bg(Color::Rgb(30, 27, 75)),
         ),
     ])
 }
