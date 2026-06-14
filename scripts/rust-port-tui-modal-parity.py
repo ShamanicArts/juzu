@@ -122,7 +122,7 @@ def assert_diff_footer_contract(text: str, width: int, failures: list[str]) -> N
         failures.append(f"diff footer at {width} cols: footer hint row not found")
         return
     footer = footer_lines[-1]
-    for needle in ["DIFF", "^d", "Log", "[ ]", "File", "j/k", "Move", "Esc", "Exit"]:
+    for needle in ["DIFF", "^d", "Log", "[ ]", "File", "j/k", "Move", "{/}", "Hunk", "Esc", "Exit"]:
         if needle not in footer:
             failures.append(f"diff footer at {width} cols: missing {needle!r}")
 

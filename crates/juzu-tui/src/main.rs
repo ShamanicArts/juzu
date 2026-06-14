@@ -1462,6 +1462,8 @@ fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
             Span::raw(" File   "),
             Span::styled(" j/k ", Style::default().fg(Color::Black).bg(Color::Gray)),
             Span::raw(" Move   "),
+            Span::styled(" {/} ", Style::default().fg(Color::Black).bg(Color::Gray)),
+            Span::raw(" Hunk   "),
             Span::styled(" Esc ", Style::default().fg(Color::Black).bg(Color::Gray)),
             Span::raw(" Exit"),
         ])
