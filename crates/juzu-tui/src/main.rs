@@ -19,6 +19,8 @@ use ratatui::{
 };
 use std::{collections::HashMap, io::stdout, path::PathBuf, time::Duration};
 
+const DIFF_PREVIEW_ROW_CAP: usize = 420;
+
 fn arg_value(args: &[String], key: &str) -> Option<String> {
     args.windows(2).find_map(|pair| {
         if pair[0] == key {
@@ -156,10 +158,12 @@ fn ensure_selected_diff(app: &mut App) {
     let preview = parse_git_patch(&diff)
         .map(|document| {
             let rows = collapsed_diff_rows(&document, 3);
+            let row_count = rows.len();
+            let rows = cap_diff_preview_rows(rows, DIFF_PREVIEW_ROW_CAP);
             DiffPreview {
                 raw_line_count: diff.lines().count(),
                 file_count: document.files.len(),
-                row_count: rows.len(),
+                row_count,
                 rows,
                 parse_error: None,
             }
@@ -186,6 +190,27 @@ struct DiffPreview {
 enum DiffJump {
     PreviousHunk,
     NextHunk,
+}
+
+fn cap_diff_preview_rows(mut rows: Vec<DiffRow>, cap: usize) -> Vec<DiffRow> {
+    if rows.len() <= cap {
+        return rows;
+    }
+    let omitted = rows.len() - cap;
+    rows.truncate(cap);
+    let (file_index, hunk_index) = rows
+        .last()
+        .map(|row| (row.file_index, row.hunk_index))
+        .unwrap_or((0, None));
+    rows.push(DiffRow {
+        kind: DiffRowKind::Collapse,
+        file_index,
+        hunk_index,
+        old_line: None,
+        new_line: None,
+        text: format!("preview capped · {omitted} additional rows omitted"),
+    });
+    rows
 }
 
 fn jump_selected_diff(app: &mut App, jump: DiffJump) {
@@ -798,8 +823,11 @@ fn render_diff_preview_lines(
 
     lines.push(render_diff_metadata(
         &format!(
-            "{} files · {} raw · {} rows",
-            diff.file_count, diff.raw_line_count, diff.row_count
+            "{} files · {} raw · {} rows · {} shown",
+            diff.file_count,
+            diff.raw_line_count,
+            diff.row_count,
+            diff.rows.len()
         ),
         sidebar_width.saturating_sub(4),
     ));

@@ -29,7 +29,7 @@ The runner:
 
 ## Latest artifact
 
-`bench/results/rust-port/rust-tui-bench/2026-06-14T02-09-31-569Z/rust-tui-benchmark.html`
+`bench/results/rust-port/rust-tui-bench/2026-06-14T02-11-51-620Z/rust-tui-benchmark.html`
 
 ## Current headline
 
@@ -37,11 +37,11 @@ Current benchmark is for the Rust TUI after native `files()` hydration, lazy sel
 
 | Scenario | RSS peak | RSS steady median | PSS steady median | Header median |
 | --- | ---: | ---: | ---: | ---: |
-| `idle-mainline` | 10.94 MB | 10.71 MB | 8.96 MB | 131.64 ms |
-| `navigate-mainline` | 35.81 MB | 35.79 MB | 34.03 MB | 131.32 ms |
-| `layout-switching` | 34.66 MB | 33.95 MB | 32.20 MB | 130.78 ms |
+| `idle-mainline` | 10.76 MB | 10.56 MB | 8.80 MB | 133.26 ms |
+| `navigate-mainline` | 28.52 MB | 28.45 MB | 26.70 MB | 127.04 ms |
+| `layout-switching` | 28.02 MB | 27.07 MB | 25.32 MB | 132.30 ms |
 
-The visual renderer itself keeps idle memory close to the earlier capped-diff baseline. Navigation/layout scenarios are heavier because selected-node diff hydration retains structured rows for large patches. The headline is still far below the old live Bun/OpenTUI TUI (~175 MB RSS steady), but this confirms the next performance task: keep the crafted renderer while avoiding large patch rows staying resident during navigation.
+The visual renderer itself keeps idle memory close to the earlier capped-diff baseline. Hard-capping retained structured preview rows dropped navigation peak RSS from 35.81 MB to 28.52 MB and layout-switching peak RSS from 34.66 MB to 28.02 MB while preserving the crafted sidebar preview. The headline remains far below the old live Bun/OpenTUI TUI (~175 MB RSS steady).
 
 Use the HTML artifact as the source of truth for exact per-run values.
 
