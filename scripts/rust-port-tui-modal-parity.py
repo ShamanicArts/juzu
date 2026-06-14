@@ -145,6 +145,11 @@ def assert_diff_panel_contract(text: str, width: int, failures: list[str]) -> No
         failures.append(f"diff panel at {width} cols: hunk header bar should span to a right cap")
 
 
+def assert_diff_code_band_contract(text: str, width: int, failures: list[str]) -> None:
+    if "▌+" not in text:
+        failures.append(f"diff code bands at {width} cols: added rows need a continuous left band marker")
+
+
 def scroll_indicator_line(text: str) -> str:
     for line in text.splitlines():
         if "SCROLL" in line:
@@ -220,6 +225,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_diff_title_contract(diff, width, failures)
         assert_diff_footer_contract(diff, width, failures)
         assert_diff_panel_contract(diff, width, failures)
+        assert_diff_code_band_contract(diff, width, failures)
         assert_contains(diff, "Change: nqmmukmt", "diff mode keeps selected commit", failures)
         assert_not_contains(diff, "preview capped", "full diff pane should not show sidebar preview cap rows", failures)
         if "JUZU" not in diff:

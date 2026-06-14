@@ -54,8 +54,9 @@ def terminal_row(row: dict[str, Any], width: int) -> str:
     old_line = "" if row.get("oldLine") is None else str(row.get("oldLine"))
     new_line = "" if row.get("newLine") is None else str(row.get("newLine"))
     sign = "+" if kind == "add" else "-" if kind == "remove" else " "
+    band = "▌" if kind in {"add", "remove"} else "│"
     body = text[1:] if text.startswith(("+", "-", " ")) else text
-    return f"{old_line:>4} {new_line:>4} {sign}{body}"[:width]
+    return f"{band}{sign} {old_line:>4} {new_line:>4} {body}"[:width]
 
 
 def render_terminal(rows: list[dict[str, Any]], width: int, limit: int) -> str:
@@ -102,7 +103,7 @@ table {{ width:100%; border-collapse:collapse; font-size:12px; }} th {{ text-ali
 <div class='statbar'><div class='stat'><strong>{report['summary']['fileCount']}</strong> files</div><div class='stat'><strong>{report['summary']['rawLineCount']}</strong> raw lines</div><div class='stat'><strong>{report['summary']['collapsedRowCount']}</strong> rendered rows</div><div class='stat'><strong>{report['summary']['terminalWidth']}</strong> terminal columns</div></div>
 <div class='grid'>
 <section class='card'><h2>Terminal-style rendered preview</h2><div class='terminal'>{render_terminal(rows, report['summary']['terminalWidth'], 160)}</div></section>
-<section class='card'><h2>Pierre/JUZU design mapping</h2><ul class='notes'><li>File headers are section dividers, closer to Pierre's file-level hierarchy than a plain row.</li><li>Hunks render as compact blue/purple bands so scan position is obvious without wasting vertical space.</li><li>Old/new gutters are dim and aligned, borrowing Pierre's code-column discipline while keeping JUZU's dense terminal feel.</li><li>Add/remove rows use tinted full-row backgrounds, making mutation blocks readable in tmux, not just technically colored.</li><li>Collapse rows are centered separators, not inert text.</li></ul><div class='mapping'><div><strong>From Pierre</strong><br>file/hunk hierarchy, gutters, collapsed regions, patch reading rhythm.</div><div><strong>From JUZU</strong><br>sharp terminal density, low chrome, high information per line.</div></div></section>
+<section class='card'><h2>Pierre/JUZU design mapping</h2><ul class='notes'><li>File headers are section dividers, closer to Pierre's file-level hierarchy than a plain row.</li><li>Hunks render as compact blue/purple bands so scan position is obvious without wasting vertical space.</li><li>Old/new gutters are dim and aligned, borrowing Pierre's code-column discipline while keeping JUZU's dense terminal feel.</li><li>Add/remove rows use tinted full-row backgrounds plus a continuous left mutation band, making blocks readable in tmux, not just technically colored.</li><li>Collapse rows are centered separators, not inert text.</li></ul><div class='mapping'><div><strong>From Pierre</strong><br>file/hunk hierarchy, gutters, collapsed regions, patch reading rhythm.</div><div><strong>From JUZU</strong><br>sharp terminal density, low chrome, high information per line.</div></div></section>
 </div>
 <div class='grid'>
 <section class='card'><h2>Raw native diff first section</h2><pre>{html.escape(raw_first)}</pre></section>

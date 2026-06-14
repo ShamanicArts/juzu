@@ -1290,6 +1290,10 @@ fn render_diff_code_row(row: &DiffRow, max_len: usize) -> Line<'static> {
         DiffRowKind::Remove => "-",
         _ => " ",
     };
+    let band = match row.kind {
+        DiffRowKind::Add | DiffRowKind::Remove => "▌",
+        _ => "│",
+    };
     let (gutter_style, sign_style, text_style) = match row.kind {
         DiffRowKind::Add => (
             Style::default()
@@ -1321,12 +1325,14 @@ fn render_diff_code_row(row: &DiffRow, max_len: usize) -> Line<'static> {
             Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
         ),
     };
-    let text_budget = max_len.saturating_sub(gutter.len() + 3);
+    let text_budget = max_len.saturating_sub(gutter.len() + 5);
     let content = row.text.strip_prefix(['+', '-', ' ']).unwrap_or(&row.text);
     Line::from(vec![
+        Span::styled(band, sign_style),
+        Span::styled(sign.to_string(), sign_style),
+        Span::styled(" ", Style::default().fg(Color::DarkGray)),
         Span::styled(gutter, gutter_style),
         Span::styled(" ", Style::default().fg(Color::DarkGray)),
-        Span::styled(sign.to_string(), sign_style),
         Span::styled(truncate(content, text_budget), text_style),
     ])
 }
