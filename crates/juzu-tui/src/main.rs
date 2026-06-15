@@ -1277,15 +1277,10 @@ fn render_diff_pane(
                 width,
             ));
         } else {
-            let rows = rows_for_diff_file(diff, app.diff_file_index);
-            let visible_count = height.saturating_sub(lines.len() + 2).max(1);
+            let rows = diffview_rows_for_file(diff, app.diff_file_index);
+            let visible_count = height.saturating_sub(lines.len()).max(1);
             let max_scroll = rows.len().saturating_sub(visible_count);
             let scroll = app.diff_scroll.min(max_scroll);
-            let end = (scroll + visible_count).min(rows.len());
-            lines.push(render_diff_viewport_bar(t, scroll, end, rows.len(), width));
-            if let Some(anchor) = render_diff_anchor_label(t, &rows, scroll, width) {
-                lines.push(anchor);
-            }
             for row in rows.iter().skip(scroll).take(visible_count) {
                 lines.push(render_diff_row(t, row, width));
             }
@@ -1333,6 +1328,21 @@ fn rows_for_diff_file(diff: &DiffPreview, file_index: usize) -> Vec<DiffRow> {
     rows.iter()
         .filter(|row| row.file_index == index)
         .cloned()
+        .collect()
+}
+
+fn diffview_rows_for_file(diff: &DiffPreview, file_index: usize) -> Vec<DiffRow> {
+    rows_for_diff_file(diff, file_index)
+        .into_iter()
+        .filter(|row| {
+            matches!(
+                row.kind,
+                DiffRowKind::Context
+                    | DiffRowKind::Add
+                    | DiffRowKind::Remove
+                    | DiffRowKind::Collapse
+            )
+        })
         .collect()
 }
 
@@ -2478,55 +2488,6 @@ fn render_diff_collapse_row(_tokens: &UiTokens, text: &str, max_len: usize) -> L
     ])
 }
 
-fn render_diff_viewport_bar(
-    tokens: &UiTokens,
-    scroll: usize,
-    end: usize,
-    total: usize,
-    max_len: usize,
-) -> Line<'static> {
-    let range = if total == 0 {
-        "diff rows 0/0".to_string()
-    } else {
-        format!("diff rows {}-{} of {}", scroll + 1, end, total)
-    };
-    let handle = render_scroll_handle(scroll, end, total, 10);
-    let label = format!("VIEWPORT {range}   SCROLL {handle}");
-    let clipped = truncate(&label, max_len.saturating_sub(2));
-    Line::from(vec![Span::styled(
-        format!(" {:<width$}", clipped, width = max_len.saturating_sub(1)),
-        Style::default()
-            .fg(tokens.slate_text)
-            .bg(tokens.slate_bg2)
-            .add_modifier(Modifier::BOLD),
-    )])
-}
-
-fn render_scroll_handle(scroll: usize, end: usize, total: usize, slots: usize) -> String {
-    if total <= 1 || slots == 0 {
-        return "█".repeat(slots.max(1));
-    }
-    let visible = end.saturating_sub(scroll).max(1);
-    let handle_len = ((visible * slots) / total).clamp(1, slots);
-    let max_start = slots.saturating_sub(handle_len);
-    let start = if total <= visible {
-        0
-    } else {
-        (scroll * max_start) / total.saturating_sub(visible).max(1)
-    };
-    let mut out = String::with_capacity(slots + 2);
-    out.push('[');
-    for idx in 0..slots {
-        if idx >= start && idx < start + handle_len {
-            out.push('█');
-        } else {
-            out.push('░');
-        }
-    }
-    out.push(']');
-    out
-}
-
 fn render_diff_scroll_range(
     tokens: &UiTokens,
     scroll: usize,
@@ -2817,18 +2778,72 @@ mod tests {
     }
 
     #[test]
-    fn diff_viewport_bar_uses_old_panel_tokens() {
-        let line = render_diff_viewport_bar(&UI_TOKENS, 0, 10, 40, 80);
-        for span in &line.spans {
-            assert_eq!(span.style.bg, Some(UI_TOKENS.slate_bg2));
-        }
-    }
-
-    #[test]
     fn theme_picker_window_keeps_selected_visible() {
         assert_eq!(theme_picker_window(0, 21, 8), (0, 8));
         assert_eq!(theme_picker_window(10, 21, 8), (7, 15));
         assert_eq!(theme_picker_window(20, 21, 8), (13, 21));
+    }
+
+    #[test]
+    fn full_diff_pane_hides_patch_scaffold_like_bun_diffview() {
+        let diff = DiffPreview {
+            raw_line_count: 7,
+            file_count: 1,
+            row_count: 5,
+            preview_rows: vec![],
+            full_rows: Some(vec![
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Modified src/lib.rs".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Metadata,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "diff --git a/src/lib.rs b/src/lib.rs".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::HunkHeader,
+                    file_index: 0,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: None,
+                    text: "@@ -1,1 +1,1 @@".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Remove,
+                    file_index: 0,
+                    hunk_index: Some(0),
+                    old_line: Some(1),
+                    new_line: None,
+                    text: "-old".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Add,
+                    file_index: 0,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: Some(1),
+                    text: "+new".to_string(),
+                },
+            ]),
+            parse_error: None,
+        };
+
+        let visible = diffview_rows_for_file(&diff, 0);
+        assert_eq!(visible.len(), 2);
+        assert!(visible
+            .iter()
+            .all(|row| matches!(row.kind, DiffRowKind::Add | DiffRowKind::Remove)));
+        assert!(!visible
+            .iter()
+            .any(|row| row.text.contains("diff --git") || row.text.contains("@@")));
     }
 
     #[test]

@@ -251,9 +251,9 @@ def run_capture_sequence(args: argparse.Namespace) -> list[CapturePair]:
                 limit_capture(rust_diff, args.lines),
                 limit_capture(bun_diff, args.lines),
                 [
-                    "Bun DiffView uses OpenTUI's diff renderer: full-row backgrounds, distinct gutters, and a continuous pane.",
-                    "Rust still shows bordered scaffolding and text-local bands; readable is not parity.",
-                    "Future diff work must compare directly to src/tui/components/DiffView.tsx, not hand-style random terminal rows.",
+                    "Bun DiffView uses OpenTUI's diff renderer: file title followed directly by unified code rows.",
+                    "Rust now hides its earlier patch scaffold rows in the full diff pane; remaining gaps are wrapping, context-row rhythm, sidebar preview density, and exact OpenTUI diff renderer fidelity.",
+                    "Future diff work must keep comparing directly to src/tui/components/DiffView.tsx rather than adding Rust-only bars or status rows.",
                 ],
             )
         )

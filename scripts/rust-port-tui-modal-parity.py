@@ -145,52 +145,44 @@ def assert_sidebar_details_rhythm_contract(text: str, width: int, failures: list
         failures.append(f"sidebar rhythm at {width} cols: empty bookmarks section should be omitted like Bun")
 
 
+def diff_left_pane_text(text: str, width: int) -> str:
+    left_width = max(1, int(width * 0.60))
+    return "\n".join(line[:left_width] for line in text.splitlines())
+
+
 def assert_diff_panel_contract(text: str, width: int, failures: list[str]) -> None:
-    if "__never_old_box__" in text:
-        failures.append(f"diff panel at {width} cols: missing full diff file title")
-    if "File " not in text:
-        failures.append(f"diff panel at {width} cols: default Bun-smooth chrome should not render a diff box border")
-    if "VIEWPORT" not in text:
-        failures.append(f"diff panel at {width} cols: missing full-width viewport/status bar")
-    if "SCROLL" not in text:
-        failures.append(f"diff panel at {width} cols: missing visual scroll handle")
-    if "◆" not in text:
-        failures.append(f"diff panel at {width} cols: missing file header bar glyph")
-    hunk_lines = [line for line in text.splitlines() if "@@" in line]
-    if not hunk_lines:
-        failures.append(f"diff panel at {width} cols: missing hunk header bar")
-    elif not any("╮" in line for line in hunk_lines):
-        failures.append(f"diff panel at {width} cols: hunk header bar should span to a right cap")
+    left = diff_left_pane_text(text, width)
+    if "File " not in left:
+        failures.append(f"diff panel at {width} cols: missing Bun-style file title")
+    structural_lines = [line for line in left.splitlines() if not re.match(r"^\s*\d+\s+[+\- ]\s+", line)]
+    structural = "\n".join(structural_lines)
+    for forbidden in ["VIEWPORT", "SCROLL", "STICKY", "◆", "╭─ @@", "diff --git", "new file mode", "--- /dev/null", "+++ b/"]:
+        if forbidden in structural:
+            failures.append(f"diff panel at {width} cols: Rust-only patch scaffold should be hidden from Bun DiffView surface: {forbidden!r}")
+    if not re.search(r"^\s*\d+\s+[+\-]\s+", left, re.MULTILINE):
+        failures.append(f"diff panel at {width} cols: expected Bun DiffView code rows immediately under title")
 
 
 def assert_diff_code_band_contract(text: str, width: int, failures: list[str]) -> None:
-    if "▌+" in text or "▌-" in text:
-        failures.append(f"diff code gutters at {width} cols: Bun DiffView uses gutter signs, not a custom left mutation band")
-    if not re.search(r"\s\d+\s+[+-]", text):
+    left = diff_left_pane_text(text, width)
+    if not re.search(r"^\s*\d+\s+[+\-]\s+", left, re.MULTILINE):
         failures.append(f"diff code gutters at {width} cols: expected Bun-style line number followed by +/- sign")
 
 
-def scroll_indicator_line(text: str) -> str:
+def first_diff_code_line(text: str) -> str:
     for line in text.splitlines():
-        if "SCROLL" in line:
-            return line
+        if re.match(r"^\s*\d+\s+[+\- ]\s+", line):
+            return line.strip()
     return ""
 
 
-def assert_scroll_indicator_changes(before: str, after: str, width: int, failures: list[str]) -> None:
-    before_line = scroll_indicator_line(before)
-    after_line = scroll_indicator_line(after)
+def assert_diff_code_scrolls(before: str, after: str, width: int, failures: list[str]) -> None:
+    before_line = first_diff_code_line(before)
+    after_line = first_diff_code_line(after)
     if not before_line or not after_line:
-        failures.append(f"diff scroll handle at {width} cols: missing before/after indicator line")
+        failures.append(f"diff scrolling at {width} cols: missing comparable Bun-style code rows")
     elif before_line == after_line:
-        failures.append(f"diff scroll handle at {width} cols: indicator did not change after scrolling")
-
-
-def assert_sticky_context_contract(text: str, width: int, failures: list[str]) -> None:
-    if "STICKY" not in text:
-        failures.append(f"sticky context at {width} cols: missing explicit sticky file/hunk bar")
-    if "▸" not in text:
-        failures.append(f"sticky context at {width} cols: missing file-to-hunk separator")
+        failures.append(f"diff scrolling at {width} cols: first code row did not change after scrolling")
 
 
 def assert_debug_state_contract(label: str, state: dict[str, Any], failures: list[str]) -> None:
@@ -333,25 +325,26 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff, "~/dev/juzu", "after Ctrl+D keeps compact footer repo context", failures)
 
         send(session, "j")
-        diff_scroll_down = wait_for(session, "diff rows 2-")
+        time.sleep(0.15)
+        diff_scroll_down = capture(session)
         captures["afterDiffJ"] = diff_scroll_down
-        assert_contains(diff_scroll_down, "diff rows 2-", "j scrolls diff rows in diff mode", failures)
         assert_contains(diff_scroll_down, "Change: uyompyrw", "j in diff mode does not move DAG selection", failures)
-        assert_scroll_indicator_changes(diff, diff_scroll_down, width, failures)
-        assert_sticky_context_contract(diff_scroll_down, width, failures)
+        assert_diff_code_scrolls(diff, diff_scroll_down, width, failures)
 
         send(session, "k")
-        diff_scroll_up = wait_for(session, "diff rows 1-")
+        time.sleep(0.15)
+        diff_scroll_up = capture(session)
         captures["afterDiffK"] = diff_scroll_up
-        assert_contains(diff_scroll_up, "diff rows 1-", "k scrolls diff rows up in diff mode", failures)
         assert_contains(diff_scroll_up, "Change: uyompyrw", "k in diff mode does not move DAG selection", failures)
+        if first_diff_code_line(diff_scroll_up) != first_diff_code_line(diff):
+            failures.append(f"diff scrolling at {width} cols: k should restore the first visible Bun-style code row")
 
         send(session, "]")
         diff_next_file = wait_for(session, "File 2/")
         captures["afterDiffNextFile"] = diff_next_file
         assert_contains(diff_next_file, "File 2/", "] cycles to next diff file in diff mode", failures)
-        assert_contains(diff_next_file, "diff rows 1-", "File 2 renders diff rows", failures)
-        assert_not_contains(diff_next_file, "diff rows 1-0 of 0", "File 2 is not an empty rendered diff", failures)
+        if not first_diff_code_line(diff_next_file):
+            failures.append(f"diff file cycling at {width} cols: File 2 should render Bun-style code rows")
         assert_contains(diff_next_file, "Change: uyompyrw", "] in diff mode does not move DAG selection", failures)
         assert_contains(diff_next_file, "▶", "diff mode sidebar visibly marks selected diff file", failures)
         assert_contains(diff_next_file, "Current file preview", "diff mode sidebar remains scoped to current file after file cycling", failures)
@@ -366,9 +359,9 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         diff_last_file = wait_for(session, "File 2/")
         captures["afterDiffLastFile"] = diff_last_file
         assert_contains(diff_last_file, "File 2/", "[ from first file wraps to last diff file", failures)
-        assert_contains(diff_last_file, "diff rows 1-", "Last file renders diff rows", failures)
+        if not first_diff_code_line(diff_last_file):
+            failures.append(f"diff file cycling at {width} cols: wrapped last file should render Bun-style code rows")
         assert_not_contains(diff_last_file, "File 2/2: Diff", "Last file title is not generic/missing rows", failures)
-        assert_not_contains(diff_last_file, "diff rows 0/0", "Last file is not an empty rendered diff", failures)
         assert_not_contains(diff_last_file, "preview capped", "wrapped full diff pane should not show sidebar preview cap rows", failures)
         assert_contains(diff_last_file, "Change: uyompyrw", "last file navigation does not move DAG selection", failures)
         assert_contains(diff_last_file, "▶", "wrapped last diff file remains visibly selected in sidebar", failures)
