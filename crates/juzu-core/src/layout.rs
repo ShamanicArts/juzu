@@ -272,7 +272,13 @@ fn layout_mainline(
         }
     }
 
-    let branch_roots: Vec<String> = branch_commits.keys().cloned().collect();
+    let mut branch_roots: Vec<String> = branch_commits.keys().cloned().collect();
+    branch_roots.sort_by_key(|root_id| {
+        branch_commits
+            .get(root_id)
+            .and_then(|commits| commits.first().copied())
+            .unwrap_or(usize::MAX)
+    });
     for root_id in branch_roots {
         let mut branch_set: HashSet<String> = branch_commits[&root_id]
             .iter()
@@ -300,7 +306,15 @@ fn layout_mainline(
             .sort_by_key(|idx| nodes[*idx].y.unwrap_or(0));
     }
 
-    for (root_id, commits) in &branch_commits {
+    let mut branch_roots: Vec<String> = branch_commits.keys().cloned().collect();
+    branch_roots.sort_by_key(|root_id| {
+        branch_commits
+            .get(root_id)
+            .and_then(|commits| commits.first().copied())
+            .unwrap_or(usize::MAX)
+    });
+    for root_id in branch_roots {
+        let commits = &branch_commits[&root_id];
         if commits.is_empty() {
             continue;
         }
@@ -464,5 +478,27 @@ mod tests {
         assert_eq!(out.nodes[0].x, Some(50));
         assert_eq!(out.nodes[0].y, Some(50));
         assert_eq!(out.nodes[1].y, Some(134));
+    }
+
+    #[test]
+    fn mainline_branch_lanes_are_stable_across_repeated_layouts() {
+        let nodes = vec![
+            node("wc", &["merge"]),
+            node("merge", &["main2", "feature_b2", "feature_a2"]),
+            node("feature_b2", &["feature_b1"]),
+            node("feature_a2", &["feature_a1"]),
+            node("main2", &["main1"]),
+            node("feature_b1", &["main1"]),
+            node("feature_a1", &["main1"]),
+            node("main1", &["root"]),
+            node("root", &[]),
+        ];
+        let first = calculate_default_layout(LayoutMode::Mainline, &nodes);
+        let first_lanes: Vec<_> = first.nodes.iter().map(|node| node.lane).collect();
+        for _ in 0..100 {
+            let next = calculate_default_layout(LayoutMode::Mainline, &nodes);
+            let next_lanes: Vec<_> = next.nodes.iter().map(|node| node.lane).collect();
+            assert_eq!(next_lanes, first_lanes);
+        }
     }
 }

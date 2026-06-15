@@ -1,0 +1,88 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust live tmux proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --ok:#74b88c; --bad:#ce6f7c; --info:#7f9fbf; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .status.pass { color:var(--ok); } .status.fail { color:var(--bad); }
+.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; } code { color:var(--info); }
+</style></head><body>
+<h1>JUZU Rust live tmux proof · <span class='status pass'>PASS</span></h1>
+<div class='meta'>Target: <code>juzu:rust-tui</code> · pane command: <code>./target/release/juzu-tui</code> · expected: <code>LOG, nodes</code> · missing: <code>none</code></div>
+<section class='card'><pre> LOG   ^X Act  ^O Ops  ^L View  ^B Book
+                                                                                                  Selected
+              @....@ tkvzvrot 9b060fad                                                            Change: zvupuuvrvrtpmxpvkrzkvlrplkznnqmr
+              │      (no description)                                                             Commit: 76c986bd9d93
+              │      no file changes                                                              Lane: Some(0)  X: Some(122)  Y: Some(302)
+              │                                                                                   Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+              o..... pswlwwol df3b8557                                                            Time: 2026-06-15T18:29:43+01:00
+              │      default rust tui to bun smooth chrome
+              │      A bench/results/rust-port/live-tmux/2026-06-15T17-50-07.767Z/live-tmux-pr... Bookmarks
+              │                                                                                   —
+              o..... poqmsxkk 87a7d973
+              │      fix raw visual audit terminal backgrounds                                    Description (x expand):
+              │      A bench/results/rust-port/visual-parity-audit/2026-06-15T17-31-28.870Z/vi... preserve ansi in visual parity audit
+              │
+              O....&gt; zvupuuvr 76c986bd                                                            Files (f collapse):
+              │      preserve ansi in visual parity audit                                           A bench/results/rust-port/visual-parity-audit/2026-06-15T17-29-4
+              │      A bench/results/rust-port/visual-parity-audit/2026-06-15T17-29-42.911Z/vi...   M docs/rust-port/visual-parity-audit.md
+              │                                                                                     M scripts/rust-port-visual-parity-audit.py
+              o..... pmzrktpq e33afd51
+              │      add bun rust visual parity audit                                             Diff
+              │      A bench/results/rust-port/live-tmux/2026-06-15T17-26-12.371Z/live-tmux-pr...   · 3 files · 1382 raw · 1385 rows · 303 shown
+              │                                                                                     · diff rows 1-14 of 303
+              o..... uyompyrw b6671af5                                                             STICKY ▸ top · Added bench/results/rust-port/visual-parit...
+              │      restore readable rust diff row colors                                        ╭ ◆ Added bench/results/rust-port/visual-parity-audit/2026-...╮
+              │      A bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-pr...   · diff --git a/bench/results/rust-port/visual-parity-audi...
+              │                                                                                     · new file mode 100644
+              o..... qorzvqxu d1406324                                                              · --- /dev/null
+              │      brighten rust selected row treatments                                          · +++ b/bench/results/rust-port/visual-parity-audit/2026-...
+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-58-45.534Z/live-tmux-pr... ╭─ @@ -0,0 +1,955 @@                                         ╮
+              │                                                                                   ▌+         1 &lt;!doctype html&gt;
+              o..... rpwlyzsp 2daf82d1                                                            ▌+         2 &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU...
+              │      add rust theme picker preview panel                                          ▌+         3 &lt;style&gt;
+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-52-38.623Z/live-tmux-pr... ▌+         4 :root { color-scheme: dark; --bg:#0d1117; --p...
+              │                                                                                   ▌+         5 body { margin:24px; background:#0d1117; color...
+              o..... omurtoty fe27794f                                                            ▌+         6 h1 { margin:0 0 6px; letter-spacing:-.035em; ...
+              │      window rust theme picker with swatches                                       ▌+         7 .subtitle { color:var(--muted); max-width:110...
+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-36-42.781Z/live-tmux-pr... ▌+         8 .warning { border:1px solid #7c5c1d; backgrou...
+              │                                                                                   ────────────────── ⋯ 289 more rows below ───────────────────
+              o..... wmxowuvs c81e297d
+              │      wire active theme into rust diff renderer
+              │      A bench/results/rust-port/diff-render/2026-06-15T03-30-51.347Z/diff-rende...
+              │
+              o..... yzulmmsn f3619f25
+              │      wire active theme into rust sidebar surfaces
+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-25-18.309Z/live-tmux-pr...
+              │
+              o..... rxknvunu b4b03fda
+              │      wire active theme into rust graph surfaces
+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-19-34.337Z/live-tmux-pr...
+              │
+              o..... yswlrwxw 35814748
+              │      port bundled themes into rust tui picker
+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-01-54.683Z/live-tmux-pr...
+              │
+              o..... tvvsyrlx 5e959642
+              │      wire rust theme picker and revset view behavior
+              │      A bench/results/rust-port/live-tmux/2026-06-15T02-48-43.727Z/live-tmux-pr...
+              │
+              o..... wvlqrqps dd5ea188
+              │      wire rust view leader command behavior
+              │      A bench/results/rust-port/live-tmux/2026-06-15T02-42-37.028Z/live-tmux-pr...
+              │
+              o..... qllxrstu f8475757
+              │      fill rust view leader controls from bun
+              │      A bench/results/rust-port/live-tmux/2026-06-15T02-30-50.396Z/live-tmux-pr...
+              │
+              o..... lzptmmtu 6a1b5dc1
+              │      prove rust leader strip modes against bun
+              │      A bench/results/rust-port/live-tmux/2026-06-15T02-19-44.844Z/live-tmux-pr...
+              │
+
+              │
+              │
+              │
+ ~/dev/juzu @tkvzvrot                                                                                                                           mainline  180 nodes
+</pre></section>
+</body></html>

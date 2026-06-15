@@ -73,6 +73,7 @@ Static state proofs are HTML/tmux captures; MP4 is reserved for real app motion.
 
 The Rust TUI now mirrors more of old `GraphView`'s presentation model:
 
+- deterministic mainline branch lane assignment across redraws; branch roots are processed in node order instead of randomized `HashMap` iteration, preventing branch/merge commits from jumping horizontally while scrolling
 - four-line row rhythm per visible commit (`id`, description, files/status, spacer)
 - edge rendering across the full graph, clipped into the viewport, so off-screen vertical lanes continue
 - mainline-mode bus spans only across connected branch/merge lanes
