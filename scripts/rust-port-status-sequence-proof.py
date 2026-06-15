@@ -97,8 +97,8 @@ def main() -> None:
     try:
         send(session, cmd, "Enter")
         captures.append(("01 LOG idle", wait_for(session, "dag graph")))
-        send(session, "C-v")
-        captures.append(("02 Ctrl+V enters View leader", wait_for(session, "VIEW")))
+        send(session, "C-l")
+        captures.append(("02 Ctrl+L enters View leader", wait_for(session, "VIEW")))
         send(session, "q")
         captures.append(("03 q exits View leader back to Log", wait_for(session, "LOG")))
     finally:

@@ -215,6 +215,8 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         initial = wait_for(session, "dag graph")
         captures["initial"] = initial
         assert_contains(initial, "dag graph", "initial log mode", failures)
+        for needle in ["LOG", "^X", "Act", "^O", "Ops", "^L", "View", "^B", "Book"]:
+            assert_contains(initial, needle, "initial old Bun leader strip", failures)
 
         selected = select_change_prefix(session, "nqmmukmt")
         captures["afterSelectChange"] = selected
@@ -358,8 +360,8 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
     debug_states: dict[str, Any] = {}
     failures: list[str] = []
     scenarios = {
-        "viewLeaderStaysLog": "C-v",
-        "viewLeaderQReturnsLog": "C-v,q",
+        "viewLeaderStaysLog": "C-l",
+        "viewLeaderQReturnsLog": "C-l,q",
         "enterScrollFileExit": "C-d,j,],Esc",
         "quitReturnsLog": "C-d,q",
         "gReturnsLog": "C-d,g",
@@ -384,13 +386,13 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
             if label in exit_scenarios:
                 assert_debug_state_contract(keys, state, failures)
         if debug_states["viewLeaderStaysLog"].get("viewMode") != "Log":
-            failures.append("debug-state C-v should stay in Log view")
+            failures.append("debug-state C-l should stay in Log view")
         if debug_states["viewLeaderStaysLog"].get("activeLeaderMode") != "View":
-            failures.append("debug-state C-v should enter View leader mode")
+            failures.append("debug-state C-l should enter View leader mode")
         if debug_states["viewLeaderQReturnsLog"].get("viewMode") != "Log":
-            failures.append("debug-state C-v,q should stay in Log view")
+            failures.append("debug-state C-l,q should stay in Log view")
         if debug_states["viewLeaderQReturnsLog"].get("activeLeaderMode") is not None:
-            failures.append("debug-state C-v,q should exit View leader mode")
+            failures.append("debug-state C-l,q should exit View leader mode")
         if debug_states["enterScrollFileExit"].get("diffFileIndex") != 1:
             failures.append("debug-state C-d,j,],Esc should cycle to file index 1 before exit")
         if debug_states["doubleNextFileEsc"].get("diffFileIndex") != 2:

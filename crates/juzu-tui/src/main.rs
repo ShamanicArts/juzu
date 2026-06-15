@@ -107,15 +107,22 @@ enum ViewMode {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum LeaderMode {
+    Action,
+    Ops,
     View,
+    Bookmarks,
 }
 
 impl LeaderMode {
     fn label(self) -> &'static str {
         match self {
+            LeaderMode::Action => "Actions",
+            LeaderMode::Ops => "Operations",
             LeaderMode::View => "View",
+            LeaderMode::Bookmarks => "Bookmarks",
         }
     }
+
 }
 
 struct App {
@@ -216,9 +223,26 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
         toggle_diff_view(app);
         return false;
     }
-    if modifiers.contains(KeyModifiers::CONTROL) && matches!(code, KeyCode::Char('v')) {
-        app.active_leader_mode = Some(LeaderMode::View);
-        return false;
+    if modifiers.contains(KeyModifiers::CONTROL) {
+        match code {
+            KeyCode::Char('x') => {
+                app.active_leader_mode = Some(LeaderMode::Action);
+                return false;
+            }
+            KeyCode::Char('o') => {
+                app.active_leader_mode = Some(LeaderMode::Ops);
+                return false;
+            }
+            KeyCode::Char('l') => {
+                app.active_leader_mode = Some(LeaderMode::View);
+                return false;
+            }
+            KeyCode::Char('b') => {
+                app.active_leader_mode = Some(LeaderMode::Bookmarks);
+                return false;
+            }
+            _ => {}
+        }
     }
     if app.active_leader_mode.is_some() && matches!(code, KeyCode::Char('q') | KeyCode::Esc) {
         app.active_leader_mode = None;
@@ -296,7 +320,10 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
 fn parse_debug_key(raw: &str) -> Option<(KeyCode, KeyModifiers)> {
     match raw {
         "C-d" | "Ctrl+D" | "ctrl+d" => Some((KeyCode::Char('d'), KeyModifiers::CONTROL)),
-        "C-v" | "Ctrl+V" | "ctrl+v" => Some((KeyCode::Char('v'), KeyModifiers::CONTROL)),
+        "C-x" | "Ctrl+X" | "ctrl+x" => Some((KeyCode::Char('x'), KeyModifiers::CONTROL)),
+        "C-o" | "Ctrl+O" | "ctrl+o" => Some((KeyCode::Char('o'), KeyModifiers::CONTROL)),
+        "C-l" | "Ctrl+L" | "ctrl+l" => Some((KeyCode::Char('l'), KeyModifiers::CONTROL)),
+        "C-b" | "Ctrl+B" | "ctrl+b" => Some((KeyCode::Char('b'), KeyModifiers::CONTROL)),
         "Esc" | "Escape" => Some((KeyCode::Esc, KeyModifiers::NONE)),
         "PageDown" => Some((KeyCode::PageDown, KeyModifiers::NONE)),
         "PageUp" => Some((KeyCode::PageUp, KeyModifiers::NONE)),
@@ -589,49 +616,112 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             Span::styled("Esc", key_style),
             Span::styled(" Exit ", item_style),
         ])
-    } else if app.active_leader_mode == Some(LeaderMode::View) {
-        Line::from(vec![
-            Span::styled(" VIEW ", mode_style),
-            Span::raw("  "),
-            Span::styled("1", key_style),
-            Span::styled(" Chronological ", item_style),
-            Span::raw(" "),
-            Span::styled("2", key_style),
-            Span::styled(" Mainline ", item_style),
-            Span::raw(" "),
-            Span::styled("3", key_style),
-            Span::styled(" Bookmark ", item_style),
-            Span::raw(" "),
-            Span::styled("4", key_style),
-            Span::styled(" Working copy ", item_style),
-            Span::raw(" "),
-            Span::styled("5", key_style),
-            Span::styled(" Topological ", item_style),
-            Span::raw(" "),
-            Span::styled("Esc/q", key_style),
-            Span::styled(" Exit ", item_style),
-        ])
+    } else if let Some(leader) = app.active_leader_mode {
+        let active_mode_style = Style::default()
+            .fg(UI_TOKENS.slate_bg0)
+            .bg(leader_mode_color(leader))
+            .add_modifier(Modifier::BOLD);
+        match leader {
+            LeaderMode::View => Line::from(vec![
+                Span::styled(" VIEW ", active_mode_style),
+                Span::raw("  "),
+                Span::styled("1", key_style),
+                Span::styled(" Chronological ", item_style),
+                Span::raw(" "),
+                Span::styled("2", key_style),
+                Span::styled(" Mainline ", item_style),
+                Span::raw(" "),
+                Span::styled("3", key_style),
+                Span::styled(" Bookmark ", item_style),
+                Span::raw(" "),
+                Span::styled("4", key_style),
+                Span::styled(" Working copy ", item_style),
+                Span::raw(" "),
+                Span::styled("5", key_style),
+                Span::styled(" Topological ", item_style),
+                Span::raw(" "),
+                Span::styled("Esc/q", key_style),
+                Span::styled(" Exit ", item_style),
+            ]),
+            LeaderMode::Action => Line::from(vec![
+                Span::styled(" ACT ", active_mode_style),
+                Span::raw("  "),
+                Span::styled("n", key_style),
+                Span::styled(" New ", item_style),
+                Span::raw(" "),
+                Span::styled("e", key_style),
+                Span::styled(" Edit ", item_style),
+                Span::raw(" "),
+                Span::styled("d", key_style),
+                Span::styled(" Describe ", item_style),
+                Span::raw(" "),
+                Span::styled("b", key_style),
+                Span::styled(" Rebase ", item_style),
+                Span::raw(" "),
+                Span::styled("Esc/q", key_style),
+                Span::styled(" Exit ", item_style),
+            ]),
+            LeaderMode::Ops => Line::from(vec![
+                Span::styled(" OPS ", active_mode_style),
+                Span::raw("  "),
+                Span::styled("u", key_style),
+                Span::styled(" Undo ", item_style),
+                Span::raw(" "),
+                Span::styled("r", key_style),
+                Span::styled(" Redo ", item_style),
+                Span::raw(" "),
+                Span::styled("f", key_style),
+                Span::styled(" Fetch ", item_style),
+                Span::raw(" "),
+                Span::styled("p", key_style),
+                Span::styled(" Push ", item_style),
+                Span::raw(" "),
+                Span::styled("Esc/q", key_style),
+                Span::styled(" Exit ", item_style),
+            ]),
+            LeaderMode::Bookmarks => Line::from(vec![
+                Span::styled(" BOOK ", active_mode_style),
+                Span::raw("  "),
+                Span::styled("s", key_style),
+                Span::styled(" Bookmark set ", item_style),
+                Span::raw(" "),
+                Span::styled("d", key_style),
+                Span::styled(" Bookmark delete ", item_style),
+                Span::raw(" "),
+                Span::styled("Esc/q", key_style),
+                Span::styled(" Exit ", item_style),
+            ]),
+        }
     } else {
         Line::from(vec![
             Span::styled(" LOG ", mode_style),
             Span::raw("  "),
-            Span::styled("j/k", key_style),
-            Span::styled(" Select ", item_style),
+            Span::styled("^X", key_style),
+            Span::styled(" Act ", item_style),
             Span::raw(" "),
-            Span::styled("1-5", key_style),
-            Span::styled(" Layout ", item_style),
+            Span::styled("^O", key_style),
+            Span::styled(" Ops ", item_style),
             Span::raw(" "),
-            Span::styled("^d", key_style),
-            Span::styled(" Diff ", item_style),
+            Span::styled("^L", key_style),
+            Span::styled(" View ", item_style),
             Span::raw(" "),
-            Span::styled("q", key_style),
-            Span::styled(" Quit ", item_style),
+            Span::styled("^B", key_style),
+            Span::styled(" Book ", item_style),
         ])
     };
     frame.render_widget(
         Paragraph::new(line).style(Style::default().bg(UI_TOKENS.slate_panel)),
         area,
     );
+}
+
+fn leader_mode_color(mode: LeaderMode) -> Color {
+    match mode {
+        LeaderMode::Action => UI_TOKENS.semantic_warn,
+        LeaderMode::Ops => UI_TOKENS.semantic_info,
+        LeaderMode::View => UI_TOKENS.semantic_mode_log,
+        LeaderMode::Bookmarks => UI_TOKENS.semantic_success,
+    }
 }
 
 fn render_body(frame: &mut Frame, area: Rect, app: &App, layout: &juzu_core::layout::LayoutResult) {
@@ -1542,8 +1632,8 @@ fn render_diff_viewport_bar(
     Line::from(vec![Span::styled(
         format!(" {:<width$}", clipped, width = max_len.saturating_sub(1)),
         Style::default()
-            .fg(Color::Rgb(203, 213, 225))
-            .bg(Color::Rgb(30, 41, 59))
+            .fg(UI_TOKENS.slate_text)
+            .bg(UI_TOKENS.slate_bg2)
             .add_modifier(Modifier::BOLD),
     )])
 }
@@ -1665,6 +1755,14 @@ mod tests {
         let home = std::env::var("HOME").expect("HOME is set in parity environment");
         let path = PathBuf::from(format!("{home}/dev/juzu"));
         assert_eq!(compact_home_path(&path), "~/dev/juzu");
+    }
+
+    #[test]
+    fn diff_viewport_bar_uses_old_panel_tokens() {
+        let line = render_diff_viewport_bar(0, 10, 40, 80);
+        for span in &line.spans {
+            assert_eq!(span.style.bg, Some(UI_TOKENS.slate_bg2));
+        }
     }
 }
 
