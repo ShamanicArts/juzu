@@ -1252,10 +1252,12 @@ fn render_graph_table(
     app: &App,
     layout: &juzu_core::layout::LayoutResult,
 ) {
+    let t = &app.theme;
     let block = Block::default()
         .title(" dag graph ")
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(UI_TOKENS.slate_border_soft));
+        .border_style(Style::default().fg(t.slate_border_soft))
+        .style(Style::default().bg(t.slate_bg0));
     let inner = block.inner(area);
     let width = inner.width as usize;
     let height = inner.height as usize;
@@ -1324,7 +1326,7 @@ fn render_graph_table(
         }
         for (y, (x0, x1)) in &bus_by_y {
             for x in *x0..=*x1 {
-                put_cell(&mut cells, x, *y, '─', lane_color(0));
+                put_cell(&mut cells, x, *y, '─', lane_color(t, 0));
             }
         }
     }
@@ -1336,7 +1338,7 @@ fn render_graph_table(
         let child_lane = child.lane.unwrap_or(0);
         let x0 = lane_x(child_lane);
         let y0 = row_y_abs(child_idx);
-        let child_color = lane_color(child_lane);
+        let child_color = lane_color(t, child_lane);
 
         for parent_id in &child.parents {
             let Some(parent_idx) = all_index.get(parent_id.as_str()).copied() else {
@@ -1349,10 +1351,10 @@ fn render_graph_table(
             if y0.max(y1) < view_top || y0.min(y1) > view_bottom {
                 continue;
             }
-            let parent_color = lane_color(parent_lane);
+            let parent_color = lane_color(t, parent_lane);
             let connection_selected = child_idx == selected || parent_idx == selected;
             let line_color = if connection_selected {
-                Color::White
+                t.slate_text
             } else {
                 parent_color
             };
@@ -1377,7 +1379,7 @@ fn render_graph_table(
 
             if is_merge_commit {
                 let selected_child_color = if child_idx == selected {
-                    Color::White
+                    t.slate_text
                 } else {
                     child_color
                 };
@@ -1391,7 +1393,7 @@ fn render_graph_table(
                 draw_vert(&mut cells, x1, connect_y + 1, y1 - 1, '│', line_color);
             } else {
                 let selected_child_color = if child_idx == selected {
-                    Color::White
+                    t.slate_text
                 } else {
                     child_color
                 };
@@ -1420,7 +1422,7 @@ fn render_graph_table(
         let x = lane_x(lane);
         let y = row_y_abs(global);
         let is_selected = global == selected;
-        let color = lane_color(lane);
+        let color = lane_color(t, lane);
         let node_ch = if node.is_working_copy {
             '@'
         } else if node.is_conflict {
@@ -1433,11 +1435,11 @@ fn render_graph_table(
             'o'
         };
         let node_color = if is_selected && !node.is_working_copy && !node.is_conflict {
-            Color::White
+            t.slate_text
         } else if node.is_working_copy {
-            Color::Green
+            t.semantic_success
         } else if node.is_conflict {
-            Color::Red
+            t.semantic_error
         } else {
             color
         };
@@ -1456,20 +1458,20 @@ fn render_graph_table(
                 indicator_x.saturating_sub(1),
                 y,
                 "@",
-                Color::Green,
+                t.semantic_success,
             );
-            put_text(&mut cells, indicator_x, y, ">", Color::White);
+            put_text(&mut cells, indicator_x, y, ">", t.slate_text);
         } else if node.is_working_copy {
-            put_text(&mut cells, indicator_x, y, "@", Color::Green);
+            put_text(&mut cells, indicator_x, y, "@", t.semantic_success);
         } else if is_selected {
-            put_text(&mut cells, indicator_x, y, ">", Color::White);
+            put_text(&mut cells, indicator_x, y, ">", t.slate_text);
         }
         put_text(
             &mut cells,
             text_x,
             y,
             &change_short,
-            if is_selected { Color::White } else { color },
+            if is_selected { t.slate_text } else { color },
         );
         put_text(
             &mut cells,
@@ -1477,9 +1479,9 @@ fn render_graph_table(
             y,
             &commit_short,
             if is_selected {
-                UI_TOKENS.slate_text
+                t.slate_text
             } else {
-                UI_TOKENS.graph_commit_id
+                t.graph_commit_id
             },
         );
         put_text(
@@ -1492,9 +1494,9 @@ fn render_graph_table(
                 &desc
             },
             if is_selected {
-                UI_TOKENS.slate_text
+                t.slate_text
             } else {
-                UI_TOKENS.graph_text_desc
+                t.graph_text_desc
             },
         );
         if !node.bookmarks.is_empty() {
@@ -1506,9 +1508,9 @@ fn render_graph_table(
                 y + 1,
                 &truncate(&bm, width.saturating_sub(text_x + desc_len + 1)),
                 if is_selected {
-                    UI_TOKENS.graph_bookmark_selected
+                    t.graph_bookmark_selected
                 } else {
-                    UI_TOKENS.graph_bookmark
+                    t.graph_bookmark
                 },
             );
         }
@@ -1524,11 +1526,11 @@ fn render_graph_table(
             y + 2,
             &file_summary,
             if files.is_empty() {
-                UI_TOKENS.graph_text_muted
+                t.graph_text_muted
             } else if is_selected {
-                UI_TOKENS.semantic_info
+                t.semantic_info
             } else {
-                UI_TOKENS.graph_text_muted
+                t.graph_text_muted
             },
         );
     }
@@ -1561,8 +1563,8 @@ impl Default for GraphCell {
     }
 }
 
-fn lane_color(lane: usize) -> Color {
-    UI_TOKENS.graph_lanes[lane % UI_TOKENS.graph_lanes.len()]
+fn lane_color(tokens: &UiTokens, lane: usize) -> Color {
+    tokens.graph_lanes[lane % tokens.graph_lanes.len()]
 }
 
 fn build_children_by_id(
@@ -1633,13 +1635,13 @@ fn truncate(s: &str, max_len: usize) -> String {
     out
 }
 
-fn file_type_color(file_type: &str) -> Color {
+fn file_type_color(tokens: &UiTokens, file_type: &str) -> Color {
     match file_type {
-        "A" => UI_TOKENS.graph_file_add,
-        "D" => UI_TOKENS.graph_file_del,
-        "M" => UI_TOKENS.graph_file_mod,
-        "R" => UI_TOKENS.graph_bookmark,
-        _ => UI_TOKENS.slate_text_muted,
+        "A" => tokens.graph_file_add,
+        "D" => tokens.graph_file_del,
+        "M" => tokens.graph_file_mod,
+        "R" => tokens.graph_bookmark,
+        _ => tokens.slate_text_muted,
     }
 }
 
@@ -1913,7 +1915,7 @@ fn render_sidebar(
                 ),
                 Span::styled(
                     format!("{} ", file.r#type),
-                    Style::default().fg(file_type_color(&file.r#type)),
+                    Style::default().fg(file_type_color(&app.theme, &file.r#type)),
                 ),
                 Span::styled(
                     file.path.clone(),
@@ -2306,16 +2308,40 @@ mod tests {
             Color::Rgb(0xff, 0x00, 0xaa),
         ];
         for (lane, color) in expected.into_iter().enumerate() {
-            assert_eq!(lane_color(lane), color, "lane {lane}");
+            assert_eq!(lane_color(&UI_TOKENS, lane), color, "lane {lane}");
         }
-        assert_eq!(lane_color(8), expected[0]);
+        assert_eq!(lane_color(&UI_TOKENS, 8), expected[0]);
+    }
+
+    #[test]
+    fn graph_lane_colors_use_active_theme_tokens() {
+        let theme = UiTokens::named("catppuccin");
+        assert_eq!(lane_color(&theme, 0), Color::Rgb(0x89, 0xb4, 0xfa));
+        assert_eq!(lane_color(&theme, 8), Color::Rgb(0x89, 0xb4, 0xfa));
     }
 
     #[test]
     fn rust_file_badge_colors_match_old_juzu_defaults() {
-        assert_eq!(file_type_color("A"), Color::Rgb(0x74, 0xb8, 0x8c));
-        assert_eq!(file_type_color("M"), Color::Rgb(0xc9, 0xa8, 0x6a));
-        assert_eq!(file_type_color("D"), Color::Rgb(0xce, 0x6f, 0x7c));
+        assert_eq!(
+            file_type_color(&UI_TOKENS, "A"),
+            Color::Rgb(0x74, 0xb8, 0x8c)
+        );
+        assert_eq!(
+            file_type_color(&UI_TOKENS, "M"),
+            Color::Rgb(0xc9, 0xa8, 0x6a)
+        );
+        assert_eq!(
+            file_type_color(&UI_TOKENS, "D"),
+            Color::Rgb(0xce, 0x6f, 0x7c)
+        );
+    }
+
+    #[test]
+    fn file_badge_colors_use_active_theme_tokens() {
+        let theme = UiTokens::named("catppuccin");
+        assert_eq!(file_type_color(&theme, "A"), Color::Rgb(0xa6, 0xe3, 0xa1));
+        assert_eq!(file_type_color(&theme, "M"), Color::Rgb(0xf9, 0xe2, 0xaf));
+        assert_eq!(file_type_color(&theme, "D"), Color::Rgb(0xf3, 0x8b, 0xa8));
     }
 
     #[test]

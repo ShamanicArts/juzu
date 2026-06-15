@@ -1,0 +1,382 @@
+<!doctype html><html><head><meta charset='utf-8'><title>JUZU Rust bundled theme port</title>
+<style>
+body{margin:32px;background:#0b1017;color:#d8dee8;font-family:Inter,system-ui,sans-serif}h1{margin:0 0 6px}.meta{color:#8a95a7;margin-bottom:20px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:18px}.theme{background:var(--bg);color:var(--text);border:1px solid var(--bg2);border-radius:18px;overflow:hidden;box-shadow:0 20px 70px rgba(0,0,0,.3)}.bar,.footer{background:var(--panel);padding:10px 12px;display:flex;gap:10px;align-items:center;justify-content:space-between}.bar{justify-content:flex-start}.mode{background:var(--info);color:var(--bg);font-weight:900;padding:2px 8px;border-radius:5px}.key{color:var(--info);font-weight:800}.seg{background:var(--bg2);padding:2px 8px;border-radius:5px}.body{display:grid;grid-template-columns:1.2fr .9fr;gap:14px;padding:14px}.graph,.details{background:var(--panel);border:1px solid var(--bg2);border-radius:14px;padding:12px}h2{margin:0;color:var(--info)}p{margin:6px 0}.muted{color:var(--muted)}.lanes{display:flex;gap:6px;margin-top:14px}.lane{width:24px;height:56px;border-radius:9px;border:1px solid rgba(255,255,255,.2)}.add{color:var(--success);font-weight:900}.mod{color:var(--warn);font-weight:900}.footer{color:var(--muted)}
+</style></head><body><h1>JUZU Rust bundled theme port</h1><div class='meta'>21 bundled TOML themes, same theme catalogue as the Bun/Poneglyph-style system.</div><div class='grid'>
+<section class='theme' style='--bg:#1f2430;--panel:#1f2430;--bg2:#2a3340;--text:#cccac2;--muted:#8a9199;--info:#73b8ff;--success:#87d96c;--warn:#f2a93b;--error:#f27983'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>ayu-mirage</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#73b8ff'></span><span class='lane' style='background:#5ccfe6'></span><span class='lane' style='background:#95e6cb'></span><span class='lane' style='background:#d2a6ff'></span><span class='lane' style='background:#f2a93b'></span><span class='lane' style='background:#87d96c'></span><span class='lane' style='background:#ffee99'></span><span class='lane' style='background:#f27983'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/ayu-mirage</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/ayu-mirage.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#1e1e2e;--panel:#1e1e2e;--bg2:#313244;--text:#cdd6f4;--muted:#a6adc8;--info:#89b4fa;--success:#a6e3a1;--warn:#f9e2af;--error:#f38ba8'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>catppuccin</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#89b4fa'></span><span class='lane' style='background:#cba6f7'></span><span class='lane' style='background:#f5c2e7'></span><span class='lane' style='background:#fab387'></span><span class='lane' style='background:#f9e2af'></span><span class='lane' style='background:#a6e3a1'></span><span class='lane' style='background:#94e2d5'></span><span class='lane' style='background:#89dceb'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/catppuccin</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/catppuccin.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#05080f;--panel:#05080f;--bg2:#121928;--text:#00ff9d;--muted:#005f3f;--info:#00f0ff;--success:#00ff9d;--warn:#fcee0a;--error:#ff003c'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>cyberpunk</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#ff003c'></span><span class='lane' style='background:#ff5e00'></span><span class='lane' style='background:#fcee0a'></span><span class='lane' style='background:#00ff9d'></span><span class='lane' style='background:#00f0ff'></span><span class='lane' style='background:#0099ff'></span><span class='lane' style='background:#9d00ff'></span><span class='lane' style='background:#ff00ff'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/cyberpunk</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/cyberpunk.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#282a36;--panel:#282a36;--bg2:#44475a;--text:#f8f8f2;--muted:#6272a4;--info:#8be9fd;--success:#50fa7b;--warn:#f1fa8c;--error:#ff5555'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>dracula</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#8be9fd'></span><span class='lane' style='background:#bd93f9'></span><span class='lane' style='background:#ff79c6'></span><span class='lane' style='background:#ffb86c'></span><span class='lane' style='background:#f1fa8c'></span><span class='lane' style='background:#50fa7b'></span><span class='lane' style='background:#ff5555'></span><span class='lane' style='background:#6272a4'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/dracula</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/dracula.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#16110f;--panel:#231b17;--bg2:#2a211c;--text:#f1ded0;--muted:#b79f8e;--info:#9bb7d9;--success:#8fca8a;--warn:#d7a86d;--error:#de7c74'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>ember</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#ff9f6a'></span><span class='lane' style='background:#f25d7f'></span><span class='lane' style='background:#7adf9b'></span><span class='lane' style='background:#ffd166'></span><span class='lane' style='background:#c792ea'></span><span class='lane' style='background:#6ec8ff'></span><span class='lane' style='background:#fce38a'></span><span class='lane' style='background:#ff7eb6'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/ember</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/ember.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#2d353b;--panel:#2d353b;--bg2:#3d484d;--text:#d3c6aa;--muted:#859289;--info:#7fbbb3;--success:#a7c080;--warn:#dbbc7f;--error:#e67e80'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>everforest</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#7fbbb3'></span><span class='lane' style='background:#83c092'></span><span class='lane' style='background:#a7c080'></span><span class='lane' style='background:#dbbc7f'></span><span class='lane' style='background:#d699b6'></span><span class='lane' style='background:#e69875'></span><span class='lane' style='background:#e67e80'></span><span class='lane' style='background:#9da9a0'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/everforest</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/everforest.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#0d1117;--panel:#0d1117;--bg2:#21262d;--text:#c9d1d9;--muted:#8b949e;--info:#58a6ff;--success:#3fb950;--warn:#d29922;--error:#f85149'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>github-dark</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#58a6ff'></span><span class='lane' style='background:#79c0ff'></span><span class='lane' style='background:#a371f7'></span><span class='lane' style='background:#d29922'></span><span class='lane' style='background:#3fb950'></span><span class='lane' style='background:#56d364'></span><span class='lane' style='background:#f85149'></span><span class='lane' style='background:#ffa657'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/github-dark</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/github-dark.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#282828;--panel:#282828;--bg2:#3c3836;--text:#ebdbb2;--muted:#a89984;--info:#83a598;--success:#b8bb26;--warn:#fabd2f;--error:#fb4934'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>gruvbox</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#83a598'></span><span class='lane' style='background:#8ec07c'></span><span class='lane' style='background:#b8bb26'></span><span class='lane' style='background:#fabd2f'></span><span class='lane' style='background:#fe8019'></span><span class='lane' style='background:#d3869b'></span><span class='lane' style='background:#b16286'></span><span class='lane' style='background:#458588'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/gruvbox</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/gruvbox.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#1f1f28;--panel:#1f1f28;--bg2:#2a2a37;--text:#dcd7ba;--muted:#727169;--info:#7e9cd8;--success:#98bb6c;--warn:#e6c384;--error:#e82424'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>kanagawa</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#7e9cd8'></span><span class='lane' style='background:#8ba4b0'></span><span class='lane' style='background:#98bb6c'></span><span class='lane' style='background:#e6c384'></span><span class='lane' style='background:#dca3a3'></span><span class='lane' style='background:#d27e99'></span><span class='lane' style='background:#e82424'></span><span class='lane' style='background:#c8c093'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/kanagawa</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/kanagawa.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#272822;--panel:#272822;--bg2:#3e3d32;--text:#f8f8f2;--muted:#75715e;--info:#66d9ef;--success:#a6e22e;--warn:#e6db74;--error:#f92672'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>monokai</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#66d9ef'></span><span class='lane' style='background:#ae81ff'></span><span class='lane' style='background:#f92672'></span><span class='lane' style='background:#fd971f'></span><span class='lane' style='background:#e6db74'></span><span class='lane' style='background:#a6e22e'></span><span class='lane' style='background:#75715e'></span><span class='lane' style='background:#f8f8f2'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/monokai</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/monokai.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#121812;--panel:#1e281f;--bg2:#243026;--text:#dce8d7;--muted:#9ab39b;--info:#93b9a0;--success:#8ecf8b;--warn:#d7bf76;--error:#d9898f'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>moss</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#7ed37e'></span><span class='lane' style='background:#ef7f8e'></span><span class='lane' style='background:#8ac5a4'></span><span class='lane' style='background:#e6c66a'></span><span class='lane' style='background:#b99ce7'></span><span class='lane' style='background:#7ab8d6'></span><span class='lane' style='background:#d9e273'></span><span class='lane' style='background:#f2a0c3'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/moss</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/moss.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#011627;--panel:#011627;--bg2:#1d3b53;--text:#d6deeb;--muted:#5f7e97;--info:#82aaff;--success:#addb67;--warn:#ecc48d;--error:#ef5350'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>night-owl</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#82aaff'></span><span class='lane' style='background:#7fdbca'></span><span class='lane' style='background:#c792ea'></span><span class='lane' style='background:#ecc48d'></span><span class='lane' style='background:#addb67'></span><span class='lane' style='background:#f78c6c'></span><span class='lane' style='background:#ff2c83'></span><span class='lane' style='background:#ef5350'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/night-owl</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/night-owl.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#0f1020;--panel:#181b38;--bg2:#1f2244;--text:#e1e4ff;--muted:#9da6d3;--info:#9db7ff;--success:#7fd8b9;--warn:#e4bd70;--error:#e58aa0'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>nocturne</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#7fb3ff'></span><span class='lane' style='background:#ff7fb0'></span><span class='lane' style='background:#70e7c5'></span><span class='lane' style='background:#ffd27a'></span><span class='lane' style='background:#c5a2ff'></span><span class='lane' style='background:#7ed8ff'></span><span class='lane' style='background:#d7f07a'></span><span class='lane' style='background:#ff9de2'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/nocturne</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/nocturne.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#2e3440;--panel:#2e3440;--bg2:#434c5e;--text:#eceff4;--muted:#88c0d0;--info:#81a1c1;--success:#a3be8c;--warn:#ebcb8b;--error:#bf616a'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>nord</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#81a1c1'></span><span class='lane' style='background:#5e81ac'></span><span class='lane' style='background:#88c0d0'></span><span class='lane' style='background:#a3be8c'></span><span class='lane' style='background:#ebcb8b'></span><span class='lane' style='background:#d08770'></span><span class='lane' style='background:#b48ead'></span><span class='lane' style='background:#bf616a'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/nord</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/nord.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#0b1720;--panel:#122532;--bg2:#153041;--text:#d7e9f4;--muted:#8fb5c9;--info:#7fbce3;--success:#5fd3b3;--warn:#e5bd63;--error:#e27c8d'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>oceanic</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#59c3ff'></span><span class='lane' style='background:#ff7ea8'></span><span class='lane' style='background:#56e3c2'></span><span class='lane' style='background:#ffd166'></span><span class='lane' style='background:#b892ff'></span><span class='lane' style='background:#72d6ff'></span><span class='lane' style='background:#c7f464'></span><span class='lane' style='background:#ff9ad5'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/oceanic</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/oceanic.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#282c34;--panel:#282c34;--bg2:#3e4451;--text:#abb2bf;--muted:#5c6370;--info:#61afef;--success:#98c379;--warn:#e5c07b;--error:#e06c75'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>one-dark</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#61afef'></span><span class='lane' style='background:#56b6c2'></span><span class='lane' style='background:#c678dd'></span><span class='lane' style='background:#e5c07b'></span><span class='lane' style='background:#98c379'></span><span class='lane' style='background:#d19a66'></span><span class='lane' style='background:#be5046'></span><span class='lane' style='background:#e06c75'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/one-dark</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/one-dark.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#242938;--panel:#242938;--bg2:#2c313a;--text:#a6accd;--muted:#676e95;--info:#82aaff;--success:#c3e88d;--warn:#ffcb6b;--error:#f07178'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>palenight</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#82aaff'></span><span class='lane' style='background:#89ddff'></span><span class='lane' style='background:#c792ea'></span><span class='lane' style='background:#f78c6c'></span><span class='lane' style='background:#ffcb6b'></span><span class='lane' style='background:#c3e88d'></span><span class='lane' style='background:#f07178'></span><span class='lane' style='background:#ff5370'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/palenight</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/palenight.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#191724;--panel:#191724;--bg2:#26233a;--text:#e0def4;--muted:#6e6a86;--info:#c4a7e7;--success:#9ccfd8;--warn:#f6c177;--error:#eb6f92'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>rose-pine</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#9ccfd8'></span><span class='lane' style='background:#31748f'></span><span class='lane' style='background:#c4a7e7'></span><span class='lane' style='background:#ebbcba'></span><span class='lane' style='background:#f6c177'></span><span class='lane' style='background:#6e6a86'></span><span class='lane' style='background:#eb6f92'></span><span class='lane' style='background:#21202e'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/rose-pine</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/rose-pine.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#2d2b55;--panel:#2d2b55;--bg2:#3b3b70;--text:#e4e4f4;--muted:#a599e9;--info:#36f9f6;--success:#72f1b8;--warn:#ffee80;--error:#fe4450'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>shades-of-purple</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#36f9f6'></span><span class='lane' style='background:#2de2e6'></span><span class='lane' style='background:#ff7edb'></span><span class='lane' style='background:#fede5d'></span><span class='lane' style='background:#ffee80'></span><span class='lane' style='background:#72f1b8'></span><span class='lane' style='background:#ff8b39'></span><span class='lane' style='background:#fe4450'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/shades-of-purple</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/shades-of-purple.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#111318;--panel:#1a2029;--bg2:#1d2530;--text:#d8dee8;--muted:#8a95a7;--info:#7f9fbf;--success:#74b88c;--warn:#c9a86a;--error:#ce6f7c'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>slate</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#00f0ff'></span><span class='lane' style='background:#ff0055'></span><span class='lane' style='background:#00ff9d'></span><span class='lane' style='background:#ffaa00'></span><span class='lane' style='background:#aa00ff'></span><span class='lane' style='background:#00aaff'></span><span class='lane' style='background:#ffff00'></span><span class='lane' style='background:#ff00aa'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/slate</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/slate.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section>
+<section class='theme' style='--bg:#1a1b26;--panel:#1f2335;--bg2:#24283b;--text:#a9b1d6;--muted:#565f89;--info:#7aa2f7;--success:#9ece6a;--warn:#e0af68;--error:#f7768e'>
+  <div class='bar'><span class='mode'>LOG</span><span class='key'>^L</span><span class='seg'>View</span><span class='key'>t</span><span class='seg'>Theme picker</span></div>
+  <div class='body'>
+    <div class='graph'>
+      <h2>tokyo-night</h2>
+      <p>dag graph · lane tokens</p>
+      <div class='lanes'><span class='lane' style='background:#7aa2f7'></span><span class='lane' style='background:#7dcfff'></span><span class='lane' style='background:#bb9af7'></span><span class='lane' style='background:#c0caf5'></span><span class='lane' style='background:#73daca'></span><span class='lane' style='background:#9ece6a'></span><span class='lane' style='background:#e0af68'></span><span class='lane' style='background:#ff9e64'></span></div>
+    </div>
+    <div class='details'>
+      <b>Details</b>
+      <p>Change: theme/tokyo-night</p>
+      <p class='muted'>Files (f collapse):</p>
+      <p><span class='add'>A</span> themes/tokyo-night.toml</p>
+      <p><span class='mod'>M</span> status/footer/sidebar chrome</p>
+    </div>
+  </div>
+  <div class='footer'><span>~/dev/juzu</span><span>8 lanes · bundled</span></div>
+</section></div></body></html>
