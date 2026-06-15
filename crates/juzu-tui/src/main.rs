@@ -2442,8 +2442,8 @@ fn render_diff_code_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Lin
             Style::default().fg(tokens.slate_text).bg(tokens.slate_bg0),
         ),
     };
-    let gutter = format!("{line_number:>4}");
-    let sign_cell = format!(" {sign}");
+    let gutter = format!("{line_number:>3}");
+    let sign_cell = format!(" {sign} ");
     let text_budget = max_len.saturating_sub(gutter.len() + sign_cell.len());
     let content = row.text.strip_prefix(['+', '-', ' ']).unwrap_or(&row.text);
     let content = truncate(content, text_budget);
@@ -2852,7 +2852,7 @@ mod tests {
             .iter()
             .map(|span| span.content.as_ref())
             .collect::<String>();
-        assert!(rendered.starts_with("  12 +added"), "{rendered:?}");
+        assert!(rendered.starts_with(" 12 + added"), "{rendered:?}");
         assert!(!rendered.contains("▌+"), "Bun DiffView uses line-number gutter signs, not a custom left mutation band: {rendered:?}");
         assert_eq!(line.spans[0].style.bg, Some(UI_TOKENS.slate_bg1));
         assert_eq!(line.spans[1].style.fg, Some(UI_TOKENS.semantic_file_add));
@@ -2872,7 +2872,7 @@ mod tests {
             .iter()
             .map(|span| span.content.as_ref())
             .collect::<String>();
-        assert!(rendered.starts_with("   9 -removed"), "{rendered:?}");
+        assert!(rendered.starts_with("  9 - removed"), "{rendered:?}");
         assert_eq!(line.spans[0].style.bg, Some(UI_TOKENS.slate_bg1));
         assert_eq!(line.spans[1].style.fg, Some(UI_TOKENS.semantic_file_del));
         assert_eq!(line.spans[2].style.bg, Some(remove_bg));
@@ -2896,7 +2896,7 @@ mod tests {
             .map(|span| span.content.as_ref())
             .collect::<String>();
         assert_eq!(rendered.len(), 24);
-        assert!(rendered.starts_with("   3 +short"), "{rendered:?}");
+        assert!(rendered.starts_with("  3 + short"), "{rendered:?}");
         assert!(line.spans[2].content.ends_with(' '));
         assert_eq!(line.spans[2].style.bg, Some(add_bg));
     }

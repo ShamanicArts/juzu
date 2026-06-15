@@ -31,17 +31,17 @@ The runner:
 
 ## Latest artifact
 
-`bench/results/rust-port/rust-tui-bench/2026-06-15T19-20-44-248Z/rust-tui-benchmark.html`
+`bench/results/rust-port/rust-tui-bench/2026-06-15T19-24-25-454Z/rust-tui-benchmark.html`
 
 ## Current headline
 
-Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, structured diff rendering, old-style diff pane navigation, View leader behavior, bundled themes, runtime theme wiring, selected-row polish, the first Bun-smooth chrome correction, the optional boxed-chrome toggle, Bun/OpenTUI-style status segment color mixing, the first FooterBar layer split pass, the Bun-style details sidebar rhythm pass, Bun-like sidebar file-row truncation, the first Bun `DiffView.tsx` color-palette pass, and Bun-style unified diff gutter ordering. Graph/details/diff borders remain disabled by default, status/footer bars consume only their needed rows, the footer separates repo/bookmark/wc/layout/node-count like Bun, file rows cap to pane width with ellipsis instead of overflowing, diff add/remove rows use the same `mix(slate.bg0, semantic.fileAdd/fileDel, 0.48)` background formula as the Bun `<diff>` component, diff code rows now show one active line number followed by the +/- sign before content, code-content backgrounds fill the remaining row width like Bun `<diff>`, and the View leader remains two rows with no extra `Esc/q Exit` row.
+Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, structured diff rendering, old-style diff pane navigation, View leader behavior, bundled themes, runtime theme wiring, selected-row polish, the first Bun-smooth chrome correction, the optional boxed-chrome toggle, Bun/OpenTUI-style status segment color mixing, the first FooterBar layer split pass, the Bun-style details sidebar rhythm pass, Bun-like sidebar file-row truncation, the first Bun `DiffView.tsx` color-palette pass, and Bun-style unified diff gutter ordering. Graph/details/diff borders remain disabled by default, status/footer bars consume only their needed rows, the footer separates repo/bookmark/wc/layout/node-count like Bun, file rows cap to pane width with ellipsis instead of overflowing, diff add/remove rows use the same `mix(slate.bg0, semantic.fileAdd/fileDel, 0.48)` background formula as the Bun `<diff>` component, diff code rows now show a compact active line-number gutter followed by the padded +/- sign before content, code-content backgrounds fill the remaining row width like Bun `<diff>`, and the View leader remains two rows with no extra `Esc/q Exit` row.
 
 | Scenario | RSS peak | RSS steady median | PSS steady median | Header median |
 | --- | ---: | ---: | ---: | ---: |
-| `idle-mainline` | 11.79 MB | 11.76 MB | 9.46 MB | 149.99 ms |
-| `navigate-mainline` | 63.76 MB | 63.16 MB | 60.92 MB | 155.71 ms |
-| `layout-switching` | 63.11 MB | 55.20 MB | 52.87 MB | 152.90 ms |
+| `idle-mainline` | 11.88 MB | 11.86 MB | 9.52 MB | 159.32 ms |
+| `navigate-mainline` | 64.74 MB | 64.25 MB | 62.00 MB | 156.55 ms |
+| `layout-switching` | 61.21 MB | 56.45 MB | 54.17 MB | 151.14 ms |
 
 The visual renderer itself keeps idle memory close to the earlier capped-diff baseline. Hard-capping retained structured preview rows dropped navigation peak RSS from 35.81 MB to 28.52 MB and layout-switching peak RSS from 34.66 MB to 28.02 MB while preserving the crafted sidebar preview. The headline remains far below the old live Bun/OpenTUI TUI (~175 MB RSS steady).
 

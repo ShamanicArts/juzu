@@ -55,7 +55,7 @@ def terminal_row(row: dict[str, Any], width: int) -> str:
     line_number = "" if line_number is None else str(line_number)
     sign = "+" if kind == "add" else "-" if kind == "remove" else " "
     body = text[1:] if text.startswith(("+", "-", " ")) else text
-    prefix = f"{line_number:>4} {sign}"
+    prefix = f"{line_number:>3} {sign} "
     return f"{prefix}{body[: max(0, width - len(prefix))]:<{max(0, width - len(prefix))}}"[:width]
 
 
