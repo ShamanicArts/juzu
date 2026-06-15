@@ -1,0 +1,139 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust TUI modal parity</title>
+<style>
+:root { color-scheme: dark; --bg:#07111f; --panel:#0f172a; --line:#334155; --text:#dbeafe; --muted:#94a3b8; --cyan:#67e8f9; --green:#86efac; --red:#fca5a5; }
+body { margin:32px; background:radial-gradient(circle at top left,#12233f 0,#07111f 45rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+h1 { margin:0 0 8px; } .meta { color:var(--muted); margin-bottom:20px; } .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:16px; }
+.card { border:1px solid var(--line); background:rgba(15,23,42,.94); border-radius:16px; padding:16px; box-shadow:0 18px 60px rgba(0,0,0,.25); }
+h2 { color:var(--cyan); font-size:16px; margin:0 0 12px; } pre { background:#020617; border:1px solid #1e293b; border-radius:12px; padding:12px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; }
+table { width:100%; border-collapse:collapse; margin-bottom:16px; } td, th { border-bottom:1px solid #1e293b; padding:8px; text-align:left; } th { color:var(--cyan); } .pass { color:var(--green); } .fail { color:var(--red); }
+</style></head><body>
+<h1>JUZU Rust TUI modal parity</h1>
+<div class='meta'>Width variants, footer/title/sidebar contract, and debug-state exit scenarios.</div>
+<section class='card'><h2>Overall: <span class='pass'>PASS</span></h2><ul><li>none</li></ul></section>
+<section class='card'><h2>Debug-state scenarios</h2><table><thead><tr><th>Scenario</th><th>Mode</th><th>File</th><th>Scroll</th><th>Selected</th></tr></thead><tbody><tr><td>actionLeaderStaysLog</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>opsLeaderStaysLog</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewLeaderStaysLog</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>bookLeaderStaysLog</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewLeaderQReturnsLog</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewToggleSidebar</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewToggleFiles</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewToggleDescription</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewToggleHelp</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewToggleBoxedChrome</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewThemePicker</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewThemePickerDownApplyStaysOpen</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewThemePickerEscCancels</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewRevsetFilter</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewRevsetTextSubmit</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewRevsetCancel</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>viewDiffShortcut</td><td>Diff</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>enterScrollFileExit</td><td>Log</td><td>1</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>quitReturnsLog</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>gReturnsLog</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>ctrlDTogglesLog</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>doubleNextFileEsc</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>pageScrollResetEsc</td><td>Log</td><td>0</td><td>0</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>nextHunkStaysDiff</td><td>Diff</td><td>0</td><td>5</td><td><code>uyompyrwsyxo</code></td></tr><tr><td>nextThenPrevHunkStaysDiff</td><td>Diff</td><td>0</td><td>5</td><td><code>uyompyrwsyxo</code></td></tr></tbody></table></section>
+<div class='grid'>
+<section class='card'>
+  <h2>120 cols · PASS</h2>
+  <ul><li>none</li></ul>
+  <pre> DIFF   ^d Log  [ ] File  j/k Move  {/} Hunk  Esc Exit
+ File 1/2: Added bench/results/rust...   [ / ] next/prev   Ctrl+d back  Selected
+ VIEWPORT diff rows 1-31 of 95   SCROLL [███░░░░░░░]                    Change: uyompyrwsyxopylolmpyunppyznrtnlr
+ STICKY ▸ top · Added bench/results/rust-port/live-tmux/2026-06-15...   Commit: b6671af5f5a5
+╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969...  Lane: Some(0)  X: Some(50)  Y: Some(722)
+  · diff --git a/bench/results/rust-port/live-tmux/2026-06-15T04-39...  Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  · new file mode 100644                                                Time: 2026-06-15T05:40:02+01:00
+  · --- /dev/null
+  · +++ b/bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969...  Bookmarks
+╭─ @@ -0,0 +1,88 @@                                                  ╮  —
+▌+         1 &lt;!doctype html&gt;
+▌+         2 &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust li...   Description (x expand):
+▌+         3 &lt;style&gt;                                                    restore readable rust diff row colors
+▌+         4 :root { color-scheme: dark; --bg:#111318; --panel:#1a...
+▌+         5 body { margin:32px; background:radial-gradient(circle...   Files (f collapse):
+▌+         6 h1 { margin:0 0 6px; } .meta { color:var(--muted); ma...   ▶ A bench/results/rust-port/live-tmux/2026-06-15
+▌+         7 .card { background:rgba(26,32,41,.96); border:1px sol...     M crates/juzu-tui/src/main.rs
+▌+         8 pre { background:#050816; border:1px solid #2a3442; b...
+▌+         9 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;                                      Current file preview  secondary
+▌+        10 &lt;h1&gt;JUZU Rust live tmux proof · &lt;span class=&#x27;status p...     · 2 files · 326 raw · 328 rows · 328 shown
+▌+        11 &lt;div class=&#x27;meta&#x27;&gt;Target: &lt;code&gt;juzu:rust-tui&lt;/code&gt; ...     · diff rows 1-14 of 95
+▌+        12 &lt;section class=&#x27;card&#x27;&gt;&lt;pre&gt; DIFF   ^d Log  [ ] File  ...    STICKY ▸ top · Added bench/results/rust...
+▌+        13                                                            ╭ ◆ Added bench/results/rust-port/live-tm...╮
+▌+        14                                                              · diff --git a/bench/results/rust-port/...
+▌+        15 ┌ diff ──────────────────────────────────────────────...     · new file mode 100644
+▌+        16 │ File 17/17: Modified docs/rust-port/rust-tui-benchm...     · --- /dev/null
+▌+        17 │ VIEWPORT diff rows 1-27 of 27   SCROLL [██████████]...     · +++ b/bench/results/rust-port/live-tm...
+▌+        18 │ STICKY ▸ top · Modified docs/rust-port/rust-tui-ben...   ╭─ @@ -0,0 +1,88 @@                        ╮
+▌+        19 │╭ ◆ Modified docs/rust-port/rust-tui-benchmarks.md  ...   ▌+         1 &lt;!doctype html&gt;
+▌+        20 │  · diff --git a/docs/rust-port/rust-tui-benchmarks....   ▌+         2 &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;...
+▌+        21 │  · --- a/docs/rust-port/rust-tui-benchmarks.md     ...   ▌+         3 &lt;style&gt;
+▌+        22 │  · +++ b/docs/rust-port/rust-tui-benchmarks.md     ...   ▌+         4 :root { color-scheme: dark;...
+▌+        23 │╭─ @@ -29,17 +29,17 @@                              ...   ▌+         5 body { margin:32px; backgro...
+▌+        24 ││    29   29                                        ...   ▌+         6 h1 { margin:0 0 6px; } .met...
+▌+        25 ││    30   30 ## Latest artifact                     ...   ▌+         7 .card { background:rgba(26,...
+ ~/dev/juzu @wwzonmvs                                                                                mainline  40 nodes
+</pre>
+</section>
+<section class='card'>
+  <h2>160 cols · PASS</h2>
+  <ul><li>none</li></ul>
+  <pre> DIFF   ^d Log  [ ] File  j/k Move  {/} Hunk  Esc Exit
+ File 1/2: Added bench/results/rust-port/live-tmux/2026-06-...   [ / ] next/prev   Ctrl+d back  Selected
+ VIEWPORT diff rows 1-31 of 95   SCROLL [███░░░░░░░]                                            Change: uyompyrwsyxopylolmpyunppyznrtnlr
+ STICKY ▸ top · Added bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux...   Commit: b6671af5f5a5
+╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-proof.html       Lane: Some(0)  X: Some(50)  Y: Some(722)
+  · diff --git a/bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-proof...  Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  · new file mode 100644                                                                        Time: 2026-06-15T05:40:02+01:00
+  · --- /dev/null
+  · +++ b/bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-proof.html       Bookmarks
+╭─ @@ -0,0 +1,88 @@                                                                          ╮  —
+▌+         1 &lt;!doctype html&gt;
+▌+         2 &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust live tmux proof&lt;/title&gt;         Description (x expand):
+▌+         3 &lt;style&gt;                                                                            restore readable rust diff row colors
+▌+         4 :root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --...
+▌+         5 body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#...   Files (f collapse):
+▌+         6 h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .sta...   ▶ A bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/l
+▌+         7 .card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-r...     M crates/juzu-tui/src/main.rs
+▌+         8 pre { background:#050816; border:1px solid #2a3442; border-radius:12px; paddi...
+▌+         9 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;                                                              Current file preview  secondary
+▌+        10 &lt;h1&gt;JUZU Rust live tmux proof · &lt;span class=&#x27;status pass&#x27;&gt;PASS&lt;/span&gt;&lt;/h1&gt;           · 2 files · 326 raw · 328 rows · 328 shown
+▌+        11 &lt;div class=&#x27;meta&#x27;&gt;Target: &lt;code&gt;juzu:rust-tui&lt;/code&gt; · pane command: &lt;code&gt;./...     · diff rows 1-14 of 95
+▌+        12 &lt;section class=&#x27;card&#x27;&gt;&lt;pre&gt; DIFF   ^d Log  [ ] File  j/k Move  {/} Hunk  Esc ...    STICKY ▸ top · Added bench/results/rust-port/live-tmux/...
+▌+        13                                                                                    ╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-15T04...╮
+▌+        14                                                                                      · diff --git a/bench/results/rust-port/live-tmux/2026-0...
+▌+        15 ┌ diff ──────────────────────────────────────────────────────────────────────...     · new file mode 100644
+▌+        16 │ File 17/17: Modified docs/rust-port/rust-tui-benchmarks.md   [ / ] next/pre...     · --- /dev/null
+▌+        17 │ VIEWPORT diff rows 1-27 of 27   SCROLL [██████████]                        ...     · +++ b/bench/results/rust-port/live-tmux/2026-06-15T04...
+▌+        18 │ STICKY ▸ top · Modified docs/rust-port/rust-tui-benchmarks.md              ...   ╭─ @@ -0,0 +1,88 @@                                        ╮
+▌+        19 │╭ ◆ Modified docs/rust-port/rust-tui-benchmarks.md                          ...   ▌+         1 &lt;!doctype html&gt;
+▌+        20 │  · diff --git a/docs/rust-port/rust-tui-benchmarks.md b/docs/rust-port/rust...   ▌+         2 &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JU...
+▌+        21 │  · --- a/docs/rust-port/rust-tui-benchmarks.md                             ...   ▌+         3 &lt;style&gt;
+▌+        22 │  · +++ b/docs/rust-port/rust-tui-benchmarks.md                             ...   ▌+         4 :root { color-scheme: dark; --bg:#111318; -...
+▌+        23 │╭─ @@ -29,17 +29,17 @@                                                      ...   ▌+         5 body { margin:32px; background:radial-gradi...
+▌+        24 ││    29   29                                                                ...   ▌+         6 h1 { margin:0 0 6px; } .meta { color:var(--...
+▌+        25 ││    30   30 ## Latest artifact                                             ...   ▌+         7 .card { background:rgba(26,32,41,.96); bord...
+ ~/dev/juzu @wwzonmvs                                                                                                                        mainline  40 nodes
+</pre>
+</section>
+<section class='card'>
+  <h2>206 cols · PASS</h2>
+  <ul><li>none</li></ul>
+  <pre> DIFF   ^d Log  [ ] File  j/k Move  {/} Hunk  Esc Exit
+ File 1/2: Added bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-p...   [ / ] next/prev   Ctrl+d back  Selected
+ VIEWPORT diff rows 1-31 of 95   SCROLL [███░░░░░░░]                                                                        Change: uyompyrwsyxopylolmpyunppyznrtnlr
+ STICKY ▸ top · Added bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-proof.html                       Commit: b6671af5f5a5
+╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-proof.html                                   Lane: Some(0)  X: Some(50)  Y: Some(722)
+  · diff --git a/bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-proof.html b/bench/results/rust-p...  Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  · new file mode 100644                                                                                                    Time: 2026-06-15T05:40:02+01:00
+  · --- /dev/null
+  · +++ b/bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-proof.html                                   Bookmarks
+╭─ @@ -0,0 +1,88 @@                                                                                                      ╮  —
+▌+         1 &lt;!doctype html&gt;
+▌+         2 &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust live tmux proof&lt;/title&gt;                                     Description (x expand):
+▌+         3 &lt;style&gt;                                                                                                        restore readable rust diff row colors
+▌+         4 :root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a...
+▌+         5 body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--t...   Files (f collapse):
+▌+         6 h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .status.pass { color:var(--ok); ...   ▶ A bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-proof.htm
+▌+         7 .card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; bo...     M crates/juzu-tui/src/main.rs
+▌+         8 pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font...
+▌+         9 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;                                                                                          Current file preview  secondary
+▌+        10 &lt;h1&gt;JUZU Rust live tmux proof · &lt;span class=&#x27;status pass&#x27;&gt;PASS&lt;/span&gt;&lt;/h1&gt;                                       · 2 files · 326 raw · 328 rows · 328 shown
+▌+        11 &lt;div class=&#x27;meta&#x27;&gt;Target: &lt;code&gt;juzu:rust-tui&lt;/code&gt; · pane command: &lt;code&gt;./target/release/juzu-tui&lt;/cod...     · diff rows 1-14 of 95
+▌+        12 &lt;section class=&#x27;card&#x27;&gt;&lt;pre&gt; DIFF   ^d Log  [ ] File  j/k Move  {/} Hunk  Esc Exit                               STICKY ▸ top · Added bench/results/rust-port/live-tmux/2026-06-15T04-39-5...
+▌+        13                                                                                                                ╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-t...╮
+▌+        14                                                                                                                  · diff --git a/bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z...
+▌+        15 ┌ diff ────────────────────────────────────────────────────────────────────────────────────────┐  ┌ detai...     · new file mode 100644
+▌+        16 │ File 17/17: Modified docs/rust-port/rust-tui-benchmarks.md   [ / ] next/prev   Ctrl+d back   │  │Select...     · --- /dev/null
+▌+        17 │ VIEWPORT diff rows 1-27 of 27   SCROLL [██████████]                                          │  │Change...     · +++ b/bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-t...
+▌+        18 │ STICKY ▸ top · Modified docs/rust-port/rust-tui-benchmarks.md                                │  │Commit...   ╭─ @@ -0,0 +1,88 @@                                                          ╮
+▌+        19 │╭ ◆ Modified docs/rust-port/rust-tui-benchmarks.md                                            │  │Lane: ...   ▌+         1 &lt;!doctype html&gt;
+▌+        20 │  · diff --git a/docs/rust-port/rust-tui-benchmarks.md b/docs/rust-port/rust-tui-benchmarks.md│  │Author...   ▌+         2 &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust live tmux ...
+▌+        21 │  · --- a/docs/rust-port/rust-tui-benchmarks.md                                               │  │Time: ...   ▌+         3 &lt;style&gt;
+▌+        22 │  · +++ b/docs/rust-port/rust-tui-benchmarks.md                                               │  │      ...   ▌+         4 :root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --...
+▌+        23 │╭─ @@ -29,17 +29,17 @@                                                                       ╮│  │Bookma...   ▌+         5 body { margin:32px; background:radial-gradient(circle at top ...
+▌+        24 ││    29   29                                                                                  │  │—     ...   ▌+         6 h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bot...
+▌+        25 ││    30   30 ## Latest artifact                                                               │  │      ...   ▌+         7 .card { background:rgba(26,32,41,.96); border:1px solid var(-...
+ ~/dev/juzu @wwzonmvs                                                                                                                                                                      mainline  40 nodes
+</pre>
+</section></div>
+</body></html>

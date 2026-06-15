@@ -1096,27 +1096,32 @@ fn status_key_style(t: &UiTokens) -> Style {
 }
 
 fn status_mode_style(t: &UiTokens, active: Option<LeaderMode>) -> Style {
-    let mode = active.unwrap_or(LeaderMode::Bookmarks);
-    let bg = if active.is_none() {
-        Color::Rgb(0x9f, 0xe1, 0xc9)
-    } else {
-        leader_mode_color(mode, t)
-    };
+    let tint = active
+        .map(|mode| leader_mode_color(mode, t))
+        .unwrap_or(t.semantic_mode_log);
     Style::default()
         .fg(t.slate_bg0)
-        .bg(bg)
+        .bg(mix_color(tint, t.slate_text, 0.18))
         .add_modifier(Modifier::BOLD)
 }
 
 fn status_item_style(t: &UiTokens, mode: LeaderMode) -> Style {
-    let (bg, fg) = match mode {
-        LeaderMode::Action => (Color::Rgb(0x7e, 0x65, 0x3e), Color::Rgb(0xdd, 0xbb, 0x84)),
-        LeaderMode::Ops => (Color::Rgb(0x49, 0x6b, 0x90), Color::Rgb(0xa3, 0xc2, 0xde)),
-        LeaderMode::View => (Color::Rgb(0x57, 0x7e, 0x7a), Color::Rgb(0xb3, 0xd7, 0xc6)),
-        LeaderMode::Bookmarks => (Color::Rgb(0x53, 0x80, 0x62), Color::Rgb(0xb6, 0xdc, 0xbd)),
+    let tone = leader_mode_color(mode, t);
+    Style::default()
+        .bg(mix_color(t.slate_bg2, tone, 0.42))
+        .fg(mix_color(t.slate_text, tone, 0.46))
+}
+
+fn mix_color(base: Color, overlay: Color, ratio: f32) -> Color {
+    let Color::Rgb(br, bg, bb) = base else {
+        return overlay;
     };
-    let _ = t;
-    Style::default().bg(bg).fg(fg)
+    let Color::Rgb(or, og, ob) = overlay else {
+        return base;
+    };
+    let t = ratio.clamp(0.0, 1.0);
+    let mix = |a: u8, b: u8| -> u8 { (a as f32 + (b as f32 - a as f32) * t).round() as u8 };
+    Color::Rgb(mix(br, or), mix(bg, og), mix(bb, ob))
 }
 
 fn view_leader_status_lines(t: &UiTokens) -> Vec<Line<'static>> {
@@ -2627,11 +2632,18 @@ mod tests {
     #[test]
     fn status_buttons_use_bun_slate_colored_segments() {
         let style = status_item_style(&UI_TOKENS, LeaderMode::Action);
-        assert_eq!(style.bg, Some(Color::Rgb(0x7e, 0x65, 0x3e)));
-        assert_eq!(style.fg, Some(Color::Rgb(0xdd, 0xbb, 0x84)));
+        assert_eq!(style.bg, Some(Color::Rgb(0x65, 0x5c, 0x48)));
+        assert_eq!(style.fg, Some(Color::Rgb(0xd1, 0xc5, 0xae)));
         let style = status_item_style(&UI_TOKENS, LeaderMode::View);
-        assert_eq!(style.bg, Some(Color::Rgb(0x57, 0x7e, 0x7a)));
-        assert_eq!(style.fg, Some(Color::Rgb(0xb3, 0xd7, 0xc6)));
+        assert_eq!(style.bg, Some(Color::Rgb(0x3f, 0x4f, 0x65)));
+        assert_eq!(style.fg, Some(Color::Rgb(0xa8, 0xb7, 0xcd)));
+    }
+
+    #[test]
+    fn status_mode_badge_uses_bun_mode_tint_mix() {
+        let style = status_mode_style(&UI_TOKENS, None);
+        assert_eq!(style.bg, Some(Color::Rgb(0x82, 0x98, 0xb8)));
+        assert_eq!(style.fg, Some(UI_TOKENS.slate_bg0));
     }
 
     #[test]
