@@ -1282,7 +1282,15 @@ fn render_diff_pane(
             let max_scroll = rows.len().saturating_sub(visible_count);
             let scroll = app.diff_scroll.min(max_scroll);
             for row in rows.iter().skip(scroll).take(visible_count) {
-                lines.push(render_diff_row(t, row, width));
+                for rendered in render_full_diff_row(t, row, width) {
+                    if lines.len() >= height {
+                        break;
+                    }
+                    lines.push(rendered);
+                }
+                if lines.len() >= height {
+                    break;
+                }
             }
         }
     } else {
@@ -2340,6 +2348,83 @@ fn render_diff_preview_lines(
     }
 }
 
+fn render_full_diff_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Vec<Line<'static>> {
+    if !matches!(
+        row.kind,
+        DiffRowKind::Context | DiffRowKind::Add | DiffRowKind::Remove
+    ) {
+        return vec![render_diff_row(tokens, row, max_len)];
+    }
+    let text_budget = max_len.saturating_sub(6);
+    if text_budget == 0 {
+        return vec![render_diff_code_row(tokens, row, max_len)];
+    }
+
+    let line_number = match row.kind {
+        DiffRowKind::Remove => row.old_line,
+        DiffRowKind::Add | DiffRowKind::Context => row.new_line.or(row.old_line),
+        _ => row.new_line.or(row.old_line),
+    }
+    .map(|value| value.to_string())
+    .unwrap_or_default();
+    let sign = match row.kind {
+        DiffRowKind::Add => "+",
+        DiffRowKind::Remove => "-",
+        _ => " ",
+    };
+    let add_bg = mix_color(tokens.slate_bg0, tokens.semantic_file_add, 0.48);
+    let remove_bg = mix_color(tokens.slate_bg0, tokens.semantic_file_del, 0.48);
+    let gutter_style = Style::default()
+        .fg(tokens.slate_text_muted)
+        .bg(tokens.slate_bg1);
+    let (sign_style, text_style) = match row.kind {
+        DiffRowKind::Add => (
+            Style::default()
+                .fg(tokens.semantic_file_add)
+                .bg(tokens.slate_bg1)
+                .add_modifier(Modifier::BOLD),
+            Style::default().fg(tokens.slate_text).bg(add_bg),
+        ),
+        DiffRowKind::Remove => (
+            Style::default()
+                .fg(tokens.semantic_file_del)
+                .bg(tokens.slate_bg1)
+                .add_modifier(Modifier::BOLD),
+            Style::default().fg(tokens.slate_text).bg(remove_bg),
+        ),
+        _ => (
+            Style::default()
+                .fg(tokens.slate_text_muted)
+                .bg(tokens.slate_bg1),
+            Style::default().fg(tokens.slate_text).bg(tokens.slate_bg0),
+        ),
+    };
+    let content = row.text.strip_prefix(['+', '-', ' ']).unwrap_or(&row.text);
+    let chars: Vec<char> = content.chars().collect();
+    if chars.is_empty() {
+        return vec![render_diff_code_row(tokens, row, max_len)];
+    }
+
+    chars
+        .chunks(text_budget)
+        .enumerate()
+        .map(|(idx, chunk)| {
+            let chunk_text: String = chunk.iter().collect();
+            let chunk_text = format!("{chunk_text:<width$}", width = text_budget);
+            let (gutter, sign_cell) = if idx == 0 {
+                (format!("{line_number:>3}"), format!(" {sign} "))
+            } else {
+                ("   ".to_string(), "   ".to_string())
+            };
+            Line::from(vec![
+                Span::styled(gutter, gutter_style),
+                Span::styled(sign_cell, sign_style),
+                Span::styled(chunk_text, text_style),
+            ])
+        })
+        .collect()
+}
+
 fn render_diff_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Line<'static> {
     match row.kind {
         DiffRowKind::FileHeader => render_diff_file_header(tokens, row, max_len),
@@ -2891,6 +2976,36 @@ mod tests {
         assert_eq!(line.spans[0].style.bg, Some(UI_TOKENS.slate_bg1));
         assert_eq!(line.spans[1].style.fg, Some(UI_TOKENS.semantic_file_del));
         assert_eq!(line.spans[2].style.bg, Some(remove_bg));
+    }
+
+    #[test]
+    fn full_diff_code_rows_wrap_like_bun_char_mode() {
+        let row = DiffRow {
+            kind: DiffRowKind::Add,
+            file_index: 0,
+            hunk_index: Some(0),
+            old_line: None,
+            new_line: Some(4),
+            text: "+abcdefghijklmnop".to_string(),
+        };
+        let lines = render_full_diff_row(&UI_TOKENS, &row, 12);
+        let rendered: Vec<String> = lines
+            .iter()
+            .map(|line| {
+                line.spans
+                    .iter()
+                    .map(|span| span.content.as_ref())
+                    .collect()
+            })
+            .collect();
+        assert_eq!(
+            rendered.len(),
+            3,
+            "Bun DiffView wraps long code rows instead of truncating: {rendered:?}"
+        );
+        assert_eq!(rendered[0], "  4 + abcdef");
+        assert_eq!(rendered[1], "      ghijkl");
+        assert_eq!(rendered[2], "      mnop  ");
     }
 
     #[test]
