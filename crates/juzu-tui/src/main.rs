@@ -20,6 +20,7 @@ use ratatui::{
 use std::{collections::HashMap, io::stdout, path::PathBuf, time::Duration};
 
 const DIFF_PREVIEW_ROW_CAP: usize = 420;
+const DEFAULT_LOG_LIMIT: usize = 500;
 
 #[derive(Clone, Copy)]
 struct UiTokens {
@@ -391,7 +392,7 @@ fn main() -> Result<()> {
         .unwrap_or(std::env::current_dir()?);
     let limit = arg_value(&args, "--limit")
         .and_then(|raw| raw.parse::<usize>().ok())
-        .unwrap_or(50);
+        .unwrap_or(DEFAULT_LOG_LIMIT);
     let mode = parse_layout_mode(arg_value(&args, "--mode"));
     let backend = NativeJjBackend::new();
     let nodes = futures_executor::block_on(backend.log(LogQuery {
@@ -2599,6 +2600,11 @@ mod tests {
     #[test]
     fn bun_parity_default_chrome_is_smooth_not_boxed() {
         assert_eq!(default_chrome_borders(), Borders::NONE);
+    }
+
+    #[test]
+    fn default_log_limit_matches_original_juzu_scale() {
+        assert_eq!(DEFAULT_LOG_LIMIT, 500);
     }
 
     #[test]

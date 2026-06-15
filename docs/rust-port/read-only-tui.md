@@ -7,6 +7,7 @@ Date: 2026-06-13
 `crates/juzu-tui` is now a real Ratatui review surface instead of a scaffold print:
 
 - opens repo through `juzu-jj` native backend
+- defaults to a 500-node log query, not the earlier accidental 50-node prototype cap
 - computes graph coordinates through `juzu-core::layout`
 - renders read-only commit graph with DAG connector glyphs
 - renders selected-node details sidebar
@@ -17,8 +18,10 @@ Date: 2026-06-13
 ## Run command
 
 ```bash
-cargo run -q -p juzu-tui -- --path /home/shamanic/dev/juzu --limit 30 --mode chronological
+cargo run -q -p juzu-tui -- --path /home/shamanic/dev/juzu --mode chronological
 ```
+
+The Rust TUI product default log limit is `500`, matching the original JUZU web/app scale rather than the earlier accidental Rust prototype default of `50`. Smaller `--limit` values are only for benchmarks, parity fixtures, or intentionally constrained review runs.
 
 ## tmux review
 
