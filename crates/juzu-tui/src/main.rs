@@ -1488,7 +1488,11 @@ fn render_graph_table(
             text_x,
             y,
             &change_short,
-            if is_selected { t.slate_text } else { color },
+            if is_selected {
+                selected_text_color(t)
+            } else {
+                color
+            },
         );
         put_text(
             &mut cells,
@@ -1496,7 +1500,7 @@ fn render_graph_table(
             y,
             &commit_short,
             if is_selected {
-                t.slate_text
+                selected_text_color(t)
             } else {
                 t.graph_commit_id
             },
@@ -1511,7 +1515,7 @@ fn render_graph_table(
                 &desc
             },
             if is_selected {
-                t.slate_text
+                selected_text_color(t)
             } else {
                 t.graph_text_desc
             },
@@ -1536,19 +1540,14 @@ fn render_graph_table(
             .get(&node.change_id)
             .map(Vec::as_slice)
             .unwrap_or(&[]);
-        let file_summary = format_file_summary(files, width.saturating_sub(text_x + 1));
-        put_text(
+        put_graph_file_summary(
             &mut cells,
             text_x,
             y + 2,
-            &file_summary,
-            if files.is_empty() {
-                t.graph_text_muted
-            } else if is_selected {
-                t.semantic_info
-            } else {
-                t.graph_text_muted
-            },
+            files,
+            width.saturating_sub(text_x + 1),
+            is_selected,
+            t,
         );
     }
 
@@ -1662,6 +1661,25 @@ fn file_type_color(tokens: &UiTokens, file_type: &str) -> Color {
     }
 }
 
+fn brighten_color(color: Color, add: u8) -> Color {
+    match color {
+        Color::Rgb(r, g, b) => Color::Rgb(
+            r.saturating_add(add),
+            g.saturating_add(add),
+            b.saturating_add(add),
+        ),
+        other => other,
+    }
+}
+
+fn selected_file_type_color(tokens: &UiTokens, file_type: &str) -> Color {
+    brighten_color(file_type_color(tokens, file_type), 60)
+}
+
+fn selected_text_color(tokens: &UiTokens) -> Color {
+    brighten_color(tokens.slate_text, 60)
+}
+
 fn sidebar_heading_style(tokens: &UiTokens) -> Style {
     Style::default()
         .fg(tokens.semantic_info)
@@ -1678,20 +1696,84 @@ fn sidebar_selected_text_style(tokens: &UiTokens) -> Style {
         .add_modifier(Modifier::BOLD)
 }
 
-fn format_file_summary(files: &[FileEntry], max_len: usize) -> String {
+fn put_graph_file_summary(
+    cells: &mut [Vec<GraphCell>],
+    x: usize,
+    y: isize,
+    files: &[FileEntry],
+    max_len: usize,
+    is_selected: bool,
+    tokens: &UiTokens,
+) {
+    if max_len == 0 {
+        return;
+    }
     if files.is_empty() {
-        return "no file changes".to_string();
+        put_text(
+            cells,
+            x,
+            y,
+            "no file changes",
+            if is_selected {
+                brighten_color(tokens.graph_text_muted, 40)
+            } else {
+                tokens.graph_text_muted
+            },
+        );
+        return;
     }
-    let parts = files
-        .iter()
-        .take(3)
-        .map(|file| format!("{} {}", file.r#type, file.path))
-        .collect::<Vec<_>>();
-    let mut summary = parts.join("  ");
-    if files.len() > 3 {
-        summary.push_str(&format!("  +{}", files.len() - 3));
+
+    let mut cursor = x;
+    let end = x.saturating_add(max_len);
+    for (idx, file) in files.iter().take(3).enumerate() {
+        if idx > 0 && cursor + 2 < end {
+            put_text(
+                cells,
+                cursor,
+                y,
+                "  ",
+                if is_selected {
+                    brighten_color(tokens.slate_text, 40)
+                } else {
+                    tokens.graph_text_muted
+                },
+            );
+            cursor += 2;
+        }
+        let color = if is_selected {
+            selected_file_type_color(tokens, &file.r#type)
+        } else {
+            file_type_color(tokens, &file.r#type)
+        };
+        let text = format!("{} {}", file.r#type, file.path);
+        let room = end.saturating_sub(cursor);
+        if room == 0 {
+            return;
+        }
+        let text = truncate(&text, room);
+        put_text(cells, cursor, y, &text, color);
+        cursor += text.chars().count();
+        if cursor >= end {
+            return;
+        }
     }
-    truncate(&summary, max_len)
+    if files.len() > 3 && cursor + 3 < end {
+        let more = truncate(
+            &format!("  +{}", files.len() - 3),
+            end.saturating_sub(cursor),
+        );
+        put_text(
+            cells,
+            cursor,
+            y,
+            &more,
+            if is_selected {
+                brighten_color(tokens.graph_text_muted, 40)
+            } else {
+                tokens.graph_text_muted
+            },
+        );
+    }
 }
 
 fn render_collapsed_sidebar(frame: &mut Frame, area: Rect, app: &App) {
@@ -1995,7 +2077,11 @@ fn render_sidebar(
                 ),
                 Span::styled(
                     format!("{} ", file.r#type),
-                    Style::default().fg(file_type_color(&app.theme, &file.r#type)),
+                    Style::default().fg(if is_selected_diff_file {
+                        selected_file_type_color(&app.theme, &file.r#type)
+                    } else {
+                        file_type_color(&app.theme, &file.r#type)
+                    }),
                 ),
                 Span::styled(
                     file.path.clone(),
@@ -2419,6 +2505,26 @@ mod tests {
         assert_eq!(file_type_color(&theme, "A"), Color::Rgb(0xa6, 0xe3, 0xa1));
         assert_eq!(file_type_color(&theme, "M"), Color::Rgb(0xf9, 0xe2, 0xaf));
         assert_eq!(file_type_color(&theme, "D"), Color::Rgb(0xf3, 0x8b, 0xa8));
+    }
+
+    #[test]
+    fn selected_row_colors_brighten_like_old_bun_graph_view() {
+        assert_eq!(
+            brighten_color(UI_TOKENS.slate_text, 60),
+            Color::Rgb(0xff, 0xff, 0xff)
+        );
+        assert_eq!(
+            selected_file_type_color(&UI_TOKENS, "A"),
+            Color::Rgb(0xb0, 0xf4, 0xc8)
+        );
+        assert_eq!(
+            selected_file_type_color(&UI_TOKENS, "M"),
+            Color::Rgb(0xff, 0xe4, 0xa6)
+        );
+        assert_eq!(
+            selected_file_type_color(&UI_TOKENS, "D"),
+            Color::Rgb(0xff, 0xab, 0xb8)
+        );
     }
 
     #[test]
