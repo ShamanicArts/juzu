@@ -259,8 +259,8 @@ def run_capture_sequence(args: argparse.Namespace) -> list[CapturePair]:
         tmux("kill-session", "-t", bun_session, check=False)
 
 
-def render_terminal(capture: TerminalCapture) -> str:
-    return f"<pre class='terminal'>{sgr_to_html(capture.ansi)}</pre>"
+def render_terminal(capture: TerminalCapture, flavor: str) -> str:
+    return f"<pre class='terminal {html.escape(flavor)}'>{sgr_to_html(capture.ansi)}</pre>"
 
 
 def render_pair(pair: CapturePair) -> str:
@@ -270,8 +270,8 @@ def render_pair(pair: CapturePair) -> str:
   <h2>{html.escape(pair.label)}</h2>
   <table><thead><tr><th>Metric</th><th>Rust</th><th>Bun oracle</th></tr></thead><tbody>{metric_table(pair)}</tbody></table>
   <div class='screens'>
-    <article><h3>Rust Ratatui, ANSI preserved</h3>{render_terminal(pair.rust)}</article>
-    <article><h3>Bun/OpenTUI oracle, ANSI preserved</h3>{render_terminal(pair.bun)}</article>
+    <article><h3>Rust Ratatui, ANSI preserved</h3>{render_terminal(pair.rust, 'rust')}</article>
+    <article><h3>Bun/OpenTUI oracle, ANSI preserved</h3>{render_terminal(pair.bun, 'bun')}</article>
   </div>
   <details><summary>Plain text fallback, no color</summary><div class='screens'><pre>{html.escape(pair.rust.plain)}</pre><pre>{html.escape(pair.bun.plain)}</pre></div></details>
   <div class='notes'><h3>Visual gaps</h3><ul>{notes}</ul></div>
@@ -295,9 +295,11 @@ h1 {{ margin:0 0 6px; letter-spacing:-.035em; font-size:32px; }}
 .pair {{ margin:16px 0; }} h2 {{ margin:0 0 12px; }} h3 {{ margin:0 0 8px; color:var(--info); font-size:13px; text-transform:uppercase; letter-spacing:.08em; }}
 .screens {{ display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }}
 article {{ min-width:0; }}
-.terminal, pre {{ margin:0; padding:0; background:#000; color:#ddd; overflow:auto; font:12px/1.0 'JetBrains Mono','SFMono-Regular',ui-monospace,monospace; white-space:pre; border:1px solid #222b38; border-radius:8px; tab-size:8; }}
+.terminal, pre {{ margin:0; padding:0; color:#ddd; overflow:auto; font:12px/1.0 'JetBrains Mono','SFMono-Regular',ui-monospace,monospace; white-space:pre; border:1px solid #222b38; border-radius:8px; tab-size:8; }}
 .terminal {{ line-height:1.0; letter-spacing:0; }}
-pre:not(.terminal) {{ padding:10px; line-height:1.2; color:#cbd5e1; }}
+.terminal.rust {{ background:#111318; }}
+.terminal.bun {{ background:#1f2430; }}
+pre:not(.terminal) {{ padding:10px; line-height:1.2; color:#cbd5e1; background:#050816; }}
 .notes {{ margin-top:12px; background:#101722; border:1px solid #263141; border-radius:12px; padding:12px 14px; }}
 ul {{ margin:0; padding-left:20px; }} li {{ margin:7px 0; color:#cbd5e1; line-height:1.4; }}
 table {{ border-collapse:collapse; margin:0 0 12px; font:12px/1.35 'JetBrains Mono',monospace; }} th,td {{ border-bottom:1px solid #263141; padding:5px 9px; text-align:left; }} th {{ color:var(--muted); }} td:nth-child(2) {{ color:var(--warn); }} td:nth-child(3) {{ color:var(--ok); }}

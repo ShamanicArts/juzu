@@ -21,6 +21,7 @@ bench/results/rust-port/visual-parity-audit/<timestamp>/visual-parity-audit.html
 ## Current findings
 
 - Earlier pretty HTML masked the true differences by recoloring Rust and Bun with the same report CSS. The current artifact intentionally renders captured ANSI spans directly.
+- Raw tmux ANSI capture can omit styled trailing blank cells, so the HTML renderer gives Rust and Bun separate default terminal backgrounds instead of a fake shared black base.
 - Bun uses a smoother, lower-chrome surface. Heavy Rust borders should become toggleable, not default.
 - Rust still has too many boxed panels, broken edge/gutter risks, and large unused gaps.
 - Diff rendering is not yet Bun `DiffView.tsx` parity. Bun uses OpenTUI's `<diff>` renderer with full-row mutation backgrounds, line number gutters, and a continuous pane. Rust currently reads more like decorated text.
