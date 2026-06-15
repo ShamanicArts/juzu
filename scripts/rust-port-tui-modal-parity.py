@@ -447,6 +447,7 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         "viewToggleDescription": "C-l,x",
         "viewToggleHelp": "C-l,h",
         "viewToggleBoxedChrome": "C-l,b",
+        "viewToggleDiffScaffold": "C-l,s",
         "viewThemePicker": "C-l,t",
         "viewThemePickerDownApplyStaysOpen": "C-l,t,j,Enter",
         "viewThemePickerEscCancels": "C-l,t,j,Esc",
@@ -498,6 +499,7 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
             "viewToggleDescription": ("descExpanded", True, "debug-state C-l,x should expand description and exit View leader"),
             "viewToggleHelp": ("showHelp", True, "debug-state C-l,h should open help and exit View leader"),
             "viewToggleBoxedChrome": ("boxedChrome", True, "debug-state C-l,b should toggle boxed chrome and exit View leader"),
+            "viewToggleDiffScaffold": ("diffScaffold", True, "debug-state C-l,s should toggle full diff scaffold and exit View leader"),
             "viewThemePicker": ("themePickerMode", True, "debug-state C-l,t should open theme picker and exit View leader"),
             "viewRevsetFilter": ("revsetMode", True, "debug-state C-l,/ should open revset filter and exit View leader"),
         }

@@ -31,17 +31,17 @@ The runner:
 
 ## Latest artifact
 
-`bench/results/rust-port/rust-tui-bench/2026-06-15T19-56-19-184Z/rust-tui-benchmark.html`
+`bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/rust-tui-benchmark.html`
 
 ## Current headline
 
-Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, structured diff rendering, old-style diff pane navigation, View leader behavior, bundled themes, runtime theme wiring, selected-row polish, the first Bun-smooth chrome correction, the optional boxed-chrome toggle, Bun/OpenTUI-style status segment color mixing, the first FooterBar layer split pass, the Bun-style details sidebar rhythm pass, Bun-like sidebar file-row truncation, the first Bun `DiffView.tsx` color-palette pass, Bun-style unified diff gutter ordering, the full diff-pane scaffold removal pass, and full-pane char wrapping for long code rows. Graph/details/diff borders remain disabled by default, status/footer bars consume only their needed rows, the footer separates repo/bookmark/wc/layout/node-count like Bun, file rows cap to pane width with ellipsis instead of overflowing, diff add/remove rows use the same `mix(slate.bg0, semantic.fileAdd/fileDel, 0.48)` background formula as the Bun `<diff>` component, diff code rows now show a compact active line-number gutter followed by the padded +/- sign before content, code-content backgrounds fill the remaining row width like Bun `<diff>`, the full diff pane hides Rust-only `VIEWPORT`/`STICKY`/file-header/hunk-bar scaffold rows so it starts with Bun-style code rows under the title, and long full-pane code rows wrap in char mode with continuation lines aligned under content.
+Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, structured diff rendering, old-style diff pane navigation, View leader behavior, bundled themes, runtime theme wiring, selected-row polish, the first Bun-smooth chrome correction, the optional boxed-chrome toggle, Bun/OpenTUI-style status segment color mixing, the first FooterBar layer split pass, the Bun-style details sidebar rhythm pass, Bun-like sidebar file-row truncation, the first Bun `DiffView.tsx` color-palette pass, Bun-style unified diff gutter ordering, the full diff-pane scaffold removal pass, full-pane char wrapping for long code rows, and opt-in diff scaffold mode via `--diff-scaffold` or `Ctrl+L`, then `s`. Graph/details/diff borders remain disabled by default, status/footer bars consume only their needed rows, the footer separates repo/bookmark/wc/layout/node-count like Bun, file rows cap to pane width with ellipsis instead of overflowing, diff add/remove rows use the same `mix(slate.bg0, semantic.fileAdd/fileDel, 0.48)` background formula as the Bun `<diff>` component, diff code rows now show a compact active line-number gutter followed by the padded +/- sign before content, code-content backgrounds fill the remaining row width like Bun `<diff>`, the full diff pane hides Rust-only `VIEWPORT`/`STICKY`/file-header/hunk-bar scaffold rows by default so it starts with Bun-style code rows under the title, and long full-pane code rows wrap in char mode with continuation lines aligned under content.
 
 | Scenario | RSS peak | RSS steady median | PSS steady median | Header median |
 | --- | ---: | ---: | ---: | ---: |
-| `idle-mainline` | 14.53 MB | 14.46 MB | 12.11 MB | 160.02 ms |
-| `navigate-mainline` | 66.38 MB | 65.70 MB | 63.39 MB | 159.49 ms |
-| `layout-switching` | 62.06 MB | 56.32 MB | 54.06 MB | 158.85 ms |
+| `idle-mainline` | 11.88 MB | 11.61 MB | 9.29 MB | 154.37 ms |
+| `navigate-mainline` | 66.43 MB | 66.06 MB | 63.75 MB | 156.10 ms |
+| `layout-switching` | 62.88 MB | 56.75 MB | 54.44 MB | 161.56 ms |
 
 The visual renderer itself keeps idle memory close to the earlier capped-diff baseline. Hard-capping retained structured preview rows dropped navigation peak RSS from 35.81 MB to 28.52 MB and layout-switching peak RSS from 34.66 MB to 28.02 MB while preserving the crafted sidebar preview. The headline remains far below the old live Bun/OpenTUI TUI (~175 MB RSS steady).
 

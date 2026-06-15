@@ -387,6 +387,7 @@ struct App {
     desc_expanded: bool,
     show_help: bool,
     boxed_chrome: bool,
+    diff_scaffold: bool,
     theme_picker_mode: bool,
     theme_picker_index: usize,
     current_theme: String,
@@ -445,6 +446,7 @@ fn main() -> Result<()> {
         desc_expanded: false,
         show_help: false,
         boxed_chrome: false,
+        diff_scaffold: args.iter().any(|arg| arg == "--diff-scaffold"),
         theme_picker_mode: false,
         theme_picker_index: theme_options()
             .iter()
@@ -594,6 +596,11 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
                 app.active_leader_mode = None;
                 return false;
             }
+            KeyCode::Char('s') => {
+                app.diff_scaffold = !app.diff_scaffold;
+                app.active_leader_mode = None;
+                return false;
+            }
             KeyCode::Char('t') => {
                 app.theme_picker_mode = true;
                 app.theme_picker_index = theme_options()
@@ -734,6 +741,7 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "descExpanded": app.desc_expanded,
         "showHelp": app.show_help,
         "boxedChrome": app.boxed_chrome,
+        "diffScaffold": app.diff_scaffold,
         "themePickerMode": app.theme_picker_mode,
         "themePickerIndex": app.theme_picker_index,
         "currentTheme": app.current_theme,
@@ -1277,7 +1285,7 @@ fn render_diff_pane(
                 width,
             ));
         } else {
-            let rows = diffview_rows_for_file(diff, app.diff_file_index);
+            let rows = full_diff_pane_rows(diff, app.diff_file_index, app.diff_scaffold);
             let visible_count = height.saturating_sub(lines.len()).max(1);
             let max_scroll = rows.len().saturating_sub(visible_count);
             let scroll = app.diff_scroll.min(max_scroll);
@@ -1337,6 +1345,14 @@ fn rows_for_diff_file(diff: &DiffPreview, file_index: usize) -> Vec<DiffRow> {
         .filter(|row| row.file_index == index)
         .cloned()
         .collect()
+}
+
+fn full_diff_pane_rows(diff: &DiffPreview, file_index: usize, show_scaffold: bool) -> Vec<DiffRow> {
+    if show_scaffold {
+        rows_for_diff_file(diff, file_index)
+    } else {
+        diffview_rows_for_file(diff, file_index)
+    }
 }
 
 fn diffview_rows_for_file(diff: &DiffPreview, file_index: usize) -> Vec<DiffRow> {
@@ -2867,6 +2883,68 @@ mod tests {
         assert_eq!(theme_picker_window(0, 21, 8), (0, 8));
         assert_eq!(theme_picker_window(10, 21, 8), (7, 15));
         assert_eq!(theme_picker_window(20, 21, 8), (13, 21));
+    }
+
+    #[test]
+    fn full_diff_scaffold_is_opt_in_not_deleted() {
+        let diff = DiffPreview {
+            raw_line_count: 7,
+            file_count: 1,
+            row_count: 5,
+            preview_rows: vec![],
+            full_rows: Some(vec![
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Modified src/lib.rs".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Metadata,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "diff --git a/src/lib.rs b/src/lib.rs".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::HunkHeader,
+                    file_index: 0,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: None,
+                    text: "@@ -1,1 +1,1 @@".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Add,
+                    file_index: 0,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: Some(1),
+                    text: "+new".to_string(),
+                },
+            ]),
+            parse_error: None,
+        };
+
+        let clean_rows = full_diff_pane_rows(&diff, 0, false);
+        assert!(clean_rows.iter().all(|row| matches!(
+            row.kind,
+            DiffRowKind::Add | DiffRowKind::Remove | DiffRowKind::Context | DiffRowKind::Collapse
+        )));
+
+        let scaffold_rows = full_diff_pane_rows(&diff, 0, true);
+        assert!(scaffold_rows
+            .iter()
+            .any(|row| row.kind == DiffRowKind::FileHeader));
+        assert!(scaffold_rows
+            .iter()
+            .any(|row| row.kind == DiffRowKind::Metadata));
+        assert!(scaffold_rows
+            .iter()
+            .any(|row| row.kind == DiffRowKind::HunkHeader));
     }
 
     #[test]
