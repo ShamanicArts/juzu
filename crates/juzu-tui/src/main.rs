@@ -2615,6 +2615,51 @@ mod tests {
     }
 
     #[test]
+    fn footer_segments_match_old_bun_footer_bar_layers() {
+        let home = std::env::var("HOME").expect("HOME is set in parity environment");
+        let path = PathBuf::from(format!("{home}/dev/juzu"));
+        let nodes = vec![juzu_core::CommitNode {
+            change_id: "abc123456789".to_string(),
+            commit_id: "def123456789".to_string(),
+            parents: vec![],
+            author: "tester".to_string(),
+            time: "now".to_string(),
+            bookmarks: vec!["main".to_string()],
+            git_branches: vec![],
+            description_title: "wc".to_string(),
+            description_full: "wc".to_string(),
+            is_empty: false,
+            is_conflict: false,
+            is_hidden: false,
+            is_root: false,
+            is_working_copy: true,
+            x: None,
+            y: None,
+            lane: None,
+            extra_height: None,
+            is_pinned: false,
+        }];
+
+        let line = footer_line(&UI_TOKENS, &path, LayoutMode::Mainline, &nodes, 80);
+        let spans = line.spans;
+        assert_eq!(spans[0].content.as_ref(), " ~/dev/juzu ");
+        assert_eq!(spans[0].style.bg, Some(UI_TOKENS.slate_bg2));
+        assert_eq!(spans[0].style.fg, Some(UI_TOKENS.semantic_info));
+        assert_eq!(spans[1].content.as_ref(), "main");
+        assert_eq!(spans[1].style.bg, Some(UI_TOKENS.slate_panel));
+        assert_eq!(spans[1].style.fg, Some(UI_TOKENS.semantic_info));
+        assert_eq!(spans[2].content.as_ref(), " @abc12345");
+        assert_eq!(spans[2].style.bg, Some(UI_TOKENS.slate_panel));
+        assert_eq!(spans[2].style.fg, Some(UI_TOKENS.semantic_success));
+        assert_eq!(spans[4].content.as_ref(), "mainline");
+        assert_eq!(spans[4].style.bg, Some(UI_TOKENS.slate_panel));
+        assert_eq!(spans[4].style.fg, Some(UI_TOKENS.slate_text));
+        assert_eq!(spans[5].content.as_ref(), " 1 nodes ");
+        assert_eq!(spans[5].style.bg, Some(UI_TOKENS.slate_bg2));
+        assert_eq!(spans[5].style.fg, Some(UI_TOKENS.semantic_success));
+    }
+
+    #[test]
     fn bun_parity_default_chrome_is_smooth_not_boxed() {
         assert_eq!(default_chrome_borders(false), Borders::NONE);
     }
@@ -2753,35 +2798,63 @@ fn compact_home_path(path: &std::path::Path) -> String {
     }
 }
 
-fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
-    let t = &app.theme;
-    let repo = compact_home_path(&app.path);
-    let working_copy = app.nodes.iter().find(|node| node.is_working_copy);
+fn footer_line<'a>(
+    t: &UiTokens,
+    path: &std::path::Path,
+    mode: LayoutMode,
+    nodes: &[juzu_core::CommitNode],
+    width: usize,
+) -> Line<'a> {
+    let repo = compact_home_path(path);
+    let working_copy = nodes.iter().find(|node| node.is_working_copy);
+    let bookmark = working_copy
+        .and_then(|node| node.bookmarks.first())
+        .cloned()
+        .unwrap_or_default();
     let wc = working_copy
         .map(|node| format!(" @{}", node.change_id.chars().take(8).collect::<String>()))
         .unwrap_or_default();
-    let bookmark = working_copy
-        .and_then(|node| node.bookmarks.first())
-        .map(|bookmark| format!(" {bookmark}"))
-        .unwrap_or_default();
-    let mode = format!("{:?}", app.mode).to_lowercase();
-    let right = format!(" {mode}  {} nodes ", app.nodes.len());
-    let width = area.width as usize;
-    let left_text = format!(" {repo}{bookmark}{wc}");
-    let spacer = width.saturating_sub(left_text.chars().count() + right.chars().count());
-    let line = Line::from(vec![
+    let mode = format!("{:?}", mode).to_lowercase();
+    let repo_segment = format!(" {repo} ");
+    let node_segment = format!(" {} nodes ", nodes.len());
+    let fixed_width = repo_segment.chars().count()
+        + bookmark.chars().count()
+        + wc.chars().count()
+        + mode.chars().count()
+        + node_segment.chars().count();
+    let spacer = width.saturating_sub(fixed_width);
+    Line::from(vec![
         Span::styled(
-            left_text,
+            repo_segment,
             Style::default().fg(t.semantic_info).bg(t.slate_bg2),
         ),
-        Span::styled(" ".repeat(spacer), Style::default().bg(t.slate_panel)),
         Span::styled(
-            right,
+            bookmark,
+            Style::default().fg(t.semantic_info).bg(t.slate_panel),
+        ),
+        Span::styled(
+            wc,
+            Style::default().fg(t.semantic_success).bg(t.slate_panel),
+        ),
+        Span::styled(" ".repeat(spacer), Style::default().bg(t.slate_panel)),
+        Span::styled(mode, Style::default().fg(t.slate_text).bg(t.slate_panel)),
+        Span::styled(
+            node_segment,
             Style::default().fg(t.semantic_success).bg(t.slate_bg2),
         ),
-    ]);
+    ])
+}
+
+fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
+    let line = footer_line(
+        &app.theme,
+        &app.path,
+        app.mode,
+        &app.nodes,
+        area.width as usize,
+    );
     frame.render_widget(
-        Paragraph::new(line).style(Style::default().bg(t.slate_panel)),
+        Paragraph::new(line).style(Style::default().bg(app.theme.slate_panel)),
         area,
     );
 }
