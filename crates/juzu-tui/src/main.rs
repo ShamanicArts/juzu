@@ -1756,6 +1756,58 @@ fn sidebar_selected_text_style(tokens: &UiTokens) -> Style {
         .add_modifier(Modifier::BOLD)
 }
 
+fn truncate_bun_text(s: &str, max_len: usize) -> String {
+    let char_count = s.chars().count();
+    if char_count <= max_len {
+        return s.to_string();
+    }
+    if max_len == 0 {
+        return String::new();
+    }
+    if max_len <= 3 {
+        return s.chars().take(max_len).collect();
+    }
+    let mut out = s.chars().take(max_len - 1).collect::<String>();
+    out.push('…');
+    out
+}
+
+fn sidebar_file_line(
+    tokens: &UiTokens,
+    file: &FileEntry,
+    is_selected_diff_file: bool,
+    max_width: usize,
+) -> Line<'static> {
+    let selector = if is_selected_diff_file { "▶ " } else { "" };
+    let type_part = format!("{} ", file.r#type);
+    let prefix_width = selector.chars().count() + type_part.chars().count();
+    let path = truncate_bun_text(&file.path, max_width.saturating_sub(prefix_width));
+    let mut spans = Vec::new();
+    if is_selected_diff_file {
+        spans.push(Span::styled(
+            selector.to_string(),
+            sidebar_heading_style(tokens),
+        ));
+    }
+    spans.push(Span::styled(
+        type_part,
+        Style::default().fg(if is_selected_diff_file {
+            selected_file_type_color(tokens, &file.r#type)
+        } else {
+            file_type_color(tokens, &file.r#type)
+        }),
+    ));
+    spans.push(Span::styled(
+        path,
+        if is_selected_diff_file {
+            sidebar_selected_text_style(tokens)
+        } else {
+            Style::default().fg(tokens.slate_text)
+        },
+    ));
+    Line::from(spans)
+}
+
 fn put_graph_file_summary(
     cells: &mut [Vec<GraphCell>],
     x: usize,
@@ -2153,28 +2205,12 @@ fn render_sidebar(
             .take(file_end.saturating_sub(file_start))
         {
             let is_selected_diff_file = selected_file_index == Some(idx);
-            lines.push(Line::from(vec![
-                Span::styled(
-                    if is_selected_diff_file { "▶ " } else { "  " },
-                    sidebar_heading_style(t),
-                ),
-                Span::styled(
-                    format!("{} ", file.r#type),
-                    Style::default().fg(if is_selected_diff_file {
-                        selected_file_type_color(&app.theme, &file.r#type)
-                    } else {
-                        file_type_color(&app.theme, &file.r#type)
-                    }),
-                ),
-                Span::styled(
-                    file.path.clone(),
-                    if is_selected_diff_file {
-                        sidebar_selected_text_style(t)
-                    } else {
-                        Style::default().fg(t.slate_text)
-                    },
-                ),
-            ]));
+            lines.push(sidebar_file_line(
+                t,
+                file,
+                is_selected_diff_file,
+                area.width as usize,
+            ));
         }
         if files.len() > file_end {
             lines.push(Line::from(format!("… {} more", files.len() - file_end)));
@@ -2640,6 +2676,41 @@ mod tests {
             sidebar_label_style(&UI_TOKENS).fg,
             Some(Color::Rgb(0xbd, 0xc4, 0xd1))
         );
+    }
+
+    #[test]
+    fn sidebar_file_rows_match_bun_padding_and_truncation() {
+        let file = FileEntry {
+            path: "crates/juzu-tui/src/some/really/deep/file/that/needs/truncation.rs".to_string(),
+            r#type: "M".to_string(),
+        };
+        let line = sidebar_file_line(&UI_TOKENS, &file, false, 24);
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+        assert_eq!(rendered.chars().count(), 24);
+        assert!(rendered.starts_with("M crates/juzu-tui"));
+        assert!(rendered.ends_with('…'));
+        assert!(!rendered.starts_with("  M"));
+    }
+
+    #[test]
+    fn sidebar_selected_diff_file_rows_keep_arrow_inside_width() {
+        let file = FileEntry {
+            path: "packages/super-long-path/component.tsx".to_string(),
+            r#type: "A".to_string(),
+        };
+        let line = sidebar_file_line(&UI_TOKENS, &file, true, 18);
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+        assert_eq!(rendered.chars().count(), 18);
+        assert!(rendered.starts_with("▶ A packages/s"));
+        assert!(rendered.ends_with('…'));
     }
 
     #[test]
