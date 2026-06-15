@@ -96,11 +96,23 @@ def main() -> None:
     captures: list[tuple[str, str]] = []
     try:
         send(session, cmd, "Enter")
-        captures.append(("01 LOG idle", wait_for(session, "dag graph")))
-        send(session, "C-l")
-        captures.append(("02 Ctrl+L enters View leader", wait_for(session, "VIEW")))
+        captures.append(("01 LOG idle · ^X Act ^O Ops ^L View ^B Book", wait_for(session, "dag graph")))
+        send(session, "C-x")
+        captures.append(("02 Ctrl+X enters Act leader", wait_for(session, "ACT")))
         send(session, "q")
-        captures.append(("03 q exits View leader back to Log", wait_for(session, "LOG")))
+        captures.append(("03 q exits Act leader back to Log", wait_for(session, "LOG")))
+        send(session, "C-o")
+        captures.append(("04 Ctrl+O enters Ops leader", wait_for(session, "OPS")))
+        send(session, "q")
+        captures.append(("05 q exits Ops leader back to Log", wait_for(session, "LOG")))
+        send(session, "C-l")
+        captures.append(("06 Ctrl+L enters View leader", wait_for(session, "VIEW")))
+        send(session, "q")
+        captures.append(("07 q exits View leader back to Log", wait_for(session, "LOG")))
+        send(session, "C-b")
+        captures.append(("08 Ctrl+B enters Bookmarks leader", wait_for(session, "BOOK")))
+        send(session, "q")
+        captures.append(("09 q exits Bookmarks leader back to Log", wait_for(session, "LOG")))
     finally:
         tmux("kill-session", "-t", session, check=False)
 

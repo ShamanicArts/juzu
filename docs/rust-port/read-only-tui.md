@@ -50,11 +50,11 @@ Latest diff render review:
 
 Latest modal parity proof:
 
-`bench/results/rust-port/tui-modal-parity/2026-06-15T02-14-26-384Z/bun-leader-strip-report.html`
+`bench/results/rust-port/tui-modal-parity/2026-06-15T02-17-44-305Z/all-leader-debug-report.html`
 
 Latest status sequence proof:
 
-`bench/results/rust-port/status-sequence/2026-06-15T02-14-50.637Z/status-sequence-proof.mp4`
+`bench/results/rust-port/status-sequence/2026-06-15T02-18-07.764Z/status-sequence-proof.mp4`
 
 This is a static tmux capture converted into HTML. The live review surface is the tmux window.
 

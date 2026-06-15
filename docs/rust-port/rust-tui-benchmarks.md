@@ -29,7 +29,7 @@ The runner:
 
 ## Latest artifact
 
-`bench/results/rust-port/rust-tui-bench/2026-06-15T02-14-51-888Z/rust-tui-benchmark.html`
+`bench/results/rust-port/rust-tui-bench/2026-06-15T02-18-14-984Z/rust-tui-benchmark.html`
 
 ## Current headline
 
@@ -37,9 +37,9 @@ Current benchmark is for the Rust TUI after native `files()` hydration, lazy sel
 
 | Scenario | RSS peak | RSS steady median | PSS steady median | Header median |
 | --- | ---: | ---: | ---: | ---: |
-| `idle-mainline` | 14.91 MB | 14.82 MB | 13.07 MB | 149.57 ms |
-| `navigate-mainline` | 46.59 MB | 46.52 MB | 44.77 MB | 149.16 ms |
-| `layout-switching` | 46.73 MB | 46.47 MB | 44.72 MB | 150.68 ms |
+| `idle-mainline` | 11.00 MB | 10.95 MB | 5.58 MB | 141.00 ms |
+| `navigate-mainline` | 47.18 MB | 46.88 MB | 41.57 MB | 141.44 ms |
+| `layout-switching` | 47.30 MB | 47.12 MB | 41.79 MB | 166.46 ms |
 
 The visual renderer itself keeps idle memory close to the earlier capped-diff baseline. Hard-capping retained structured preview rows dropped navigation peak RSS from 35.81 MB to 28.52 MB and layout-switching peak RSS from 34.66 MB to 28.02 MB while preserving the crafted sidebar preview. The headline remains far below the old live Bun/OpenTUI TUI (~175 MB RSS steady).
 

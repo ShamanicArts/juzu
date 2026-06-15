@@ -360,7 +360,10 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
     debug_states: dict[str, Any] = {}
     failures: list[str] = []
     scenarios = {
+        "actionLeaderStaysLog": "C-x",
+        "opsLeaderStaysLog": "C-o",
         "viewLeaderStaysLog": "C-l",
+        "bookLeaderStaysLog": "C-b",
         "viewLeaderQReturnsLog": "C-l,q",
         "enterScrollFileExit": "C-d,j,],Esc",
         "quitReturnsLog": "C-d,q",
@@ -385,10 +388,17 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
             debug_states[label] = state
             if label in exit_scenarios:
                 assert_debug_state_contract(keys, state, failures)
-        if debug_states["viewLeaderStaysLog"].get("viewMode") != "Log":
-            failures.append("debug-state C-l should stay in Log view")
-        if debug_states["viewLeaderStaysLog"].get("activeLeaderMode") != "View":
-            failures.append("debug-state C-l should enter View leader mode")
+        expected_leaders = {
+            "actionLeaderStaysLog": ("Actions", "C-x"),
+            "opsLeaderStaysLog": ("Operations", "C-o"),
+            "viewLeaderStaysLog": ("View", "C-l"),
+            "bookLeaderStaysLog": ("Bookmarks", "C-b"),
+        }
+        for label, (expected_mode, key_label) in expected_leaders.items():
+            if debug_states[label].get("viewMode") != "Log":
+                failures.append(f"debug-state {key_label} should stay in Log view")
+            if debug_states[label].get("activeLeaderMode") != expected_mode:
+                failures.append(f"debug-state {key_label} should enter {expected_mode} leader mode")
         if debug_states["viewLeaderQReturnsLog"].get("viewMode") != "Log":
             failures.append("debug-state C-l,q should stay in Log view")
         if debug_states["viewLeaderQReturnsLog"].get("activeLeaderMode") is not None:
