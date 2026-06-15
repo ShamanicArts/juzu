@@ -226,6 +226,10 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
     ensure_selected_diff(app, app.view_mode == ViewMode::Diff);
     let selected = app.nodes.get(app.selected);
     let diff = selected_diff(app);
+    let active_rows = active_diff_rows_for_state(app, diff);
+    let max_scroll = active_rows.len().saturating_sub(1);
+    let scroll = app.diff_scroll.min(max_scroll);
+    let current_row = active_rows.get(scroll);
     let payload = serde_json::json!({
         "viewMode": match app.view_mode { ViewMode::Log => "Log", ViewMode::Diff => "Diff" },
         "layoutMode": format!("{:?}", app.mode),
@@ -236,10 +240,46 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "diffFileIndex": app.diff_file_index,
         "diffFileCount": diff.map(|preview| preview.file_count).unwrap_or(0),
         "diffRows": diff.map(|preview| preview.row_count).unwrap_or(0),
+        "currentDiffRowKind": current_row.map(|row| format!("{:?}", row.kind)).unwrap_or_default(),
+        "currentDiffRowText": current_row.map(|row| row.text.as_str()).unwrap_or(""),
+        "stickyContext": diff_sticky_context_text(&active_rows, scroll).unwrap_or_default(),
         "hasParseError": diff.and_then(|preview| preview.parse_error.as_ref()).is_some(),
     });
     println!("{}", serde_json::to_string_pretty(&payload)?);
     Ok(())
+}
+
+fn active_diff_rows_for_state(app: &App, diff: Option<&DiffPreview>) -> Vec<DiffRow> {
+    let Some(diff) = diff else {
+        return Vec::new();
+    };
+    if app.view_mode == ViewMode::Diff {
+        rows_for_diff_file(diff, app.diff_file_index)
+    } else {
+        diff.preview_rows.clone()
+    }
+}
+
+fn diff_sticky_context_text(rows: &[DiffRow], scroll: usize) -> Option<String> {
+    let upto = rows.len().min(scroll.saturating_add(1));
+    if upto == 0 {
+        return None;
+    }
+    let mut file = None;
+    let mut hunk = None;
+    for row in rows.iter().take(upto) {
+        match row.kind {
+            DiffRowKind::FileHeader => file = Some(row.text.as_str()),
+            DiffRowKind::HunkHeader => hunk = Some(row.text.as_str()),
+            _ => {}
+        }
+    }
+    match (file, hunk) {
+        (Some(file), Some(hunk)) => Some(format!("{hunk} · {file}")),
+        (Some(file), None) => Some(format!("top · {file}")),
+        (None, Some(hunk)) => Some(hunk.to_string()),
+        (None, None) => None,
+    }
 }
 
 fn ensure_selected_diff(app: &mut App, include_full_rows: bool) {

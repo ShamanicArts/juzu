@@ -362,16 +362,41 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         "ctrlDTogglesLog": "C-d,C-d",
         "doubleNextFileEsc": "C-d,],],Esc",
         "pageScrollResetEsc": "C-d,PageDown,PageUp,Esc",
+        "nextHunkStaysDiff": "C-d,}",
+        "nextThenPrevHunkStaysDiff": "C-d,},PageDown,{",
     }
     try:
+        exit_scenarios = {
+            "enterScrollFileExit",
+            "quitReturnsLog",
+            "gReturnsLog",
+            "ctrlDTogglesLog",
+            "doubleNextFileEsc",
+            "pageScrollResetEsc",
+        }
         for label, keys in scenarios.items():
             state = run_debug_state(args, keys)
             debug_states[label] = state
-            assert_debug_state_contract(keys, state, failures)
+            if label in exit_scenarios:
+                assert_debug_state_contract(keys, state, failures)
         if debug_states["enterScrollFileExit"].get("diffFileIndex") != 1:
             failures.append("debug-state C-d,j,],Esc should cycle to file index 1 before exit")
         if debug_states["doubleNextFileEsc"].get("diffFileIndex") != 2:
             failures.append("debug-state C-d,],],Esc should cycle to file index 2 before exit")
+        next_hunk = debug_states["nextHunkStaysDiff"]
+        if next_hunk.get("viewMode") != "Diff":
+            failures.append("debug-state C-d,} should stay in Diff mode")
+        if next_hunk.get("currentDiffRowKind") != "HunkHeader":
+            failures.append("debug-state C-d,} should land exactly on a hunk header row")
+        if "@@" not in next_hunk.get("stickyContext", ""):
+            failures.append("debug-state C-d,} should update sticky context to the target hunk")
+        previous_hunk = debug_states["nextThenPrevHunkStaysDiff"]
+        if previous_hunk.get("viewMode") != "Diff":
+            failures.append("debug-state C-d,},PageDown,{ should stay in Diff mode")
+        if previous_hunk.get("currentDiffRowKind") != "HunkHeader":
+            failures.append("debug-state C-d,},PageDown,{ should land exactly on a hunk header row")
+        if "@@" not in previous_hunk.get("stickyContext", ""):
+            failures.append("debug-state C-d,},PageDown,{ should expose hunk sticky context")
     except Exception as exc:
         failures.append(f"debug-state emitter failed: {exc}")
 
