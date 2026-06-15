@@ -32,6 +32,12 @@ Attach:
 tmux attach -t juzu
 ```
 
+Before claiming the review surface is current, capture it with:
+
+```bash
+bun run review:live-tmux -- --target juzu:rust-tui --expect LOG,dag
+```
+
 ## Latest review artifact
 
 Latest token parity swatch:
@@ -83,3 +89,4 @@ bun run parity:tui-modal -- --repo /home/shamanic/dev/juzu --limit 40 --widths 1
 - wire safe native working-copy snapshot support so `@` dirty files match old `jj diff --summary`
 - continue Pierre/JUZU-style diff viewport UX: hunk/file jumping, sticky-ish file/hunk context, and exact patch-fidelity decisions
 - hydrate sidebar description through native backend
+- keep live tmux proof artifacts attached to restart/checkpoint claims
