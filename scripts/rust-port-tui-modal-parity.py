@@ -238,7 +238,56 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
             "Esc/q", "Exit",
         ]:
             assert_contains(view_mode, needle, "old Bun View leader strip", failures)
-        send(session, "q")
+        send(session, "c")
+        sidebar_collapsed = wait_for(session, "[ ]")
+        captures["afterViewToggleSidebar"] = sidebar_collapsed
+        assert_contains(sidebar_collapsed, "dag graph", "View c returns to log graph", failures)
+        assert_contains(sidebar_collapsed, "[ ]", "View c shows old collapsed sidebar marker", failures)
+        assert_not_contains(sidebar_collapsed, "┌ details", "View c collapses full details pane", failures)
+        send(session, "C-l")
+        view_mode_reopen = wait_for(session, "VIEW")
+        captures["afterCtrlLViewReopen"] = view_mode_reopen
+        send(session, "c")
+        view_mode_expanded = wait_for(session, "┌ details")
+        captures["afterViewToggleSidebarExpanded"] = view_mode_expanded
+        assert_contains(view_mode_expanded, "┌ details", "View c toggles sidebar back open", failures)
+
+        send(session, "C-l")
+        view_mode_for_help = wait_for(session, "VIEW")
+        captures["afterCtrlLViewForHelp"] = view_mode_for_help
+        send(session, "h")
+        help_screen = wait_for(session, "Help")
+        captures["afterViewToggleHelp"] = help_screen
+        assert_contains(help_screen, "Navigation", "View h opens old sidebar help surface", failures)
+        send(session, "h")
+        help_closed = wait_for(session, "Selected")
+        captures["afterViewToggleHelpClosed"] = help_closed
+        assert_contains(help_closed, "Selected", "h closes help surface", failures)
+
+        send(session, "C-l")
+        view_mode_for_theme = wait_for(session, "VIEW")
+        captures["afterCtrlLViewForTheme"] = view_mode_for_theme
+        send(session, "t")
+        theme_screen = wait_for(session, "THEME SELECTOR")
+        captures["afterViewThemePicker"] = theme_screen
+        assert_contains(theme_screen, "THEME SELECTOR", "View t opens theme picker surface", failures)
+        send(session, "Escape")
+        theme_closed = wait_for(session, "Selected")
+        captures["afterThemeEsc"] = theme_closed
+        assert_contains(theme_closed, "Selected", "Esc closes theme picker surface", failures)
+
+        send(session, "C-l")
+        view_mode_for_revset = wait_for(session, "VIEW")
+        captures["afterCtrlLViewForRevset"] = view_mode_for_revset
+        send(session, "/")
+        revset_screen = wait_for(session, "Revset:")
+        captures["afterViewRevset"] = revset_screen
+        assert_contains(revset_screen, "Revset:", "View / opens revset prompt surface", failures)
+        send(session, "Escape")
+        revset_closed = wait_for(session, "Selected")
+        captures["afterRevsetEsc"] = revset_closed
+        assert_contains(revset_closed, "Selected", "Esc closes revset prompt surface", failures)
+
         selected = select_change_prefix(session, "nqmmukmt")
         captures["afterSelectChange"] = selected
         assert_contains(selected, "Files", "selected non-empty change details", failures)
@@ -386,6 +435,13 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         "viewLeaderStaysLog": "C-l",
         "bookLeaderStaysLog": "C-b",
         "viewLeaderQReturnsLog": "C-l,q",
+        "viewToggleSidebar": "C-l,c",
+        "viewToggleFiles": "C-l,f",
+        "viewToggleDescription": "C-l,x",
+        "viewToggleHelp": "C-l,h",
+        "viewThemePicker": "C-l,t",
+        "viewRevsetFilter": "C-l,/",
+        "viewDiffShortcut": "C-l,C-d",
         "enterScrollFileExit": "C-d,j,],Esc",
         "quitReturnsLog": "C-d,q",
         "gReturnsLog": "C-d,g",
@@ -424,6 +480,25 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
             failures.append("debug-state C-l,q should stay in Log view")
         if debug_states["viewLeaderQReturnsLog"].get("activeLeaderMode") is not None:
             failures.append("debug-state C-l,q should exit View leader mode")
+        view_behavior_expectations = {
+            "viewToggleSidebar": ("sidebarCollapsed", True, "debug-state C-l,c should collapse sidebar and exit View leader"),
+            "viewToggleFiles": ("filesExpanded", False, "debug-state C-l,f should collapse files and exit View leader"),
+            "viewToggleDescription": ("descExpanded", True, "debug-state C-l,x should expand description and exit View leader"),
+            "viewToggleHelp": ("showHelp", True, "debug-state C-l,h should open help and exit View leader"),
+            "viewThemePicker": ("themePickerMode", True, "debug-state C-l,t should open theme picker and exit View leader"),
+            "viewRevsetFilter": ("revsetMode", True, "debug-state C-l,/ should open revset filter and exit View leader"),
+        }
+        for label, (field, expected, message) in view_behavior_expectations.items():
+            if debug_states[label].get("viewMode") != "Log":
+                failures.append(f"{message}: expected to remain in Log view")
+            if debug_states[label].get("activeLeaderMode") is not None:
+                failures.append(f"{message}: active leader mode should clear")
+            if debug_states[label].get(field) != expected:
+                failures.append(message)
+        if debug_states["viewDiffShortcut"].get("viewMode") != "Diff":
+            failures.append("debug-state C-l,C-d should enter Diff view from View leader")
+        if debug_states["viewDiffShortcut"].get("activeLeaderMode") is not None:
+            failures.append("debug-state C-l,C-d should clear View leader mode")
         if debug_states["enterScrollFileExit"].get("diffFileIndex") != 1:
             failures.append("debug-state C-d,j,],Esc should cycle to file index 1 before exit")
         if debug_states["doubleNextFileEsc"].get("diffFileIndex") != 2:

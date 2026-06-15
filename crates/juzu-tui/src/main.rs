@@ -129,6 +129,12 @@ struct App {
     mode: LayoutMode,
     view_mode: ViewMode,
     active_leader_mode: Option<LeaderMode>,
+    sidebar_collapsed: bool,
+    files_expanded: bool,
+    desc_expanded: bool,
+    show_help: bool,
+    theme_picker_mode: bool,
+    revset_mode: bool,
     nodes: Vec<juzu_core::CommitNode>,
     files_by_change: HashMap<String, Vec<FileEntry>>,
     diffs_by_change: HashMap<String, DiffPreview>,
@@ -175,6 +181,12 @@ fn main() -> Result<()> {
         mode,
         view_mode: ViewMode::Log,
         active_leader_mode: None,
+        sidebar_collapsed: false,
+        files_expanded: true,
+        desc_expanded: false,
+        show_help: false,
+        theme_picker_mode: false,
+        revset_mode: false,
         nodes,
         files_by_change,
         diffs_by_change,
@@ -222,6 +234,24 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
         toggle_diff_view(app);
         return false;
     }
+    if app.show_help {
+        if matches!(code, KeyCode::Char('h') | KeyCode::Char('q') | KeyCode::Esc) {
+            app.show_help = false;
+        }
+        return false;
+    }
+    if app.theme_picker_mode {
+        if matches!(code, KeyCode::Char('q') | KeyCode::Esc) {
+            app.theme_picker_mode = false;
+        }
+        return false;
+    }
+    if app.revset_mode {
+        if matches!(code, KeyCode::Char('q') | KeyCode::Esc) {
+            app.revset_mode = false;
+        }
+        return false;
+    }
     if modifiers.contains(KeyModifiers::CONTROL) {
         match code {
             KeyCode::Char('x') => {
@@ -238,6 +268,41 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
             }
             KeyCode::Char('b') => {
                 app.active_leader_mode = Some(LeaderMode::Bookmarks);
+                return false;
+            }
+            _ => {}
+        }
+    }
+    if app.active_leader_mode == Some(LeaderMode::View) {
+        match code {
+            KeyCode::Char('c') => {
+                app.sidebar_collapsed = !app.sidebar_collapsed;
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('f') => {
+                app.files_expanded = !app.files_expanded;
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('x') => {
+                app.desc_expanded = !app.desc_expanded;
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('h') => {
+                app.show_help = true;
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('t') => {
+                app.theme_picker_mode = true;
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('/') => {
+                app.revset_mode = true;
+                app.active_leader_mode = None;
                 return false;
             }
             _ => {}
@@ -358,6 +423,12 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "viewMode": match app.view_mode { ViewMode::Log => "Log", ViewMode::Diff => "Diff" },
         "layoutMode": format!("{:?}", app.mode),
         "activeLeaderMode": app.active_leader_mode.map(|mode| mode.label()),
+        "sidebarCollapsed": app.sidebar_collapsed,
+        "filesExpanded": app.files_expanded,
+        "descExpanded": app.desc_expanded,
+        "showHelp": app.show_help,
+        "themePickerMode": app.theme_picker_mode,
+        "revsetMode": app.revset_mode,
         "selectedIndex": app.selected,
         "selectedChange": selected.map(|node| node.change_id.as_str()).unwrap_or(""),
         "selectedCommit": selected.map(|node| node.commit_id.as_str()).unwrap_or(""),
@@ -596,7 +667,37 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
         .fg(UI_TOKENS.slate_bg0)
         .bg(UI_TOKENS.semantic_mode_log)
         .add_modifier(Modifier::BOLD);
-    let lines = if app.view_mode == ViewMode::Diff {
+    let lines = if app.theme_picker_mode {
+        vec![Line::from(vec![
+            Span::styled(" THEME ", mode_style),
+            Span::raw("  "),
+            Span::styled("j/k", key_style),
+            Span::styled(" Select ", item_style),
+            Span::raw(" "),
+            Span::styled("Enter", key_style),
+            Span::styled(" Apply ", item_style),
+            Span::raw(" "),
+            Span::styled("Esc", key_style),
+            Span::styled(" Cancel ", item_style),
+        ])]
+    } else if app.revset_mode {
+        vec![Line::from(vec![
+            Span::styled(" REVSET ", mode_style),
+            Span::raw("  "),
+            Span::styled("Enter", key_style),
+            Span::styled(" Apply ", item_style),
+            Span::raw(" "),
+            Span::styled("Esc", key_style),
+            Span::styled(" Cancel ", item_style),
+        ])]
+    } else if app.show_help {
+        vec![Line::from(vec![
+            Span::styled(" HELP ", mode_style),
+            Span::raw("  "),
+            Span::styled("h/q/Esc", key_style),
+            Span::styled(" Close ", item_style),
+        ])]
+    } else if app.view_mode == ViewMode::Diff {
         vec![Line::from(vec![
             Span::styled(" DIFF ", mode_style),
             Span::raw("  "),
@@ -749,9 +850,14 @@ fn leader_mode_color(mode: LeaderMode) -> Color {
 }
 
 fn render_body(frame: &mut Frame, area: Rect, app: &App, layout: &juzu_core::layout::LayoutResult) {
+    let constraints = if app.sidebar_collapsed {
+        [Constraint::Min(8), Constraint::Length(6)]
+    } else {
+        [Constraint::Percentage(60), Constraint::Percentage(40)]
+    };
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+        .constraints(constraints)
         .split(area);
     if app.view_mode == ViewMode::Diff {
         let diff_area = Rect {
@@ -762,7 +868,11 @@ fn render_body(frame: &mut Frame, area: Rect, app: &App, layout: &juzu_core::lay
     } else {
         render_graph_table(frame, chunks[0], app, layout);
     }
-    render_sidebar(frame, chunks[1], app, layout);
+    if app.sidebar_collapsed {
+        render_collapsed_sidebar(frame, chunks[1]);
+    } else {
+        render_sidebar(frame, chunks[1], app, layout);
+    }
 }
 
 fn render_diff_pane(
@@ -1278,12 +1388,137 @@ fn format_file_summary(files: &[FileEntry], max_len: usize) -> String {
     truncate(&summary, max_len)
 }
 
+fn render_collapsed_sidebar(frame: &mut Frame, area: Rect) {
+    let lines = vec![
+        Line::from(Span::styled(
+            "[ ]",
+            Style::default()
+                .fg(UI_TOKENS.semantic_info)
+                .add_modifier(Modifier::BOLD),
+        )),
+        Line::from(Span::styled(
+            "^L c",
+            Style::default().fg(UI_TOKENS.slate_text_muted),
+        )),
+    ];
+    frame.render_widget(
+        Paragraph::new(lines).block(
+            Block::default()
+                .title(" side ")
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(UI_TOKENS.slate_border_soft)),
+        ),
+        area,
+    );
+}
+
+fn render_sidebar_mode_panel(
+    frame: &mut Frame,
+    area: Rect,
+    title: &'static str,
+    lines: Vec<Line<'static>>,
+) {
+    frame.render_widget(
+        Paragraph::new(lines).block(
+            Block::default()
+                .title(title)
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(UI_TOKENS.slate_border_soft)),
+        ),
+        area,
+    );
+}
+
 fn render_sidebar(
     frame: &mut Frame,
     area: Rect,
     app: &App,
     layout: &juzu_core::layout::LayoutResult,
 ) {
+    if app.show_help {
+        render_sidebar_mode_panel(
+            frame,
+            area,
+            " Help (h to close) ",
+            vec![
+                Line::from(Span::styled(
+                    "Navigation",
+                    Style::default()
+                        .fg(UI_TOKENS.semantic_info)
+                        .add_modifier(Modifier::BOLD),
+                )),
+                Line::from("j/k or ↑/↓  Navigate"),
+                Line::from("PgUp/PgDn   Scroll"),
+                Line::from(""),
+                Line::from(Span::styled(
+                    "Leader Modes",
+                    Style::default()
+                        .fg(UI_TOKENS.semantic_info)
+                        .add_modifier(Modifier::BOLD),
+                )),
+                Line::from("^X Actions  ^O Ops  ^L View  ^B Book"),
+                Line::from(""),
+                Line::from(Span::styled(
+                    "View",
+                    Style::default()
+                        .fg(UI_TOKENS.semantic_info)
+                        .add_modifier(Modifier::BOLD),
+                )),
+                Line::from("c sidebar  f files  x description"),
+                Line::from("t theme  / revset  ^d diff"),
+                Line::from(""),
+                Line::from("Press h, q, or Esc to close help"),
+            ],
+        );
+        return;
+    }
+    if app.theme_picker_mode {
+        render_sidebar_mode_panel(
+            frame,
+            area,
+            " Details ",
+            vec![
+                Line::from(Span::styled(
+                    "THEME SELECTOR",
+                    Style::default()
+                        .fg(UI_TOKENS.semantic_info)
+                        .add_modifier(Modifier::BOLD),
+                )),
+                Line::from(""),
+                Line::from(Span::styled(
+                    "> slate",
+                    Style::default()
+                        .fg(UI_TOKENS.semantic_success)
+                        .add_modifier(Modifier::BOLD),
+                )),
+                Line::from("  ember"),
+                Line::from(""),
+                Line::from("j/k or ↑/↓: select"),
+                Line::from("Enter: apply"),
+                Line::from("Esc: cancel"),
+            ],
+        );
+        return;
+    }
+    if app.revset_mode {
+        render_sidebar_mode_panel(
+            frame,
+            area,
+            " Details ",
+            vec![
+                Line::from(Span::styled(
+                    "Revset:",
+                    Style::default()
+                        .fg(UI_TOKENS.semantic_info)
+                        .add_modifier(Modifier::BOLD),
+                )),
+                Line::from("_"),
+                Line::from(""),
+                Line::from("Enter: apply  Esc: cancel  ←/→: move cursor"),
+            ],
+        );
+        return;
+    }
     let selected = app.selected.min(layout.nodes.len().saturating_sub(1));
     let Some(node) = layout.nodes.get(selected) else {
         return;
@@ -1317,10 +1552,28 @@ fn render_sidebar(
             node.bookmarks.join(", ")
         }),
         Line::from(""),
-        Line::from(Span::styled("Title", Style::default().fg(Color::Yellow))),
-        Line::from(node.description_title.clone()),
+        Line::from(Span::styled(
+            if app.desc_expanded {
+                "Description:"
+            } else {
+                "Description (x expand):"
+            },
+            Style::default().fg(Color::Yellow),
+        )),
+        Line::from(if app.desc_expanded {
+            node.description_full.clone()
+        } else {
+            node.description_title.clone()
+        }),
         Line::from(""),
-        Line::from(Span::styled("Files", Style::default().fg(Color::Yellow))),
+        Line::from(Span::styled(
+            if app.files_expanded {
+                "Files (f collapse):"
+            } else {
+                "Files (f expand):"
+            },
+            Style::default().fg(Color::Yellow),
+        )),
     ];
     let mut lines = lines;
     let files = app
@@ -1335,7 +1588,13 @@ fn render_sidebar(
             .diffs_by_change
             .get(&node.change_id)
             .is_some_and(|diff| !diff.preview_rows.is_empty());
-        let file_preview_limit = if diff_is_available { 4 } else { 12 };
+        let file_preview_limit = if !app.files_expanded {
+            3
+        } else if diff_is_available {
+            4
+        } else {
+            12
+        };
         let selected_file_index = if app.view_mode == ViewMode::Diff {
             Some(app.diff_file_index.min(files.len().saturating_sub(1)))
         } else {
