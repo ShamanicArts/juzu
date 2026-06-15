@@ -105,10 +105,24 @@ enum ViewMode {
     Diff,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum LeaderMode {
+    View,
+}
+
+impl LeaderMode {
+    fn label(self) -> &'static str {
+        match self {
+            LeaderMode::View => "View",
+        }
+    }
+}
+
 struct App {
     path: PathBuf,
     mode: LayoutMode,
     view_mode: ViewMode,
+    active_leader_mode: Option<LeaderMode>,
     nodes: Vec<juzu_core::CommitNode>,
     files_by_change: HashMap<String, Vec<FileEntry>>,
     diffs_by_change: HashMap<String, DiffPreview>,
@@ -154,6 +168,7 @@ fn main() -> Result<()> {
         path,
         mode,
         view_mode: ViewMode::Log,
+        active_leader_mode: None,
         nodes,
         files_by_change,
         diffs_by_change,
@@ -197,7 +212,16 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
 
 fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
     if modifiers.contains(KeyModifiers::CONTROL) && matches!(code, KeyCode::Char('d')) {
+        app.active_leader_mode = None;
         toggle_diff_view(app);
+        return false;
+    }
+    if modifiers.contains(KeyModifiers::CONTROL) && matches!(code, KeyCode::Char('v')) {
+        app.active_leader_mode = Some(LeaderMode::View);
+        return false;
+    }
+    if app.active_leader_mode.is_some() && matches!(code, KeyCode::Char('q') | KeyCode::Esc) {
+        app.active_leader_mode = None;
         return false;
     }
     match code {
@@ -244,11 +268,26 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
         }
         KeyCode::Char('}') => jump_selected_diff(app, DiffJump::NextHunk),
         KeyCode::Char('{') => jump_selected_diff(app, DiffJump::PreviousHunk),
-        KeyCode::Char('1') => app.mode = LayoutMode::Chronological,
-        KeyCode::Char('2') => app.mode = LayoutMode::Mainline,
-        KeyCode::Char('3') => app.mode = LayoutMode::BookmarkCentric,
-        KeyCode::Char('4') => app.mode = LayoutMode::WcFocused,
-        KeyCode::Char('5') => app.mode = LayoutMode::Topological,
+        KeyCode::Char('1') => {
+            app.mode = LayoutMode::Chronological;
+            app.active_leader_mode = None;
+        }
+        KeyCode::Char('2') => {
+            app.mode = LayoutMode::Mainline;
+            app.active_leader_mode = None;
+        }
+        KeyCode::Char('3') => {
+            app.mode = LayoutMode::BookmarkCentric;
+            app.active_leader_mode = None;
+        }
+        KeyCode::Char('4') => {
+            app.mode = LayoutMode::WcFocused;
+            app.active_leader_mode = None;
+        }
+        KeyCode::Char('5') => {
+            app.mode = LayoutMode::Topological;
+            app.active_leader_mode = None;
+        }
         _ => {}
     }
     false
@@ -257,6 +296,7 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
 fn parse_debug_key(raw: &str) -> Option<(KeyCode, KeyModifiers)> {
     match raw {
         "C-d" | "Ctrl+D" | "ctrl+d" => Some((KeyCode::Char('d'), KeyModifiers::CONTROL)),
+        "C-v" | "Ctrl+V" | "ctrl+v" => Some((KeyCode::Char('v'), KeyModifiers::CONTROL)),
         "Esc" | "Escape" => Some((KeyCode::Esc, KeyModifiers::NONE)),
         "PageDown" => Some((KeyCode::PageDown, KeyModifiers::NONE)),
         "PageUp" => Some((KeyCode::PageUp, KeyModifiers::NONE)),
@@ -291,6 +331,7 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
     let payload = serde_json::json!({
         "viewMode": match app.view_mode { ViewMode::Log => "Log", ViewMode::Diff => "Diff" },
         "layoutMode": format!("{:?}", app.mode),
+        "activeLeaderMode": app.active_leader_mode.map(|mode| mode.label()),
         "selectedIndex": app.selected,
         "selectedChange": selected.map(|node| node.change_id.as_str()).unwrap_or(""),
         "selectedCommit": selected.map(|node| node.commit_id.as_str()).unwrap_or(""),
@@ -546,6 +587,28 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             Span::styled(" Hunk ", item_style),
             Span::raw(" "),
             Span::styled("Esc", key_style),
+            Span::styled(" Exit ", item_style),
+        ])
+    } else if app.active_leader_mode == Some(LeaderMode::View) {
+        Line::from(vec![
+            Span::styled(" VIEW ", mode_style),
+            Span::raw("  "),
+            Span::styled("1", key_style),
+            Span::styled(" Chronological ", item_style),
+            Span::raw(" "),
+            Span::styled("2", key_style),
+            Span::styled(" Mainline ", item_style),
+            Span::raw(" "),
+            Span::styled("3", key_style),
+            Span::styled(" Bookmark ", item_style),
+            Span::raw(" "),
+            Span::styled("4", key_style),
+            Span::styled(" Working copy ", item_style),
+            Span::raw(" "),
+            Span::styled("5", key_style),
+            Span::styled(" Topological ", item_style),
+            Span::raw(" "),
+            Span::styled("Esc/q", key_style),
             Span::styled(" Exit ", item_style),
         ])
     } else {
