@@ -2371,11 +2371,6 @@ fn render_full_diff_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Vec
     ) {
         return vec![render_diff_row(tokens, row, max_len)];
     }
-    let text_budget = max_len.saturating_sub(6);
-    if text_budget == 0 {
-        return vec![render_diff_code_row(tokens, row, max_len)];
-    }
-
     let line_number = match row.kind {
         DiffRowKind::Remove => row.old_line,
         DiffRowKind::Add | DiffRowKind::Context => row.new_line.or(row.old_line),
@@ -2383,6 +2378,12 @@ fn render_full_diff_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Vec
     }
     .map(|value| value.to_string())
     .unwrap_or_default();
+    let gutter_width = line_number.chars().count().max(3);
+    let sign_width = 3usize;
+    let text_budget = max_len.saturating_sub(gutter_width + sign_width);
+    if text_budget == 0 {
+        return vec![render_diff_code_row(tokens, row, max_len)];
+    }
     let sign = match row.kind {
         DiffRowKind::Add => "+",
         DiffRowKind::Remove => "-",
@@ -2428,9 +2429,9 @@ fn render_full_diff_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Vec
             let chunk_text: String = chunk.iter().collect();
             let chunk_text = format!("{chunk_text:<width$}", width = text_budget);
             let (gutter, sign_cell) = if idx == 0 {
-                (format!("{line_number:>3}"), format!(" {sign} "))
+                (format!("{line_number:>gutter_width$}"), format!(" {sign} "))
             } else {
-                ("   ".to_string(), "   ".to_string())
+                (" ".repeat(gutter_width), "   ".to_string())
             };
             Line::from(vec![
                 Span::styled(gutter, gutter_style),
@@ -3084,6 +3085,36 @@ mod tests {
         assert_eq!(rendered[0], "  4 + abcdef");
         assert_eq!(rendered[1], "      ghijkl");
         assert_eq!(rendered[2], "      mnop  ");
+    }
+
+    #[test]
+    fn full_diff_code_rows_wrap_with_large_bun_line_number_gutters() {
+        let row = DiffRow {
+            kind: DiffRowKind::Add,
+            file_index: 0,
+            hunk_index: Some(0),
+            old_line: None,
+            new_line: Some(1200),
+            text: "+abcdefghijklmnop".to_string(),
+        };
+        let lines = render_full_diff_row(&UI_TOKENS, &row, 12);
+        let rendered: Vec<String> = lines
+            .iter()
+            .map(|line| {
+                line.spans
+                    .iter()
+                    .map(|span| span.content.as_ref())
+                    .collect()
+            })
+            .collect();
+        assert_eq!(rendered[0], "1200 + abcde");
+        assert_eq!(rendered[1], "       fghij");
+        assert_eq!(rendered[2], "       klmno");
+        assert_eq!(rendered[3], "       p    ");
+        assert!(
+            rendered.iter().all(|line| line.chars().count() == 12),
+            "wrapped large-gutter rows must not overflow the pane width: {rendered:?}"
+        );
     }
 
     #[test]

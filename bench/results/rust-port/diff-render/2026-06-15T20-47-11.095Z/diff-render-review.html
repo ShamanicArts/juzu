@@ -1,0 +1,646 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust diff render review</title>
+<style>
+:root { color-scheme: dark; --bg:#0b1020; --panel:#111827; --panel2:#0f172a; --line:#334155; --text:#dbeafe; --muted:#94a3b8; --cyan:#67e8f9; --blue:#93c5fd; --purple:#c4b5fd; --green:#bbf7d0; --green-bg:#052e16; --green-sign:#14532d; --red:#fecaca; --red-bg:#450a0a; --red-sign:#7f1d1d; --amber:#facc15; --amber-bg:#422006; }
+body { margin:32px; background:radial-gradient(circle at top left,#111f3d 0,#0b1020 42rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+h1 { margin:0 0 6px; letter-spacing:-0.03em; } h2 { margin:0 0 12px; font-size:16px; color:var(--cyan); }
+.meta { color:var(--muted); margin-bottom:22px; } .grid { display:grid; grid-template-columns:1.05fr .95fr; gap:16px; align-items:start; }
+.card { background:linear-gradient(180deg,rgba(17,24,39,.96),rgba(15,23,42,.96)); border:1px solid var(--line); border-radius:16px; padding:16px 18px; box-shadow:0 18px 60px rgba(0,0,0,.24); margin-bottom:16px; }
+.statbar { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0; } .stat { border:1px solid var(--line); border-radius:999px; padding:7px 11px; background:#111827; color:var(--muted); } .stat strong { color:var(--text); }
+pre, code, .terminal, table { font-family:'JetBrains Mono','SFMono-Regular',ui-monospace,monospace; } pre { white-space:pre-wrap; font-size:12px; color:#cbd5e1; overflow:auto; }
+.terminal { background:#050816; border:1px solid #273449; border-radius:14px; padding:12px; font-size:12px; line-height:1.45; overflow:auto; } .term-row { white-space:pre; min-height:1.45em; }
+.file_header { color:var(--cyan); background:#111827; font-weight:700; } .metadata { color:var(--muted); } .hunk_header { color:var(--blue); background:#1e1b4b; font-weight:700; } .context { color:#9ca3af; } .add { color:var(--green); background:var(--green-bg); } .remove { color:var(--red); background:var(--red-bg); } .collapse { color:var(--amber); background:var(--amber-bg); text-align:center; }
+table { width:100%; border-collapse:collapse; font-size:12px; } th { text-align:left; color:var(--blue); border-bottom:1px solid var(--line); padding:8px; } td { border-bottom:1px solid #1e293b; padding:6px 8px; vertical-align:top; }
+.notes li { margin:8px 0; color:#cbd5e1; } .mapping { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; } .mapping div { border:1px solid #273449; border-radius:12px; padding:10px; background:#0f172a; }
+</style></head><body>
+<h1>JUZU Rust diff render review</h1>
+<div class='meta'>Repo: /home/shamanic/dev/juzu · Change: uqvwwrvyzqxk · Generated: 2026-06-15T20:47:13.475451+00:00</div>
+<div class='statbar'><div class='stat'><strong>38</strong> files</div><div class='stat'><strong>10800</strong> raw lines</div><div class='stat'><strong>10838</strong> rendered rows</div><div class='stat'><strong>46</strong> terminal columns</div></div>
+<div class='grid'>
+<section class='card'><h2>Terminal-style rendered preview</h2><div class='terminal'><div class='term-row file_header'>╭ ◆ Added bench/results/rust-port/live-tmux/ ╮</div>
+<div class='term-row metadata'>  · diff --git a/bench/results/rust-port/live-</div>
+<div class='term-row metadata'>  · new file mode 100644</div>
+<div class='term-row metadata'>  · --- /dev/null</div>
+<div class='term-row metadata'>  · +++ b/bench/results/rust-port/live-tmux/20</div>
+<div class='term-row hunk_header'>╭─ @@ -0,0 +1,88 @@</div>
+<div class='term-row add'>  1 + &lt;!doctype html&gt;                         </div>
+<div class='term-row add'>  2 + &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title</div>
+<div class='term-row add'>  3 + &lt;style&gt;                                 </div>
+<div class='term-row add'>  4 + :root { color-scheme: dark; --bg:#111318</div>
+<div class='term-row add'>  5 + body { margin:32px; background:radial-gr</div>
+<div class='term-row add'>  6 + h1 { margin:0 0 6px; } .meta { color:var</div>
+<div class='term-row add'>  7 + .card { background:rgba(26,32,41,.96); b</div>
+<div class='term-row add'>  8 + pre { background:#050816; border:1px sol</div>
+<div class='term-row add'>  9 + &lt;/style&gt;&lt;/head&gt;&lt;body&gt;                   </div>
+<div class='term-row add'> 10 + &lt;h1&gt;JUZU Rust live tmux proof · &lt;span cl</div>
+<div class='term-row add'> 11 + &lt;div class=&#x27;meta&#x27;&gt;Target: &lt;code&gt;juzu:rus</div>
+<div class='term-row add'> 12 + &lt;section class=&#x27;card&#x27;&gt;&lt;pre&gt; LOG   ^X Act</div>
+<div class='term-row add'> 13 +               │                         </div>
+<div class='term-row add'> 14 +               o..... rpwlyzsp 2daf82d1  </div>
+<div class='term-row add'> 15 +               │      add rust theme pick</div>
+<div class='term-row add'> 16 +               │      A bench/results/rus</div>
+<div class='term-row add'> 17 +               │                         </div>
+<div class='term-row add'> 18 +               o..... omurtoty fe27794f  </div>
+<div class='term-row add'> 19 +               │      window rust theme p</div>
+<div class='term-row add'> 20 +               │      A bench/results/rus</div>
+<div class='term-row add'> 21 +               │                         </div>
+<div class='term-row add'> 22 +               o..... wmxowuvs c81e297d  </div>
+<div class='term-row add'> 23 +               │      wire active theme i</div>
+<div class='term-row add'> 24 +               │      A bench/results/rus</div>
+<div class='term-row add'> 25 +               │                         </div>
+<div class='term-row add'> 26 +               o..... yzulmmsn f3619f25  </div>
+<div class='term-row add'> 27 +               │      wire active theme i</div>
+<div class='term-row add'> 28 +               │      A bench/results/rus</div>
+<div class='term-row add'> 29 +               │                         </div>
+<div class='term-row add'> 30 +               o..... rxknvunu b4b03fda  </div>
+<div class='term-row add'> 31 +               │      wire active theme i</div>
+<div class='term-row add'> 32 +               │      A bench/results/rus</div>
+<div class='term-row add'> 33 +               │                         </div>
+<div class='term-row add'> 34 +               o..... yswlrwxw 35814748  </div>
+<div class='term-row add'> 35 +               │      port bundled themes</div>
+<div class='term-row add'> 36 +               │      A bench/results/rus</div>
+<div class='term-row add'> 37 +               │                         </div>
+<div class='term-row add'> 38 +               o..... tvvsyrlx 5e959642  </div>
+<div class='term-row add'> 39 +               │      wire rust theme pic</div>
+<div class='term-row add'> 40 +               │      A bench/results/rus</div>
+<div class='term-row add'> 41 +               │                         </div>
+<div class='term-row add'> 42 +               o..... wvlqrqps dd5ea188  </div>
+<div class='term-row add'> 43 +               │      wire rust view lead</div>
+<div class='term-row add'> 44 +               │      A bench/results/rus</div>
+<div class='term-row add'> 45 +               │                         </div>
+<div class='term-row add'> 46 +               O....&amp;gt; qllxrstu f847575</div>
+<div class='term-row add'> 47 +               │      fill rust view lead</div>
+<div class='term-row add'> 48 +               │      A bench/results/rus</div>
+<div class='term-row add'> 49 +               │                         </div>
+<div class='term-row add'> 50 +               o..... lzptmmtu 6a1b5dc1  </div>
+<div class='term-row add'> 51 +               │      prove rust leader s</div>
+<div class='term-row add'> 52 +               │      A bench/results/rus</div>
+<div class='term-row add'> 53 +               │                         </div>
+<div class='term-row add'> 54 +               o..... wrqsuuww 96e71b02  </div>
+<div class='term-row add'> 55 +               │      match bun leader st</div>
+<div class='term-row add'> 56 +               │      A bench/results/rus</div>
+<div class='term-row add'> 57 +               │                         </div>
+<div class='term-row add'> 58 +               o..... xsvnvsqt ac595d63  </div>
+<div class='term-row add'> 59 +               │      add rust view leade</div>
+<div class='term-row add'> 60 +               │      A bench/results/rus</div>
+<div class='term-row add'> 61 +               │                         </div>
+<div class='term-row add'> 62 +               o..... yxnvvvyu 2e9f54b2  </div>
+<div class='term-row add'> 63 +               │      compact rust footer</div>
+<div class='term-row add'> 64 +               │      A bench/results/rus</div>
+<div class='term-row add'> 65 +               │                         </div>
+<div class='term-row add'> 66 +               o..... wyqokumx 5dcf8f9e  </div>
+<div class='term-row add'> 67 +               │      extend rust tui tok</div>
+<div class='term-row add'> 68 +               │      A bench/results/rus</div>
+<div class='term-row add'> 69 +               │                         </div>
+<div class='term-row add'> 70 +               o..... zvuqrmvq 4a424936  </div>
+<div class='term-row add'> 71 +               │      add live tmux revie</div>
+<div class='term-row add'> 72 +               │      A bench/results/rus</div>
+<div class='term-row add'> 73 +               │                         </div>
+<div class='term-row add'> 74 +               o..... zoywkzyl 9cccc34d  </div>
+<div class='term-row add'> 75 +               │      map rust tui chrome</div>
+<div class='term-row add'> 76 +               │      A bench/results/rus</div>
+<div class='term-row add'> 77 +               │                         </div>
+<div class='term-row add'> 78 +               o..... qzxvpkxm 86187d8c  </div>
+<div class='term-row add'> 79 +               │      assert rust diff hu</div>
+<div class='term-row add'> 80 +               │      A bench/results/rus</div>
+<div class='term-row add'> 81 +               │                         </div>
+<div class='term-row add'> 82 +                                         </div>
+<div class='term-row add'> 83 +               │                         </div>
+<div class='term-row add'> 84 +               │                         </div>
+<div class='term-row add'> 85 +               │                         </div>
+<div class='term-row add'> 86 +  ~/dev/juzu  @kpxqlxuz                  </div>
+<div class='term-row add'> 87 + &lt;/pre&gt;&lt;/section&gt;                        </div>
+<div class='term-row add'> 88 + &lt;/body&gt;&lt;/html&gt;                          </div>
+<div class='term-row metadata'>  · \ No newline at end of file</div>
+<div class='term-row file_header'>╭ ◆ Added bench/results/rust-port/rust-tui-b ╮</div>
+<div class='term-row metadata'>  · diff --git a/bench/results/rust-port/rust-</div>
+<div class='term-row metadata'>  · new file mode 100644</div>
+<div class='term-row metadata'>  · --- /dev/null</div>
+<div class='term-row metadata'>  · +++ b/bench/results/rust-port/rust-tui-ben</div>
+<div class='term-row hunk_header'>╭─ @@ -0,0 +1 @@</div>
+<div class='term-row add'>  1 +  LOG   ^X Act  ^O Ops  ^L View  ^B Book </div>
+<div class='term-row metadata'>  · \ No newline at end of file</div>
+<div class='term-row file_header'>╭ ◆ Added bench/results/rust-port/rust-tui-b ╮</div>
+<div class='term-row metadata'>  · diff --git a/bench/results/rust-port/rust-</div>
+<div class='term-row metadata'>  · new file mode 100644</div>
+<div class='term-row metadata'>  · --- /dev/null</div>
+<div class='term-row metadata'>  · +++ b/bench/results/rust-port/rust-tui-ben</div>
+<div class='term-row hunk_header'>╭─ @@ -0,0 +1 @@</div>
+<div class='term-row add'>  1 +  LOG   ^X Act  ^O Ops  ^L View  ^B Book </div>
+<div class='term-row metadata'>  · \ No newline at end of file</div>
+<div class='term-row file_header'>╭ ◆ Added bench/results/rust-port/rust-tui-b ╮</div>
+<div class='term-row metadata'>  · diff --git a/bench/results/rust-port/rust-</div>
+<div class='term-row metadata'>  · new file mode 100644</div>
+<div class='term-row metadata'>  · --- /dev/null</div>
+<div class='term-row metadata'>  · +++ b/bench/results/rust-port/rust-tui-ben</div>
+<div class='term-row hunk_header'>╭─ @@ -0,0 +1 @@</div>
+<div class='term-row add'>  1 +  LOG   ^X Act  ^O Ops  ^L View  ^B Book </div>
+<div class='term-row metadata'>  · \ No newline at end of file</div>
+<div class='term-row file_header'>╭ ◆ Added bench/results/rust-port/rust-tui-b ╮</div>
+<div class='term-row metadata'>  · diff --git a/bench/results/rust-port/rust-</div>
+<div class='term-row metadata'>  · new file mode 100644</div>
+<div class='term-row metadata'>  · --- /dev/null</div>
+<div class='term-row metadata'>  · +++ b/bench/results/rust-port/rust-tui-ben</div>
+<div class='term-row hunk_header'>╭─ @@ -0,0 +1 @@</div>
+<div class='term-row add'>  1 +  LOG   ^X Act  ^O Ops  ^L View  ^B Book </div>
+<div class='term-row metadata'>  · \ No newline at end of file</div>
+<div class='term-row file_header'>╭ ◆ Added bench/results/rust-port/rust-tui-b ╮</div>
+<div class='term-row metadata'>  · diff --git a/bench/results/rust-port/rust-</div>
+<div class='term-row metadata'>  · new file mode 100644</div>
+<div class='term-row metadata'>  · --- /dev/null</div>
+<div class='term-row metadata'>  · +++ b/bench/results/rust-port/rust-tui-ben</div>
+<div class='term-row hunk_header'>╭─ @@ -0,0 +1 @@</div>
+<div class='term-row add'>  1 +  LOG   ^X Act  ^O Ops  ^L View  ^B Book </div>
+<div class='term-row metadata'>  · \ No newline at end of file</div>
+<div class='term-row file_header'>╭ ◆ Added bench/results/rust-port/rust-tui-b ╮</div>
+<div class='term-row metadata'>  · diff --git a/bench/results/rust-port/rust-</div>
+<div class='term-row metadata'>  · new file mode 100644</div>
+<div class='term-row metadata'>  · --- /dev/null</div>
+<div class='term-row metadata'>  · +++ b/bench/results/rust-port/rust-tui-ben</div>
+<div class='term-row hunk_header'>╭─ @@ -0,0 +1 @@</div>
+<div class='term-row add'>  1 +  LOG   ^X Act  ^O Ops  ^L View  ^B Book </div>
+<div class='term-row metadata'>  · \ No newline at end of file</div>
+<div class='term-row file_header'>╭ ◆ Added bench/results/rust-port/rust-tui-b ╮</div>
+<div class='term-row metadata'>  · diff --git a/bench/results/rust-port/rust-</div>
+<div class='term-row metadata'>  · new file mode 100644</div>
+<div class='term-row metadata'>  · --- /dev/null</div>
+<div class='term-row metadata'>  · +++ b/bench/results/rust-port/rust-tui-ben</div>
+<div class='term-row hunk_header'>╭─ @@ -0,0 +1 @@</div>
+<div class='term-row add'>  1 +  LOG   ^X Act  ^O Ops  ^L View  ^B Book </div>
+<div class='term-row metadata'>  · \ No newline at end of file</div>
+<div class='term-row file_header'>╭ ◆ Added bench/results/rust-port/rust-tui-b ╮</div>
+<div class='term-row metadata'>  · diff --git a/bench/results/rust-port/rust-</div>
+<div class='term-row metadata'>  · new file mode 100644</div>
+<div class='term-row metadata'>  · --- /dev/null</div>
+<div class='term-row metadata'>  · +++ b/bench/results/rust-port/rust-tui-ben</div>
+<div class='term-row hunk_header'>╭─ @@ -0,0 +1 @@</div>
+<div class='term-row add'>  1 +  LOG   ^X Act  ^O Ops  ^L View  ^B Book </div>
+<div class='term-row metadata'>  · \ No newline at end of file</div>
+<div class='term-row file_header'>╭ ◆ Added bench/results/rust-port/rust-tui-b ╮</div>
+<div class='term-row collapse'>⋯ 10678 more rows omitted</div></div></section>
+<section class='card'><h2>Pierre/JUZU design mapping</h2><ul class='notes'><li>The structured model still retains file/hunk hierarchy for sidebar previews, hunk jumps, and future virtualization.</li><li>The full Rust diff pane now filters those scaffold rows and starts with Bun/OpenTUI-style code rows under the file title.</li><li>Unified gutters follow Bun DiffView ordering: one active line number, then the +/- sign, then code content.</li><li>Add/remove/context content spans fill the remaining row width, matching the Bun `<diff>` component's full-row background treatment.</li><li>Collapse rows remain available for capped sidebar previews, not the uncapped full pane.</li></ul><div class='mapping'><div><strong>From Pierre</strong><br>structured model, file/hunk hierarchy, collapsed regions, patch reading rhythm.</div><div><strong>From JUZU</strong><br>sharp terminal density, low chrome, Bun DiffView-like full pane.</div></div></section>
+</div>
+<div class='grid'>
+<section class='card'><h2>Raw native diff first section</h2><pre>diff --git a/bench/results/rust-port/live-tmux/2026-06-15T20-32-42.370Z/live-tmux-proof.html b/bench/results/rust-port/live-tmux/2026-06-15T20-32-42.370Z/live-tmux-proof.html
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/live-tmux/2026-06-15T20-32-42.370Z/live-tmux-proof.html
+@@ -0,0 +1,88 @@
++&lt;!doctype html&gt;
++&lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust live tmux proof&lt;/title&gt;
++&lt;style&gt;
++:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --ok:#74b88c; --bad:#ce6f7c; --info:#7f9fbf; }
++body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
++h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .status.pass { color:var(--ok); } .status.fail { color:var(--bad); }
++.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.26); }
++pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 &#x27;JetBrains Mono&#x27;,ui-monospace,monospace; color:#d8dee8; } code { color:var(--info); }
++&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
++&lt;h1&gt;JUZU Rust live tmux proof · &lt;span class=&#x27;status pass&#x27;&gt;PASS&lt;/span&gt;&lt;/h1&gt;
++&lt;div class=&#x27;meta&#x27;&gt;Target: &lt;code&gt;juzu:rust-tui&lt;/code&gt; · pane command: &lt;code&gt;./target/release/juzu-tui&lt;/code&gt; · required command: &lt;code&gt;juzu-tui&lt;/code&gt; · expected: &lt;code&gt;LOG, Change:&lt;/code&gt; · missing: &lt;code&gt;none&lt;/code&gt;&lt;/div&gt;
++&lt;section class=&#x27;card&#x27;&gt;&lt;pre&gt; LOG   ^X Act  ^O Ops  ^L View  ^B Book
++              │                                                                                   Change: qllxrstuoonyovwkwtowpktzyzuzvwxq
++              o..... rpwlyzsp 2daf82d1                                                            Commit: f84757576f2be8c344a4160a37821de070d10d42
++              │      add rust theme picker preview panel                                          Author: shamanic &amp;lt;shamanicbeatbox@gmail.com&amp;gt;
++              │      A bench/results/rust-port/live-tmux/2026-06-15T03-52-38.623Z/live-tmux-pr... Time: 2026-06-15T03:30:56+01:00
++              │
++              o..... omurtoty fe27794f                                                            Description (x expand):
++              │      window rust theme picker with swatches                                       fill rust view leader controls from bun
++              │      A bench/results/rust-port/live-tmux/2026-06-15T03-36-42.781Z/live-tmux-pr...
++              │                                                                                   Files (f collapse):
++              o..... wmxowuvs c81e297d                                                            A bench/results/rust-port/live-tmux/2026-06-15T02-30-50.396Z/live…
++              │      wire active theme into rust diff renderer                                    A bench/results/rust-port/rust-tui-bench/2026-06-15T02-29-04-423Z…
++              │      A bench/results/rust-port/diff-render/2026-06-15T03-30-51.347Z/diff-rende... A bench/results/rust-port/rust-tui-bench/2026-06-15T02-29-04-423Z…
++              │                                                                                   A bench/results/rust-port/rust-tui-bench/2026-06-15T02-29-04-423Z…
++              o..... yzulmmsn f3619f25                                                            … 14 more
++              │      wire active theme into rust sidebar surfaces
++              │      A bench/results/rust-port/live-tmux/2026-06-15T03-25-18.309Z/live-tmux-pr... Diff
++              │                                                                                     · 18 files · 4711 raw · 4729 rows · 286 shown
++              o..... rxknvunu b4b03fda                                                              · diff rows 1-14 of 286
++              │      wire active theme into rust graph surfaces                                    STICKY ▸ top · Added bench/results/rust-port/live-tmux/20...
++              │      A bench/results/rust-port/live-tmux/2026-06-15T03-19-34.337Z/live-tmux-pr... ╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-15T02-3...╮
++              │                                                                                     · diff --git a/bench/results/rust-port/live-tmux/2026-06-...
++              o..... yswlrwxw 35814748                                                              · new file mode 100644
++              │      port bundled themes into rust tui picker                                       · --- /dev/null
++              │      A bench/results/rust-port/live-tmux/2026-06-15T03-01-54.683Z/live-tmux-pr...   · +++ b/bench/results/rust-port/live-tmux/2026-06-15T02-3...
++              │                                                                                   ╭─ @@ -0,0 +1,88 @@                                          ╮
++              o..... tvvsyrlx 5e959642                                                            ▌+         1 &amp;lt;!doctype html&amp;gt;
++              │      wire rust theme picker and revset view behavior                              ▌+         2 &amp;lt;html&amp;gt;&amp;lt;head&amp;gt;&amp;lt;meta charset=&amp;#x27;utf-8&amp;#x27;&amp;gt;&amp;lt;title&amp;gt;JUZU...
++              │      A bench/results/rust-port/live-tmux/2026-06-15T02-48-43.727Z/live-tmux-pr... ▌+         3 &amp;lt;style&amp;gt;
++              │                                                                                   ▌+         4 :root { color-scheme: dark; --bg:#111318; --p...
++              o..... wvlqrqps dd5ea188                                                            ▌+         5 body { margin:32px; background:radial-gradien...
++              │      wire rust view leader command behavior                                       ▌+         6 h1 { margin:0 0 6px; } .meta { color:var(--mu...
++              │      A bench/results/rust-port/live-tmux/2026-06-15T02-42-37.028Z/live-tmux-pr... ▌+         7 .card { background:rgba(26,32,41,.96); border...
++              │                                                                                   ▌+         8 pre { background:#050816; border:1px solid #2...
++              O....&amp;gt; qllxrstu f8475757                                                            ────────────────── ⋯ 272 more rows below ───────────────────
++              │      fill rust view leader controls from bun
++              │      A bench/results/rust-port/live-tmux/2026-06-15T02-30-50.396Z/live-tmux-pr...
++              │
++              o..... lzptmmtu 6a1b5dc1
++              │      prove rust leader strip modes against bun
++              │      A bench/results/rust-port/live-tmux/2026-06-15T02-19-44.844Z/live-tmux-pr...
++              │
++              o..... wrqsuuww 96e71b02
++              │      match bun leader strip and ctrl l view mode
++              │      A bench/results/rust-port/diff-render/2026-06-15T02-07-50.486Z/diff-rende...
++              │
++              o..... xsvnvsqt ac595d63
++              │      add rust view leader status parity
++              │      A bench/results/rust-port/live-tmux/2026-06-15T02-06-19.984Z/live-tmux-pr...
++              │
++              o..... yxnvvvyu 2e9f54b2
++              │      compact rust footer repo path like bun
++              │      A bench/results/rust-port/live-tmux/2026-06-15T02-00-50.941Z/live-tmux-pr...
++              │
++              o..... wyqokumx 5dcf8f9e
++              │      extend rust tui token parity into graph surfaces
++              │      A bench/results/rust-port/live-tmux/2026-06-15T01-48-42.368Z/live-tmux-pr...
++              │
++              o..... zvuqrmvq 4a424936
++              │      add live tmux review proof artifact
++              │      A bench/results/rust-port/live-tmux/2026-06-15T01-23-11.505Z/live-tmux-pr...
++              │
++              o..... zoywkzyl 9cccc34d
++              │      map rust tui chrome to old ui tokens
++              │      A bench/results/rust-port/rust-tui-bench/2026-06-15T01-20-33-601Z/idle-ma...
++              │
++              o..... qzxvpkxm 86187d8c
++              │      assert rust diff hunk jump debug state
++              │      A bench/results/rust-port/rust-tui-bench/2026-06-15T01-14-47-698Z/idle-ma...
++              │
++
++              │
++              │
++              │
++ ~/dev/juzu  @kpxqlxuz                                                                                                                           mainline 186 nodes
++&lt;/pre&gt;&lt;/section&gt;
++&lt;/body&gt;&lt;/html&gt;
+\ No newline at end of file
+diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-1-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-1-capture.txt
+new file mode 100644
+--- /dev/null
++++ b/bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-1-capture.txt
+@@ -0,0 +1 @@
++ LOG   ^X Act  ^O Ops  ^L View  ^B Book                                                                                                                                                         Change: uqvwwrvyzqxkvwyrxuzvqxyuvuooylkk (@)      @...@&gt; uqvwwrvy bdafe5fb                                              Commit: bdafe5fba067bb081574ef551ea7d1cdbcb01982  │      (no description)                                               Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;      │      no file changes                                                Time: 2026-06-15T20:58:15+01:00                   │                                                                                                                       o..... ylvrnzyz 5d4e5c14                                              Description (x expand):                           │      wrap full diff rows like bun diffview                                                                            │      A bench/results/rust-port/diff-render/2026-06-15T19-56-17.5...                                                   │                                                                     Files (f collapse):                               o..... pwqrmqsm 61eda292                                              —                                                 │      hide rust diff scaffold from full pane                                                                           │      A bench/results/rust-port/diff-render/2026-06-15T19-53-22.1... Diff                                              │                                                                       · 0 files · 0 raw · 0 rows · 0 shown            o..... ptuuymsn 1140b5d3                                                · clean patch                                   │      match bun diffview gutter width                                                                                  │      A bench/results/rust-port/diff-render/2026-06-15T19-23-55.2...                                                   │                                                                                                                       o..... kwwyznmy 7a737a16                                                                                                │      fill rust diff rows like bun diffview                                                                            │      A bench/results/rust-port/diff-render/2026-06-15T19-20-15.1...                                                   │                                                                                                                       o..... srtwqwon e54ddf68                                                                                                │      match bun diffview unified gutter order                                                                          │      A bench/results/rust-port/diff-render/2026-06-15T19-16-37.0...                                                   │                                                                                                                       o..... mknosvsm 588f7b14                                                                                                │      harden live tmux proof command check                                                                             │      A bench/results/rust-port/live-tmux/2026-06-15T19-06-41.765...                                                   │                                                                                                                       o..... yqlwymyt 64a7815b                                                                                                │      match bun diffview row palette                                                                                   │      A bench/results/rust-port/diff-render/2026-06-15T19-04-03.9...                                                   │                                                                                                                                                                                                                                              ~/dev/juzu  @uqvwwrvy                                                                                mainline 80 nodes </pre></section>
+<section class='card'><h2>Parsed rows behind the rendering</h2><table><thead><tr><th>Kind</th><th>Old</th><th>New</th><th>Text</th></tr></thead><tbody>
+<tr class='file_header'>
+  <td>file-header</td><td></td><td></td><td><code>Added bench/results/rust-port/live-tmux/2026-06-15T20-32-42.370Z/live-tmux-proof.html</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>diff --git a/bench/results/rust-port/live-tmux/2026-06-15T20-32-42.370Z/live-tmux-proof.html b/bench/results/rust-port/live-tmux/2026-06-15T20-32-42.370Z/live-tmux-proof.html</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>new file mode 100644</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>--- /dev/null</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>+++ b/bench/results/rust-port/live-tmux/2026-06-15T20-32-42.370Z/live-tmux-proof.html</code></td>
+</tr>
+<tr class='hunk_header'>
+  <td>hunk-header</td><td></td><td></td><td><code>@@ -0,0 +1,88 @@</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>1</td><td><code>+&lt;!doctype html&gt;</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>2</td><td><code>+&lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust live tmux proof&lt;/title&gt;</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>3</td><td><code>+&lt;style&gt;</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>4</td><td><code>+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --ok:#74b88c; --bad:#ce6f7c; --info:#7f9fbf; }</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>5</td><td><code>+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>6</td><td><code>+h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .status.pass { color:var(--ok); } .status.fail { color:var(--bad); }</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>7</td><td><code>+.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.26); }</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>8</td><td><code>+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 &#x27;JetBrains Mono&#x27;,ui-monospace,monospace; color:#d8dee8; } code { color:var(--info); }</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>9</td><td><code>+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>10</td><td><code>+&lt;h1&gt;JUZU Rust live tmux proof · &lt;span class=&#x27;status pass&#x27;&gt;PASS&lt;/span&gt;&lt;/h1&gt;</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>11</td><td><code>+&lt;div class=&#x27;meta&#x27;&gt;Target: &lt;code&gt;juzu:rust-tui&lt;/code&gt; · pane command: &lt;code&gt;./target/release/juzu-tui&lt;/code&gt; · required command: &lt;code&gt;juzu-tui&lt;/code&gt; · expected: &lt;code&gt;LOG, Change:&lt;/code&gt; · missing: &lt;code&gt;none&lt;/code&gt;&lt;/div&gt;</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>12</td><td><code>+&lt;section class=&#x27;card&#x27;&gt;&lt;pre&gt; LOG   ^X Act  ^O Ops  ^L View  ^B Book</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>13</td><td><code>+              │                                                                                   Change: qllxrstuoonyovwkwtowpktzyzuzvwxq</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>14</td><td><code>+              o..... rpwlyzsp 2daf82d1                                                            Commit: f84757576f2be8c344a4160a37821de070d10d42</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>15</td><td><code>+              │      add rust theme picker preview panel                                          Author: shamanic &amp;lt;shamanicbeatbox@gmail.com&amp;gt;</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>16</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-52-38.623Z/live-tmux-pr... Time: 2026-06-15T03:30:56+01:00</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>17</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>18</td><td><code>+              o..... omurtoty fe27794f                                                            Description (x expand):</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>19</td><td><code>+              │      window rust theme picker with swatches                                       fill rust view leader controls from bun</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>20</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-36-42.781Z/live-tmux-pr...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>21</td><td><code>+              │                                                                                   Files (f collapse):</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>22</td><td><code>+              o..... wmxowuvs c81e297d                                                            A bench/results/rust-port/live-tmux/2026-06-15T02-30-50.396Z/live…</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>23</td><td><code>+              │      wire active theme into rust diff renderer                                    A bench/results/rust-port/rust-tui-bench/2026-06-15T02-29-04-423Z…</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>24</td><td><code>+              │      A bench/results/rust-port/diff-render/2026-06-15T03-30-51.347Z/diff-rende... A bench/results/rust-port/rust-tui-bench/2026-06-15T02-29-04-423Z…</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>25</td><td><code>+              │                                                                                   A bench/results/rust-port/rust-tui-bench/2026-06-15T02-29-04-423Z…</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>26</td><td><code>+              o..... yzulmmsn f3619f25                                                            … 14 more</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>27</td><td><code>+              │      wire active theme into rust sidebar surfaces</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>28</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-25-18.309Z/live-tmux-pr... Diff</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>29</td><td><code>+              │                                                                                     · 18 files · 4711 raw · 4729 rows · 286 shown</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>30</td><td><code>+              o..... rxknvunu b4b03fda                                                              · diff rows 1-14 of 286</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>31</td><td><code>+              │      wire active theme into rust graph surfaces                                    STICKY ▸ top · Added bench/results/rust-port/live-tmux/20...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>32</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-19-34.337Z/live-tmux-pr... ╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-15T02-3...╮</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>33</td><td><code>+              │                                                                                     · diff --git a/bench/results/rust-port/live-tmux/2026-06-...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>34</td><td><code>+              o..... yswlrwxw 35814748                                                              · new file mode 100644</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>35</td><td><code>+              │      port bundled themes into rust tui picker                                       · --- /dev/null</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>36</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-01-54.683Z/live-tmux-pr...   · +++ b/bench/results/rust-port/live-tmux/2026-06-15T02-3...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>37</td><td><code>+              │                                                                                   ╭─ @@ -0,0 +1,88 @@                                          ╮</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>38</td><td><code>+              o..... tvvsyrlx 5e959642                                                            ▌+         1 &amp;lt;!doctype html&amp;gt;</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>39</td><td><code>+              │      wire rust theme picker and revset view behavior                              ▌+         2 &amp;lt;html&amp;gt;&amp;lt;head&amp;gt;&amp;lt;meta charset=&amp;#x27;utf-8&amp;#x27;&amp;gt;&amp;lt;title&amp;gt;JUZU...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>40</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T02-48-43.727Z/live-tmux-pr... ▌+         3 &amp;lt;style&amp;gt;</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>41</td><td><code>+              │                                                                                   ▌+         4 :root { color-scheme: dark; --bg:#111318; --p...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>42</td><td><code>+              o..... wvlqrqps dd5ea188                                                            ▌+         5 body { margin:32px; background:radial-gradien...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>43</td><td><code>+              │      wire rust view leader command behavior                                       ▌+         6 h1 { margin:0 0 6px; } .meta { color:var(--mu...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>44</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T02-42-37.028Z/live-tmux-pr... ▌+         7 .card { background:rgba(26,32,41,.96); border...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>45</td><td><code>+              │                                                                                   ▌+         8 pre { background:#050816; border:1px solid #2...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>46</td><td><code>+              O....&amp;gt; qllxrstu f8475757                                                            ────────────────── ⋯ 272 more rows below ───────────────────</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>47</td><td><code>+              │      fill rust view leader controls from bun</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>48</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T02-30-50.396Z/live-tmux-pr...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>49</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>50</td><td><code>+              o..... lzptmmtu 6a1b5dc1</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>51</td><td><code>+              │      prove rust leader strip modes against bun</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>52</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T02-19-44.844Z/live-tmux-pr...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>53</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>54</td><td><code>+              o..... wrqsuuww 96e71b02</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>55</td><td><code>+              │      match bun leader strip and ctrl l view mode</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>56</td><td><code>+              │      A bench/results/rust-port/diff-render/2026-06-15T02-07-50.486Z/diff-rende...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>57</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>58</td><td><code>+              o..... xsvnvsqt ac595d63</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>59</td><td><code>+              │      add rust view leader status parity</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>60</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T02-06-19.984Z/live-tmux-pr...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>61</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>62</td><td><code>+              o..... yxnvvvyu 2e9f54b2</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>63</td><td><code>+              │      compact rust footer repo path like bun</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>64</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T02-00-50.941Z/live-tmux-pr...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>65</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>66</td><td><code>+              o..... wyqokumx 5dcf8f9e</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>67</td><td><code>+              │      extend rust tui token parity into graph surfaces</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>68</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T01-48-42.368Z/live-tmux-pr...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>69</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>70</td><td><code>+              o..... zvuqrmvq 4a424936</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>71</td><td><code>+              │      add live tmux review proof artifact</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>72</td><td><code>+              │      A bench/results/rust-port/live-tmux/2026-06-15T01-23-11.505Z/live-tmux-pr...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>73</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>74</td><td><code>+              o..... zoywkzyl 9cccc34d</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>75</td><td><code>+              │      map rust tui chrome to old ui tokens</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>76</td><td><code>+              │      A bench/results/rust-port/rust-tui-bench/2026-06-15T01-20-33-601Z/idle-ma...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>77</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>78</td><td><code>+              o..... qzxvpkxm 86187d8c</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>79</td><td><code>+              │      assert rust diff hunk jump debug state</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>80</td><td><code>+              │      A bench/results/rust-port/rust-tui-bench/2026-06-15T01-14-47-698Z/idle-ma...</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>81</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>82</td><td><code>+</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>83</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>84</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>85</td><td><code>+              │</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>86</td><td><code>+ ~/dev/juzu  @kpxqlxuz                                                                                                                           mainline 186 nodes</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>87</td><td><code>+&lt;/pre&gt;&lt;/section&gt;</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>88</td><td><code>+&lt;/body&gt;&lt;/html&gt;</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>\ No newline at end of file</code></td>
+</tr>
+<tr class='file_header'>
+  <td>file-header</td><td></td><td></td><td><code>Added bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-1-capture.txt</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-1-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-1-capture.txt</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>new file mode 100644</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>--- /dev/null</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>+++ b/bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-1-capture.txt</code></td>
+</tr>
+<tr class='hunk_header'>
+  <td>hunk-header</td><td></td><td></td><td><code>@@ -0,0 +1 @@</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>1</td><td><code>+ LOG   ^X Act  ^O Ops  ^L View  ^B Book                                                                                                                                                         Change: uqvwwrvyzqxkvwyrxuzvqxyuvuooylkk (@)      @...@&gt; uqvwwrvy bdafe5fb                                              Commit: bdafe5fba067bb081574ef551ea7d1cdbcb01982  │      (no description)                                               Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;      │      no file changes                                                Time: 2026-06-15T20:58:15+01:00                   │                                                                                                                       o..... ylvrnzyz 5d4e5c14                                              Description (x expand):                           │      wrap full diff rows like bun diffview                                                                            │      A bench/results/rust-port/diff-render/2026-06-15T19-56-17.5...                                                   │                                                                     Files (f collapse):                               o..... pwqrmqsm 61eda292                                              —                                                 │      hide rust diff scaffold from full pane                                                                           │      A bench/results/rust-port/diff-render/2026-06-15T19-53-22.1... Diff                                              │                                                                       · 0 files · 0 raw · 0 rows · 0 shown            o..... ptuuymsn 1140b5d3                                                · clean patch                                   │      match bun diffview gutter width                                                                                  │      A bench/results/rust-port/diff-render/2026-06-15T19-23-55.2...                                                   │                                                                                                                       o..... kwwyznmy 7a737a16                                                                                                │      fill rust diff rows like bun diffview                                                                            │      A bench/results/rust-port/diff-render/2026-06-15T19-20-15.1...                                                   │                                                                                                                       o..... srtwqwon e54ddf68                                                                                                │      match bun diffview unified gutter order                                                                          │      A bench/results/rust-port/diff-render/2026-06-15T19-16-37.0...                                                   │                                                                                                                       o..... mknosvsm 588f7b14                                                                                                │      harden live tmux proof command check                                                                             │      A bench/results/rust-port/live-tmux/2026-06-15T19-06-41.765...                                                   │                                                                                                                       o..... yqlwymyt 64a7815b                                                                                                │      match bun diffview row palette                                                                                   │      A bench/results/rust-port/diff-render/2026-06-15T19-04-03.9...                                                   │                                                                                                                                                                                                                                              ~/dev/juzu  @uqvwwrvy                                                                                mainline 80 nodes </code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>\ No newline at end of file</code></td>
+</tr>
+<tr class='file_header'>
+  <td>file-header</td><td></td><td></td><td><code>Added bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-2-capture.txt</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-2-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-2-capture.txt</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>new file mode 100644</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>--- /dev/null</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>+++ b/bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-2-capture.txt</code></td>
+</tr>
+<tr class='hunk_header'>
+  <td>hunk-header</td><td></td><td></td><td><code>@@ -0,0 +1 @@</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>1</td><td><code>+ LOG   ^X Act  ^O Ops  ^L View  ^B Book                                                                                                                                                         Change: uqvwwrvyzqxkvwyrxuzvqxyuvuooylkk (@)      @...@&gt; uqvwwrvy bdafe5fb                                              Commit: bdafe5fba067bb081574ef551ea7d1cdbcb01982  │      (no description)                                               Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;      │      no file changes                                                Time: 2026-06-15T20:58:15+01:00                   │                                                                                                                       o..... ylvrnzyz 5d4e5c14                                              Description (x expand):                           │      wrap full diff rows like bun diffview                                                                            │      A bench/results/rust-port/diff-render/2026-06-15T19-56-17.5...                                                   │                                                                     Files (f collapse):                               o..... pwqrmqsm 61eda292                                              —                                                 │      hide rust diff scaffold from full pane                                                                           │      A bench/results/rust-port/diff-render/2026-06-15T19-53-22.1... Diff                                              │                                                                       · 0 files · 0 raw · 0 rows · 0 shown            o..... ptuuymsn 1140b5d3                                                · clean patch                                   │      match bun diffview gutter width                                                                                  │      A bench/results/rust-port/diff-render/2026-06-15T19-23-55.2...                                                   │                                                                                                                       o..... kwwyznmy 7a737a16                                                                                                │      fill rust diff rows like bun diffview                                                                            │      A bench/results/rust-port/diff-render/2026-06-15T19-20-15.1...                                                   │                                                                                                                       o..... srtwqwon e54ddf68                                                                                                │      match bun diffview unified gutter order                                                                          │      A bench/results/rust-port/diff-render/2026-06-15T19-16-37.0...                                                   │                                                                                                                       o..... mknosvsm 588f7b14                                                                                                │      harden live tmux proof command check                                                                             │      A bench/results/rust-port/live-tmux/2026-06-15T19-06-41.765...                                                   │                                                                                                                       o..... yqlwymyt 64a7815b                                                                                                │      match bun diffview row palette                                                                                   │      A bench/results/rust-port/diff-render/2026-06-15T19-04-03.9...                                                   │                                                                                                                                                                                                                                              ~/dev/juzu  @uqvwwrvy                                                                                mainline 80 nodes </code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>\ No newline at end of file</code></td>
+</tr>
+<tr class='file_header'>
+  <td>file-header</td><td></td><td></td><td><code>Added bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-3-capture.txt</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>diff --git a/bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-3-capture.txt b/bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-3-capture.txt</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>new file mode 100644</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>--- /dev/null</code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>+++ b/bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/idle-mainline-run-3-capture.txt</code></td>
+</tr>
+<tr class='hunk_header'>
+  <td>hunk-header</td><td></td><td></td><td><code>@@ -0,0 +1 @@</code></td>
+</tr>
+<tr class='add'>
+  <td>add</td><td></td><td>1</td><td><code>+ LOG   ^X Act  ^O Ops  ^L View  ^B Book                                                                                                                                                         Change: uqvwwrvyzqxkvwyrxuzvqxyuvuooylkk (@)      @...@&gt; uqvwwrvy bdafe5fb                                              Commit: bdafe5fba067bb081574ef551ea7d1cdbcb01982  │      (no description)                                               Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;      │      no file changes                                                Time: 2026-06-15T20:58:15+01:00                   │                                                                                                                       o..... ylvrnzyz 5d4e5c14                                              Description (x expand):                           │      wrap full diff rows like bun diffview                                                                            │      A bench/results/rust-port/diff-render/2026-06-15T19-56-17.5...                                                   │                                                                     Files (f collapse):                               o..... pwqrmqsm 61eda292                                              —                                                 │      hide rust diff scaffold from full pane                                                                           │      A bench/results/rust-port/diff-render/2026-06-15T19-53-22.1... Diff                                              │                                                                       · 0 files · 0 raw · 0 rows · 0 shown            o..... ptuuymsn 1140b5d3                                                · clean patch                                   │      match bun diffview gutter width                                                                                  │      A bench/results/rust-port/diff-render/2026-06-15T19-23-55.2...                                                   │                                                                                                                       o..... kwwyznmy 7a737a16                                                                                                │      fill rust diff rows like bun diffview                                                                            │      A bench/results/rust-port/diff-render/2026-06-15T19-20-15.1...                                                   │                                                                                                                       o..... srtwqwon e54ddf68                                                                                                │      match bun diffview unified gutter order                                                                          │      A bench/results/rust-port/diff-render/2026-06-15T19-16-37.0...                                                   │                                                                                                                       o..... mknosvsm 588f7b14                                                                                                │      harden live tmux proof command check                                                                             │      A bench/results/rust-port/live-tmux/2026-06-15T19-06-41.765...                                                   │                                                                                                                       o..... yqlwymyt 64a7815b                                                                                                │      match bun diffview row palette                                                                                   │      A bench/results/rust-port/diff-render/2026-06-15T19-04-03.9...                                                   │                                                                                                                                                                                                                                              ~/dev/juzu  @uqvwwrvy                                                                                mainline 80 nodes </code></td>
+</tr>
+<tr class='metadata'>
+  <td>metadata</td><td></td><td></td><td><code>\ No newline at end of file</code></td>
+</tr>
+<tr class='file_header'>
+  <td>file-header</td><td></td><td></td><td><code>Added bench/results/rust-port/rust-tui-bench/2026-06-15T20-31-32-473Z/layout-switching-run-1-capture.txt</code></td>
+</tr></tbody></table></section>
+</div>
+</body></html>
