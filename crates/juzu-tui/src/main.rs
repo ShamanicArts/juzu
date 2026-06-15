@@ -931,12 +931,17 @@ fn jump_selected_diff(app: &mut App, jump: DiffJump) {
 
 fn render(frame: &mut Frame, app: &App) {
     let layout = calculate_default_layout(app.mode, &app.nodes);
+    let status_height = if app.active_leader_mode == Some(LeaderMode::View) {
+        2
+    } else {
+        1
+    };
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),
+            Constraint::Length(status_height),
             Constraint::Min(8),
-            Constraint::Length(3),
+            Constraint::Length(1),
         ])
         .split(frame.area());
     render_status_bar(frame, chunks[0], app);
@@ -946,12 +951,9 @@ fn render(frame: &mut Frame, app: &App) {
 
 fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
     let t = &app.theme;
-    let item_style = Style::default().bg(t.slate_bg2).fg(t.slate_text);
-    let key_style = Style::default().fg(t.semantic_info);
-    let mode_style = Style::default()
-        .fg(t.slate_bg0)
-        .bg(t.semantic_mode_log)
-        .add_modifier(Modifier::BOLD);
+    let item_style = status_item_style(t, LeaderMode::View);
+    let key_style = status_key_style(t);
+    let mode_style = status_mode_style(t, app.active_leader_mode);
     let lines = if app.theme_picker_mode {
         vec![Line::from(vec![
             Span::styled(" THEME ", mode_style),
@@ -1007,52 +1009,7 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             .bg(leader_mode_color(leader, t))
             .add_modifier(Modifier::BOLD);
         match leader {
-            LeaderMode::View => vec![
-                Line::from(vec![
-                    Span::styled(" VIEW ", active_mode_style),
-                    Span::raw("  "),
-                    Span::styled("1", key_style),
-                    Span::styled(" Layout chronological ", item_style),
-                    Span::raw(" "),
-                    Span::styled("2", key_style),
-                    Span::styled(" Layout mainline ", item_style),
-                    Span::raw(" "),
-                    Span::styled("3", key_style),
-                    Span::styled(" Layout bookmark ", item_style),
-                    Span::raw(" "),
-                    Span::styled("4", key_style),
-                    Span::styled(" Layout wc ", item_style),
-                    Span::raw(" "),
-                    Span::styled("5", key_style),
-                    Span::styled(" Layout topological ", item_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("c", key_style),
-                    Span::styled(" Toggle sidebar ", item_style),
-                    Span::raw(" "),
-                    Span::styled("t", key_style),
-                    Span::styled(" Theme picker ", item_style),
-                    Span::raw(" "),
-                    Span::styled("f", key_style),
-                    Span::styled(" Toggle files ", item_style),
-                    Span::raw(" "),
-                    Span::styled("x", key_style),
-                    Span::styled(" Toggle description ", item_style),
-                    Span::raw(" "),
-                    Span::styled("h", key_style),
-                    Span::styled(" Toggle help ", item_style),
-                    Span::raw(" "),
-                    Span::styled("/", key_style),
-                    Span::styled(" Revset filter ", item_style),
-                    Span::raw(" "),
-                    Span::styled("^d", key_style),
-                    Span::styled(" Diff view ", item_style),
-                ]),
-                Line::from(vec![
-                    Span::styled("Esc/q", key_style),
-                    Span::styled(" Exit ", item_style),
-                ]),
-            ],
+            LeaderMode::View => view_leader_status_lines(t),
             LeaderMode::Action => vec![Line::from(vec![
                 Span::styled(" ACT ", active_mode_style),
                 Span::raw("  "),
@@ -1107,22 +1064,105 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             Span::styled(" LOG ", mode_style),
             Span::raw("  "),
             Span::styled("^X", key_style),
-            Span::styled(" Act ", item_style),
+            Span::styled(" Act ", status_item_style(t, LeaderMode::Action)),
             Span::raw(" "),
             Span::styled("^O", key_style),
-            Span::styled(" Ops ", item_style),
+            Span::styled(" Ops ", status_item_style(t, LeaderMode::Ops)),
             Span::raw(" "),
             Span::styled("^L", key_style),
-            Span::styled(" View ", item_style),
+            Span::styled(" View ", status_item_style(t, LeaderMode::View)),
             Span::raw(" "),
             Span::styled("^B", key_style),
-            Span::styled(" Book ", item_style),
+            Span::styled(" Book ", status_item_style(t, LeaderMode::Bookmarks)),
         ])]
     };
     frame.render_widget(
         Paragraph::new(lines).style(Style::default().bg(t.slate_panel)),
         area,
     );
+}
+
+fn status_key_style(t: &UiTokens) -> Style {
+    Style::default().fg(t.semantic_info).bg(t.slate_panel)
+}
+
+fn status_mode_style(t: &UiTokens, active: Option<LeaderMode>) -> Style {
+    let mode = active.unwrap_or(LeaderMode::Bookmarks);
+    let bg = if active.is_none() {
+        Color::Rgb(0x9f, 0xe1, 0xc9)
+    } else {
+        leader_mode_color(mode, t)
+    };
+    Style::default()
+        .fg(t.slate_bg0)
+        .bg(bg)
+        .add_modifier(Modifier::BOLD)
+}
+
+fn status_item_style(t: &UiTokens, mode: LeaderMode) -> Style {
+    let (bg, fg) = match mode {
+        LeaderMode::Action => (Color::Rgb(0x7e, 0x65, 0x3e), Color::Rgb(0xdd, 0xbb, 0x84)),
+        LeaderMode::Ops => (Color::Rgb(0x49, 0x6b, 0x90), Color::Rgb(0xa3, 0xc2, 0xde)),
+        LeaderMode::View => (Color::Rgb(0x57, 0x7e, 0x7a), Color::Rgb(0xb3, 0xd7, 0xc6)),
+        LeaderMode::Bookmarks => (Color::Rgb(0x53, 0x80, 0x62), Color::Rgb(0xb6, 0xdc, 0xbd)),
+    };
+    let _ = t;
+    Style::default().bg(bg).fg(fg)
+}
+
+fn view_leader_status_lines(t: &UiTokens) -> Vec<Line<'static>> {
+    let key_style = status_key_style(t);
+    let item_style = status_item_style(t, LeaderMode::View);
+    let active_mode_style = Style::default()
+        .fg(t.slate_bg0)
+        .bg(leader_mode_color(LeaderMode::View, t))
+        .add_modifier(Modifier::BOLD);
+    vec![
+        Line::from(vec![
+            Span::styled(" VIEW ", active_mode_style),
+            Span::raw("  "),
+            Span::styled("1", key_style),
+            Span::styled(" Layout chronological ", item_style),
+            Span::raw(" "),
+            Span::styled("2", key_style),
+            Span::styled(" Layout mainline ", item_style),
+            Span::raw(" "),
+            Span::styled("3", key_style),
+            Span::styled(" Layout bookmark ", item_style),
+            Span::raw(" "),
+            Span::styled("4", key_style),
+            Span::styled(" Layout wc ", item_style),
+            Span::raw(" "),
+            Span::styled("5", key_style),
+            Span::styled(" Layout topological ", item_style),
+        ]),
+        Line::from(vec![
+            Span::styled("c", key_style),
+            Span::styled(" Toggle sidebar ", item_style),
+            Span::raw(" "),
+            Span::styled("t", key_style),
+            Span::styled(" Theme picker ", item_style),
+            Span::raw(" "),
+            Span::styled("f", key_style),
+            Span::styled(" Toggle files ", item_style),
+            Span::raw(" "),
+            Span::styled("x", key_style),
+            Span::styled(" Toggle description ", item_style),
+            Span::raw(" "),
+            Span::styled("h", key_style),
+            Span::styled(" Toggle help ", item_style),
+            Span::raw(" "),
+            Span::styled("/", key_style),
+            Span::styled(" Revset filter ", item_style),
+            Span::raw(" "),
+            Span::styled("^d", key_style),
+            Span::styled(" Diff view ", item_style),
+        ]),
+    ]
+}
+
+fn default_chrome_borders() -> Borders {
+    Borders::NONE
 }
 
 fn leader_mode_color(mode: LeaderMode, t: &UiTokens) -> Color {
@@ -1172,12 +1212,11 @@ fn render_diff_pane(
         return;
     };
     let block = Block::default()
-        .title(" diff ")
-        .borders(Borders::ALL)
+        .borders(default_chrome_borders())
         .border_style(Style::default().fg(t.slate_border_strong))
         .style(Style::default().bg(t.slate_bg0));
-    let width = area.width.saturating_sub(2) as usize;
-    let height = area.height.saturating_sub(2) as usize;
+    let width = area.width as usize;
+    let height = area.height as usize;
     let mut lines = Vec::new();
     let diff = selected_diff(app);
     let title = diff
@@ -1271,8 +1310,7 @@ fn render_graph_table(
 ) {
     let t = &app.theme;
     let block = Block::default()
-        .title(" dag graph ")
-        .borders(Borders::ALL)
+        .borders(default_chrome_borders())
         .border_style(Style::default().fg(t.slate_border_soft))
         .style(Style::default().bg(t.slate_bg0));
     let inner = block.inner(area);
@@ -2112,8 +2150,7 @@ fn render_sidebar(
             .style(Style::default().fg(t.slate_text).bg(t.slate_panel))
             .block(
                 Block::default()
-                    .title(" details ")
-                    .borders(Borders::ALL)
+                    .borders(default_chrome_borders())
                     .border_style(Style::default().fg(t.slate_border_soft))
                     .style(Style::default().bg(t.slate_panel)),
             ),
@@ -2557,6 +2594,33 @@ mod tests {
         let home = std::env::var("HOME").expect("HOME is set in parity environment");
         let path = PathBuf::from(format!("{home}/dev/juzu"));
         assert_eq!(compact_home_path(&path), "~/dev/juzu");
+    }
+
+    #[test]
+    fn bun_parity_default_chrome_is_smooth_not_boxed() {
+        assert_eq!(default_chrome_borders(), Borders::NONE);
+    }
+
+    #[test]
+    fn status_buttons_use_bun_slate_colored_segments() {
+        let style = status_item_style(&UI_TOKENS, LeaderMode::Action);
+        assert_eq!(style.bg, Some(Color::Rgb(0x7e, 0x65, 0x3e)));
+        assert_eq!(style.fg, Some(Color::Rgb(0xdd, 0xbb, 0x84)));
+        let style = status_item_style(&UI_TOKENS, LeaderMode::View);
+        assert_eq!(style.bg, Some(Color::Rgb(0x57, 0x7e, 0x7a)));
+        assert_eq!(style.fg, Some(Color::Rgb(0xb3, 0xd7, 0xc6)));
+    }
+
+    #[test]
+    fn view_leader_status_fits_two_rows_without_extra_exit_row() {
+        let lines = view_leader_status_lines(&UI_TOKENS);
+        assert_eq!(lines.len(), 2);
+        let rendered = lines
+            .iter()
+            .flat_map(|line| line.spans.iter())
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+        assert!(!rendered.contains("Esc/q Exit"));
     }
 
     #[test]

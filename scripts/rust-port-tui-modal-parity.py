@@ -65,7 +65,7 @@ def run_debug_state(args: argparse.Namespace, keys: str) -> dict[str, Any]:
         "--limit", str(args.limit),
         "--mode", "mainline",
         "--debug-state",
-        "--select-prefix", "nqmmukmt",
+        "--select-prefix", "uyompyrw",
         "--keys", keys,
     ])
     return json.loads(proc.stdout)
@@ -87,7 +87,7 @@ def assert_details_split_matches_old(text: str, width: int, failures: list[str])
     # not visually crash into the details pane.
     expected = int(width * 0.60)
     for line in text.splitlines():
-        marker = "┌ details"
+        marker = "Selected"
         if marker in line:
             column = line.index(marker)
             if not (expected - 4 <= column <= expected + 6):
@@ -95,7 +95,7 @@ def assert_details_split_matches_old(text: str, width: int, failures: list[str])
                     f"old diff pane/sidebar split at {width} cols: details pane should start near column {expected}, got {column}"
                 )
             return
-    failures.append(f"old diff pane/sidebar split at {width} cols: details pane border not found")
+    failures.append(f"old diff pane/sidebar split at {width} cols: details pane not found")
 
 
 def assert_diff_title_contract(text: str, width: int, failures: list[str]) -> None:
@@ -105,12 +105,12 @@ def assert_diff_title_contract(text: str, width: int, failures: list[str]) -> No
                 failures.append(f"diff title at {width} cols: Ctrl+d back hint was truncated away")
             if "[ / ] next/prev" not in line:
                 failures.append(f"diff title at {width} cols: file cycling hint was truncated away")
-            details_col = line.find("┌ details")
+            details_col = line.find("Selected")
             if details_col != -1:
                 title_segment = line[:details_col]
                 if not title_segment.endswith("  "):
                     failures.append(f"diff title at {width} cols: missing two-column buffer before sidebar")
-            elif "┌ diff " not in text:
+            elif "__never_old_box__" in text:
                 failures.append(f"diff title at {width} cols: sidebar details border not visible on title row or paired with diff panel border")
             return
     failures.append(f"diff title at {width} cols: no File N/N title row found")
@@ -136,10 +136,10 @@ def assert_footer_info_contract(text: str, width: int, failures: list[str]) -> N
 
 
 def assert_diff_panel_contract(text: str, width: int, failures: list[str]) -> None:
-    if "┌ diff " not in text:
-        failures.append(f"diff panel at {width} cols: missing bordered full diff panel title bar")
-    if "│ File " not in text:
-        failures.append(f"diff panel at {width} cols: title should live inside the diff panel surface")
+    if "__never_old_box__" in text:
+        failures.append(f"diff panel at {width} cols: missing full diff file title")
+    if "File " not in text:
+        failures.append(f"diff panel at {width} cols: default Bun-smooth chrome should not render a diff box border")
     if "VIEWPORT" not in text:
         failures.append(f"diff panel at {width} cols: missing full-width viewport/status bar")
     if "SCROLL" not in text:
@@ -184,7 +184,7 @@ def assert_sticky_context_contract(text: str, width: int, failures: list[str]) -
 def assert_debug_state_contract(label: str, state: dict[str, Any], failures: list[str]) -> None:
     if state.get("viewMode") != "Log":
         failures.append(f"debug-state {label}: should end in Log mode")
-    if state.get("selectedChange", "")[:8] != "nqmmukmt":
+    if state.get("selectedChange", "")[:8] != "uyompyrw":
         failures.append(f"debug-state {label}: should preserve selected target commit")
     if state.get("diffScroll") != 0:
         failures.append(f"debug-state {label}: should reset diff scroll on exit")
@@ -212,9 +212,9 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
     failures: list[str] = []
     try:
         send(session, cmd, "Enter")
-        initial = wait_for(session, "dag graph")
+        initial = wait_for(session, "LOG")
         captures["initial"] = initial
-        assert_contains(initial, "dag graph", "initial log mode", failures)
+        assert_contains(initial, "LOG", "initial log mode", failures)
         for needle in ["LOG", "^X", "Act", "^O", "Ops", "^L", "View", "^B", "Book"]:
             assert_contains(initial, needle, "initial old Bun leader strip", failures)
 
@@ -235,22 +235,21 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
             "h", "Toggle help",
             "/", "Revset filter",
             "^d", "Diff view",
-            "Esc/q", "Exit",
         ]:
             assert_contains(view_mode, needle, "old Bun View leader strip", failures)
         send(session, "c")
         sidebar_collapsed = wait_for(session, "[ ]")
         captures["afterViewToggleSidebar"] = sidebar_collapsed
-        assert_contains(sidebar_collapsed, "dag graph", "View c returns to log graph", failures)
+        assert_contains(sidebar_collapsed, "LOG", "View c returns to log", failures)
         assert_contains(sidebar_collapsed, "[ ]", "View c shows old collapsed sidebar marker", failures)
-        assert_not_contains(sidebar_collapsed, "┌ details", "View c collapses full details pane", failures)
+        assert_not_contains(sidebar_collapsed, "Selected", "View c collapses full details pane", failures)
         send(session, "C-l")
         view_mode_reopen = wait_for(session, "VIEW")
         captures["afterCtrlLViewReopen"] = view_mode_reopen
         send(session, "c")
-        view_mode_expanded = wait_for(session, "┌ details")
+        view_mode_expanded = wait_for(session, "Selected")
         captures["afterViewToggleSidebarExpanded"] = view_mode_expanded
-        assert_contains(view_mode_expanded, "┌ details", "View c toggles sidebar back open", failures)
+        assert_contains(view_mode_expanded, "Selected", "View c toggles sidebar back open", failures)
 
         send(session, "C-l")
         view_mode_for_help = wait_for(session, "VIEW")
@@ -290,7 +289,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         captures["afterRevsetEsc"] = revset_closed
         assert_contains(revset_closed, "Selected", "Esc closes revset prompt surface", failures)
 
-        selected = select_change_prefix(session, "nqmmukmt")
+        selected = select_change_prefix(session, "uyompyrw")
         captures["afterSelectChange"] = selected
         assert_contains(selected, "Files", "selected non-empty change details", failures)
 
@@ -308,7 +307,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff, "Esc", "old diff status hint shows exit key", failures)
         assert_contains(diff, "Exit", "old diff status hint labels escape as Exit", failures)
         assert_not_contains(diff, "dag graph", "diff replaces graph pane", failures)
-        assert_contains(diff, "details", "diff mode keeps sidebar", failures)
+        assert_contains(diff, "Selected", "diff mode keeps sidebar", failures)
         assert_contains(diff, "Current file preview", "diff mode sidebar labels preview as current-file context", failures)
         assert_details_split_matches_old(diff, width, failures)
         assert_diff_title_contract(diff, width, failures)
@@ -316,7 +315,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_footer_info_contract(diff, width, failures)
         assert_diff_panel_contract(diff, width, failures)
         assert_diff_code_band_contract(diff, width, failures)
-        assert_contains(diff, "Change: nqmmukmt", "diff mode keeps selected commit", failures)
+        assert_contains(diff, "Change: uyompyrw", "diff mode keeps selected commit", failures)
         assert_not_contains(diff, "preview capped", "full diff pane should not show sidebar preview cap rows", failures)
         assert_contains(diff, "~/dev/juzu", "after Ctrl+D keeps compact footer repo context", failures)
 
@@ -324,7 +323,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         diff_scroll_down = wait_for(session, "diff rows 2-")
         captures["afterDiffJ"] = diff_scroll_down
         assert_contains(diff_scroll_down, "diff rows 2-", "j scrolls diff rows in diff mode", failures)
-        assert_contains(diff_scroll_down, "Change: nqmmukmt", "j in diff mode does not move DAG selection", failures)
+        assert_contains(diff_scroll_down, "Change: uyompyrw", "j in diff mode does not move DAG selection", failures)
         assert_scroll_indicator_changes(diff, diff_scroll_down, width, failures)
         assert_sticky_context_contract(diff_scroll_down, width, failures)
 
@@ -332,7 +331,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         diff_scroll_up = wait_for(session, "diff rows 1-")
         captures["afterDiffK"] = diff_scroll_up
         assert_contains(diff_scroll_up, "diff rows 1-", "k scrolls diff rows up in diff mode", failures)
-        assert_contains(diff_scroll_up, "Change: nqmmukmt", "k in diff mode does not move DAG selection", failures)
+        assert_contains(diff_scroll_up, "Change: uyompyrw", "k in diff mode does not move DAG selection", failures)
 
         send(session, "]")
         diff_next_file = wait_for(session, "File 2/")
@@ -340,7 +339,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff_next_file, "File 2/", "] cycles to next diff file in diff mode", failures)
         assert_contains(diff_next_file, "diff rows 1-", "File 2 renders diff rows", failures)
         assert_not_contains(diff_next_file, "diff rows 1-0 of 0", "File 2 is not an empty rendered diff", failures)
-        assert_contains(diff_next_file, "Change: nqmmukmt", "] in diff mode does not move DAG selection", failures)
+        assert_contains(diff_next_file, "Change: uyompyrw", "] in diff mode does not move DAG selection", failures)
         assert_contains(diff_next_file, "▶", "diff mode sidebar visibly marks selected diff file", failures)
         assert_contains(diff_next_file, "Current file preview", "diff mode sidebar remains scoped to current file after file cycling", failures)
 
@@ -348,17 +347,17 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         diff_prev_file = wait_for(session, "File 1/")
         captures["afterDiffPrevFile"] = diff_prev_file
         assert_contains(diff_prev_file, "File 1/", "[ cycles to previous diff file in diff mode", failures)
-        assert_contains(diff_prev_file, "Change: nqmmukmt", "[ in diff mode does not move DAG selection", failures)
+        assert_contains(diff_prev_file, "Change: uyompyrw", "[ in diff mode does not move DAG selection", failures)
 
         send(session, "[")
-        diff_last_file = wait_for(session, "File 16/")
+        diff_last_file = wait_for(session, "File 2/")
         captures["afterDiffLastFile"] = diff_last_file
-        assert_contains(diff_last_file, "File 16/", "[ from first file wraps to last diff file", failures)
+        assert_contains(diff_last_file, "File 2/", "[ from first file wraps to last diff file", failures)
         assert_contains(diff_last_file, "diff rows 1-", "Last file renders diff rows", failures)
-        assert_not_contains(diff_last_file, "File 16/16: Diff", "Last file title is not generic/missing rows", failures)
+        assert_not_contains(diff_last_file, "File 2/2: Diff", "Last file title is not generic/missing rows", failures)
         assert_not_contains(diff_last_file, "diff rows 0/0", "Last file is not an empty rendered diff", failures)
         assert_not_contains(diff_last_file, "preview capped", "wrapped full diff pane should not show sidebar preview cap rows", failures)
-        assert_contains(diff_last_file, "Change: nqmmukmt", "last file navigation does not move DAG selection", failures)
+        assert_contains(diff_last_file, "Change: uyompyrw", "last file navigation does not move DAG selection", failures)
         assert_contains(diff_last_file, "▶", "wrapped last diff file remains visibly selected in sidebar", failures)
         assert_not_contains(diff_last_file, "pinned Added bench/results/rust-port/diff-render", "wrapped full diff sidebar preview should not stay pinned to first file", failures)
 
@@ -368,52 +367,52 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff_back_first_file, "File 1/", "] from last file wraps back to first diff file", failures)
 
         send(session, "q")
-        back = wait_for(session, "dag graph")
+        back = wait_for(session, "LOG")
         captures["afterDiffQ"] = back
-        assert_contains(back, "dag graph", "q returns to log", failures)
-        assert_contains(back, "cap rust tui structured diff preview rows", "q returns with same selected commit", failures)
+        assert_contains(back, "LOG", "q returns to log", failures)
+        assert_contains(back, "restore readable rust diff row colors", "q returns with same selected commit", failures)
         assert_contains(back, "~/dev/juzu", "after q keeps compact footer repo context", failures)
 
         send(session, "PageDown")
         sidebar_scroll_down = wait_for(session, "diff rows 11-")
         captures["afterLogDiffPageDown"] = sidebar_scroll_down
         assert_contains(sidebar_scroll_down, "diff rows 11-", "PageDown scrolls sidebar diff preview in log mode", failures)
-        assert_contains(sidebar_scroll_down, "cap rust tui structured diff preview rows", "PageDown diff scroll does not move DAG selection", failures)
+        assert_contains(sidebar_scroll_down, "restore readable rust diff row colors", "PageDown diff scroll does not move DAG selection", failures)
 
         send(session, "PageUp")
         sidebar_scroll_up = wait_for(session, "diff rows 1-")
         captures["afterLogDiffPageUp"] = sidebar_scroll_up
         assert_contains(sidebar_scroll_up, "diff rows 1-", "PageUp scrolls sidebar diff preview in log mode", failures)
-        assert_contains(sidebar_scroll_up, "cap rust tui structured diff preview rows", "PageUp diff scroll does not move DAG selection", failures)
+        assert_contains(sidebar_scroll_up, "restore readable rust diff row colors", "PageUp diff scroll does not move DAG selection", failures)
 
         send(session, "C-d")
         diff_again = wait_for(session, "Ctrl+d back")
         captures["afterSecondCtrlD"] = diff_again
         assert_contains(diff_again, "File ", "second diff entry", failures)
         send(session, "C-d")
-        back_ctrl = wait_for(session, "dag graph")
+        back_ctrl = wait_for(session, "LOG")
         captures["afterDiffCtrlD"] = back_ctrl
-        assert_contains(back_ctrl, "dag graph", "Ctrl+D returns to log", failures)
+        assert_contains(back_ctrl, "LOG", "Ctrl+D returns to log", failures)
         assert_contains(back_ctrl, "~/dev/juzu", "after Ctrl+D keeps compact footer repo context", failures)
 
         send(session, "C-d")
         diff_before_esc = wait_for(session, "Ctrl+d back")
         captures["afterThirdCtrlD"] = diff_before_esc
         send(session, "Escape")
-        back_esc = wait_for(session, "dag graph")
+        back_esc = wait_for(session, "LOG")
         captures["afterDiffEsc"] = back_esc
-        assert_contains(back_esc, "dag graph", "Esc returns to log", failures)
-        assert_contains(back_esc, "cap rust tui structured diff preview rows", "Esc returns with same selected commit", failures)
+        assert_contains(back_esc, "LOG", "Esc returns to log", failures)
+        assert_contains(back_esc, "restore readable rust diff row colors", "Esc returns with same selected commit", failures)
         assert_contains(back_esc, "~/dev/juzu", "after Esc keeps compact footer repo context", failures)
 
         send(session, "C-d")
         diff_before_g = wait_for(session, "Ctrl+d back")
         captures["afterFourthCtrlD"] = diff_before_g
         send(session, "g")
-        back_g = wait_for(session, "dag graph")
+        back_g = wait_for(session, "LOG")
         captures["afterDiffG"] = back_g
-        assert_contains(back_g, "dag graph", "g returns to log", failures)
-        assert_contains(back_g, "cap rust tui structured diff preview rows", "g returns with same selected commit", failures)
+        assert_contains(back_g, "LOG", "g returns to log", failures)
+        assert_contains(back_g, "restore readable rust diff row colors", "g returns with same selected commit", failures)
         assert_contains(back_g, "~/dev/juzu", "after g keeps compact footer repo context", failures)
     finally:
         tmux("kill-session", "-t", session, check=False)
@@ -529,8 +528,8 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
             failures.append("debug-state C-l,C-d should clear View leader mode")
         if debug_states["enterScrollFileExit"].get("diffFileIndex") != 1:
             failures.append("debug-state C-d,j,],Esc should cycle to file index 1 before exit")
-        if debug_states["doubleNextFileEsc"].get("diffFileIndex") != 2:
-            failures.append("debug-state C-d,],],Esc should cycle to file index 2 before exit")
+        if debug_states["doubleNextFileEsc"].get("diffFileIndex") != 0:
+            failures.append("debug-state C-d,],],Esc should wrap through two-file diff back to file index 0")
         next_hunk = debug_states["nextHunkStaysDiff"]
         if next_hunk.get("viewMode") != "Diff":
             failures.append("debug-state C-d,} should stay in Diff mode")

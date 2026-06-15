@@ -70,12 +70,15 @@ def capture_both(session: str) -> TerminalCapture:
     return TerminalCapture(plain=plain, ansi=ansi)
 
 
-def wait_for(session: str, needles: list[str], timeout: float = 8.0) -> TerminalCapture:
+def wait_for(session: str, needles: list[str], timeout: float = 8.0, settle: float = 0.0) -> TerminalCapture:
     deadline = time.time() + timeout
     last = TerminalCapture(plain="", ansi="")
     while time.time() < deadline:
         last = capture_both(session)
         if all(needle in last.plain for needle in needles):
+            if settle > 0:
+                time.sleep(settle)
+                return capture_both(session)
             return last
         time.sleep(0.12)
     return last
@@ -175,11 +178,11 @@ def metric_table(pair: CapturePair) -> str:
     return "".join(rows)
 
 
-def start_session(session: str, cmd: str, width: int, height: int, wait_needles: list[str]) -> TerminalCapture:
+def start_session(session: str, cmd: str, width: int, height: int, wait_needles: list[str], settle: float) -> TerminalCapture:
     tmux("kill-session", "-t", session, check=False)
     tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", str(height))
     send(session, f"cd {ROOT} && {cmd}", "Enter")
-    return wait_for(session, wait_needles)
+    return wait_for(session, wait_needles, settle=settle)
 
 
 def build_release() -> None:
@@ -198,8 +201,9 @@ def run_capture_sequence(args: argparse.Namespace) -> list[CapturePair]:
             args.width,
             args.height,
             ["LOG", "dag graph"],
+            args.rust_settle,
         )
-        bun_initial = start_session(bun_session, "bun run tui", args.width, args.height, ["LOG", "Details"])
+        bun_initial = start_session(bun_session, "bun run tui", args.width, args.height, ["LOG", "Details"], args.bun_settle)
 
         pairs = [
             CapturePair(
@@ -216,8 +220,8 @@ def run_capture_sequence(args: argparse.Namespace) -> list[CapturePair]:
 
         send(rust_session, "C-l")
         send(bun_session, "C-l")
-        rust_view = wait_for(rust_session, ["VIEW"])
-        bun_view = wait_for(bun_session, ["VIEW"])
+        rust_view = wait_for(rust_session, ["VIEW"], settle=args.rust_settle)
+        bun_view = wait_for(bun_session, ["VIEW"], settle=args.bun_settle)
         pairs.append(
             CapturePair(
                 "02 view leader strip",
@@ -239,8 +243,8 @@ def run_capture_sequence(args: argparse.Namespace) -> list[CapturePair]:
             time.sleep(0.04)
         send(rust_session, "C-d")
         send(bun_session, "C-d")
-        rust_diff = wait_for(rust_session, ["DIFF"], timeout=8.0)
-        bun_diff = wait_for(bun_session, ["DIFF"], timeout=8.0)
+        rust_diff = wait_for(rust_session, ["DIFF"], timeout=8.0, settle=args.rust_settle)
+        bun_diff = wait_for(bun_session, ["DIFF"], timeout=8.0, settle=args.bun_settle)
         pairs.append(
             CapturePair(
                 "03 diff pane",
@@ -327,6 +331,8 @@ def main() -> None:
     parser.add_argument("--height", type=int, default=75)
     parser.add_argument("--lines", type=int, default=75)
     parser.add_argument("--diff-down", type=int, default=2)
+    parser.add_argument("--bun-settle", type=float, default=1.2)
+    parser.add_argument("--rust-settle", type=float, default=0.2)
     args = parser.parse_args()
 
     stamp = dt.datetime.now(dt.UTC).isoformat(timespec="milliseconds").replace(":", "-").replace("+00-00", "Z")
