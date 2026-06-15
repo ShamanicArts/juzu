@@ -21,6 +21,27 @@ use std::{collections::HashMap, io::stdout, path::PathBuf, time::Duration};
 
 const DIFF_PREVIEW_ROW_CAP: usize = 420;
 
+#[derive(Clone, Copy)]
+struct UiTokens {
+    slate_bg0: Color,
+    slate_panel: Color,
+    slate_bg2: Color,
+    slate_text: Color,
+    semantic_info: Color,
+    semantic_success: Color,
+    semantic_mode_log: Color,
+}
+
+const UI_TOKENS: UiTokens = UiTokens {
+    slate_bg0: Color::Rgb(0x11, 0x13, 0x18),
+    slate_panel: Color::Rgb(0x1a, 0x20, 0x29),
+    slate_bg2: Color::Rgb(0x1d, 0x25, 0x30),
+    slate_text: Color::Rgb(0xd8, 0xde, 0xe8),
+    semantic_info: Color::Rgb(0x7f, 0x9f, 0xbf),
+    semantic_success: Color::Rgb(0x74, 0xb8, 0x8c),
+    semantic_mode_log: Color::Rgb(0x6f, 0x89, 0xad),
+};
+
 fn arg_value(args: &[String], key: &str) -> Option<String> {
     args.windows(2).find_map(|pair| {
         if pair[0] == key {
@@ -463,56 +484,52 @@ fn render(frame: &mut Frame, app: &App) {
 }
 
 fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
+    let item_style = Style::default()
+        .bg(UI_TOKENS.slate_bg2)
+        .fg(UI_TOKENS.slate_text);
+    let key_style = Style::default().fg(UI_TOKENS.semantic_info);
+    let mode_style = Style::default()
+        .fg(UI_TOKENS.slate_bg0)
+        .bg(UI_TOKENS.semantic_mode_log)
+        .add_modifier(Modifier::BOLD);
     let line = if app.view_mode == ViewMode::Diff {
         Line::from(vec![
-            Span::styled(
-                " DIFF ",
-                Style::default()
-                    .fg(Color::Rgb(3, 7, 18))
-                    .bg(Color::Rgb(111, 137, 173))
-                    .add_modifier(Modifier::BOLD),
-            ),
+            Span::styled(" DIFF ", mode_style),
             Span::raw("  "),
-            Span::styled("^d", Style::default().fg(Color::Rgb(127, 159, 191))),
-            Span::styled(" Log ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::styled("^d", key_style),
+            Span::styled(" Log ", item_style),
             Span::raw(" "),
-            Span::styled("[ ]", Style::default().fg(Color::Rgb(127, 159, 191))),
-            Span::styled(" File ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::styled("[ ]", key_style),
+            Span::styled(" File ", item_style),
             Span::raw(" "),
-            Span::styled("j/k", Style::default().fg(Color::Rgb(127, 159, 191))),
-            Span::styled(" Move ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::styled("j/k", key_style),
+            Span::styled(" Move ", item_style),
             Span::raw(" "),
-            Span::styled("{/}", Style::default().fg(Color::Rgb(127, 159, 191))),
-            Span::styled(" Hunk ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::styled("{/}", key_style),
+            Span::styled(" Hunk ", item_style),
             Span::raw(" "),
-            Span::styled("Esc", Style::default().fg(Color::Rgb(127, 159, 191))),
-            Span::styled(" Exit ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::styled("Esc", key_style),
+            Span::styled(" Exit ", item_style),
         ])
     } else {
         Line::from(vec![
-            Span::styled(
-                " LOG ",
-                Style::default()
-                    .fg(Color::Rgb(3, 7, 18))
-                    .bg(Color::Rgb(111, 137, 173))
-                    .add_modifier(Modifier::BOLD),
-            ),
+            Span::styled(" LOG ", mode_style),
             Span::raw("  "),
-            Span::styled("j/k", Style::default().fg(Color::Rgb(127, 159, 191))),
-            Span::styled(" Select ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::styled("j/k", key_style),
+            Span::styled(" Select ", item_style),
             Span::raw(" "),
-            Span::styled("1-5", Style::default().fg(Color::Rgb(127, 159, 191))),
-            Span::styled(" Layout ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::styled("1-5", key_style),
+            Span::styled(" Layout ", item_style),
             Span::raw(" "),
-            Span::styled("^d", Style::default().fg(Color::Rgb(127, 159, 191))),
-            Span::styled(" Diff ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::styled("^d", key_style),
+            Span::styled(" Diff ", item_style),
             Span::raw(" "),
-            Span::styled("q", Style::default().fg(Color::Rgb(127, 159, 191))),
-            Span::styled(" Quit ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::styled("q", key_style),
+            Span::styled(" Quit ", item_style),
         ])
     };
     frame.render_widget(
-        Paragraph::new(line).style(Style::default().bg(Color::Rgb(26, 32, 41))),
+        Paragraph::new(line).style(Style::default().bg(UI_TOKENS.slate_panel)),
         area,
     );
 }
@@ -1504,6 +1521,21 @@ fn render_diff_anchor_label(
     )]))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rust_ui_tokens_match_old_juzu_defaults() {
+        assert_eq!(UI_TOKENS.slate_bg0, Color::Rgb(0x11, 0x13, 0x18));
+        assert_eq!(UI_TOKENS.slate_panel, Color::Rgb(0x1a, 0x20, 0x29));
+        assert_eq!(UI_TOKENS.slate_bg2, Color::Rgb(0x1d, 0x25, 0x30));
+        assert_eq!(UI_TOKENS.semantic_info, Color::Rgb(0x7f, 0x9f, 0xbf));
+        assert_eq!(UI_TOKENS.semantic_success, Color::Rgb(0x74, 0xb8, 0x8c));
+        assert_eq!(UI_TOKENS.semantic_mode_log, Color::Rgb(0x6f, 0x89, 0xad));
+    }
+}
+
 fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
     let repo = app.path.display().to_string();
     let working_copy = app.nodes.iter().find(|node| node.is_working_copy);
@@ -1523,22 +1555,22 @@ fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
         Span::styled(
             left_text,
             Style::default()
-                .fg(Color::Rgb(127, 159, 191))
-                .bg(Color::Rgb(29, 37, 48)),
+                .fg(UI_TOKENS.semantic_info)
+                .bg(UI_TOKENS.slate_bg2),
         ),
         Span::styled(
             " ".repeat(spacer),
-            Style::default().bg(Color::Rgb(26, 32, 41)),
+            Style::default().bg(UI_TOKENS.slate_panel),
         ),
         Span::styled(
             right,
             Style::default()
-                .fg(Color::Rgb(116, 184, 140))
-                .bg(Color::Rgb(29, 37, 48)),
+                .fg(UI_TOKENS.semantic_success)
+                .bg(UI_TOKENS.slate_bg2),
         ),
     ]);
     frame.render_widget(
-        Paragraph::new(line).style(Style::default().bg(Color::Rgb(26, 32, 41))),
+        Paragraph::new(line).style(Style::default().bg(UI_TOKENS.slate_panel)),
         area,
     );
 }

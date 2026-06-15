@@ -34,6 +34,12 @@ tmux attach -t juzu
 
 ## Latest review artifact
 
+Latest token parity swatch:
+
+`bench/results/rust-port/token-parity/2026-06-15T01-20-33.363Z/token-parity.html`
+
+Latest diff render review:
+
 `bench/results/rust-port/diff-render/2026-06-15T00-45-20.631Z/diff-render-review.html`
 
 Latest modal parity proof:
@@ -72,7 +78,7 @@ bun run parity:tui-modal -- --repo /home/shamanic/dev/juzu --limit 40 --widths 1
 ## Next expansion
 
 - improve connector parity for off-screen edges and mainline bus behavior
-- port old color/theme tokens
+- expand old color/theme token parity beyond the status/footer chrome into graph lanes, diff rows, panels, and sidebar surfaces
 - add keyboard parity from old JUZU modes
 - wire safe native working-copy snapshot support so `@` dirty files match old `jj diff --summary`
 - continue Pierre/JUZU-style diff viewport UX: hunk/file jumping, sticky-ish file/hunk context, and exact patch-fidelity decisions
