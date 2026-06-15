@@ -17,9 +17,22 @@ TOKENS = [
     ("slate.panel", "slate_panel", "#1a2029"),
     ("slate.bg2", "slate_bg2", "#1d2530"),
     ("slate.text", "slate_text", "#d8dee8"),
+    ("slate.textMuted", "slate_text_muted", "#8a95a7"),
+    ("slate.borderSoft", "slate_border_soft", "#2a3442"),
+    ("slate.borderStrong", "slate_border_strong", "#3a4759"),
     ("semantic.info", "semantic_info", "#7f9fbf"),
     ("semantic.success", "semantic_success", "#74b88c"),
+    ("semantic.warn", "semantic_warn", "#c9a86a"),
+    ("semantic.error", "semantic_error", "#ce6f7c"),
     ("semantic.modeLog", "semantic_mode_log", "#6f89ad"),
+    ("graph.textDesc", "graph_text_desc", "#bbbbbb"),
+    ("graph.textMuted", "graph_text_muted", "#6a7685"),
+    ("graph.commitId", "graph_commit_id", "#5a6a7a"),
+    ("graph.bookmark", "graph_bookmark", "#c9a86a"),
+    ("graph.bookmarkSelected", "graph_bookmark_selected", "#e8c884"),
+    ("graph.fileAdd", "graph_file_add", "#74b88c"),
+    ("graph.fileMod", "graph_file_mod", "#c9a86a"),
+    ("graph.fileDel", "graph_file_del", "#ce6f7c"),
 ]
 
 
@@ -38,7 +51,8 @@ def main() -> None:
     all_match = True
     for ts_name, rust_name, expected in TOKENS:
         actual = rust_hex(rust_name, rs_src)
-        ts_found = expected in ts_src
+        shorthand = f"#{expected[1]}{expected[3]}{expected[5]}" if expected[1] == expected[2] and expected[3] == expected[4] and expected[5] == expected[6] else None
+        ts_found = expected in ts_src or (shorthand is not None and shorthand in ts_src)
         ok = actual == expected and ts_found
         all_match = all_match and ok
         rows.append((ts_name, rust_name, expected, actual, ts_found, ok))

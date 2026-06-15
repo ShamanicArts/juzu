@@ -27,9 +27,23 @@ struct UiTokens {
     slate_panel: Color,
     slate_bg2: Color,
     slate_text: Color,
+    slate_text_muted: Color,
+    slate_border_soft: Color,
+    slate_border_strong: Color,
     semantic_info: Color,
     semantic_success: Color,
+    semantic_warn: Color,
+    semantic_error: Color,
     semantic_mode_log: Color,
+    graph_lanes: [Color; 8],
+    graph_text_desc: Color,
+    graph_text_muted: Color,
+    graph_commit_id: Color,
+    graph_bookmark: Color,
+    graph_bookmark_selected: Color,
+    graph_file_add: Color,
+    graph_file_mod: Color,
+    graph_file_del: Color,
 }
 
 const UI_TOKENS: UiTokens = UiTokens {
@@ -37,9 +51,32 @@ const UI_TOKENS: UiTokens = UiTokens {
     slate_panel: Color::Rgb(0x1a, 0x20, 0x29),
     slate_bg2: Color::Rgb(0x1d, 0x25, 0x30),
     slate_text: Color::Rgb(0xd8, 0xde, 0xe8),
+    slate_text_muted: Color::Rgb(0x8a, 0x95, 0xa7),
+    slate_border_soft: Color::Rgb(0x2a, 0x34, 0x42),
+    slate_border_strong: Color::Rgb(0x3a, 0x47, 0x59),
     semantic_info: Color::Rgb(0x7f, 0x9f, 0xbf),
     semantic_success: Color::Rgb(0x74, 0xb8, 0x8c),
+    semantic_warn: Color::Rgb(0xc9, 0xa8, 0x6a),
+    semantic_error: Color::Rgb(0xce, 0x6f, 0x7c),
     semantic_mode_log: Color::Rgb(0x6f, 0x89, 0xad),
+    graph_lanes: [
+        Color::Rgb(0x00, 0xf0, 0xff),
+        Color::Rgb(0xff, 0x00, 0x55),
+        Color::Rgb(0x00, 0xff, 0x9d),
+        Color::Rgb(0xff, 0xaa, 0x00),
+        Color::Rgb(0xaa, 0x00, 0xff),
+        Color::Rgb(0x00, 0xaa, 0xff),
+        Color::Rgb(0xff, 0xff, 0x00),
+        Color::Rgb(0xff, 0x00, 0xaa),
+    ],
+    graph_text_desc: Color::Rgb(0xbb, 0xbb, 0xbb),
+    graph_text_muted: Color::Rgb(0x6a, 0x76, 0x85),
+    graph_commit_id: Color::Rgb(0x5a, 0x6a, 0x7a),
+    graph_bookmark: Color::Rgb(0xc9, 0xa8, 0x6a),
+    graph_bookmark_selected: Color::Rgb(0xe8, 0xc8, 0x84),
+    graph_file_add: Color::Rgb(0x74, 0xb8, 0x8c),
+    graph_file_mod: Color::Rgb(0xc9, 0xa8, 0x6a),
+    graph_file_del: Color::Rgb(0xce, 0x6f, 0x7c),
 };
 
 fn arg_value(args: &[String], key: &str) -> Option<String> {
@@ -564,8 +601,8 @@ fn render_diff_pane(
     let block = Block::default()
         .title(" diff ")
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Rgb(71, 85, 105)))
-        .style(Style::default().bg(Color::Rgb(3, 7, 18)));
+        .border_style(Style::default().fg(UI_TOKENS.slate_border_strong))
+        .style(Style::default().bg(UI_TOKENS.slate_bg0));
     let width = area.width.saturating_sub(2) as usize;
     let height = area.height.saturating_sub(2) as usize;
     let mut lines = Vec::new();
@@ -657,7 +694,10 @@ fn render_graph_table(
     app: &App,
     layout: &juzu_core::layout::LayoutResult,
 ) {
-    let block = Block::default().title(" dag graph ").borders(Borders::ALL);
+    let block = Block::default()
+        .title(" dag graph ")
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(UI_TOKENS.slate_border_soft));
     let inner = block.inner(area);
     let width = inner.width as usize;
     let height = inner.height as usize;
@@ -879,9 +919,9 @@ fn render_graph_table(
             y,
             &commit_short,
             if is_selected {
-                Color::White
+                UI_TOKENS.slate_text
             } else {
-                Color::DarkGray
+                UI_TOKENS.graph_commit_id
             },
         );
         put_text(
@@ -894,9 +934,9 @@ fn render_graph_table(
                 &desc
             },
             if is_selected {
-                Color::White
+                UI_TOKENS.slate_text
             } else {
-                Color::Gray
+                UI_TOKENS.graph_text_desc
             },
         );
         if !node.bookmarks.is_empty() {
@@ -908,9 +948,9 @@ fn render_graph_table(
                 y + 1,
                 &truncate(&bm, width.saturating_sub(text_x + desc_len + 1)),
                 if is_selected {
-                    Color::LightYellow
+                    UI_TOKENS.graph_bookmark_selected
                 } else {
-                    Color::Yellow
+                    UI_TOKENS.graph_bookmark
                 },
             );
         }
@@ -926,11 +966,11 @@ fn render_graph_table(
             y + 2,
             &file_summary,
             if files.is_empty() {
-                Color::DarkGray
+                UI_TOKENS.graph_text_muted
             } else if is_selected {
-                Color::LightBlue
+                UI_TOKENS.semantic_info
             } else {
-                Color::Blue
+                UI_TOKENS.graph_text_muted
             },
         );
     }
@@ -958,23 +998,13 @@ impl Default for GraphCell {
     fn default() -> Self {
         Self {
             ch: ' ',
-            fg: Color::Gray,
+            fg: UI_TOKENS.graph_text_muted,
         }
     }
 }
 
 fn lane_color(lane: usize) -> Color {
-    const COLORS: [Color; 8] = [
-        Color::Cyan,
-        Color::Magenta,
-        Color::Yellow,
-        Color::Green,
-        Color::Blue,
-        Color::LightRed,
-        Color::LightCyan,
-        Color::LightMagenta,
-    ];
-    COLORS[lane % COLORS.len()]
+    UI_TOKENS.graph_lanes[lane % UI_TOKENS.graph_lanes.len()]
 }
 
 fn build_children_by_id(
@@ -1047,11 +1077,11 @@ fn truncate(s: &str, max_len: usize) -> String {
 
 fn file_type_color(file_type: &str) -> Color {
     match file_type {
-        "A" => Color::Green,
-        "D" => Color::Red,
-        "M" => Color::Yellow,
-        "R" => Color::Magenta,
-        _ => Color::Gray,
+        "A" => UI_TOKENS.graph_file_add,
+        "D" => UI_TOKENS.graph_file_del,
+        "M" => UI_TOKENS.graph_file_mod,
+        "R" => UI_TOKENS.graph_bookmark,
+        _ => UI_TOKENS.slate_text_muted,
     }
 }
 
@@ -1201,7 +1231,12 @@ fn render_sidebar(
     }
     render_diff_preview_lines(&mut lines, app, node, area.width as usize, 14);
     frame.render_widget(
-        Paragraph::new(lines).block(Block::default().title(" details ").borders(Borders::ALL)),
+        Paragraph::new(lines).block(
+            Block::default()
+                .title(" details ")
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(UI_TOKENS.slate_border_soft)),
+        ),
         area,
     );
 }
@@ -1370,7 +1405,7 @@ fn render_diff_code_row(row: &DiffRow, max_len: usize) -> Line<'static> {
     let (gutter_style, sign_style, text_style) = match row.kind {
         DiffRowKind::Add => (
             Style::default()
-                .fg(Color::Rgb(134, 239, 172))
+                .fg(UI_TOKENS.semantic_success)
                 .bg(Color::Rgb(5, 46, 22)),
             Style::default()
                 .fg(Color::Rgb(187, 247, 208))
@@ -1382,7 +1417,7 @@ fn render_diff_code_row(row: &DiffRow, max_len: usize) -> Line<'static> {
         ),
         DiffRowKind::Remove => (
             Style::default()
-                .fg(Color::Rgb(252, 165, 165))
+                .fg(UI_TOKENS.semantic_error)
                 .bg(Color::Rgb(69, 10, 10)),
             Style::default()
                 .fg(Color::Rgb(254, 202, 202))
@@ -1419,7 +1454,9 @@ fn render_diff_collapse_row(text: &str, max_len: usize) -> Line<'static> {
         Span::styled("─".repeat(left), Style::default().fg(Color::DarkGray)),
         Span::styled(
             clipped,
-            Style::default().fg(Color::Yellow).bg(Color::Rgb(66, 32, 6)),
+            Style::default()
+                .fg(UI_TOKENS.semantic_warn)
+                .bg(Color::Rgb(66, 32, 6)),
         ),
         Span::styled("─".repeat(right), Style::default().fg(Color::DarkGray)),
     ])
@@ -1533,6 +1570,31 @@ mod tests {
         assert_eq!(UI_TOKENS.semantic_info, Color::Rgb(0x7f, 0x9f, 0xbf));
         assert_eq!(UI_TOKENS.semantic_success, Color::Rgb(0x74, 0xb8, 0x8c));
         assert_eq!(UI_TOKENS.semantic_mode_log, Color::Rgb(0x6f, 0x89, 0xad));
+    }
+
+    #[test]
+    fn rust_graph_lane_colors_match_old_juzu_defaults() {
+        let expected = [
+            Color::Rgb(0x00, 0xf0, 0xff),
+            Color::Rgb(0xff, 0x00, 0x55),
+            Color::Rgb(0x00, 0xff, 0x9d),
+            Color::Rgb(0xff, 0xaa, 0x00),
+            Color::Rgb(0xaa, 0x00, 0xff),
+            Color::Rgb(0x00, 0xaa, 0xff),
+            Color::Rgb(0xff, 0xff, 0x00),
+            Color::Rgb(0xff, 0x00, 0xaa),
+        ];
+        for (lane, color) in expected.into_iter().enumerate() {
+            assert_eq!(lane_color(lane), color, "lane {lane}");
+        }
+        assert_eq!(lane_color(8), expected[0]);
+    }
+
+    #[test]
+    fn rust_file_badge_colors_match_old_juzu_defaults() {
+        assert_eq!(file_type_color("A"), Color::Rgb(0x74, 0xb8, 0x8c));
+        assert_eq!(file_type_color("M"), Color::Rgb(0xc9, 0xa8, 0x6a));
+        assert_eq!(file_type_color("D"), Color::Rgb(0xce, 0x6f, 0x7c));
     }
 }
 

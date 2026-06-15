@@ -29,17 +29,17 @@ The runner:
 
 ## Latest artifact
 
-`bench/results/rust-port/rust-tui-bench/2026-06-15T01-20-33-601Z/rust-tui-benchmark.html`
+`bench/results/rust-port/rust-tui-bench/2026-06-15T01-46-44-938Z/rust-tui-benchmark.html`
 
 ## Current headline
 
-Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, the Pierre/JUZU-style structured diff sidebar renderer, the TDD-rebuilt old-style diff pane toggle, fixed diff navigation parity in both diff-pane and log/sidebar views, per-file retained diff row capping so later files render, old-style diff-mode controls in the top status bar including `{/} Hunk`, Bun-like bottom footer info parity, the Rust `--debug-state` modal state emitter, old JUZU 60/40 pane split parity, width-variant modal parity coverage at 120/160/206 columns, selected diff-file marking/windowing in the sidebar, lazy uncapped full-row loading only for the active diff pane, diff-mode sidebar preview following the selected file, the full diff pane's bordered panel/title/viewport status surface with an updating `SCROLL` handle, diff-mode sidebar labeling as a secondary current-file preview, right-capped hunk bars, continuous `▌+` / `▌-` mutation bands for add/remove rows, an explicit full-width `STICKY ▸ ...` file/hunk context bar while scrolling, debug-state assertions that `{` / `}` hunk jumps land on hunk headers with updated sticky context, and direct Rust constants for the old Bun/OpenTUI status/footer UI tokens.
+Current benchmark is for the Rust TUI after native `files()` hydration, lazy selected-node native `diff()` preview hydration, the Pierre/JUZU-style structured diff sidebar renderer, the TDD-rebuilt old-style diff pane toggle, fixed diff navigation parity in both diff-pane and log/sidebar views, per-file retained diff row capping so later files render, old-style diff-mode controls in the top status bar including `{/} Hunk`, Bun-like bottom footer info parity, the Rust `--debug-state` modal state emitter, old JUZU 60/40 pane split parity, width-variant modal parity coverage at 120/160/206 columns, selected diff-file marking/windowing in the sidebar, lazy uncapped full-row loading only for the active diff pane, diff-mode sidebar preview following the selected file, the full diff pane's bordered panel/title/viewport status surface with an updating `SCROLL` handle, diff-mode sidebar labeling as a secondary current-file preview, right-capped hunk bars, continuous `▌+` / `▌-` mutation bands for add/remove rows, an explicit full-width `STICKY ▸ ...` file/hunk context bar while scrolling, debug-state assertions that `{` / `}` hunk jumps land on hunk headers with updated sticky context, direct Rust constants for the old Bun/OpenTUI chrome tokens, and token parity extended into graph lanes, graph text/bookmark/file colors, panel borders, and sidebar file badges.
 
 | Scenario | RSS peak | RSS steady median | PSS steady median | Header median |
 | --- | ---: | ---: | ---: | ---: |
-| `idle-mainline` | 10.92 MB | 10.86 MB | 9.11 MB | 140.43 ms |
-| `navigate-mainline` | 43.48 MB | 43.46 MB | 41.71 MB | 175.49 ms |
-| `layout-switching` | 43.76 MB | 43.48 MB | 41.74 MB | 138.12 ms |
+| `idle-mainline` | 10.93 MB | 10.84 MB | 9.09 MB | 143.77 ms |
+| `navigate-mainline` | 44.43 MB | 44.18 MB | 42.43 MB | 140.67 ms |
+| `layout-switching` | 44.56 MB | 43.85 MB | 42.11 MB | 140.54 ms |
 
 The visual renderer itself keeps idle memory close to the earlier capped-diff baseline. Hard-capping retained structured preview rows dropped navigation peak RSS from 35.81 MB to 28.52 MB and layout-switching peak RSS from 34.66 MB to 28.02 MB while preserving the crafted sidebar preview. The headline remains far below the old live Bun/OpenTUI TUI (~175 MB RSS steady).
 
