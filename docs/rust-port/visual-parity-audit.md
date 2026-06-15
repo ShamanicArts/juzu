@@ -10,6 +10,8 @@ Generate a side-by-side Bun/Rust tmux capture audit:
 bun run review:visual-parity -- --repo /home/shamanic/dev/juzu --limit 80 --width 164 --height 75
 ```
 
+The audit must preserve ANSI styling from `tmux capture-pane -e`. Plain escaped text with shared CSS is not acceptable for visual parity because it masks color, background, and pane-surface differences.
+
 The artifact is written under:
 
 ```text
@@ -18,6 +20,7 @@ bench/results/rust-port/visual-parity-audit/<timestamp>/visual-parity-audit.html
 
 ## Current findings
 
+- Earlier pretty HTML masked the true differences by recoloring Rust and Bun with the same report CSS. The current artifact intentionally renders captured ANSI spans directly.
 - Bun uses a smoother, lower-chrome surface. Heavy Rust borders should become toggleable, not default.
 - Rust still has too many boxed panels, broken edge/gutter risks, and large unused gaps.
 - Diff rendering is not yet Bun `DiffView.tsx` parity. Bun uses OpenTUI's `<diff>` renderer with full-row mutation backgrounds, line number gutters, and a continuous pane. Rust currently reads more like decorated text.
