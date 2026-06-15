@@ -1742,6 +1742,10 @@ fn sidebar_heading_style(tokens: &UiTokens) -> Style {
         .add_modifier(Modifier::BOLD)
 }
 
+fn sidebar_label_style(tokens: &UiTokens) -> Style {
+    Style::default().fg(mix_color(tokens.slate_text_muted, tokens.slate_text, 0.65))
+}
+
 fn sidebar_muted_style(tokens: &UiTokens) -> Style {
     Style::default().fg(tokens.slate_text_muted)
 }
@@ -2038,51 +2042,74 @@ fn render_sidebar(
     let Some(node) = layout.nodes.get(selected) else {
         return;
     };
-    let lines = vec![
-        Line::from(Span::styled("Selected", sidebar_heading_style(t))),
-        Line::from(format!("Change: {}", node.change_id)),
-        Line::from(format!(
-            "Commit: {}",
-            node.commit_id.chars().take(12).collect::<String>()
-        )),
-        Line::from(format!(
-            "Lane: {:?}  X: {:?}  Y: {:?}",
-            node.lane, node.x, node.y
-        )),
-        Line::from(format!("Author: {}", node.author)),
-        Line::from(format!("Time: {}", node.time)),
-        Line::from(""),
-        Line::from(Span::styled("Bookmarks", sidebar_heading_style(t))),
-        Line::from(if node.bookmarks.is_empty() {
-            "—".to_string()
-        } else {
-            node.bookmarks.join(", ")
-        }),
-        Line::from(""),
+    let mut lines = vec![
         Line::from(Span::styled(
-            if app.desc_expanded {
-                "Description:"
+            format!(
+                "Change: {}{}",
+                node.change_id,
+                if node.is_working_copy { " (@)" } else { "" }
+            ),
+            if node.is_working_copy {
+                Style::default().fg(t.semantic_success)
             } else {
-                "Description (x expand):"
+                sidebar_heading_style(t)
             },
-            sidebar_heading_style(t),
         )),
-        Line::from(if app.desc_expanded {
-            node.description_full.clone()
-        } else {
-            node.description_title.clone()
-        }),
-        Line::from(""),
         Line::from(Span::styled(
-            if app.files_expanded {
-                "Files (f collapse):"
-            } else {
-                "Files (f expand):"
-            },
-            sidebar_heading_style(t),
+            format!("Commit: {}", node.commit_id),
+            sidebar_label_style(t),
         )),
+        Line::from(Span::styled(
+            format!("Author: {}", node.author),
+            sidebar_label_style(t),
+        )),
+        Line::from(Span::styled(
+            format!("Time: {}", node.time),
+            sidebar_label_style(t),
+        )),
+        Line::from(""),
     ];
-    let mut lines = lines;
+    if !node.bookmarks.is_empty() {
+        lines.push(Line::from(Span::styled(
+            "Bookmarks:",
+            sidebar_label_style(t),
+        )));
+        for bookmark in node.bookmarks.iter().take(4) {
+            lines.push(Line::from(Span::styled(
+                format!("  {bookmark}"),
+                Style::default().fg(t.semantic_info),
+            )));
+        }
+        if node.bookmarks.len() > 4 {
+            lines.push(Line::from(Span::styled(
+                format!("  ... +{} more", node.bookmarks.len() - 4),
+                sidebar_muted_style(t),
+            )));
+        }
+        lines.push(Line::from(""));
+    }
+    lines.push(Line::from(Span::styled(
+        if app.desc_expanded {
+            "Description:"
+        } else {
+            "Description (x expand):"
+        },
+        sidebar_label_style(t),
+    )));
+    lines.push(Line::from(if app.desc_expanded {
+        node.description_full.clone()
+    } else {
+        node.description_title.clone()
+    }));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        if app.files_expanded {
+            "Files (f collapse):"
+        } else {
+            "Files (f expand):"
+        },
+        sidebar_label_style(t),
+    )));
     let files = app
         .files_by_change
         .get(&node.change_id)
@@ -2604,6 +2631,14 @@ mod tests {
         assert_eq!(
             sidebar_selected_text_style(&theme).fg,
             Some(Color::Rgb(0xcd, 0xd6, 0xf4))
+        );
+    }
+
+    #[test]
+    fn sidebar_label_style_matches_bun_dim_to_text_mix() {
+        assert_eq!(
+            sidebar_label_style(&UI_TOKENS).fg,
+            Some(Color::Rgb(0xbd, 0xc4, 0xd1))
         );
     }
 

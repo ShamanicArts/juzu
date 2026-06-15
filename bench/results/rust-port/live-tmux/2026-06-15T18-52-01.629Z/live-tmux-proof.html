@@ -1,0 +1,88 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust live tmux proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --ok:#74b88c; --bad:#ce6f7c; --info:#7f9fbf; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .status.pass { color:var(--ok); } .status.fail { color:var(--bad); }
+.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; } code { color:var(--info); }
+</style></head><body>
+<h1>JUZU Rust live tmux proof · <span class='status pass'>PASS</span></h1>
+<div class='meta'>Target: <code>juzu:rust-tui</code> · pane command: <code>./target/release/juzu-tui</code> · expected: <code>LOG, Change:</code> · missing: <code>none</code></div>
+<section class='card'><pre> LOG   ^X Act  ^O Ops  ^L View  ^B Book
+                                                                                                  Change: ovypzynwpttwkqvoxuympvsuvtqwoxxr (@)
+              @...@&gt; ovypzynw 5d8660cb                                                            Commit: 5d8660cbe41c087394b87e953f0b1fc95188ba9d
+              │      (no description)                                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+              │      M crates/juzu-tui/src/main.rs  M scripts/rust-port-live-tmux-proof.py  M ... Time: 2026-06-15T19:49:47+01:00
+              │
+              o..... potlwwwx 57f5fa22                                                            Description (x expand):
+              │      match bun footer segment layers
+              │      A bench/results/rust-port/live-tmux/2026-06-15T18-44-25.642Z/live-tmux-pr...
+              │                                                                                   Files (f collapse):
+              o..... wwzonmvs 9b34f87e                                                              M crates/juzu-tui/src/main.rs
+              │      match bun status segment color mixing                                          M scripts/rust-port-live-tmux-proof.py
+              │      A bench/results/rust-port/live-tmux/2026-06-15T18-12-47.913Z/live-tmux-pr...   M scripts/rust-port-tui-modal-parity.py
+              │
+              o..... owrmwtws d028c27d                                                            Diff
+              │      add optional boxed chrome toggle proof                                         · 3 files · 260 raw · 263 rows · 263 shown
+              │      A bench/results/rust-port/layout-parity/2026-06-15T18-07-10-006Z/layout-p...   · diff rows 1-14 of 263
+              │                                                                                    STICKY ▸ top · Modified crates/juzu-tui/src/main.rs
+              o..... qysuqqol 6b463b8b                                                            ╭ ◆ Modified crates/juzu-tui/src/main.rs                      ╮
+              │      stabilize rust mainline branch lanes                                           · diff --git a/crates/juzu-tui/src/main.rs b/crates/juzu-...
+              │      A bench/results/rust-port/layout-parity/2026-06-15T17-55-56-521Z/layout-p...   · --- a/crates/juzu-tui/src/main.rs
+              │                                                                                     · +++ b/crates/juzu-tui/src/main.rs
+              o..... tkvzvrot 6cdc3c9b                                                            ╭─ @@ -1742,6 +1742,10 @@                                    ╮
+              │      match original juzu default log limit                                        │  1742 1742         .add_modifier(Modifier::BOLD)
+              │      A bench/results/rust-port/live-tmux/2026-06-15T17-53-20.700Z/live-tmux-pr... │  1743 1743 }
+              │                                                                                   │  1744 1744
+              o..... pswlwwol df3b8557                                                            ▌+      1745 fn sidebar_label_style(tokens: &amp;UiTokens) -&gt; ...
+              │      default rust tui to bun smooth chrome                                        ▌+      1746     Style::default().fg(mix_color(tokens.slat...
+              │      A bench/results/rust-port/live-tmux/2026-06-15T17-50-07.767Z/live-tmux-pr... ▌+      1747 }
+              │                                                                                   ▌+      1748
+              o..... poqmsxkk 87a7d973                                                            │  1745 1749 fn sidebar_muted_style(tokens: &amp;UiTokens) -&gt; ...
+              │      fix raw visual audit terminal backgrounds                                    │  1746 1750     Style::default().fg(tokens.slate_text_muted)
+              │      A bench/results/rust-port/visual-parity-audit/2026-06-15T17-31-28.870Z/vi... ────────────────── ⋯ 249 more rows below ───────────────────
+              │
+              o..... zvupuuvr 76c986bd
+              │      preserve ansi in visual parity audit
+              │      A bench/results/rust-port/visual-parity-audit/2026-06-15T17-29-42.911Z/vi...
+              │
+              o..... pmzrktpq e33afd51
+              │      add bun rust visual parity audit
+              │      A bench/results/rust-port/live-tmux/2026-06-15T17-26-12.371Z/live-tmux-pr...
+              │
+              o..... uyompyrw b6671af5
+              │      restore readable rust diff row colors
+              │      A bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-pr...
+              │
+              o..... qorzvqxu d1406324
+              │      brighten rust selected row treatments
+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-58-45.534Z/live-tmux-pr...
+              │
+              o..... rpwlyzsp 2daf82d1
+              │      add rust theme picker preview panel
+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-52-38.623Z/live-tmux-pr...
+              │
+              o..... omurtoty fe27794f
+              │      window rust theme picker with swatches
+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-36-42.781Z/live-tmux-pr...
+              │
+              o..... wmxowuvs c81e297d
+              │      wire active theme into rust diff renderer
+              │      A bench/results/rust-port/diff-render/2026-06-15T03-30-51.347Z/diff-rende...
+              │
+              o..... yzulmmsn f3619f25
+              │      wire active theme into rust sidebar surfaces
+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-25-18.309Z/live-tmux-pr...
+              │
+              o..... rxknvunu b4b03fda
+              │      wire active theme into rust graph surfaces
+              │      A bench/results/rust-port/live-tmux/2026-06-15T03-19-34.337Z/live-tmux-pr...
+              │
+
+              │
+              │
+              │
+ ~/dev/juzu  @ovypzynw                                                                                                                           mainline 185 nodes
+</pre></section>
+</body></html>

@@ -87,7 +87,7 @@ def assert_details_split_matches_old(text: str, width: int, failures: list[str])
     # not visually crash into the details pane.
     expected = int(width * 0.60)
     for line in text.splitlines():
-        marker = "Selected"
+        marker = "Change:"
         if marker in line:
             column = line.index(marker)
             if not (expected - 4 <= column <= expected + 6):
@@ -95,7 +95,7 @@ def assert_details_split_matches_old(text: str, width: int, failures: list[str])
                     f"old diff pane/sidebar split at {width} cols: details pane should start near column {expected}, got {column}"
                 )
             return
-    failures.append(f"old diff pane/sidebar split at {width} cols: details pane not found")
+    failures.append(f"old diff pane/sidebar split at {width} cols: details pane Change metadata not found")
 
 
 def assert_diff_title_contract(text: str, width: int, failures: list[str]) -> None:
@@ -105,7 +105,7 @@ def assert_diff_title_contract(text: str, width: int, failures: list[str]) -> No
                 failures.append(f"diff title at {width} cols: Ctrl+d back hint was truncated away")
             if "[ / ] next/prev" not in line:
                 failures.append(f"diff title at {width} cols: file cycling hint was truncated away")
-            details_col = line.find("Selected")
+            details_col = line.find("Change:")
             if details_col != -1:
                 title_segment = line[:details_col]
                 if not title_segment.endswith("  "):
@@ -133,6 +133,15 @@ def assert_footer_info_contract(text: str, width: int, failures: list[str]) -> N
             failures.append(f"footer info at {width} cols: bottom footer missing {needle!r}")
     if "/home/shamanic/dev/juzu" in bottom:
         failures.append(f"footer info at {width} cols: bottom footer should compact HOME to '~'")
+
+
+def assert_sidebar_details_rhythm_contract(text: str, width: int, failures: list[str]) -> None:
+    if "Selected" in text:
+        failures.append(f"sidebar rhythm at {width} cols: old Bun details pane does not render a redundant 'Selected' content heading")
+    if "Change:" not in text:
+        failures.append(f"sidebar rhythm at {width} cols: details pane should start with Change metadata")
+    if "Bookmarks\n—" in text or "Bookmarks\r\n—" in text:
+        failures.append(f"sidebar rhythm at {width} cols: empty bookmarks section should be omitted like Bun")
 
 
 def assert_diff_panel_contract(text: str, width: int, failures: list[str]) -> None:
@@ -247,9 +256,9 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         view_mode_reopen = wait_for(session, "VIEW")
         captures["afterCtrlLViewReopen"] = view_mode_reopen
         send(session, "c")
-        view_mode_expanded = wait_for(session, "Selected")
+        view_mode_expanded = wait_for(session, "Change:")
         captures["afterViewToggleSidebarExpanded"] = view_mode_expanded
-        assert_contains(view_mode_expanded, "Selected", "View c toggles sidebar back open", failures)
+        assert_contains(view_mode_expanded, "Change:", "View c toggles sidebar back open", failures)
 
         send(session, "C-l")
         view_mode_for_help = wait_for(session, "VIEW")
@@ -259,9 +268,9 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         captures["afterViewToggleHelp"] = help_screen
         assert_contains(help_screen, "Navigation", "View h opens old sidebar help surface", failures)
         send(session, "h")
-        help_closed = wait_for(session, "Selected")
+        help_closed = wait_for(session, "Change:")
         captures["afterViewToggleHelpClosed"] = help_closed
-        assert_contains(help_closed, "Selected", "h closes help surface", failures)
+        assert_contains(help_closed, "Change:", "h closes help surface", failures)
 
         send(session, "C-l")
         view_mode_for_theme = wait_for(session, "VIEW")
@@ -273,9 +282,9 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         for needle in ["PREVIEW", "Surface", "Graph lanes", "Diff bands", "Add", "Remove"]:
             assert_contains(theme_screen, needle, "theme picker shows rich preview panel", failures)
         send(session, "Escape")
-        theme_closed = wait_for(session, "Selected")
+        theme_closed = wait_for(session, "Change:")
         captures["afterThemeEsc"] = theme_closed
-        assert_contains(theme_closed, "Selected", "Esc closes theme picker surface", failures)
+        assert_contains(theme_closed, "Change:", "Esc closes theme picker surface", failures)
 
         send(session, "C-l")
         view_mode_for_revset = wait_for(session, "VIEW")
@@ -285,9 +294,9 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         captures["afterViewRevset"] = revset_screen
         assert_contains(revset_screen, "Revset:", "View / opens revset prompt surface", failures)
         send(session, "Escape")
-        revset_closed = wait_for(session, "Selected")
+        revset_closed = wait_for(session, "Change:")
         captures["afterRevsetEsc"] = revset_closed
-        assert_contains(revset_closed, "Selected", "Esc closes revset prompt surface", failures)
+        assert_contains(revset_closed, "Change:", "Esc closes revset prompt surface", failures)
 
         selected = select_change_prefix(session, "uyompyrw")
         captures["afterSelectChange"] = selected
@@ -307,9 +316,10 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff, "Esc", "old diff status hint shows exit key", failures)
         assert_contains(diff, "Exit", "old diff status hint labels escape as Exit", failures)
         assert_not_contains(diff, "dag graph", "diff replaces graph pane", failures)
-        assert_contains(diff, "Selected", "diff mode keeps sidebar", failures)
+        assert_contains(diff, "Change: uyompyrw", "diff mode keeps sidebar metadata", failures)
         assert_contains(diff, "Current file preview", "diff mode sidebar labels preview as current-file context", failures)
         assert_details_split_matches_old(diff, width, failures)
+        assert_sidebar_details_rhythm_contract(diff, width, failures)
         assert_diff_title_contract(diff, width, failures)
         assert_diff_status_bar_contract(diff, width, failures)
         assert_footer_info_contract(diff, width, failures)
