@@ -1775,7 +1775,7 @@ fn render_sidebar(
             Line::from(""),
         ];
         let options = theme_options();
-        let list_capacity = (area.height as usize).saturating_sub(8).max(5);
+        let list_capacity = (area.height as usize).saturating_sub(16).max(5);
         let (start, end) =
             theme_picker_window(app.theme_picker_index, options.len(), list_capacity);
         if start > 0 {
@@ -1818,9 +1818,62 @@ fn render_sidebar(
                 sidebar_muted_style(t),
             )));
         }
+        let preview_theme_name = options[app.theme_picker_index];
+        let preview_theme = UiTokens::named(preview_theme_name);
         lines.extend([
             Line::from(""),
             Line::from(format!("showing {}-{} / {}", start + 1, end, options.len())),
+            Line::from(vec![
+                Span::styled("PREVIEW ", sidebar_heading_style(t)),
+                Span::styled(
+                    preview_theme_name.to_string(),
+                    Style::default()
+                        .fg(preview_theme.semantic_info)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]),
+            Line::from(vec![
+                Span::styled("Surface ", sidebar_muted_style(t)),
+                Span::styled(
+                    " panel ",
+                    Style::default()
+                        .fg(preview_theme.slate_text)
+                        .bg(preview_theme.slate_panel),
+                ),
+                Span::raw(" "),
+                Span::styled(
+                    " border ",
+                    Style::default()
+                        .fg(preview_theme.slate_border_strong)
+                        .bg(preview_theme.slate_bg0),
+                ),
+            ]),
+            Line::from(vec![
+                Span::styled("Graph lanes ", sidebar_muted_style(t)),
+                Span::styled("██", Style::default().fg(preview_theme.graph_lanes[0])),
+                Span::styled("██", Style::default().fg(preview_theme.graph_lanes[1])),
+                Span::styled("██", Style::default().fg(preview_theme.graph_lanes[2])),
+                Span::styled("██", Style::default().fg(preview_theme.graph_lanes[3])),
+                Span::styled("██", Style::default().fg(preview_theme.graph_lanes[4])),
+                Span::styled("██", Style::default().fg(preview_theme.graph_lanes[5])),
+            ]),
+            Line::from(vec![
+                Span::styled("Diff bands ", sidebar_muted_style(t)),
+                Span::styled(
+                    "▌+ Add ",
+                    Style::default()
+                        .fg(preview_theme.graph_file_add)
+                        .bg(preview_theme.slate_bg2),
+                ),
+                Span::raw(" "),
+                Span::styled(
+                    "▌- Remove ",
+                    Style::default()
+                        .fg(preview_theme.graph_file_del)
+                        .bg(preview_theme.slate_bg2),
+                ),
+            ]),
+            Line::from(""),
             Line::from("j/k or ↑/↓: select"),
             Line::from("Enter: apply stays open"),
             Line::from("Esc/q: close"),

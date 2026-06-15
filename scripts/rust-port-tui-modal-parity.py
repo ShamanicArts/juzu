@@ -271,6 +271,8 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         theme_screen = wait_for(session, "THEME SELECTOR")
         captures["afterViewThemePicker"] = theme_screen
         assert_contains(theme_screen, "THEME SELECTOR", "View t opens theme picker surface", failures)
+        for needle in ["PREVIEW", "Surface", "Graph lanes", "Diff bands", "Add", "Remove"]:
+            assert_contains(theme_screen, needle, "theme picker shows rich preview panel", failures)
         send(session, "Escape")
         theme_closed = wait_for(session, "Selected")
         captures["afterThemeEsc"] = theme_closed
