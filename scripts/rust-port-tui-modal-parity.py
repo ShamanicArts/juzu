@@ -502,10 +502,10 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         theme_apply = debug_states["viewThemePickerDownApplyStaysOpen"]
         if theme_apply.get("themePickerMode") is not True:
             failures.append("debug-state C-l,t,j,Enter should keep theme picker open after applying preview")
-        if theme_apply.get("themePickerIndex") != 1:
-            failures.append("debug-state C-l,t,j,Enter should move theme picker selection to index 1")
-        if theme_apply.get("currentTheme") != "ember":
-            failures.append("debug-state C-l,t,j,Enter should apply selected theme in Rust state")
+        if theme_apply.get("themePickerIndex") != 20:
+            failures.append("debug-state C-l,t,j,Enter should move theme picker selection from slate to next bundled theme")
+        if theme_apply.get("currentTheme") != "tokyo-night":
+            failures.append("debug-state C-l,t,j,Enter should apply selected bundled theme in Rust state")
         theme_cancel = debug_states["viewThemePickerEscCancels"]
         if theme_cancel.get("themePickerMode") is not False:
             failures.append("debug-state C-l,t,j,Esc should close theme picker")

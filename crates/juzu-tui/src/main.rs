@@ -79,6 +79,228 @@ const UI_TOKENS: UiTokens = UiTokens {
     graph_file_del: Color::Rgb(0xce, 0x6f, 0x7c),
 };
 
+const EMBEDDED_THEMES: &[(&str, &str)] = &[
+    (
+        "ayu-mirage",
+        include_str!("../../../themes/ayu-mirage.toml"),
+    ),
+    (
+        "catppuccin",
+        include_str!("../../../themes/catppuccin.toml"),
+    ),
+    ("cyberpunk", include_str!("../../../themes/cyberpunk.toml")),
+    ("dracula", include_str!("../../../themes/dracula.toml")),
+    ("ember", include_str!("../../../themes/ember.toml")),
+    (
+        "everforest",
+        include_str!("../../../themes/everforest.toml"),
+    ),
+    (
+        "github-dark",
+        include_str!("../../../themes/github-dark.toml"),
+    ),
+    ("gruvbox", include_str!("../../../themes/gruvbox.toml")),
+    ("kanagawa", include_str!("../../../themes/kanagawa.toml")),
+    ("monokai", include_str!("../../../themes/monokai.toml")),
+    ("moss", include_str!("../../../themes/moss.toml")),
+    ("night-owl", include_str!("../../../themes/night-owl.toml")),
+    ("nocturne", include_str!("../../../themes/nocturne.toml")),
+    ("nord", include_str!("../../../themes/nord.toml")),
+    ("oceanic", include_str!("../../../themes/oceanic.toml")),
+    ("one-dark", include_str!("../../../themes/one-dark.toml")),
+    ("palenight", include_str!("../../../themes/palenight.toml")),
+    ("rose-pine", include_str!("../../../themes/rose-pine.toml")),
+    (
+        "shades-of-purple",
+        include_str!("../../../themes/shades-of-purple.toml"),
+    ),
+    ("slate", include_str!("../../../themes/slate.toml")),
+    (
+        "tokyo-night",
+        include_str!("../../../themes/tokyo-night.toml"),
+    ),
+];
+
+impl UiTokens {
+    fn named(name: &str) -> Self {
+        EMBEDDED_THEMES
+            .iter()
+            .find(|(theme_name, _)| *theme_name == name)
+            .map(|(_, raw)| Self::from_theme_toml(raw))
+            .unwrap_or(UI_TOKENS)
+    }
+
+    fn from_theme_toml(raw: &str) -> Self {
+        let mut tokens = UI_TOKENS;
+        let mut section = String::new();
+        let mut collecting_lanes = false;
+        let mut lanes = Vec::new();
+        for raw_line in raw.lines() {
+            let line = raw_line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            if collecting_lanes {
+                if let Some(color) = extract_hex_color(line).and_then(parse_hex_color) {
+                    lanes.push(color);
+                }
+                if line.contains(']') {
+                    for (idx, color) in lanes.iter().copied().take(8).enumerate() {
+                        tokens.graph_lanes[idx] = color;
+                    }
+                    collecting_lanes = false;
+                }
+                continue;
+            }
+            if line.starts_with('[') && line.ends_with(']') {
+                section = line.trim_matches(&['[', ']'][..]).to_string();
+                continue;
+            }
+            let Some((key, value)) = line.split_once('=') else {
+                continue;
+            };
+            let key = key.trim();
+            if section == "graph" && key == "lanes" {
+                collecting_lanes = true;
+                lanes.clear();
+                if let Some(color) = extract_hex_color(value).and_then(parse_hex_color) {
+                    lanes.push(color);
+                }
+                continue;
+            }
+            let value = value.trim().trim_matches('"');
+            let Some(color) = parse_hex_color(value) else {
+                continue;
+            };
+            tokens.apply_theme_token(&section, key, color);
+        }
+        tokens.ensure_readable_contrast()
+    }
+
+    fn apply_theme_token(&mut self, section: &str, key: &str, color: Color) {
+        match (section, key) {
+            ("slate", "bg0") => self.slate_bg0 = color,
+            ("slate", "bg2") => self.slate_bg2 = color,
+            ("slate", "panel") => self.slate_panel = color,
+            ("slate", "borderSoft") => self.slate_border_soft = color,
+            ("slate", "borderStrong") => self.slate_border_strong = color,
+            ("slate", "text") => self.slate_text = color,
+            ("slate", "textMuted") => self.slate_text_muted = color,
+            ("semantic", "success" | "modeMarks") => self.semantic_success = color,
+            ("semantic", "warn" | "modeAction") => self.semantic_warn = color,
+            ("semantic", "error") => self.semantic_error = color,
+            ("semantic", "info" | "modeOps" | "modeView") => self.semantic_info = color,
+            ("semantic", "modeLog") => self.semantic_mode_log = color,
+            ("semantic", "fileAdd") => self.graph_file_add = color,
+            ("semantic", "fileMod") => self.graph_file_mod = color,
+            ("semantic", "fileDel") => self.graph_file_del = color,
+            ("graph", "text") => self.graph_text_muted = color,
+            ("graph", "textDesc") => self.graph_text_desc = color,
+            ("graph", "nodeBorder") => self.graph_commit_id = color,
+            ("graph", "bookmark") => self.graph_bookmark = color,
+            ("graph", "bookmarkSelected") => self.graph_bookmark_selected = color,
+            _ => {}
+        }
+    }
+
+    fn ensure_readable_contrast(mut self) -> Self {
+        self.slate_text = readable_on(self.slate_text, self.slate_bg0);
+        self.slate_text = readable_on(self.slate_text, self.slate_panel);
+        self.slate_text_muted =
+            readable_muted_on(self.slate_text_muted, self.slate_bg0, self.slate_text);
+        self.slate_text_muted =
+            readable_muted_on(self.slate_text_muted, self.slate_panel, self.slate_text);
+        self
+    }
+}
+
+fn theme_options() -> &'static [&'static str] {
+    const NAMES: &[&str] = &[
+        "ayu-mirage",
+        "catppuccin",
+        "cyberpunk",
+        "dracula",
+        "ember",
+        "everforest",
+        "github-dark",
+        "gruvbox",
+        "kanagawa",
+        "monokai",
+        "moss",
+        "night-owl",
+        "nocturne",
+        "nord",
+        "oceanic",
+        "one-dark",
+        "palenight",
+        "rose-pine",
+        "shades-of-purple",
+        "slate",
+        "tokyo-night",
+    ];
+    NAMES
+}
+
+fn extract_hex_color(raw: &str) -> Option<&str> {
+    let start = raw.find('#')?;
+    raw.get(start..start + 7)
+}
+
+fn parse_hex_color(raw: &str) -> Option<Color> {
+    let hex = raw.strip_prefix('#')?;
+    if hex.len() != 6 {
+        return None;
+    }
+    let r = u8::from_str_radix(&hex[0..2], 16).ok()?;
+    let g = u8::from_str_radix(&hex[2..4], 16).ok()?;
+    let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
+    Some(Color::Rgb(r, g, b))
+}
+
+fn readable_on(fg: Color, bg: Color) -> Color {
+    if contrast_ratio(fg, bg).unwrap_or(21.0) < 4.5 {
+        Color::Rgb(0xf8, 0xf8, 0xf2)
+    } else {
+        fg
+    }
+}
+
+fn readable_muted_on(fg: Color, bg: Color, fallback: Color) -> Color {
+    if contrast_ratio(fg, bg).unwrap_or(21.0) < 2.6 {
+        fallback
+    } else {
+        fg
+    }
+}
+
+fn contrast_ratio(a: Color, b: Color) -> Option<f32> {
+    let (ar, ag, ab) = color_rgb(a)?;
+    let (br, bg, bb) = color_rgb(b)?;
+    let al = rel_luminance(ar, ag, ab);
+    let bl = rel_luminance(br, bg, bb);
+    let (light, dark) = if al > bl { (al, bl) } else { (bl, al) };
+    Some((light + 0.05) / (dark + 0.05))
+}
+
+fn color_rgb(color: Color) -> Option<(u8, u8, u8)> {
+    match color {
+        Color::Rgb(r, g, b) => Some((r, g, b)),
+        _ => None,
+    }
+}
+
+fn rel_luminance(r: u8, g: u8, b: u8) -> f32 {
+    fn channel(v: u8) -> f32 {
+        let c = v as f32 / 255.0;
+        if c <= 0.03928 {
+            c / 12.92
+        } else {
+            ((c + 0.055) / 1.055).powf(2.4)
+        }
+    }
+    0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+}
+
 fn arg_value(args: &[String], key: &str) -> Option<String> {
     args.windows(2).find_map(|pair| {
         if pair[0] == key {
@@ -136,6 +358,7 @@ struct App {
     theme_picker_mode: bool,
     theme_picker_index: usize,
     current_theme: String,
+    theme: UiTokens,
     revset_mode: bool,
     revset_value: String,
     revset_query: String,
@@ -190,8 +413,12 @@ fn main() -> Result<()> {
         desc_expanded: false,
         show_help: false,
         theme_picker_mode: false,
-        theme_picker_index: 0,
+        theme_picker_index: theme_options()
+            .iter()
+            .position(|name| *name == "slate")
+            .unwrap_or(0),
         current_theme: "slate".to_string(),
+        theme: UiTokens::named("slate"),
         revset_mode: false,
         revset_value: String::new(),
         revset_query: String::new(),
@@ -259,7 +486,8 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
                     (app.theme_picker_index + theme_options().len() - 1) % theme_options().len()
             }
             KeyCode::Enter => {
-                app.current_theme = theme_options()[app.theme_picker_index].to_string()
+                app.current_theme = theme_options()[app.theme_picker_index].to_string();
+                app.theme = UiTokens::named(&app.current_theme);
             }
             _ => {}
         }
@@ -703,13 +931,12 @@ fn render(frame: &mut Frame, app: &App) {
 }
 
 fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
-    let item_style = Style::default()
-        .bg(UI_TOKENS.slate_bg2)
-        .fg(UI_TOKENS.slate_text);
-    let key_style = Style::default().fg(UI_TOKENS.semantic_info);
+    let t = &app.theme;
+    let item_style = Style::default().bg(t.slate_bg2).fg(t.slate_text);
+    let key_style = Style::default().fg(t.semantic_info);
     let mode_style = Style::default()
-        .fg(UI_TOKENS.slate_bg0)
-        .bg(UI_TOKENS.semantic_mode_log)
+        .fg(t.slate_bg0)
+        .bg(t.semantic_mode_log)
         .add_modifier(Modifier::BOLD);
     let lines = if app.theme_picker_mode {
         vec![Line::from(vec![
@@ -762,8 +989,8 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
         ])]
     } else if let Some(leader) = app.active_leader_mode {
         let active_mode_style = Style::default()
-            .fg(UI_TOKENS.slate_bg0)
-            .bg(leader_mode_color(leader))
+            .fg(t.slate_bg0)
+            .bg(leader_mode_color(leader, t))
             .add_modifier(Modifier::BOLD);
         match leader {
             LeaderMode::View => vec![
@@ -879,21 +1106,17 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
         ])]
     };
     frame.render_widget(
-        Paragraph::new(lines).style(Style::default().bg(UI_TOKENS.slate_panel)),
+        Paragraph::new(lines).style(Style::default().bg(t.slate_panel)),
         area,
     );
 }
 
-fn theme_options() -> [&'static str; 2] {
-    ["slate", "ember"]
-}
-
-fn leader_mode_color(mode: LeaderMode) -> Color {
+fn leader_mode_color(mode: LeaderMode, t: &UiTokens) -> Color {
     match mode {
-        LeaderMode::Action => UI_TOKENS.semantic_warn,
-        LeaderMode::Ops => UI_TOKENS.semantic_info,
-        LeaderMode::View => UI_TOKENS.semantic_mode_log,
-        LeaderMode::Bookmarks => UI_TOKENS.semantic_success,
+        LeaderMode::Action => t.semantic_warn,
+        LeaderMode::Ops => t.semantic_info,
+        LeaderMode::View => t.semantic_mode_log,
+        LeaderMode::Bookmarks => t.semantic_success,
     }
 }
 
@@ -2109,6 +2332,37 @@ mod tests {
             assert_eq!(span.style.bg, Some(UI_TOKENS.slate_bg2));
         }
     }
+
+    #[test]
+    fn bundled_juzu_theme_names_match_repository_themes() {
+        assert_eq!(theme_options().len(), 21);
+        assert!(theme_options().contains(&"catppuccin"));
+        assert!(theme_options().contains(&"tokyo-night"));
+        assert_eq!(EMBEDDED_THEMES.len(), theme_options().len());
+    }
+
+    #[test]
+    fn parses_bundled_catppuccin_theme_tokens() {
+        let theme = UiTokens::named("catppuccin");
+        assert_eq!(color_hex(theme.slate_bg0), "#1e1e2e");
+        assert_eq!(color_hex(theme.semantic_info), "#89b4fa");
+        assert_eq!(color_hex(theme.graph_lanes[0]), "#89b4fa");
+        assert_eq!(color_hex(theme.graph_lanes[7]), "#89dceb");
+    }
+
+    #[test]
+    fn unknown_theme_falls_back_to_slate_tokens() {
+        let theme = UiTokens::named("definitely-not-real");
+        assert_eq!(theme.slate_bg0, UI_TOKENS.slate_bg0);
+        assert_eq!(theme.semantic_info, UI_TOKENS.semantic_info);
+    }
+
+    fn color_hex(color: Color) -> String {
+        match color {
+            Color::Rgb(r, g, b) => format!("#{r:02x}{g:02x}{b:02x}"),
+            _ => "#000000".to_string(),
+        }
+    }
 }
 
 fn compact_home_path(path: &std::path::Path) -> String {
@@ -2130,6 +2384,7 @@ fn compact_home_path(path: &std::path::Path) -> String {
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
+    let t = &app.theme;
     let repo = compact_home_path(&app.path);
     let working_copy = app.nodes.iter().find(|node| node.is_working_copy);
     let wc = working_copy
@@ -2147,23 +2402,16 @@ fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
     let line = Line::from(vec![
         Span::styled(
             left_text,
-            Style::default()
-                .fg(UI_TOKENS.semantic_info)
-                .bg(UI_TOKENS.slate_bg2),
+            Style::default().fg(t.semantic_info).bg(t.slate_bg2),
         ),
-        Span::styled(
-            " ".repeat(spacer),
-            Style::default().bg(UI_TOKENS.slate_panel),
-        ),
+        Span::styled(" ".repeat(spacer), Style::default().bg(t.slate_panel)),
         Span::styled(
             right,
-            Style::default()
-                .fg(UI_TOKENS.semantic_success)
-                .bg(UI_TOKENS.slate_bg2),
+            Style::default().fg(t.semantic_success).bg(t.slate_bg2),
         ),
     ]);
     frame.render_widget(
-        Paragraph::new(line).style(Style::default().bg(UI_TOKENS.slate_panel)),
+        Paragraph::new(line).style(Style::default().bg(t.slate_panel)),
         area,
     );
 }
