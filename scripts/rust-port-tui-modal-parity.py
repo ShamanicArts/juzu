@@ -116,15 +116,21 @@ def assert_diff_title_contract(text: str, width: int, failures: list[str]) -> No
     failures.append(f"diff title at {width} cols: no File N/N title row found")
 
 
-def assert_diff_footer_contract(text: str, width: int, failures: list[str]) -> None:
-    footer_lines = [line for line in text.splitlines() if "^d" in line and "Esc" in line]
-    if not footer_lines:
-        failures.append(f"diff footer at {width} cols: footer hint row not found")
-        return
-    footer = footer_lines[-1]
+def assert_diff_status_bar_contract(text: str, width: int, failures: list[str]) -> None:
+    top = "\n".join(text.splitlines()[:4])
     for needle in ["DIFF", "^d", "Log", "[ ]", "File", "j/k", "Move", "{/}", "Hunk", "Esc", "Exit"]:
-        if needle not in footer:
-            failures.append(f"diff footer at {width} cols: missing {needle!r}")
+        if needle not in top:
+            failures.append(f"diff status bar at {width} cols: top status row missing {needle!r}")
+
+
+def assert_footer_info_contract(text: str, width: int, failures: list[str]) -> None:
+    bottom = "\n".join(text.splitlines()[-4:])
+    for forbidden in ["^d", "[ ]", "j/k", "Esc"]:
+        if forbidden in bottom:
+            failures.append(f"footer info at {width} cols: bottom footer should not contain control hint {forbidden!r}")
+    for needle in ["/home/shamanic/dev/juzu", "nodes"]:
+        if needle not in bottom:
+            failures.append(f"footer info at {width} cols: bottom footer missing {needle!r}")
 
 
 def assert_diff_panel_contract(text: str, width: int, failures: list[str]) -> None:
@@ -230,13 +236,13 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff, "Current file preview", "diff mode sidebar labels preview as current-file context", failures)
         assert_details_split_matches_old(diff, width, failures)
         assert_diff_title_contract(diff, width, failures)
-        assert_diff_footer_contract(diff, width, failures)
+        assert_diff_status_bar_contract(diff, width, failures)
+        assert_footer_info_contract(diff, width, failures)
         assert_diff_panel_contract(diff, width, failures)
         assert_diff_code_band_contract(diff, width, failures)
         assert_contains(diff, "Change: nqmmukmt", "diff mode keeps selected commit", failures)
         assert_not_contains(diff, "preview capped", "full diff pane should not show sidebar preview cap rows", failures)
-        if "JUZU" not in diff:
-            failures.append("after Ctrl+D: screen no longer shows JUZU, app likely exited")
+        assert_contains(diff, "/home/shamanic/dev/juzu", "after Ctrl+D keeps footer repo context", failures)
 
         send(session, "j")
         diff_scroll_down = wait_for(session, "diff rows 2-")
@@ -290,8 +296,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         captures["afterDiffQ"] = back
         assert_contains(back, "dag graph", "q returns to log", failures)
         assert_contains(back, "cap rust tui structured diff preview rows", "q returns with same selected commit", failures)
-        if "JUZU" not in back:
-            failures.append("after q in diff mode: screen no longer shows JUZU, app likely exited")
+        assert_contains(back, "/home/shamanic/dev/juzu", "after q keeps footer repo context", failures)
 
         send(session, "PageDown")
         sidebar_scroll_down = wait_for(session, "diff rows 11-")
@@ -313,8 +318,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         back_ctrl = wait_for(session, "dag graph")
         captures["afterDiffCtrlD"] = back_ctrl
         assert_contains(back_ctrl, "dag graph", "Ctrl+D returns to log", failures)
-        if "JUZU" not in back_ctrl:
-            failures.append("after Ctrl+D in diff mode: screen no longer shows JUZU, app likely exited")
+        assert_contains(back_ctrl, "/home/shamanic/dev/juzu", "after Ctrl+D keeps footer repo context", failures)
 
         send(session, "C-d")
         diff_before_esc = wait_for(session, "Ctrl+d back")
@@ -324,8 +328,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         captures["afterDiffEsc"] = back_esc
         assert_contains(back_esc, "dag graph", "Esc returns to log", failures)
         assert_contains(back_esc, "cap rust tui structured diff preview rows", "Esc returns with same selected commit", failures)
-        if "JUZU" not in back_esc:
-            failures.append("after Esc in diff mode: screen no longer shows JUZU, app likely exited")
+        assert_contains(back_esc, "/home/shamanic/dev/juzu", "after Esc keeps footer repo context", failures)
 
         send(session, "C-d")
         diff_before_g = wait_for(session, "Ctrl+d back")
@@ -335,8 +338,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         captures["afterDiffG"] = back_g
         assert_contains(back_g, "dag graph", "g returns to log", failures)
         assert_contains(back_g, "cap rust tui structured diff preview rows", "g returns with same selected commit", failures)
-        if "JUZU" not in back_g:
-            failures.append("after g in diff mode: screen no longer shows JUZU, app likely exited")
+        assert_contains(back_g, "/home/shamanic/dev/juzu", "after g keeps footer repo context", failures)
     finally:
         tmux("kill-session", "-t", session, check=False)
     return {

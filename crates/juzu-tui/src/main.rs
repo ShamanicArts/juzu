@@ -417,46 +417,62 @@ fn render(frame: &mut Frame, app: &App) {
             Constraint::Length(3),
         ])
         .split(frame.area());
-    render_header(frame, chunks[0], app, &layout);
+    render_status_bar(frame, chunks[0], app);
     render_body(frame, chunks[1], app, &layout);
     render_footer(frame, chunks[2], app);
 }
 
-fn render_header(
-    frame: &mut Frame,
-    area: Rect,
-    app: &App,
-    layout: &juzu_core::layout::LayoutResult,
-) {
-    let title = Line::from(vec![
-        Span::styled(
-            " JUZU ",
-            Style::default()
-                .fg(Color::Black)
-                .bg(Color::Cyan)
-                .add_modifier(Modifier::BOLD),
-        ),
-        Span::raw("  Rust read-only graph  "),
-        Span::styled(
-            if app.view_mode == ViewMode::Diff {
-                "DIFF".to_string()
-            } else {
-                format!("{:?}", app.mode)
-            },
-            Style::default().fg(Color::Yellow),
-        ),
-        Span::raw(format!(
-            "  nodes:{} lanes:{} ",
-            layout.nodes.len(),
-            layout.max_lane + 1
-        )),
-        Span::styled(
-            app.path.display().to_string(),
-            Style::default().fg(Color::DarkGray),
-        ),
-    ]);
+fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
+    let line = if app.view_mode == ViewMode::Diff {
+        Line::from(vec![
+            Span::styled(
+                " DIFF ",
+                Style::default()
+                    .fg(Color::Rgb(3, 7, 18))
+                    .bg(Color::Rgb(111, 137, 173))
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw("  "),
+            Span::styled("^d", Style::default().fg(Color::Rgb(127, 159, 191))),
+            Span::styled(" Log ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::raw(" "),
+            Span::styled("[ ]", Style::default().fg(Color::Rgb(127, 159, 191))),
+            Span::styled(" File ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::raw(" "),
+            Span::styled("j/k", Style::default().fg(Color::Rgb(127, 159, 191))),
+            Span::styled(" Move ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::raw(" "),
+            Span::styled("{/}", Style::default().fg(Color::Rgb(127, 159, 191))),
+            Span::styled(" Hunk ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::raw(" "),
+            Span::styled("Esc", Style::default().fg(Color::Rgb(127, 159, 191))),
+            Span::styled(" Exit ", Style::default().bg(Color::Rgb(29, 37, 48))),
+        ])
+    } else {
+        Line::from(vec![
+            Span::styled(
+                " LOG ",
+                Style::default()
+                    .fg(Color::Rgb(3, 7, 18))
+                    .bg(Color::Rgb(111, 137, 173))
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw("  "),
+            Span::styled("j/k", Style::default().fg(Color::Rgb(127, 159, 191))),
+            Span::styled(" Select ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::raw(" "),
+            Span::styled("1-5", Style::default().fg(Color::Rgb(127, 159, 191))),
+            Span::styled(" Layout ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::raw(" "),
+            Span::styled("^d", Style::default().fg(Color::Rgb(127, 159, 191))),
+            Span::styled(" Diff ", Style::default().bg(Color::Rgb(29, 37, 48))),
+            Span::raw(" "),
+            Span::styled("q", Style::default().fg(Color::Rgb(127, 159, 191))),
+            Span::styled(" Quit ", Style::default().bg(Color::Rgb(29, 37, 48))),
+        ])
+    };
     frame.render_widget(
-        Paragraph::new(title).block(Block::default().borders(Borders::BOTTOM)),
+        Paragraph::new(line).style(Style::default().bg(Color::Rgb(26, 32, 41))),
         area,
     );
 }
@@ -1449,40 +1465,40 @@ fn render_diff_anchor_label(
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
-    let line = if app.view_mode == ViewMode::Diff {
-        Line::from(vec![
-            Span::styled(
-                " DIFF ",
-                Style::default().fg(Color::Black).bg(Color::Yellow),
-            ),
-            Span::raw("  "),
-            Span::styled(" ^d ", Style::default().fg(Color::Black).bg(Color::Gray)),
-            Span::raw(" Log   "),
-            Span::styled(" [ ] ", Style::default().fg(Color::Black).bg(Color::Gray)),
-            Span::raw(" File   "),
-            Span::styled(" j/k ", Style::default().fg(Color::Black).bg(Color::Gray)),
-            Span::raw(" Move   "),
-            Span::styled(" {/} ", Style::default().fg(Color::Black).bg(Color::Gray)),
-            Span::raw(" Hunk   "),
-            Span::styled(" Esc ", Style::default().fg(Color::Black).bg(Color::Gray)),
-            Span::raw(" Exit"),
-        ])
-    } else {
-        Line::from(vec![
-            Span::styled(" q/esc ", Style::default().fg(Color::Black).bg(Color::Gray)),
-            Span::raw(" quit   "),
-            Span::styled(" j/k ", Style::default().fg(Color::Black).bg(Color::Gray)),
-            Span::raw(" select   "),
-            Span::styled(" 1-5 ", Style::default().fg(Color::Black).bg(Color::Gray)),
-            Span::raw(" layout modes   "),
-            Span::styled(" [/] ", Style::default().fg(Color::Black).bg(Color::Gray)),
-            Span::raw(" diff scroll   "),
-            Span::styled(" {/} ", Style::default().fg(Color::Black).bg(Color::Gray)),
-            Span::raw(" hunk jump"),
-        ])
-    };
+    let repo = app.path.display().to_string();
+    let working_copy = app.nodes.iter().find(|node| node.is_working_copy);
+    let wc = working_copy
+        .map(|node| format!(" @{}", node.change_id.chars().take(8).collect::<String>()))
+        .unwrap_or_default();
+    let bookmark = working_copy
+        .and_then(|node| node.bookmarks.first())
+        .map(|bookmark| format!(" {bookmark}"))
+        .unwrap_or_default();
+    let mode = format!("{:?}", app.mode).to_lowercase();
+    let right = format!(" {mode}  {} nodes ", app.nodes.len());
+    let width = area.width as usize;
+    let left_text = format!(" {repo}{bookmark}{wc}");
+    let spacer = width.saturating_sub(left_text.chars().count() + right.chars().count());
+    let line = Line::from(vec![
+        Span::styled(
+            left_text,
+            Style::default()
+                .fg(Color::Rgb(127, 159, 191))
+                .bg(Color::Rgb(29, 37, 48)),
+        ),
+        Span::styled(
+            " ".repeat(spacer),
+            Style::default().bg(Color::Rgb(26, 32, 41)),
+        ),
+        Span::styled(
+            right,
+            Style::default()
+                .fg(Color::Rgb(116, 184, 140))
+                .bg(Color::Rgb(29, 37, 48)),
+        ),
+    ]);
     frame.render_widget(
-        Paragraph::new(line).block(Block::default().borders(Borders::TOP)),
+        Paragraph::new(line).style(Style::default().bg(Color::Rgb(26, 32, 41))),
         area,
     );
 }

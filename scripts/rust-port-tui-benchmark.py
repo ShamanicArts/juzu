@@ -178,7 +178,7 @@ def run_tui_once(binary: pathlib.Path, repo: pathlib.Path, limit: int, scenario_
                     first_bytes_ms = round((time.monotonic() - started) * 1000, 2)
                 captured.extend(chunk)
                 plain = strip_ansi(captured.decode(errors="ignore"))
-                if first_header_ms is None and "JUZU" in plain:
+                if first_header_ms is None and ("dag graph" in plain or " LOG " in plain or " DIFF " in plain):
                     first_header_ms = round((time.monotonic() - started) * 1000, 2)
 
         if proc.poll() is not None:
