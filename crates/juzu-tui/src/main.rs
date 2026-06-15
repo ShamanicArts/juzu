@@ -134,7 +134,11 @@ struct App {
     desc_expanded: bool,
     show_help: bool,
     theme_picker_mode: bool,
+    theme_picker_index: usize,
+    current_theme: String,
     revset_mode: bool,
+    revset_value: String,
+    revset_query: String,
     nodes: Vec<juzu_core::CommitNode>,
     files_by_change: HashMap<String, Vec<FileEntry>>,
     diffs_by_change: HashMap<String, DiffPreview>,
@@ -186,7 +190,11 @@ fn main() -> Result<()> {
         desc_expanded: false,
         show_help: false,
         theme_picker_mode: false,
+        theme_picker_index: 0,
+        current_theme: "slate".to_string(),
         revset_mode: false,
+        revset_value: String::new(),
+        revset_query: String::new(),
         nodes,
         files_by_change,
         diffs_by_change,
@@ -241,14 +249,39 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
         return false;
     }
     if app.theme_picker_mode {
-        if matches!(code, KeyCode::Char('q') | KeyCode::Esc) {
-            app.theme_picker_mode = false;
+        match code {
+            KeyCode::Char('q') | KeyCode::Esc => app.theme_picker_mode = false,
+            KeyCode::Char('j') | KeyCode::Down => {
+                app.theme_picker_index = (app.theme_picker_index + 1) % theme_options().len()
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                app.theme_picker_index =
+                    (app.theme_picker_index + theme_options().len() - 1) % theme_options().len()
+            }
+            KeyCode::Enter => {
+                app.current_theme = theme_options()[app.theme_picker_index].to_string()
+            }
+            _ => {}
         }
         return false;
     }
     if app.revset_mode {
-        if matches!(code, KeyCode::Char('q') | KeyCode::Esc) {
-            app.revset_mode = false;
+        match code {
+            KeyCode::Char('q') | KeyCode::Esc => {
+                app.revset_mode = false;
+                app.revset_value.clear();
+            }
+            KeyCode::Enter => {
+                app.revset_query = app.revset_value.trim().to_string();
+                app.revset_mode = false;
+            }
+            KeyCode::Backspace => {
+                app.revset_value.pop();
+            }
+            KeyCode::Char(ch) if !modifiers.contains(KeyModifiers::CONTROL) => {
+                app.revset_value.push(ch)
+            }
+            _ => {}
         }
         return false;
     }
@@ -297,11 +330,16 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
             }
             KeyCode::Char('t') => {
                 app.theme_picker_mode = true;
+                app.theme_picker_index = theme_options()
+                    .iter()
+                    .position(|theme| *theme == app.current_theme)
+                    .unwrap_or(0);
                 app.active_leader_mode = None;
                 return false;
             }
             KeyCode::Char('/') => {
                 app.revset_mode = true;
+                app.revset_value = app.revset_query.clone();
                 app.active_leader_mode = None;
                 return false;
             }
@@ -391,6 +429,8 @@ fn parse_debug_key(raw: &str) -> Option<(KeyCode, KeyModifiers)> {
         "Esc" | "Escape" => Some((KeyCode::Esc, KeyModifiers::NONE)),
         "PageDown" => Some((KeyCode::PageDown, KeyModifiers::NONE)),
         "PageUp" => Some((KeyCode::PageUp, KeyModifiers::NONE)),
+        "Enter" | "Return" => Some((KeyCode::Enter, KeyModifiers::NONE)),
+        "Backspace" => Some((KeyCode::Backspace, KeyModifiers::NONE)),
         "Down" => Some((KeyCode::Down, KeyModifiers::NONE)),
         "Up" => Some((KeyCode::Up, KeyModifiers::NONE)),
         value if value.chars().count() == 1 => {
@@ -428,7 +468,11 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "descExpanded": app.desc_expanded,
         "showHelp": app.show_help,
         "themePickerMode": app.theme_picker_mode,
+        "themePickerIndex": app.theme_picker_index,
+        "currentTheme": app.current_theme,
         "revsetMode": app.revset_mode,
+        "revsetValue": app.revset_value,
+        "revsetQuery": app.revset_query,
         "selectedIndex": app.selected,
         "selectedChange": selected.map(|node| node.change_id.as_str()).unwrap_or(""),
         "selectedCommit": selected.map(|node| node.commit_id.as_str()).unwrap_or(""),
@@ -838,6 +882,10 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
         Paragraph::new(lines).style(Style::default().bg(UI_TOKENS.slate_panel)),
         area,
     );
+}
+
+fn theme_options() -> [&'static str; 2] {
+    ["slate", "ember"]
 }
 
 fn leader_mode_color(mode: LeaderMode) -> Color {
@@ -1473,31 +1521,45 @@ fn render_sidebar(
         return;
     }
     if app.theme_picker_mode {
-        render_sidebar_mode_panel(
-            frame,
-            area,
-            " Details ",
-            vec![
-                Line::from(Span::styled(
-                    "THEME SELECTOR",
-                    Style::default()
-                        .fg(UI_TOKENS.semantic_info)
-                        .add_modifier(Modifier::BOLD),
-                )),
-                Line::from(""),
-                Line::from(Span::styled(
-                    "> slate",
-                    Style::default()
-                        .fg(UI_TOKENS.semantic_success)
-                        .add_modifier(Modifier::BOLD),
-                )),
-                Line::from("  ember"),
-                Line::from(""),
-                Line::from("j/k or ↑/↓: select"),
-                Line::from("Enter: apply"),
-                Line::from("Esc: cancel"),
-            ],
-        );
+        let mut lines = vec![
+            Line::from(Span::styled(
+                "THEME SELECTOR",
+                Style::default()
+                    .fg(UI_TOKENS.semantic_info)
+                    .add_modifier(Modifier::BOLD),
+            )),
+            Line::from(""),
+        ];
+        for (index, theme) in theme_options().iter().enumerate() {
+            let cursor = if index == app.theme_picker_index {
+                ">"
+            } else {
+                " "
+            };
+            let current = if *theme == app.current_theme {
+                " *"
+            } else {
+                ""
+            };
+            let style = if index == app.theme_picker_index {
+                Style::default()
+                    .fg(UI_TOKENS.semantic_success)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(UI_TOKENS.slate_text)
+            };
+            lines.push(Line::from(Span::styled(
+                format!("{cursor} {theme}{current}"),
+                style,
+            )));
+        }
+        lines.extend([
+            Line::from(""),
+            Line::from("j/k or ↑/↓: select"),
+            Line::from("Enter: apply"),
+            Line::from("Esc: cancel"),
+        ]);
+        render_sidebar_mode_panel(frame, area, " Details ", lines);
         return;
     }
     if app.revset_mode {
@@ -1512,7 +1574,7 @@ fn render_sidebar(
                         .fg(UI_TOKENS.semantic_info)
                         .add_modifier(Modifier::BOLD),
                 )),
-                Line::from("_"),
+                Line::from(format!("{} _", app.revset_value)),
                 Line::from(""),
                 Line::from("Enter: apply  Esc: cancel  ←/→: move cursor"),
             ],

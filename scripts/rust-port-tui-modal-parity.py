@@ -440,7 +440,11 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         "viewToggleDescription": "C-l,x",
         "viewToggleHelp": "C-l,h",
         "viewThemePicker": "C-l,t",
+        "viewThemePickerDownApplyStaysOpen": "C-l,t,j,Enter",
+        "viewThemePickerEscCancels": "C-l,t,j,Esc",
         "viewRevsetFilter": "C-l,/",
+        "viewRevsetTextSubmit": "C-l,/,m,a,i,n,Enter",
+        "viewRevsetCancel": "C-l,/,x,Esc",
         "viewDiffShortcut": "C-l,C-d",
         "enterScrollFileExit": "C-d,j,],Esc",
         "quitReturnsLog": "C-d,q",
@@ -495,6 +499,28 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
                 failures.append(f"{message}: active leader mode should clear")
             if debug_states[label].get(field) != expected:
                 failures.append(message)
+        theme_apply = debug_states["viewThemePickerDownApplyStaysOpen"]
+        if theme_apply.get("themePickerMode") is not True:
+            failures.append("debug-state C-l,t,j,Enter should keep theme picker open after applying preview")
+        if theme_apply.get("themePickerIndex") != 1:
+            failures.append("debug-state C-l,t,j,Enter should move theme picker selection to index 1")
+        if theme_apply.get("currentTheme") != "ember":
+            failures.append("debug-state C-l,t,j,Enter should apply selected theme in Rust state")
+        theme_cancel = debug_states["viewThemePickerEscCancels"]
+        if theme_cancel.get("themePickerMode") is not False:
+            failures.append("debug-state C-l,t,j,Esc should close theme picker")
+        if theme_cancel.get("currentTheme") != "slate":
+            failures.append("debug-state C-l,t,j,Esc should not apply unconfirmed theme")
+        revset_submit = debug_states["viewRevsetTextSubmit"]
+        if revset_submit.get("revsetMode") is not False:
+            failures.append("debug-state C-l,/,m,a,i,n,Enter should close revset mode")
+        if revset_submit.get("revsetQuery") != "main":
+            failures.append("debug-state C-l,/,m,a,i,n,Enter should store revset query text")
+        revset_cancel = debug_states["viewRevsetCancel"]
+        if revset_cancel.get("revsetMode") is not False:
+            failures.append("debug-state C-l,/,x,Esc should close revset mode")
+        if revset_cancel.get("revsetQuery"):
+            failures.append("debug-state C-l,/,x,Esc should not apply cancelled revset text")
         if debug_states["viewDiffShortcut"].get("viewMode") != "Diff":
             failures.append("debug-state C-l,C-d should enter Diff view from View leader")
         if debug_states["viewDiffShortcut"].get("activeLeaderMode") is not None:
