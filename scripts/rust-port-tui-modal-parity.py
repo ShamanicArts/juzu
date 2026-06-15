@@ -190,7 +190,7 @@ def assert_debug_state_contract(label: str, state: dict[str, Any], failures: lis
         failures.append(f"debug-state {label}: should reset diff scroll on exit")
 
 
-def select_change_prefix(session: str, change_prefix: str, max_steps: int = 32) -> str:
+def select_change_prefix(session: str, change_prefix: str, max_steps: int = 80) -> str:
     needle = f"Change: {change_prefix}"
     screen = capture(session)
     if needle in screen:

@@ -1140,7 +1140,7 @@ fn render_body(frame: &mut Frame, area: Rect, app: &App, layout: &juzu_core::lay
         render_graph_table(frame, chunks[0], app, layout);
     }
     if app.sidebar_collapsed {
-        render_collapsed_sidebar(frame, chunks[1]);
+        render_collapsed_sidebar(frame, chunks[1], app);
     } else {
         render_sidebar(frame, chunks[1], app, layout);
     }
@@ -1152,6 +1152,7 @@ fn render_diff_pane(
     app: &App,
     layout: &juzu_core::layout::LayoutResult,
 ) {
+    let t = &app.theme;
     let selected = app.selected.min(layout.nodes.len().saturating_sub(1));
     let Some(node) = layout.nodes.get(selected) else {
         return;
@@ -1159,8 +1160,8 @@ fn render_diff_pane(
     let block = Block::default()
         .title(" diff ")
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(UI_TOKENS.slate_border_strong))
-        .style(Style::default().bg(UI_TOKENS.slate_bg0));
+        .border_style(Style::default().fg(t.slate_border_strong))
+        .style(Style::default().bg(t.slate_bg0));
     let width = area.width.saturating_sub(2) as usize;
     let height = area.height.saturating_sub(2) as usize;
     let mut lines = Vec::new();
@@ -1180,7 +1181,7 @@ fn render_diff_pane(
         if let Some(error) = &diff.parse_error {
             lines.push(Line::from(Span::styled(
                 truncate(error, width),
-                Style::default().fg(Color::Red),
+                Style::default().fg(t.semantic_error),
             )));
         } else if full_diff_rows(diff).is_empty() {
             lines.push(render_diff_metadata(
@@ -1645,6 +1646,22 @@ fn file_type_color(tokens: &UiTokens, file_type: &str) -> Color {
     }
 }
 
+fn sidebar_heading_style(tokens: &UiTokens) -> Style {
+    Style::default()
+        .fg(tokens.semantic_info)
+        .add_modifier(Modifier::BOLD)
+}
+
+fn sidebar_muted_style(tokens: &UiTokens) -> Style {
+    Style::default().fg(tokens.slate_text_muted)
+}
+
+fn sidebar_selected_text_style(tokens: &UiTokens) -> Style {
+    Style::default()
+        .fg(tokens.slate_text)
+        .add_modifier(Modifier::BOLD)
+}
+
 fn format_file_summary(files: &[FileEntry], max_len: usize) -> String {
     if files.is_empty() {
         return "no file changes".to_string();
@@ -1661,26 +1678,22 @@ fn format_file_summary(files: &[FileEntry], max_len: usize) -> String {
     truncate(&summary, max_len)
 }
 
-fn render_collapsed_sidebar(frame: &mut Frame, area: Rect) {
+fn render_collapsed_sidebar(frame: &mut Frame, area: Rect, app: &App) {
+    let t = &app.theme;
     let lines = vec![
-        Line::from(Span::styled(
-            "[ ]",
-            Style::default()
-                .fg(UI_TOKENS.semantic_info)
-                .add_modifier(Modifier::BOLD),
-        )),
-        Line::from(Span::styled(
-            "^L c",
-            Style::default().fg(UI_TOKENS.slate_text_muted),
-        )),
+        Line::from(Span::styled("[ ]", sidebar_heading_style(t))),
+        Line::from(Span::styled("^L c", sidebar_muted_style(t))),
     ];
     frame.render_widget(
-        Paragraph::new(lines).block(
-            Block::default()
-                .title(" side ")
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(UI_TOKENS.slate_border_soft)),
-        ),
+        Paragraph::new(lines)
+            .style(Style::default().bg(t.slate_panel))
+            .block(
+                Block::default()
+                    .title(" side ")
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(t.slate_border_soft))
+                    .style(Style::default().bg(t.slate_panel)),
+            ),
         area,
     );
 }
@@ -1690,14 +1703,22 @@ fn render_sidebar_mode_panel(
     area: Rect,
     title: &'static str,
     lines: Vec<Line<'static>>,
+    tokens: &UiTokens,
 ) {
     frame.render_widget(
-        Paragraph::new(lines).block(
-            Block::default()
-                .title(title)
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(UI_TOKENS.slate_border_soft)),
-        ),
+        Paragraph::new(lines)
+            .style(
+                Style::default()
+                    .fg(tokens.slate_text)
+                    .bg(tokens.slate_panel),
+            )
+            .block(
+                Block::default()
+                    .title(title)
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(tokens.slate_border_soft))
+                    .style(Style::default().bg(tokens.slate_panel)),
+            ),
         area,
     );
 }
@@ -1708,51 +1729,33 @@ fn render_sidebar(
     app: &App,
     layout: &juzu_core::layout::LayoutResult,
 ) {
+    let t = &app.theme;
     if app.show_help {
         render_sidebar_mode_panel(
             frame,
             area,
             " Help (h to close) ",
             vec![
-                Line::from(Span::styled(
-                    "Navigation",
-                    Style::default()
-                        .fg(UI_TOKENS.semantic_info)
-                        .add_modifier(Modifier::BOLD),
-                )),
+                Line::from(Span::styled("Navigation", sidebar_heading_style(t))),
                 Line::from("j/k or ↑/↓  Navigate"),
                 Line::from("PgUp/PgDn   Scroll"),
                 Line::from(""),
-                Line::from(Span::styled(
-                    "Leader Modes",
-                    Style::default()
-                        .fg(UI_TOKENS.semantic_info)
-                        .add_modifier(Modifier::BOLD),
-                )),
+                Line::from(Span::styled("Leader Modes", sidebar_heading_style(t))),
                 Line::from("^X Actions  ^O Ops  ^L View  ^B Book"),
                 Line::from(""),
-                Line::from(Span::styled(
-                    "View",
-                    Style::default()
-                        .fg(UI_TOKENS.semantic_info)
-                        .add_modifier(Modifier::BOLD),
-                )),
+                Line::from(Span::styled("View", sidebar_heading_style(t))),
                 Line::from("c sidebar  f files  x description"),
                 Line::from("t theme  / revset  ^d diff"),
                 Line::from(""),
                 Line::from("Press h, q, or Esc to close help"),
             ],
+            t,
         );
         return;
     }
     if app.theme_picker_mode {
         let mut lines = vec![
-            Line::from(Span::styled(
-                "THEME SELECTOR",
-                Style::default()
-                    .fg(UI_TOKENS.semantic_info)
-                    .add_modifier(Modifier::BOLD),
-            )),
+            Line::from(Span::styled("THEME SELECTOR", sidebar_heading_style(t))),
             Line::from(""),
         ];
         for (index, theme) in theme_options().iter().enumerate() {
@@ -1768,10 +1771,10 @@ fn render_sidebar(
             };
             let style = if index == app.theme_picker_index {
                 Style::default()
-                    .fg(UI_TOKENS.semantic_success)
+                    .fg(t.semantic_success)
                     .add_modifier(Modifier::BOLD)
             } else {
-                Style::default().fg(UI_TOKENS.slate_text)
+                Style::default().fg(t.slate_text)
             };
             lines.push(Line::from(Span::styled(
                 format!("{cursor} {theme}{current}"),
@@ -1784,7 +1787,7 @@ fn render_sidebar(
             Line::from("Enter: apply"),
             Line::from("Esc: cancel"),
         ]);
-        render_sidebar_mode_panel(frame, area, " Details ", lines);
+        render_sidebar_mode_panel(frame, area, " Details ", lines, t);
         return;
     }
     if app.revset_mode {
@@ -1793,16 +1796,12 @@ fn render_sidebar(
             area,
             " Details ",
             vec![
-                Line::from(Span::styled(
-                    "Revset:",
-                    Style::default()
-                        .fg(UI_TOKENS.semantic_info)
-                        .add_modifier(Modifier::BOLD),
-                )),
+                Line::from(Span::styled("Revset:", sidebar_heading_style(t))),
                 Line::from(format!("{} _", app.revset_value)),
                 Line::from(""),
                 Line::from("Enter: apply  Esc: cancel  ←/→: move cursor"),
             ],
+            t,
         );
         return;
     }
@@ -1811,12 +1810,7 @@ fn render_sidebar(
         return;
     };
     let lines = vec![
-        Line::from(Span::styled(
-            "Selected",
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        )),
+        Line::from(Span::styled("Selected", sidebar_heading_style(t))),
         Line::from(format!("Change: {}", node.change_id)),
         Line::from(format!(
             "Commit: {}",
@@ -1829,10 +1823,7 @@ fn render_sidebar(
         Line::from(format!("Author: {}", node.author)),
         Line::from(format!("Time: {}", node.time)),
         Line::from(""),
-        Line::from(Span::styled(
-            "Bookmarks",
-            Style::default().fg(Color::Yellow),
-        )),
+        Line::from(Span::styled("Bookmarks", sidebar_heading_style(t))),
         Line::from(if node.bookmarks.is_empty() {
             "—".to_string()
         } else {
@@ -1845,7 +1836,7 @@ fn render_sidebar(
             } else {
                 "Description (x expand):"
             },
-            Style::default().fg(Color::Yellow),
+            sidebar_heading_style(t),
         )),
         Line::from(if app.desc_expanded {
             node.description_full.clone()
@@ -1859,7 +1850,7 @@ fn render_sidebar(
             } else {
                 "Files (f expand):"
             },
-            Style::default().fg(Color::Yellow),
+            sidebar_heading_style(t),
         )),
     ];
     let mut lines = lines;
@@ -1909,9 +1900,7 @@ fn render_sidebar(
             lines.push(Line::from(vec![
                 Span::styled(
                     if is_selected_diff_file { "▶ " } else { "  " },
-                    Style::default()
-                        .fg(Color::LightCyan)
-                        .add_modifier(Modifier::BOLD),
+                    sidebar_heading_style(t),
                 ),
                 Span::styled(
                     format!("{} ", file.r#type),
@@ -1920,11 +1909,9 @@ fn render_sidebar(
                 Span::styled(
                     file.path.clone(),
                     if is_selected_diff_file {
-                        Style::default()
-                            .fg(Color::White)
-                            .add_modifier(Modifier::BOLD)
+                        sidebar_selected_text_style(t)
                     } else {
-                        Style::default()
+                        Style::default().fg(t.slate_text)
                     },
                 ),
             ]));
@@ -1936,30 +1923,23 @@ fn render_sidebar(
     lines.push(Line::from(""));
     if app.view_mode == ViewMode::Diff {
         lines.push(Line::from(vec![
-            Span::styled(
-                "Current file preview",
-                Style::default()
-                    .fg(Color::LightCyan)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::styled("  secondary", Style::default().fg(Color::DarkGray)),
+            Span::styled("Current file preview", sidebar_heading_style(t)),
+            Span::styled("  secondary", sidebar_muted_style(t)),
         ]));
     } else {
-        lines.push(Line::from(Span::styled(
-            "Diff",
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        )));
+        lines.push(Line::from(Span::styled("Diff", sidebar_heading_style(t))));
     }
-    render_diff_preview_lines(&mut lines, app, node, area.width as usize, 14);
+    render_diff_preview_lines(&mut lines, app, node, area.width as usize, 14, t);
     frame.render_widget(
-        Paragraph::new(lines).block(
-            Block::default()
-                .title(" details ")
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(UI_TOKENS.slate_border_soft)),
-        ),
+        Paragraph::new(lines)
+            .style(Style::default().fg(t.slate_text).bg(t.slate_panel))
+            .block(
+                Block::default()
+                    .title(" details ")
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(t.slate_border_soft))
+                    .style(Style::default().bg(t.slate_panel)),
+            ),
         area,
     );
 }
@@ -1970,11 +1950,12 @@ fn render_diff_preview_lines(
     node: &juzu_core::CommitNode,
     sidebar_width: usize,
     visible_count: usize,
+    t: &UiTokens,
 ) {
     let Some(diff) = app.diffs_by_change.get(&node.change_id) else {
         lines.push(Line::from(Span::styled(
             "  waiting for native diff",
-            Style::default().fg(Color::DarkGray),
+            sidebar_muted_style(t),
         )));
         return;
     };
@@ -1992,7 +1973,7 @@ fn render_diff_preview_lines(
     if let Some(error) = &diff.parse_error {
         lines.push(Line::from(Span::styled(
             truncate(error, sidebar_width.saturating_sub(4)),
-            Style::default().fg(Color::Red),
+            Style::default().fg(t.semantic_error),
         )));
         return;
     }
@@ -2073,10 +2054,10 @@ fn render_diff_file_header(row: &DiffRow, max_len: usize) -> Line<'static> {
 
 fn render_diff_metadata(text: &str, max_len: usize) -> Line<'static> {
     Line::from(vec![
-        Span::styled("  · ", Style::default().fg(Color::DarkGray)),
+        Span::styled("  · ", Style::default().fg(UI_TOKENS.slate_text_muted)),
         Span::styled(
             truncate(text, max_len.saturating_sub(4)),
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(UI_TOKENS.slate_text_muted),
         ),
     ])
 }
@@ -2151,8 +2132,8 @@ fn render_diff_code_row(row: &DiffRow, max_len: usize) -> Line<'static> {
                 .bg(Color::Rgb(69, 10, 10)),
         ),
         _ => (
-            Style::default().fg(Color::DarkGray),
-            Style::default().fg(Color::DarkGray),
+            Style::default().fg(UI_TOKENS.slate_text_muted),
+            Style::default().fg(UI_TOKENS.slate_text_muted),
             Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
         ),
     };
@@ -2161,9 +2142,9 @@ fn render_diff_code_row(row: &DiffRow, max_len: usize) -> Line<'static> {
     Line::from(vec![
         Span::styled(band, sign_style),
         Span::styled(sign.to_string(), sign_style),
-        Span::styled(" ", Style::default().fg(Color::DarkGray)),
+        Span::styled(" ", Style::default().fg(UI_TOKENS.slate_text_muted)),
         Span::styled(gutter, gutter_style),
-        Span::styled(" ", Style::default().fg(Color::DarkGray)),
+        Span::styled(" ", Style::default().fg(UI_TOKENS.slate_text_muted)),
         Span::styled(truncate(content, text_budget), text_style),
     ])
 }
@@ -2174,14 +2155,20 @@ fn render_diff_collapse_row(text: &str, max_len: usize) -> Line<'static> {
     let left = max_len.saturating_sub(clipped.len()) / 2;
     let right = max_len.saturating_sub(clipped.len() + left);
     Line::from(vec![
-        Span::styled("─".repeat(left), Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            "─".repeat(left),
+            Style::default().fg(UI_TOKENS.slate_text_muted),
+        ),
         Span::styled(
             clipped,
             Style::default()
                 .fg(UI_TOKENS.semantic_warn)
                 .bg(Color::Rgb(66, 32, 6)),
         ),
-        Span::styled("─".repeat(right), Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            "─".repeat(right),
+            Style::default().fg(UI_TOKENS.slate_text_muted),
+        ),
     ])
 }
 
@@ -2342,6 +2329,23 @@ mod tests {
         assert_eq!(file_type_color(&theme, "A"), Color::Rgb(0xa6, 0xe3, 0xa1));
         assert_eq!(file_type_color(&theme, "M"), Color::Rgb(0xf9, 0xe2, 0xaf));
         assert_eq!(file_type_color(&theme, "D"), Color::Rgb(0xf3, 0x8b, 0xa8));
+    }
+
+    #[test]
+    fn sidebar_styles_use_active_theme_tokens() {
+        let theme = UiTokens::named("catppuccin");
+        assert_eq!(
+            sidebar_heading_style(&theme).fg,
+            Some(Color::Rgb(0x89, 0xb4, 0xfa))
+        );
+        assert_eq!(
+            sidebar_muted_style(&theme).fg,
+            Some(Color::Rgb(0xa6, 0xad, 0xc8))
+        );
+        assert_eq!(
+            sidebar_selected_text_style(&theme).fg,
+            Some(Color::Rgb(0xcd, 0xd6, 0xf4))
+        );
     }
 
     #[test]
