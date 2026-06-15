@@ -218,6 +218,27 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         for needle in ["LOG", "^X", "Act", "^O", "Ops", "^L", "View", "^B", "Book"]:
             assert_contains(initial, needle, "initial old Bun leader strip", failures)
 
+        send(session, "C-l")
+        view_mode = wait_for(session, "VIEW")
+        captures["afterCtrlLView"] = view_mode
+        for needle in [
+            "VIEW",
+            "1", "Layout chronological",
+            "2", "Layout mainline",
+            "3", "Layout bookmark",
+            "4", "Layout wc",
+            "5", "Layout topological",
+            "c", "Toggle sidebar",
+            "t", "Theme picker",
+            "f", "Toggle files",
+            "x", "Toggle description",
+            "h", "Toggle help",
+            "/", "Revset filter",
+            "^d", "Diff view",
+            "Esc/q", "Exit",
+        ]:
+            assert_contains(view_mode, needle, "old Bun View leader strip", failures)
+        send(session, "q")
         selected = select_change_prefix(session, "nqmmukmt")
         captures["afterSelectChange"] = selected
         assert_contains(selected, "Files", "selected non-empty change details", failures)

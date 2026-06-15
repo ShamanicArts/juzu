@@ -122,7 +122,6 @@ impl LeaderMode {
             LeaderMode::Bookmarks => "Bookmarks",
         }
     }
-
 }
 
 struct App {
@@ -597,8 +596,8 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
         .fg(UI_TOKENS.slate_bg0)
         .bg(UI_TOKENS.semantic_mode_log)
         .add_modifier(Modifier::BOLD);
-    let line = if app.view_mode == ViewMode::Diff {
-        Line::from(vec![
+    let lines = if app.view_mode == ViewMode::Diff {
+        vec![Line::from(vec![
             Span::styled(" DIFF ", mode_style),
             Span::raw("  "),
             Span::styled("^d", key_style),
@@ -615,35 +614,60 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             Span::raw(" "),
             Span::styled("Esc", key_style),
             Span::styled(" Exit ", item_style),
-        ])
+        ])]
     } else if let Some(leader) = app.active_leader_mode {
         let active_mode_style = Style::default()
             .fg(UI_TOKENS.slate_bg0)
             .bg(leader_mode_color(leader))
             .add_modifier(Modifier::BOLD);
         match leader {
-            LeaderMode::View => Line::from(vec![
-                Span::styled(" VIEW ", active_mode_style),
-                Span::raw("  "),
-                Span::styled("1", key_style),
-                Span::styled(" Chronological ", item_style),
-                Span::raw(" "),
-                Span::styled("2", key_style),
-                Span::styled(" Mainline ", item_style),
-                Span::raw(" "),
-                Span::styled("3", key_style),
-                Span::styled(" Bookmark ", item_style),
-                Span::raw(" "),
-                Span::styled("4", key_style),
-                Span::styled(" Working copy ", item_style),
-                Span::raw(" "),
-                Span::styled("5", key_style),
-                Span::styled(" Topological ", item_style),
-                Span::raw(" "),
-                Span::styled("Esc/q", key_style),
-                Span::styled(" Exit ", item_style),
-            ]),
-            LeaderMode::Action => Line::from(vec![
+            LeaderMode::View => vec![
+                Line::from(vec![
+                    Span::styled(" VIEW ", active_mode_style),
+                    Span::raw("  "),
+                    Span::styled("1", key_style),
+                    Span::styled(" Layout chronological ", item_style),
+                    Span::raw(" "),
+                    Span::styled("2", key_style),
+                    Span::styled(" Layout mainline ", item_style),
+                    Span::raw(" "),
+                    Span::styled("3", key_style),
+                    Span::styled(" Layout bookmark ", item_style),
+                    Span::raw(" "),
+                    Span::styled("4", key_style),
+                    Span::styled(" Layout wc ", item_style),
+                    Span::raw(" "),
+                    Span::styled("5", key_style),
+                    Span::styled(" Layout topological ", item_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("c", key_style),
+                    Span::styled(" Toggle sidebar ", item_style),
+                    Span::raw(" "),
+                    Span::styled("t", key_style),
+                    Span::styled(" Theme picker ", item_style),
+                    Span::raw(" "),
+                    Span::styled("f", key_style),
+                    Span::styled(" Toggle files ", item_style),
+                    Span::raw(" "),
+                    Span::styled("x", key_style),
+                    Span::styled(" Toggle description ", item_style),
+                    Span::raw(" "),
+                    Span::styled("h", key_style),
+                    Span::styled(" Toggle help ", item_style),
+                    Span::raw(" "),
+                    Span::styled("/", key_style),
+                    Span::styled(" Revset filter ", item_style),
+                    Span::raw(" "),
+                    Span::styled("^d", key_style),
+                    Span::styled(" Diff view ", item_style),
+                ]),
+                Line::from(vec![
+                    Span::styled("Esc/q", key_style),
+                    Span::styled(" Exit ", item_style),
+                ]),
+            ],
+            LeaderMode::Action => vec![Line::from(vec![
                 Span::styled(" ACT ", active_mode_style),
                 Span::raw("  "),
                 Span::styled("n", key_style),
@@ -660,8 +684,8 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
                 Span::raw(" "),
                 Span::styled("Esc/q", key_style),
                 Span::styled(" Exit ", item_style),
-            ]),
-            LeaderMode::Ops => Line::from(vec![
+            ])],
+            LeaderMode::Ops => vec![Line::from(vec![
                 Span::styled(" OPS ", active_mode_style),
                 Span::raw("  "),
                 Span::styled("u", key_style),
@@ -678,8 +702,8 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
                 Span::raw(" "),
                 Span::styled("Esc/q", key_style),
                 Span::styled(" Exit ", item_style),
-            ]),
-            LeaderMode::Bookmarks => Line::from(vec![
+            ])],
+            LeaderMode::Bookmarks => vec![Line::from(vec![
                 Span::styled(" BOOK ", active_mode_style),
                 Span::raw("  "),
                 Span::styled("s", key_style),
@@ -690,10 +714,10 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
                 Span::raw(" "),
                 Span::styled("Esc/q", key_style),
                 Span::styled(" Exit ", item_style),
-            ]),
+            ])],
         }
     } else {
-        Line::from(vec![
+        vec![Line::from(vec![
             Span::styled(" LOG ", mode_style),
             Span::raw("  "),
             Span::styled("^X", key_style),
@@ -707,10 +731,10 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             Span::raw(" "),
             Span::styled("^B", key_style),
             Span::styled(" Book ", item_style),
-        ])
+        ])]
     };
     frame.render_widget(
-        Paragraph::new(line).style(Style::default().bg(UI_TOKENS.slate_panel)),
+        Paragraph::new(lines).style(Style::default().bg(UI_TOKENS.slate_panel)),
         area,
     );
 }
