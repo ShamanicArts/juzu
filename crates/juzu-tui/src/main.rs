@@ -370,6 +370,7 @@ struct App {
     files_expanded: bool,
     desc_expanded: bool,
     show_help: bool,
+    boxed_chrome: bool,
     theme_picker_mode: bool,
     theme_picker_index: usize,
     current_theme: String,
@@ -427,6 +428,7 @@ fn main() -> Result<()> {
         files_expanded: true,
         desc_expanded: false,
         show_help: false,
+        boxed_chrome: false,
         theme_picker_mode: false,
         theme_picker_index: theme_options()
             .iter()
@@ -571,6 +573,11 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
                 app.active_leader_mode = None;
                 return false;
             }
+            KeyCode::Char('b') => {
+                app.boxed_chrome = !app.boxed_chrome;
+                app.active_leader_mode = None;
+                return false;
+            }
             KeyCode::Char('t') => {
                 app.theme_picker_mode = true;
                 app.theme_picker_index = theme_options()
@@ -710,6 +717,7 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "filesExpanded": app.files_expanded,
         "descExpanded": app.desc_expanded,
         "showHelp": app.show_help,
+        "boxedChrome": app.boxed_chrome,
         "themePickerMode": app.theme_picker_mode,
         "themePickerIndex": app.theme_picker_index,
         "currentTheme": app.current_theme,
@@ -1162,8 +1170,12 @@ fn view_leader_status_lines(t: &UiTokens) -> Vec<Line<'static>> {
     ]
 }
 
-fn default_chrome_borders() -> Borders {
-    Borders::NONE
+fn default_chrome_borders(boxed_chrome: bool) -> Borders {
+    if boxed_chrome {
+        Borders::ALL
+    } else {
+        Borders::NONE
+    }
 }
 
 fn leader_mode_color(mode: LeaderMode, t: &UiTokens) -> Color {
@@ -1213,7 +1225,7 @@ fn render_diff_pane(
         return;
     };
     let block = Block::default()
-        .borders(default_chrome_borders())
+        .borders(default_chrome_borders(app.boxed_chrome))
         .border_style(Style::default().fg(t.slate_border_strong))
         .style(Style::default().bg(t.slate_bg0));
     let width = area.width as usize;
@@ -1311,7 +1323,7 @@ fn render_graph_table(
 ) {
     let t = &app.theme;
     let block = Block::default()
-        .borders(default_chrome_borders())
+        .borders(default_chrome_borders(app.boxed_chrome))
         .border_style(Style::default().fg(t.slate_border_soft))
         .style(Style::default().bg(t.slate_bg0));
     let inner = block.inner(area);
@@ -2151,7 +2163,7 @@ fn render_sidebar(
             .style(Style::default().fg(t.slate_text).bg(t.slate_panel))
             .block(
                 Block::default()
-                    .borders(default_chrome_borders())
+                    .borders(default_chrome_borders(app.boxed_chrome))
                     .border_style(Style::default().fg(t.slate_border_soft))
                     .style(Style::default().bg(t.slate_panel)),
             ),
@@ -2599,7 +2611,12 @@ mod tests {
 
     #[test]
     fn bun_parity_default_chrome_is_smooth_not_boxed() {
-        assert_eq!(default_chrome_borders(), Borders::NONE);
+        assert_eq!(default_chrome_borders(false), Borders::NONE);
+    }
+
+    #[test]
+    fn boxed_chrome_toggle_restores_bordered_review_mode() {
+        assert_eq!(default_chrome_borders(true), Borders::ALL);
     }
 
     #[test]

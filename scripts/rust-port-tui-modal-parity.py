@@ -440,6 +440,7 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         "viewToggleFiles": "C-l,f",
         "viewToggleDescription": "C-l,x",
         "viewToggleHelp": "C-l,h",
+        "viewToggleBoxedChrome": "C-l,b",
         "viewThemePicker": "C-l,t",
         "viewThemePickerDownApplyStaysOpen": "C-l,t,j,Enter",
         "viewThemePickerEscCancels": "C-l,t,j,Esc",
@@ -490,6 +491,7 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
             "viewToggleFiles": ("filesExpanded", False, "debug-state C-l,f should collapse files and exit View leader"),
             "viewToggleDescription": ("descExpanded", True, "debug-state C-l,x should expand description and exit View leader"),
             "viewToggleHelp": ("showHelp", True, "debug-state C-l,h should open help and exit View leader"),
+            "viewToggleBoxedChrome": ("boxedChrome", True, "debug-state C-l,b should toggle boxed chrome and exit View leader"),
             "viewThemePicker": ("themePickerMode", True, "debug-state C-l,t should open theme picker and exit View leader"),
             "viewRevsetFilter": ("revsetMode", True, "debug-state C-l,/ should open revset filter and exit View leader"),
         }

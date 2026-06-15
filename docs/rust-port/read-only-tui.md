@@ -38,7 +38,7 @@ tmux attach -t juzu
 Before claiming the review surface is current, capture it with:
 
 ```bash
-bun run review:live-tmux -- --target juzu:rust-tui --expect LOG,dag
+bun run review:live-tmux -- --target juzu:rust-tui --expect LOG,Selected
 ```
 
 ## Latest review artifact
@@ -53,7 +53,11 @@ Latest diff render review:
 
 Latest modal parity proof:
 
-`bench/results/rust-port/tui-modal-parity/2026-06-15T17-44-54-065Z/smooth-chrome-report.html`
+`bench/results/rust-port/tui-modal-parity/2026-06-15T18-05-14-437Z/boxed-chrome-toggle-report.html`
+
+Latest multi-state status/chrome proof:
+
+`bench/results/rust-port/status-sequence/2026-06-15T18-05-53.372Z/status-sequence-proof.mp4`
 
 Latest raw visual parity audit:
 
@@ -65,7 +69,7 @@ Latest bundled theme review:
 
 Latest live tmux proof:
 
-`bench/results/rust-port/live-tmux/2026-06-15T03-58-45.534Z/live-tmux-proof.html`
+`bench/results/rust-port/live-tmux/2026-06-15T18-08-24.671Z/live-tmux-proof.html`
 
 Static state proofs are HTML/tmux captures; MP4 is reserved for real app motion. The live review surface is the tmux window.
 
@@ -86,7 +90,7 @@ Diff preview now uses native `diff()` hydration through `juzu-jj` and a structur
 
 View leader behavior is now wired past visible-strip parity for the first real command set: `Ctrl+L c` collapses/expands the sidebar to an old-style compact `[ ]` rail, `Ctrl+L f` toggles file-list expansion, `Ctrl+L x` toggles description expansion, `Ctrl+L h` opens the sidebar help surface, `Ctrl+L t` opens the theme selector surface, `Ctrl+L /` opens the revset prompt surface, and `Ctrl+L Ctrl+D` enters diff view while clearing the leader mode. Theme picker keyboard behavior now supports `j/k` selection, `Enter` applying the selected theme while staying open, and `Esc/q` closing without applying; revset mode now accepts typed query text, applies on `Enter`, and cancels without mutating the stored query on `Esc`. The Rust TUI now embeds and parses all 21 bundled JUZU/Poneglyph-style TOML themes, including slate, ember, tokyo-night, catppuccin, dracula, gruvbox, kanagawa, nord, and the rest of the repository catalogue. Theme TOML parsing maps slate, semantic, and graph lane tokens into Rust `UiTokens` with contrast guards for text/muted text. Status/footer chrome, the main DAG graph, sidebar/details surfaces, and diff renderer now consume the active runtime theme instead of hard-coded slate tokens: graph lanes, selected-node text, working-copy/conflict indicators, commit ids, descriptions, bookmark text, graph file summaries, DAG panel border/background, collapsed-sidebar rail, help/theme/revset panels, details headings, details text, selected current-file rows, file badges, full diff panel border/title/status bars, file headers, hunk headers, sticky context bars, collapse rows, and add/remove/context row colors all route through `app.theme`. The theme picker is now windowed around the selected theme instead of dumping all 21 themes into the sidebar, shows above/below counts, keeps `Enter` apply-stays-open behavior, and renders a small active-token swatch plus current-theme marker. It now also includes an in-TUI preview panel for the currently highlighted theme: surface/panel colors, graph lane swatches, and add/remove diff bands are visible before applying. Selected-row rendering is closer to old Bun `GraphView`: selected graph text uses brightened foreground, selected graph file summaries retain per-file add/mod/delete colors instead of collapsing to one info color, and selected sidebar file badges brighten their active file type. The parity runner asserts these with Rust debug-state JSON and tmux captures across 120/160/206 column widths.
 
-Default chrome now moves back toward Bun/OpenTUI smooth mode: graph, details, and diff surfaces no longer render Ratatui box borders by default, top and bottom bars consume one row unless the View leader needs two, and the bogus third-row `Esc/q Exit` View-leader row is gone. Boxed chrome remains a future explicit toggle rather than the default.
+Default chrome now moves back toward Bun/OpenTUI smooth mode: graph, details, and diff surfaces no longer render Ratatui box borders by default, top and bottom bars consume one row unless the View leader needs two, and the bogus third-row `Esc/q Exit` View-leader row is gone. Boxed chrome is now an explicit optional mode through the View leader path (`Ctrl+L`, then `b`) and remains hidden from the Bun-parity View strip so the default visual contract stays smooth. The Rust debug-state emitter exposes `boxedChrome`, and modal parity covers `C-l,b` without disturbing the 120/160/206 column View leader layout.
 
 The old Bun/OpenTUI full diff behavior is now covered by `parity:tui-modal` before implementation changes: `Ctrl+D` swaps the graph pane for a diff pane while keeping the details sidebar, `[ / ]` cycles files in diff mode, `j/k` scroll diff rows without moving DAG selection, and `q`/`Esc`/`g`/`Ctrl+D` return to the log instead of quitting. Diff mode now renders inside a real bordered `diff` panel with a filled title row and a full-width `VIEWPORT diff rows ... SCROLL [...]` status bar, so the full pane has a stronger old-JUZU/Pierre-style surface and visible scroll affordance instead of floating text. The details sidebar switches from generic `Diff` labeling to `Current file preview  secondary` in diff mode, making the sidebar read as a subordinate preview tied to the selected full-pane file. Hunk rows now span like capped bars with a right-side cap, and add/remove code rows now begin with `▌+` / `▌-` mutation bands, so file/hunk/code separators feel less like loose text and more like panelized diff structure. The Rust TUI now has the first old-style leader-mode status state: the idle strip visibly matches the Bun screenshot shape (`LOG  ^X Act  ^O Ops  ^L View  ^B Book`), and `Ctrl+L` enters a multi-row `VIEW` status bar matching the Bun controls: layout chronological/mainline/bookmark/wc/topological, toggle sidebar, theme picker, toggle files, toggle description, toggle help, revset filter, diff view, and `Esc/q Exit`; `q` exits the leader mode without quitting. Diff mode exposes old-style controls in the top status bar (`^d Log`, `[ ] File`, `j/k Move`, `{/} Hunk`, `Esc Exit`) while the bottom footer follows Bun/OpenTUI `FooterBar` parity: home-compacted repo path (`~/dev/juzu`), working-copy id/bookmark context, layout mode, and node count. This fixes the earlier Rust inversion where controls were in the footer and repo/node information was in the header. Rust token usage now reaches beyond that chrome into graph lane colors, graph description/commit/bookmark colors, graph file-summary colors, details/dag panel borders, and sidebar file badges using old `src/core/ui-tokens.ts` values. The same parity runner now calls the Rust `--debug-state --keys ...` path so modal behavior is asserted with state JSON as well as tmux screen capture, including `{` / `}` hunk-jump scenarios that must remain in diff mode, land exactly on a `HunkHeader` row, and expose the updated sticky file/hunk context in JSON. Horizontal pane sizing now follows old JUZU's 60/40 graph/sidebar split; diff mode keeps the old two-column buffer before the sidebar and truncates long file titles so the back hint remains visible. The modal parity runner now verifies that title/footer/sidebar contract across 120, 160, and 206 column terminals, covers debug-state exit scenarios for `C-d,q`, `C-d,g`, `C-d,C-d`, `C-d,],],Esc`, and `C-d,PageDown,PageUp,Esc`, asserts that diff-mode file cycling visibly marks the selected file in the sidebar file list even after wrapping to a later file beyond the compact sidebar preview window, locks that the full diff pane never shows sidebar-only `preview capped` rows, and checks that the diff-mode sidebar preview follows the selected full-diff file instead of remaining pinned to the first file. Log/sidebar mode keeps the diff preview reachable by reserving sidebar space, and `PageDown/PageUp` scroll the sidebar diff preview without moving DAG selection. Sidebar/log mode keeps capped preview rows for performance, while entering the full diff pane lazily loads uncapped structured rows for the selected change. The structured row cap preserves a per-file slice, so navigating beyond the first diff file renders real rows instead of an empty `File N/N: Diff` pane. This explicitly replaces the bad abandoned fullscreen attempt.
 
@@ -105,7 +109,7 @@ bun run parity:tui-modal -- --repo /home/shamanic/dev/juzu --limit 40 --widths 1
 
 - improve connector parity for off-screen edges and mainline bus behavior
 - continue old color/theme token parity into exact Bun spacing/shape polish, richer in-TUI theme preview panels, and selected row treatments
-- add an explicit boxed/smooth chrome toggle, keeping Bun-like smooth chrome as default
+- refine boxed/smooth chrome UX after the hidden toggle: decide whether to surface a non-Bun hint, add persistence/config, and keep smooth as default
 - expand keyboard/status parity from the first `Ctrl+L` View leader into Actions, Operations, and Bookmarks leader behavior
 - wire safe native working-copy snapshot support so `@` dirty files match old `jj diff --summary`
 - continue Pierre/JUZU-style diff viewport UX: hunk/file jumping, sticky-ish file/hunk context, and exact patch-fidelity decisions

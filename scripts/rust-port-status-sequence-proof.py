@@ -66,6 +66,10 @@ def render_frame(text: str, title: str, out: Path) -> None:
     line_h = 22
     width = max(1280, min(2400, max((len(line) for line in lines), default=80) * char_w + 64))
     height = max(760, len(lines) * line_h + 110)
+    if width % 2:
+        width += 1
+    if height % 2:
+        height += 1
     img = Image.new("RGB", (width, height), "#111318")
     draw = ImageDraw.Draw(img)
     draw.rectangle((0, 0, width, 64), fill="#1a2029")
@@ -107,12 +111,16 @@ def main() -> None:
         captures.append(("05 q exits Ops leader back to Log", wait_for(session, "LOG")))
         send(session, "C-l")
         captures.append(("06 Ctrl+L enters View leader", wait_for(session, "VIEW")))
-        send(session, "q")
-        captures.append(("07 q exits View leader back to Log", wait_for(session, "LOG")))
+        send(session, "b")
+        captures.append(("07 b toggles optional boxed chrome, then returns to Log", wait_for(session, "┌")))
+        send(session, "C-l")
+        captures.append(("08 Ctrl+L enters View leader from boxed chrome", wait_for(session, "VIEW")))
+        send(session, "b")
+        captures.append(("09 b toggles back to Bun-smooth chrome", wait_for(session, "LOG")))
         send(session, "C-b")
-        captures.append(("08 Ctrl+B enters Bookmarks leader", wait_for(session, "BOOK")))
+        captures.append(("10 Ctrl+B enters Bookmarks leader", wait_for(session, "BOOK")))
         send(session, "q")
-        captures.append(("09 q exits Bookmarks leader back to Log", wait_for(session, "LOG")))
+        captures.append(("11 q exits Bookmarks leader back to Log", wait_for(session, "LOG")))
     finally:
         tmux("kill-session", "-t", session, check=False)
 

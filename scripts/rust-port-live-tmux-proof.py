@@ -22,7 +22,7 @@ def run(cmd: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", default="juzu:rust-tui")
-    parser.add_argument("--expect", default="LOG,dag graph")
+    parser.add_argument("--expect", default="LOG,Selected")
     parser.add_argument("--lines", type=int, default=160)
     args = parser.parse_args()
 
