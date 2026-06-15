@@ -1365,9 +1365,13 @@ fn diffview_rows_for_file(diff: &DiffPreview, file_index: usize) -> Vec<DiffRow>
                     | DiffRowKind::Add
                     | DiffRowKind::Remove
                     | DiffRowKind::Collapse
-            )
+            ) || is_no_newline_marker(row)
         })
         .collect()
+}
+
+fn is_no_newline_marker(row: &DiffRow) -> bool {
+    row.kind == DiffRowKind::Metadata && row.text == r"\ No newline at end of file"
 }
 
 fn render_graph_table(
@@ -2365,6 +2369,9 @@ fn render_diff_preview_lines(
 }
 
 fn render_full_diff_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Vec<Line<'static>> {
+    if is_no_newline_marker(row) {
+        return vec![render_diff_no_newline_marker(tokens, max_len)];
+    }
     if !matches!(
         row.kind,
         DiffRowKind::Context | DiffRowKind::Add | DiffRowKind::Remove
@@ -2564,6 +2571,34 @@ fn render_diff_code_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Lin
         Span::styled(gutter, gutter_style),
         Span::styled(sign_cell, sign_style),
         Span::styled(content, text_style),
+    ])
+}
+
+fn render_diff_no_newline_marker(tokens: &UiTokens, max_len: usize) -> Line<'static> {
+    let gutter_width = 3usize;
+    let sign_width = 3usize;
+    let text_budget = max_len.saturating_sub(gutter_width + sign_width);
+    let content = truncate(r"\ No newline at end of file", text_budget);
+    let content = format!("{content:<width$}", width = text_budget);
+    Line::from(vec![
+        Span::styled(
+            " ".repeat(gutter_width),
+            Style::default()
+                .fg(tokens.slate_text_muted)
+                .bg(tokens.slate_bg1),
+        ),
+        Span::styled(
+            " ".repeat(sign_width),
+            Style::default()
+                .fg(tokens.slate_text_muted)
+                .bg(tokens.slate_bg1),
+        ),
+        Span::styled(
+            content,
+            Style::default()
+                .fg(tokens.slate_text_muted)
+                .bg(tokens.slate_bg0),
+        ),
     ])
 }
 
@@ -3008,6 +3043,56 @@ mod tests {
         assert!(!visible
             .iter()
             .any(|row| row.text.contains("diff --git") || row.text.contains("@@")));
+    }
+
+    #[test]
+    fn full_diff_pane_preserves_no_newline_marker_like_bun_diffview() {
+        let diff = DiffPreview {
+            raw_line_count: 7,
+            file_count: 1,
+            row_count: 5,
+            preview_rows: vec![],
+            full_rows: Some(vec![
+                DiffRow {
+                    kind: DiffRowKind::Metadata,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "diff --git a/a b/a".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Add,
+                    file_index: 0,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: Some(1),
+                    text: "+new".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Metadata,
+                    file_index: 0,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: None,
+                    text: r"\ No newline at end of file".to_string(),
+                },
+            ]),
+            parse_error: None,
+        };
+
+        let visible = diffview_rows_for_file(&diff, 0);
+        assert_eq!(visible.len(), 2);
+        assert_eq!(visible[1].text, r"\ No newline at end of file");
+        assert!(!visible.iter().any(|row| row.text.contains("diff --git")));
+
+        let rendered = render_full_diff_row(&UI_TOKENS, &visible[1], 40)
+            .into_iter()
+            .flat_map(|line| line.spans.into_iter())
+            .map(|span| span.content.to_string())
+            .collect::<String>();
+        assert_eq!(rendered, r"      \ No newline at end of file       ");
+        assert_eq!(rendered.chars().count(), 40);
     }
 
     #[test]
