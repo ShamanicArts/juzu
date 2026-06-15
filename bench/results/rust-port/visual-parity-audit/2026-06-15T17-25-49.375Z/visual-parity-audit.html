@@ -1,0 +1,499 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust visual parity audit</title>
+<style>
+:root { color-scheme: dark; --bg:#0f131a; --panel:#171d26; --panel2:#101722; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --info:#7f9fbf; --warn:#c9a86a; --bad:#ce6f7c; --ok:#74b88c; }
+body { margin:32px; background:radial-gradient(circle at top left,#1c2634 0,#0f131a 48rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+h1 { margin:0 0 6px; letter-spacing:-.035em; font-size:34px; }
+.subtitle { color:var(--muted); margin-bottom:22px; max-width:98ch; line-height:1.45; }
+.summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:20px 0 26px; }
+.card, .pair { background:linear-gradient(180deg,rgba(23,29,38,.96),rgba(16,23,34,.96)); border:1px solid var(--line); border-radius:18px; padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.28); }
+.card strong { display:block; color:var(--info); font-size:13px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+.card span { font-size:18px; }
+.pair { margin:18px 0; } h2 { margin:0 0 14px; color:#e6edf7; } h3 { margin:0 0 10px; color:var(--info); font-size:14px; text-transform:uppercase; letter-spacing:.08em; }
+.screens { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
+article { min-width:0; }
+pre { margin:0; padding:14px; background:#050816; border:1px solid #273449; border-radius:14px; color:#d8dee8; overflow:auto; font:12px/1.32 'JetBrains Mono','SFMono-Regular',ui-monospace,monospace; white-space:pre; }
+.notes { margin-top:14px; background:rgba(5,8,22,.45); border:1px solid #273449; border-radius:14px; padding:14px 16px; }
+ul { margin:0; padding-left:20px; } li { margin:8px 0; color:#cbd5e1; line-height:1.45; }
+table { border-collapse:collapse; margin:0 0 14px; font:12px/1.35 'JetBrains Mono',monospace; } th,td { border-bottom:1px solid #263141; padding:6px 10px; text-align:left; } th { color:var(--muted); } td:nth-child(2) { color:var(--warn); } td:nth-child(3) { color:var(--ok); }
+.backlog { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.badge { display:inline-block; border:1px solid #334155; border-radius:999px; padding:4px 8px; color:var(--muted); font-size:12px; margin-left:8px; }
+@media (max-width: 1100px) { .screens,.summary,.backlog { grid-template-columns:1fr; } }
+</style></head><body>
+<h1>JUZU Rust visual parity audit <span class='badge'>Bun oracle vs Rust</span></h1>
+<p class='subtitle'>Generated from isolated tmux captures at 164×75. This audit intentionally focuses on visible craft gaps, not backend capability. The Rust port is fast and functional, but the current surface still diverges from the original Bun/OpenTUI product in chrome, spacing, row rhythm, and diff treatment.</p>
+<div class='summary'>
+  <div class='card'><strong>Primary correction</strong><span>Default to Bun-like smooth chrome; make boxes optional.</span></div>
+  <div class='card'><strong>Diff correction</strong><span>Match Bun DiffView full-row bars and pane continuity.</span></div>
+  <div class='card'><strong>Layout correction</strong><span>Reduce unused gaps, broken gutters, and heavy borders.</span></div>
+  <div class='card'><strong>Process correction</strong><span>Visual audit first, then one parity slice at a time.</span></div>
+</div>
+<section class='pair'>
+  <h2>Aesthetic backlog from this audit</h2>
+  <div class='backlog'>
+    <div class='notes'><h3>Immediate slices</h3><ul>
+      <li>Add a Rust <strong>smooth chrome</strong> mode and make it the default for Bun parity; keep boxed chrome as an explicit toggle.</li>
+      <li>Replace diff box/panel treatment with a Bun-like full-pane surface, preserving details sidebar but reducing border scaffolding.</li>
+      <li>Make add/remove/context rows fill the full available diff row, not just the text span/glyph prefix.</li>
+      <li>Tighten graph/sidebar spacing to Bun row rhythm, especially blank lines, file summary placement, and details heading hierarchy.</li>
+    </ul></div>
+    <div class='notes'><h3>Parity rules going forward</h3><ul>
+      <li>Do not claim visual parity from tests alone. Capture Bun and Rust side by side.</li>
+      <li>Do not invent diff visuals. Use <code>src/tui/components/DiffView.tsx</code> as the oracle.</li>
+      <li>Before changing chrome, prove whether Bun uses boxes, soft fills, or raw negative space in that state.</li>
+      <li>Every visual slice gets an HTML artifact, benchmark, tmux capture verification, and JJ commit.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class='pair'>
+  <h2>01 log surface</h2>
+  <div class='metrics'>
+    <table><thead><tr><th>Metric</th><th>Rust</th><th>Bun oracle</th></tr></thead><tbody><tr><th>lines</th><td>70</td><td>70</td></tr><tr><th>blankLines</th><td>2</td><td>1</td></tr><tr><th>boxChars</th><td>456</td><td>50</td></tr><tr><th>avgNonemptyWidth</th><td>162.2</td><td>38.0</td></tr></tbody></table>
+  </div>
+  <div class='screens'>
+    <article><h3>Rust Ratatui</h3><pre> LOG   ^X Act  ^O Ops  ^L View  ^B Book
+
+
+┌ dag graph ─────────────────────────────────────────────────────────────────────────────────────┐┌ details ───────────────────────────────────────────────────────┐
+│                                                                                                ││Selected                                                        │
+│  @...@&gt; pmzrktpq 225a2959                                                                      ││Change: pmzrktpqnpnnokmtvqsqkmvmlruruwuv                        │
+│  │      (no description)                                                                       ││Commit: 225a29592a18                                            │
+│  │      no file changes                                                                        ││Lane: Some(0)  X: Some(50)  Y: Some(50)                         │
+│  │                                                                                             ││Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;                    │
+│  o..... uyompyrw b6671af5                                                                      ││Time: 2026-06-15T05:40:02+01:00                                 │
+│  │      restore readable rust diff row colors                                                  ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-proof.html  ……… ││Bookmarks                                                       │
+│  │                                                                                             ││—                                                               │
+│  o..... qorzvqxu d1406324                                                                      ││                                                                │
+│  │      brighten rust selected row treatments                                                  ││Description (x expand):                                         │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T03-58-45.534Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... rpwlyzsp 2daf82d1                                                                      ││Files (f collapse):                                             │
+│  │      add rust theme picker preview panel                                                    ││—                                                               │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T03-52-38.623Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││Diff                                                            │
+│  o..... omurtoty fe27794f                                                                      ││  · 0 files · 0 raw · 0 rows · 0 shown                          │
+│  │      window rust theme picker with swatches                                                 ││  · clean patch                                                 │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T03-36-42.781Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... wmxowuvs c81e297d                                                                      ││                                                                │
+│  │      wire active theme into rust diff renderer                                              ││                                                                │
+│  │      A bench/results/rust-port/diff-render/2026-06-15T03-30-51.347Z/diff-render-review.html ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... yzulmmsn f3619f25                                                                      ││                                                                │
+│  │      wire active theme into rust sidebar surfaces                                           ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T03-25-18.309Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... rxknvunu b4b03fda                                                                      ││                                                                │
+│  │      wire active theme into rust graph surfaces                                             ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T03-19-34.337Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... yswlrwxw 35814748                                                                      ││                                                                │
+│  │      port bundled themes into rust tui picker                                               ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T03-01-54.683Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... tvvsyrlx 5e959642                                                                      ││                                                                │
+│  │      wire rust theme picker and revset view behavior                                        ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T02-48-43.727Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... wvlqrqps dd5ea188                                                                      ││                                                                │
+│  │      wire rust view leader command behavior                                                 ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T02-42-37.028Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... qllxrstu f8475757                                                                      ││                                                                │
+│  │      fill rust view leader controls from bun                                                ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T02-30-50.396Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... lzptmmtu 6a1b5dc1                                                                      ││                                                                │
+│  │      prove rust leader strip modes against bun                                              ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T02-19-44.844Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... wrqsuuww 96e71b02                                                                      ││                                                                │
+│  │      match bun leader strip and ctrl l view mode                                            ││                                                                │
+│  │      A bench/results/rust-port/diff-render/2026-06-15T02-07-50.486Z/diff-render-review.html ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... xsvnvsqt ac595d63                                                                      ││                                                                │
+│  │      add rust view leader status parity                                                     ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T02-06-19.984Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... yxnvvvyu 2e9f54b2                                                                      ││                                                                │
+│  │      compact rust footer repo path like bun                                                 ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T02-00-50.941Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│                                                                                                ││                                                                │</pre></article>
+    <article><h3>Bun/OpenTUI oracle</h3><pre> LOG   ^x  Act  ^o  Ops  ^l  View  ^b  Book
+
+                                                                                                    Details
+  @...@&gt; pmzrktpq 4b434b80                                                                          ----------------------------------------------------------------
+  │      (no description)                                                                           Change: pmzrktpqnpnn (@)
+  │                                                                                                 Commit: 4b434b802d43
+  │                                                                                                 Author: shamanicbeatbox@gmail.com
+  o..... uyompyrw b6671af5                                                                          Time: 2026-06-15 18:25:50.365 +01:00
+  │      restore readable rust diff row colors
+  │                                                                                                 Description (x expand):
+  │                                                                                                 (no description)
+  o..... qorzvqxu d1406324
+  │      brighten rust selected row treatments                                                      Files (f collapse):
+  │                                                                                                 (loading...)
+  │
+  o..... rpwlyzsp 2daf82d1                                                                          Themes: [slate] ember  (^l then t)
+  │      add rust theme picker preview panel
+  │
+  │
+  o..... omurtoty fe27794f
+  │      window rust theme picker with swatches
+  │
+  │
+  o..... wmxowuvs c81e297d
+  │      wire active theme into rust diff renderer
+  │
+  │
+  o..... yzulmmsn f3619f25
+  │      wire active theme into rust sidebar surfaces
+  │
+  │
+  o..... rxknvunu b4b03fda
+  │      wire active theme into rust graph surfaces
+  │
+  │
+  o..... yswlrwxw 35814748
+  │      port bundled themes into rust tui picker
+  │
+  │
+  o..... tvvsyrlx 5e959642
+  │      wire rust theme picker and revset view behavior
+  │
+  │
+  o..... wvlqrqps dd5ea188
+  │      wire rust view leader command behavior
+  │
+  │
+  o..... qllxrstu f8475757
+  │      fill rust view leader controls from bun
+  │
+  │
+  o..... lzptmmtu 6a1b5dc1
+  │      prove rust leader strip modes against bun
+  │
+  │
+  o..... wrqsuuww 96e71b02
+  │      match bun leader strip and ctrl l view mode
+  │
+  │
+  o..... xsvnvsqt ac595d63
+  │      add rust view leader status parity
+  │
+  │
+  o..... yxnvvvyu 2e9f54b2
+  │      compact rust footer repo path like bun
+  │
+  │
+  o..... wyqokumx 5dcf8f9e
+  │      extend rust tui token parity into graph surfaces
+  │</pre></article>
+  </div>
+  <div class='notes'><h3>Visual gaps</h3><ul><li>Bun log surface is smooth: no graph/details box border scaffold, mostly negative-space layout.</li><li>Rust still reads as boxed/panelized, especially when mode panes are active. Smooth chrome needs to be default, with boxes toggleable.</li><li>Graph row rhythm differs: Bun rows breathe through blank spacer lines and compact file summaries; Rust rhythm still has heavier structural glyphs and uneven gutters.</li></ul></div>
+</section>
+
+<section class='pair'>
+  <h2>02 view leader strip</h2>
+  <div class='metrics'>
+    <table><thead><tr><th>Metric</th><th>Rust</th><th>Bun oracle</th></tr></thead><tbody><tr><th>lines</th><td>70</td><td>70</td></tr><tr><th>blankLines</th><td>0</td><td>0</td></tr><tr><th>boxChars</th><td>456</td><td>50</td></tr><tr><th>avgNonemptyWidth</th><td>160.2</td><td>40.5</td></tr></tbody></table>
+  </div>
+  <div class='screens'>
+    <article><h3>Rust Ratatui</h3><pre> VIEW   1 Layout chronological  2 Layout mainline  3 Layout bookmark  4 Layout wc  5 Layout topological
+c Toggle sidebar  t Theme picker  f Toggle files  x Toggle description  h Toggle help  / Revset filter  ^d Diff view
+Esc/q Exit
+┌ dag graph ─────────────────────────────────────────────────────────────────────────────────────┐┌ details ───────────────────────────────────────────────────────┐
+│                                                                                                ││Selected                                                        │
+│  @...@&gt; pmzrktpq 225a2959                                                                      ││Change: pmzrktpqnpnnokmtvqsqkmvmlruruwuv                        │
+│  │      (no description)                                                                       ││Commit: 225a29592a18                                            │
+│  │      no file changes                                                                        ││Lane: Some(0)  X: Some(50)  Y: Some(50)                         │
+│  │                                                                                             ││Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;                    │
+│  o..... uyompyrw b6671af5                                                                      ││Time: 2026-06-15T05:40:02+01:00                                 │
+│  │      restore readable rust diff row colors                                                  ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T04-39-57.969Z/live-tmux-proof.html  ……… ││Bookmarks                                                       │
+│  │                                                                                             ││—                                                               │
+│  o..... qorzvqxu d1406324                                                                      ││                                                                │
+│  │      brighten rust selected row treatments                                                  ││Description (x expand):                                         │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T03-58-45.534Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... rpwlyzsp 2daf82d1                                                                      ││Files (f collapse):                                             │
+│  │      add rust theme picker preview panel                                                    ││—                                                               │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T03-52-38.623Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││Diff                                                            │
+│  o..... omurtoty fe27794f                                                                      ││  · 0 files · 0 raw · 0 rows · 0 shown                          │
+│  │      window rust theme picker with swatches                                                 ││  · clean patch                                                 │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T03-36-42.781Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... wmxowuvs c81e297d                                                                      ││                                                                │
+│  │      wire active theme into rust diff renderer                                              ││                                                                │
+│  │      A bench/results/rust-port/diff-render/2026-06-15T03-30-51.347Z/diff-render-review.html ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... yzulmmsn f3619f25                                                                      ││                                                                │
+│  │      wire active theme into rust sidebar surfaces                                           ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T03-25-18.309Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... rxknvunu b4b03fda                                                                      ││                                                                │
+│  │      wire active theme into rust graph surfaces                                             ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T03-19-34.337Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... yswlrwxw 35814748                                                                      ││                                                                │
+│  │      port bundled themes into rust tui picker                                               ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T03-01-54.683Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... tvvsyrlx 5e959642                                                                      ││                                                                │
+│  │      wire rust theme picker and revset view behavior                                        ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T02-48-43.727Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... wvlqrqps dd5ea188                                                                      ││                                                                │
+│  │      wire rust view leader command behavior                                                 ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T02-42-37.028Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... qllxrstu f8475757                                                                      ││                                                                │
+│  │      fill rust view leader controls from bun                                                ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T02-30-50.396Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... lzptmmtu 6a1b5dc1                                                                      ││                                                                │
+│  │      prove rust leader strip modes against bun                                              ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T02-19-44.844Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... wrqsuuww 96e71b02                                                                      ││                                                                │
+│  │      match bun leader strip and ctrl l view mode                                            ││                                                                │
+│  │      A bench/results/rust-port/diff-render/2026-06-15T02-07-50.486Z/diff-render-review.html ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... xsvnvsqt ac595d63                                                                      ││                                                                │
+│  │      add rust view leader status parity                                                     ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T02-06-19.984Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│  o..... yxnvvvyu 2e9f54b2                                                                      ││                                                                │
+│  │      compact rust footer repo path like bun                                                 ││                                                                │
+│  │      A bench/results/rust-port/live-tmux/2026-06-15T02-00-50.941Z/live-tmux-proof.html  ……… ││                                                                │
+│  │                                                                                             ││                                                                │
+│                                                                                                ││                                                                │</pre></article>
+    <article><h3>Bun/OpenTUI oracle</h3><pre> VIEW   1  Layout chronological  2  Layout mainline  3  Layout bookmark  4  Layout wc  5  Layout topological  c  Toggle sidebar
+ t  Theme picker  r  Refresh  f  Toggle files  x  Toggle description  h  Toggle help  /  Revset filter  ^d  Diff view  Esc/q  Exit
+                                                                                                    Details
+  @...@&gt; pmzrktpq 4b434b80                                                                          ----------------------------------------------------------------
+  │      (no description)                                                                           Change: pmzrktpqnpnn (@)
+  │                                                                                                 Commit: 4b434b802d43
+  │                                                                                                 Author: shamanicbeatbox@gmail.com
+  o..... uyompyrw b6671af5                                                                          Time: 2026-06-15 18:25:50.365 +01:00
+  │      restore readable rust diff row colors
+  │                                                                                                 Description (x expand):
+  │                                                                                                 (no description)
+  o..... qorzvqxu d1406324
+  │      brighten rust selected row treatments                                                      Files (f collapse):
+  │                                                                                                 (loading...)
+  │
+  o..... rpwlyzsp 2daf82d1                                                                          Themes: [slate] ember  (^l then t)
+  │      add rust theme picker preview panel
+  │
+  │
+  o..... omurtoty fe27794f
+  │      window rust theme picker with swatches
+  │
+  │
+  o..... wmxowuvs c81e297d
+  │      wire active theme into rust diff renderer
+  │
+  │
+  o..... yzulmmsn f3619f25
+  │      wire active theme into rust sidebar surfaces
+  │
+  │
+  o..... rxknvunu b4b03fda
+  │      wire active theme into rust graph surfaces
+  │
+  │
+  o..... yswlrwxw 35814748
+  │      port bundled themes into rust tui picker
+  │
+  │
+  o..... tvvsyrlx 5e959642
+  │      wire rust theme picker and revset view behavior
+  │
+  │
+  o..... wvlqrqps dd5ea188
+  │      wire rust view leader command behavior
+  │
+  │
+  o..... qllxrstu f8475757
+  │      fill rust view leader controls from bun
+  │
+  │
+  o..... lzptmmtu 6a1b5dc1
+  │      prove rust leader strip modes against bun
+  │
+  │
+  o..... wrqsuuww 96e71b02
+  │      match bun leader strip and ctrl l view mode
+  │
+  │
+  o..... xsvnvsqt ac595d63
+  │      add rust view leader status parity
+  │
+  │
+  o..... yxnvvvyu 2e9f54b2
+  │      compact rust footer repo path like bun
+  │
+  │
+  o..... wyqokumx 5dcf8f9e
+  │      extend rust tui token parity into graph surfaces
+  │</pre></article>
+  </div>
+  <div class='notes'><h3>Visual gaps</h3><ul><li>Leader labels are now directionally aligned, but case, spacing, and segment density still need exact Bun matching.</li><li>Rust should avoid growing controls into pane layout space; Bun keeps the strip feeling like chrome, not content.</li></ul></div>
+</section>
+
+<section class='pair'>
+  <h2>03 diff pane</h2>
+  <div class='metrics'>
+    <table><thead><tr><th>Metric</th><th>Rust</th><th>Bun oracle</th></tr></thead><tbody><tr><th>lines</th><td>70</td><td>70</td></tr><tr><th>blankLines</th><td>2</td><td>0</td></tr><tr><th>boxChars</th><td>596</td><td>245</td></tr><tr><th>avgNonemptyWidth</th><td>162.4</td><td>71.6</td></tr></tbody></table>
+  </div>
+  <div class='screens'>
+    <article><h3>Rust Ratatui</h3><pre> DIFF   ^d Log  [ ] File  j/k Move  {/} Hunk  Esc Exit
+
+
+┌ diff ────────────────────────────────────────────────────────────────────────────────────────┐  ┌ details ───────────────────────────────────────────────────────┐
+│ File 1/17: Added bench/results/rust-port/live-tmux/2026-06...   [ / ] next/prev   Ctrl+d back│  │Selected                                                        │
+│ VIEWPORT diff rows 1-64 of 95   SCROLL [██████░░░░]                                          │  │Change: qorzvqxuykxtxvyzsvomlrqvpuosorym                        │
+│ STICKY ▸ top · Added bench/results/rust-port/live-tmux/2026-06-15T03-58-45.534Z/live-tmux... │  │Commit: d1406324f952                                            │
+│╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-15T03-58-45.534Z/live-tmux-proof.html     │  │Lane: Some(0)  X: Some(50)  Y: Some(218)                        │
+│  · diff --git a/bench/results/rust-port/live-tmux/2026-06-15T03-58-45.534Z/live-tmux-proof...│  │Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;                    │
+│  · new file mode 100644                                                                      │  │Time: 2026-06-15T04:59:32+01:00                                 │
+│  · --- /dev/null                                                                             │  │                                                                │
+│  · +++ b/bench/results/rust-port/live-tmux/2026-06-15T03-58-45.534Z/live-tmux-proof.html     │  │Bookmarks                                                       │
+│╭─ @@ -0,0 +1,88 @@                                                                          ╮│  │—                                                               │
+│▌+         1 &lt;!doctype html&gt;                                                                  │  │                                                                │
+│▌+         2 &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust live tmux proof&lt;/title&gt;       │  │Description (x expand):                                         │
+│▌+         3 &lt;style&gt;                                                                          │  │brighten rust selected row treatments                           │
+│▌+         4 :root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --... │  │                                                                │
+│▌+         5 body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#... │  │Files (f collapse):                                             │
+│▌+         6 h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .sta... │  │▶ A bench/results/rust-port/live-tmux/2026-06-15T03-58-45.534Z/l│
+│▌+         7 .card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-r... │  │  A bench/results/rust-port/rust-tui-bench/2026-06-15T03-57-35-9│
+│▌+         8 pre { background:#050816; border:1px solid #2a3442; border-radius:12px; paddi... │  │  A bench/results/rust-port/rust-tui-bench/2026-06-15T03-57-35-9│
+│▌+         9 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;                                                            │  │  A bench/results/rust-port/rust-tui-bench/2026-06-15T03-57-35-9│
+│▌+        10 &lt;h1&gt;JUZU Rust live tmux proof · &lt;span class=&#x27;status pass&#x27;&gt;PASS&lt;/span&gt;&lt;/h1&gt;       │  │… 13 more                                                       │
+│▌+        11 &lt;div class=&#x27;meta&#x27;&gt;Target: &lt;code&gt;juzu:rust-tui&lt;/code&gt; · pane command: &lt;code&gt;./... │  │                                                                │
+│▌+        12 &lt;section class=&#x27;card&#x27;&gt;&lt;pre&gt; LOG   ^X Act  ^O Ops  ^L View  ^B Book               │  │Current file preview  secondary                                 │
+│▌+        13                                                                                  │  │  · 17 files · 5215 raw · 5232 rows · 272 shown                 │
+│▌+        14                                                                                  │  │  · diff rows 1-14 of 95                                        │
+│▌+        15 ┌ dag graph ─────────────────────────────────────────────────────────────────... │  │ STICKY ▸ top · Added bench/results/rust-port/live-tmux/20...   │
+│▌+        16 │                                                                            ... │  │╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-15T03-5...╮ │
+│▌+        17 │  @...@&amp;gt; qorzvqxu 4ff1419e                                               ... │  │  · diff --git a/bench/results/rust-port/live-tmux/2026-06-...  │
+│▌+        18 │  │      (no description)                                                   ... │  │  · new file mode 100644                                        │
+│▌+        19 │  │      no file changes                                                    ... │  │  · --- /dev/null                                               │
+│▌+        20 │  │                                                                         ... │  │  · +++ b/bench/results/rust-port/live-tmux/2026-06-15T03-5...  │
+│▌+        21 │  o..... rpwlyzsp 2daf82d1                                                  ... │  │╭─ @@ -0,0 +1,88 @@                                          ╮  │
+│▌+        22 │  │      add rust theme picker preview panel                                ... │  │▌+         1 &lt;!doctype html&gt;                                    │
+│▌+        23 │  │      A bench/results/rust-port/live-tmux/2026-06-15T03-52-38.623Z/live-t... │  │▌+         2 &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU...   │
+│▌+        24 │  │                                                                         ... │  │▌+         3 &lt;style&gt;                                            │
+│▌+        25 │  o..... omurtoty fe27794f                                                  ... │  │▌+         4 :root { color-scheme: dark; --bg:#111318; --p...   │
+│▌+        26 │  │      window rust theme picker with swatches                             ... │  │▌+         5 body { margin:32px; background:radial-gradien...   │
+│▌+        27 │  │      A bench/results/rust-port/live-tmux/2026-06-15T03-36-42.781Z/live-t... │  │▌+         6 h1 { margin:0 0 6px; } .meta { color:var(--mu...   │
+│▌+        28 │  │                                                                         ... │  │▌+         7 .card { background:rgba(26,32,41,.96); border...   │
+│▌+        29 │  o..... wmxowuvs c81e297d                                                  ... │  │▌+         8 pre { background:#050816; border:1px solid #2...   │
+│▌+        30 │  │      wire active theme into rust diff renderer                          ... │  │─────────────────── ⋯ 81 more rows below ───────────────────    │
+│▌+        31 │  │      A bench/results/rust-port/diff-render/2026-06-15T03-30-51.347Z/diff... │  │                                                                │
+│▌+        32 │  │                                                                         ... │  │                                                                │
+│▌+        33 │  o..... yzulmmsn f3619f25                                                  ... │  │                                                                │
+│▌+        34 │  │      wire active theme into rust sidebar surfaces                       ... │  │                                                                │
+│▌+        35 │  │      A bench/results/rust-port/live-tmux/2026-06-15T03-25-18.309Z/live-t... │  │                                                                │
+│▌+        36 │  │                                                                         ... │  │                                                                │
+│▌+        37 │  o..... rxknvunu b4b03fda                                                  ... │  │                                                                │
+│▌+        38 │  │      wire active theme into rust graph surfaces                         ... │  │                                                                │
+│▌+        39 │  │      A bench/results/rust-port/live-tmux/2026-06-15T03-19-34.337Z/live-t... │  │                                                                │
+│▌+        40 │  │                                                                         ... │  │                                                                │
+│▌+        41 │  o..... yswlrwxw 35814748                                                  ... │  │                                                                │
+│▌+        42 │  │      port bundled themes into rust tui picker                           ... │  │                                                                │
+│▌+        43 │  │      A bench/results/rust-port/live-tmux/2026-06-15T03-01-54.683Z/live-t... │  │                                                                │
+│▌+        44 │  │                                                                         ... │  │                                                                │
+│▌+        45 │  o..... tvvsyrlx 5e959642                                                  ... │  │                                                                │
+│▌+        46 │  │      wire rust theme picker and revset view behavior                    ... │  │                                                                │
+│▌+        47 │  │      A bench/results/rust-port/live-tmux/2026-06-15T02-48-43.727Z/live-t... │  │                                                                │
+│▌+        48 │  │                                                                         ... │  │                                                                │
+│▌+        49 │  o..... wvlqrqps dd5ea188                                                  ... │  │                                                                │
+│▌+        50 │  │      wire rust view leader command behavior                             ... │  │                                                                │
+│▌+        51 │  │      A bench/results/rust-port/live-tmux/2026-06-15T02-42-37.028Z/live-t... │  │                                                                │
+│▌+        52 │  │                                                                         ... │  │                                                                │
+│▌+        53 │  o..... qllxrstu f8475757                                                  ... │  │                                                                │
+│▌+        54 │  │      fill rust view leader controls from bun                            ... │  │                                                                │
+│▌+        55 │  │      A bench/results/rust-port/live-tmux/2026-06-15T02-30-50.396Z/live-t... │  │                                                                │
+│▌+        56 │  │                                                                         ... │  │                                                                │
+│▌+        57 │  o..... lzptmmtu 6a1b5dc1                                                  ... │  │                                                                │</pre></article>
+    <article><h3>Bun/OpenTUI oracle</h3><pre> DIFF   ^d  Log  []  File  j/k  Move  escape  Exit
+ Diff view: qorzvqxu
+Diff                                                                                                Details
+   1 + &lt;!doctype html&gt;                                                                              ----------------------------------------------------------------
+   2 + &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust live tmux proof&lt;/title&gt;                   Change: qorzvqxuykxt
+   3 + &lt;style&gt;                                                                                      Commit: d1406324f952
+   4 + :root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8;   Author: shamanicbeatbox@gmail.com
+        --muted:#8a95a7; --ok:#74b88c; --bad:#ce6f7c; --info:#7f9fbf; }                             Time: 2026-06-15 04:59:32.000 +01:00
+   5 + body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem)
+       ; color:var(--text); font-family:Inter,system-ui,sans-serif; }                               Description (x expand):
+   6 + h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .status.pass { co   brighten rust selected row treatments
+       lor:var(--ok); } .status.fail { color:var(--bad); }
+   7 + .card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; p   Files (f collapse):
+       adding:18px; box-shadow:0 18px 60px rgba(0,0,0,.26); }                                       (loading...)
+   8 + pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; over
+       flow:auto; font:12px/1.35 &#x27;JetBrains Mono&#x27;,ui-monospace,monospace; color:#d8dee8; } code {   Themes: [slate] ember  (^l then t)
+        color:var(--info); }
+   9 + &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+  10 + &lt;h1&gt;JUZU Rust live tmux proof · &lt;span class=&#x27;status pass&#x27;&gt;PASS&lt;/span&gt;&lt;/h1&gt;
+  11 + &lt;div class=&#x27;meta&#x27;&gt;Target: &lt;code&gt;juzu:rust-tui&lt;/code&gt; · pane command: &lt;code&gt;./target/releas
+       e/juzu-tui&lt;/code&gt; · expected: &lt;code&gt;LOG, dag&lt;/code&gt; · missing: &lt;code&gt;none&lt;/code&gt;&lt;/div&gt;
+  12 + &lt;section class=&#x27;card&#x27;&gt;&lt;pre&gt; LOG   ^X Act  ^O Ops  ^L View  ^B Book
+  13 +
+  14 +
+  15 + ┌ dag graph ──────────────────────────────────────────────────────────────────────────────
+       ──────┐┌ details ──────────────────────────────────────────────────────┐
+  16 + │
+             ││Selected                                                       │
+  17 + │  @...@&amp;gt; qorzvqxu 4ff1419e
+                ││Change: qorzvqxuykxtxvyzsvomlrqvpuosorym                       │
+  18 + │  │      (no description)
+             ││Commit: 4ff1419edd40                                           │
+  19 + │  │      no file changes
+             ││Lane: Some(0)  X: Some(50)  Y: Some(50)                        │
+  20 + │  │
+             ││Author: shamanic &amp;lt;shamanicbeatbox@gmail.com&amp;gt;                   │
+  21 + │  o..... rpwlyzsp 2daf82d1
+             ││Time: 2026-06-15T04:54:33+01:00                                │
+  22 + │  │      add rust theme picker preview panel
+             ││                                                               │
+  23 + │  │      A bench/results/rust-port/live-tmux/2026-06-15T03-52-38.623Z/live-tmux-proof.htm
+       l  …… ││Bookmarks                                                      │
+  24 + │  │
+             ││—                                                              │
+  25 + │  o..... omurtoty fe27794f
+             ││                                                               │
+  26 + │  │      window rust theme picker with swatches
+             ││Description (x expand):                                        │
+  27 + │  │      A bench/results/rust-port/live-tmux/2026-06-15T03-36-42.781Z/live-tmux-proof.htm
+       l  …… ││                                                               │
+  28 + │  │
+             ││                                                               │
+  29 + │  o..... wmxowuvs c81e297d
+             ││Files (f collapse):                                            │
+  30 + │  │      wire active theme into rust diff renderer
+             ││—                                                              │
+  31 + │  │      A bench/results/rust-port/diff-render/2026-06-15T03-30-51.347Z/diff-render-revie
+       w.... ││                                                               │
+  32 + │  │
+             ││Diff                                                           │
+  33 + │  o..... yzulmmsn f3619f25
+             ││  · 0 files · 0 raw · 0 rows · 0 shown                         │
+  34 + │  │      wire active theme into rust sidebar surfaces
+             ││  · clean patch                                                │
+  35 + │  │      A bench/results/rust-port/live-tmux/2026-06-15T03-25-18.309Z/live-tmux-proof.htm
+       l  …… ││                                                               │
+  36 + │  │
+             ││                                                               │
+  37 + │  o..... rxknvunu b4b03fda
+             ││                                                               │</pre></article>
+  </div>
+  <div class='notes'><h3>Visual gaps</h3><ul><li>Bun DiffView delegates to OpenTUI&#x27;s diff renderer: mutation backgrounds fill the row, line-number gutters are distinct, and the diff surface feels continuous.</li><li>Rust still has visible pane borders and text-local bands. Even when readable, it does not yet match Bun&#x27;s full-bar/full-pane treatment.</li><li>Rust diff/details split leaves stronger chrome and broken-line risk; Bun&#x27;s diff is a smooth pane swap with the details column remaining visually integrated.</li></ul></div>
+</section>
+
+</body></html>
