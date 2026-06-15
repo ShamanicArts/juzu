@@ -1596,10 +1596,35 @@ mod tests {
         assert_eq!(file_type_color("M"), Color::Rgb(0xc9, 0xa8, 0x6a));
         assert_eq!(file_type_color("D"), Color::Rgb(0xce, 0x6f, 0x7c));
     }
+
+    #[test]
+    fn compact_home_path_matches_old_footer_bar() {
+        let home = std::env::var("HOME").expect("HOME is set in parity environment");
+        let path = PathBuf::from(format!("{home}/dev/juzu"));
+        assert_eq!(compact_home_path(&path), "~/dev/juzu");
+    }
+}
+
+fn compact_home_path(path: &std::path::Path) -> String {
+    let raw = path.display().to_string();
+    let Some(home) = std::env::var_os("HOME") else {
+        return raw;
+    };
+    let home = PathBuf::from(home);
+    if let Ok(stripped) = path.strip_prefix(&home) {
+        let suffix = stripped.display().to_string();
+        if suffix.is_empty() {
+            "~".to_string()
+        } else {
+            format!("~/{}", suffix)
+        }
+    } else {
+        raw
+    }
 }
 
 fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
-    let repo = app.path.display().to_string();
+    let repo = compact_home_path(&app.path);
     let working_copy = app.nodes.iter().find(|node| node.is_working_copy);
     let wc = working_copy
         .map(|node| format!(" @{}", node.change_id.chars().take(8).collect::<String>()))

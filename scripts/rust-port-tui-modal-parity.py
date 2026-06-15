@@ -128,9 +128,11 @@ def assert_footer_info_contract(text: str, width: int, failures: list[str]) -> N
     for forbidden in ["^d", "[ ]", "j/k", "Esc"]:
         if forbidden in bottom:
             failures.append(f"footer info at {width} cols: bottom footer should not contain control hint {forbidden!r}")
-    for needle in ["/home/shamanic/dev/juzu", "nodes"]:
+    for needle in ["~/dev/juzu", "nodes"]:
         if needle not in bottom:
             failures.append(f"footer info at {width} cols: bottom footer missing {needle!r}")
+    if "/home/shamanic/dev/juzu" in bottom:
+        failures.append(f"footer info at {width} cols: bottom footer should compact HOME to '~'")
 
 
 def assert_diff_panel_contract(text: str, width: int, failures: list[str]) -> None:
@@ -242,7 +244,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_diff_code_band_contract(diff, width, failures)
         assert_contains(diff, "Change: nqmmukmt", "diff mode keeps selected commit", failures)
         assert_not_contains(diff, "preview capped", "full diff pane should not show sidebar preview cap rows", failures)
-        assert_contains(diff, "/home/shamanic/dev/juzu", "after Ctrl+D keeps footer repo context", failures)
+        assert_contains(diff, "~/dev/juzu", "after Ctrl+D keeps compact footer repo context", failures)
 
         send(session, "j")
         diff_scroll_down = wait_for(session, "diff rows 2-")
@@ -296,7 +298,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         captures["afterDiffQ"] = back
         assert_contains(back, "dag graph", "q returns to log", failures)
         assert_contains(back, "cap rust tui structured diff preview rows", "q returns with same selected commit", failures)
-        assert_contains(back, "/home/shamanic/dev/juzu", "after q keeps footer repo context", failures)
+        assert_contains(back, "~/dev/juzu", "after q keeps compact footer repo context", failures)
 
         send(session, "PageDown")
         sidebar_scroll_down = wait_for(session, "diff rows 11-")
@@ -318,7 +320,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         back_ctrl = wait_for(session, "dag graph")
         captures["afterDiffCtrlD"] = back_ctrl
         assert_contains(back_ctrl, "dag graph", "Ctrl+D returns to log", failures)
-        assert_contains(back_ctrl, "/home/shamanic/dev/juzu", "after Ctrl+D keeps footer repo context", failures)
+        assert_contains(back_ctrl, "~/dev/juzu", "after Ctrl+D keeps compact footer repo context", failures)
 
         send(session, "C-d")
         diff_before_esc = wait_for(session, "Ctrl+d back")
@@ -328,7 +330,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         captures["afterDiffEsc"] = back_esc
         assert_contains(back_esc, "dag graph", "Esc returns to log", failures)
         assert_contains(back_esc, "cap rust tui structured diff preview rows", "Esc returns with same selected commit", failures)
-        assert_contains(back_esc, "/home/shamanic/dev/juzu", "after Esc keeps footer repo context", failures)
+        assert_contains(back_esc, "~/dev/juzu", "after Esc keeps compact footer repo context", failures)
 
         send(session, "C-d")
         diff_before_g = wait_for(session, "Ctrl+d back")
@@ -338,7 +340,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         captures["afterDiffG"] = back_g
         assert_contains(back_g, "dag graph", "g returns to log", failures)
         assert_contains(back_g, "cap rust tui structured diff preview rows", "g returns with same selected commit", failures)
-        assert_contains(back_g, "/home/shamanic/dev/juzu", "after g keeps footer repo context", failures)
+        assert_contains(back_g, "~/dev/juzu", "after g keeps compact footer repo context", failures)
     finally:
         tmux("kill-session", "-t", session, check=False)
     return {
