@@ -241,6 +241,20 @@ fn theme_options() -> &'static [&'static str] {
     NAMES
 }
 
+fn theme_picker_window(selected: usize, total: usize, capacity: usize) -> (usize, usize) {
+    if total == 0 || capacity == 0 {
+        return (0, 0);
+    }
+    let capacity = capacity.min(total);
+    let selected = selected.min(total.saturating_sub(1));
+    let before = capacity.saturating_sub(1) / 2;
+    let mut start = selected.saturating_sub(before);
+    if start + capacity > total {
+        start = total.saturating_sub(capacity);
+    }
+    (start, start + capacity)
+}
+
 fn extract_hex_color(raw: &str) -> Option<&str> {
     let start = raw.find('#')?;
     raw.get(start..start + 7)
@@ -1760,17 +1774,28 @@ fn render_sidebar(
             Line::from(Span::styled("THEME SELECTOR", sidebar_heading_style(t))),
             Line::from(""),
         ];
-        for (index, theme) in theme_options().iter().enumerate() {
+        let options = theme_options();
+        let list_capacity = (area.height as usize).saturating_sub(8).max(5);
+        let (start, end) =
+            theme_picker_window(app.theme_picker_index, options.len(), list_capacity);
+        if start > 0 {
+            lines.push(Line::from(Span::styled(
+                format!("… {start} above"),
+                sidebar_muted_style(t),
+            )));
+        }
+        for (index, theme) in options.iter().enumerate().skip(start).take(end - start) {
             let cursor = if index == app.theme_picker_index {
                 ">"
             } else {
                 " "
             };
             let current = if *theme == app.current_theme {
-                " *"
+                "●"
             } else {
-                ""
+                " "
             };
+            let swatch = UiTokens::named(theme);
             let style = if index == app.theme_picker_index {
                 Style::default()
                     .fg(t.semantic_success)
@@ -1778,16 +1803,27 @@ fn render_sidebar(
             } else {
                 Style::default().fg(t.slate_text)
             };
+            lines.push(Line::from(vec![
+                Span::styled(format!("{cursor} "), style),
+                Span::styled("██", Style::default().fg(swatch.semantic_info)),
+                Span::raw(" "),
+                Span::styled(current, Style::default().fg(t.semantic_success)),
+                Span::raw(" "),
+                Span::styled((*theme).to_string(), style),
+            ]));
+        }
+        if end < options.len() {
             lines.push(Line::from(Span::styled(
-                format!("{cursor} {theme}{current}"),
-                style,
+                format!("… {} below", options.len() - end),
+                sidebar_muted_style(t),
             )));
         }
         lines.extend([
             Line::from(""),
+            Line::from(format!("showing {}-{} / {}", start + 1, end, options.len())),
             Line::from("j/k or ↑/↓: select"),
-            Line::from("Enter: apply"),
-            Line::from("Esc: cancel"),
+            Line::from("Enter: apply stays open"),
+            Line::from("Esc/q: close"),
         ]);
         render_sidebar_mode_panel(frame, area, " Details ", lines, t);
         return;
@@ -2362,6 +2398,13 @@ mod tests {
         for span in &line.spans {
             assert_eq!(span.style.bg, Some(UI_TOKENS.slate_bg2));
         }
+    }
+
+    #[test]
+    fn theme_picker_window_keeps_selected_visible() {
+        assert_eq!(theme_picker_window(0, 21, 8), (0, 8));
+        assert_eq!(theme_picker_window(10, 21, 8), (7, 15));
+        assert_eq!(theme_picker_window(20, 21, 8), (13, 21));
     }
 
     #[test]
