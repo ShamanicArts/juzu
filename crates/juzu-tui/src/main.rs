@@ -1173,8 +1173,8 @@ fn render_diff_pane(
     lines.push(Line::from(vec![Span::styled(
         format!("{:<width$}", title_bar, width = width),
         Style::default()
-            .fg(Color::LightCyan)
-            .bg(Color::Rgb(15, 23, 42))
+            .fg(t.semantic_info)
+            .bg(t.slate_bg2)
             .add_modifier(Modifier::BOLD),
     )]));
     if let Some(diff) = diff {
@@ -1185,6 +1185,7 @@ fn render_diff_pane(
             )));
         } else if full_diff_rows(diff).is_empty() {
             lines.push(render_diff_metadata(
+                t,
                 "No diff available for selected change",
                 width,
             ));
@@ -1194,16 +1195,17 @@ fn render_diff_pane(
             let max_scroll = rows.len().saturating_sub(visible_count);
             let scroll = app.diff_scroll.min(max_scroll);
             let end = (scroll + visible_count).min(rows.len());
-            lines.push(render_diff_viewport_bar(scroll, end, rows.len(), width));
-            if let Some(anchor) = render_diff_anchor_label(&rows, scroll, width) {
+            lines.push(render_diff_viewport_bar(t, scroll, end, rows.len(), width));
+            if let Some(anchor) = render_diff_anchor_label(t, &rows, scroll, width) {
                 lines.push(anchor);
             }
             for row in rows.iter().skip(scroll).take(visible_count) {
-                lines.push(render_diff_row(row, width));
+                lines.push(render_diff_row(t, row, width));
             }
         }
     } else {
         lines.push(render_diff_metadata(
+            t,
             "No diff available for selected change",
             width,
         ));
@@ -1961,6 +1963,7 @@ fn render_diff_preview_lines(
     };
 
     lines.push(render_diff_metadata(
+        t,
         &format!(
             "{} files · {} raw · {} rows · {} shown",
             diff.file_count,
@@ -1984,6 +1987,7 @@ fn render_diff_preview_lines(
     };
     if active_rows.is_empty() {
         lines.push(render_diff_metadata(
+            t,
             "clean patch",
             sidebar_width.saturating_sub(4),
         ));
@@ -1994,100 +1998,88 @@ fn render_diff_preview_lines(
     let scroll = app.diff_scroll.min(max_scroll);
     let end = (scroll + visible_count).min(active_rows.len());
     lines.push(render_diff_scroll_range(
+        t,
         scroll,
         end,
         active_rows.len(),
         sidebar_width.saturating_sub(4),
     ));
     if let Some(anchor) =
-        render_diff_anchor_label(&active_rows, scroll, sidebar_width.saturating_sub(4))
+        render_diff_anchor_label(t, &active_rows, scroll, sidebar_width.saturating_sub(4))
     {
         lines.push(anchor);
     }
     for row in active_rows.iter().skip(scroll).take(visible_count) {
-        lines.push(render_diff_row(row, sidebar_width.saturating_sub(4)));
+        lines.push(render_diff_row(t, row, sidebar_width.saturating_sub(4)));
     }
     if active_rows.len() > end {
         lines.push(render_diff_collapse_row(
+            t,
             &format!("{} more rows below", active_rows.len() - end),
             sidebar_width.saturating_sub(4),
         ));
     }
 }
 
-fn render_diff_row(row: &DiffRow, max_len: usize) -> Line<'static> {
+fn render_diff_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Line<'static> {
     match row.kind {
-        DiffRowKind::FileHeader => render_diff_file_header(row, max_len),
-        DiffRowKind::Metadata => render_diff_metadata(&row.text, max_len),
-        DiffRowKind::HunkHeader => render_diff_hunk_header(row, max_len),
+        DiffRowKind::FileHeader => render_diff_file_header(tokens, row, max_len),
+        DiffRowKind::Metadata => render_diff_metadata(tokens, &row.text, max_len),
+        DiffRowKind::HunkHeader => render_diff_hunk_header(tokens, row, max_len),
         DiffRowKind::Context | DiffRowKind::Add | DiffRowKind::Remove => {
-            render_diff_code_row(row, max_len)
+            render_diff_code_row(tokens, row, max_len)
         }
-        DiffRowKind::Collapse => render_diff_collapse_row(&row.text, max_len),
+        DiffRowKind::Collapse => render_diff_collapse_row(tokens, &row.text, max_len),
     }
 }
 
-fn render_diff_file_header(row: &DiffRow, max_len: usize) -> Line<'static> {
+fn render_diff_file_header(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Line<'static> {
     let text = truncate(&format!("◆ {}", row.text), max_len.saturating_sub(2));
+    let cap_style = Style::default()
+        .fg(tokens.semantic_info)
+        .bg(tokens.slate_bg2);
     Line::from(vec![
-        Span::styled(
-            "╭",
-            Style::default()
-                .fg(Color::LightBlue)
-                .bg(Color::Rgb(17, 24, 39)),
-        ),
+        Span::styled("╭", cap_style),
         Span::styled(
             format!(" {:<width$}", text, width = max_len.saturating_sub(2)),
             Style::default()
-                .fg(Color::LightCyan)
-                .bg(Color::Rgb(17, 24, 39))
+                .fg(tokens.semantic_info)
+                .bg(tokens.slate_bg2)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::styled(
-            "╮",
-            Style::default()
-                .fg(Color::LightBlue)
-                .bg(Color::Rgb(17, 24, 39)),
-        ),
+        Span::styled("╮", cap_style),
     ])
 }
 
-fn render_diff_metadata(text: &str, max_len: usize) -> Line<'static> {
+fn render_diff_metadata(tokens: &UiTokens, text: &str, max_len: usize) -> Line<'static> {
     Line::from(vec![
-        Span::styled("  · ", Style::default().fg(UI_TOKENS.slate_text_muted)),
+        Span::styled("  · ", sidebar_muted_style(tokens)),
         Span::styled(
             truncate(text, max_len.saturating_sub(4)),
-            Style::default().fg(UI_TOKENS.slate_text_muted),
+            sidebar_muted_style(tokens),
         ),
     ])
 }
 
-fn render_diff_hunk_header(row: &DiffRow, max_len: usize) -> Line<'static> {
+fn render_diff_hunk_header(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Line<'static> {
     let text = truncate(&row.text, max_len.saturating_sub(5));
+    let cap_style = Style::default()
+        .fg(tokens.semantic_warn)
+        .bg(tokens.slate_bg2);
     Line::from(vec![
-        Span::styled(
-            "╭─ ",
-            Style::default()
-                .fg(Color::LightMagenta)
-                .bg(Color::Rgb(30, 27, 75)),
-        ),
+        Span::styled("╭─ ", cap_style),
         Span::styled(
             format!("{:<width$}", text, width = max_len.saturating_sub(5)),
             Style::default()
-                .fg(Color::LightBlue)
-                .bg(Color::Rgb(30, 27, 75))
+                .fg(tokens.semantic_info)
+                .bg(tokens.slate_bg2)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::styled(
-            " ╮",
-            Style::default()
-                .fg(Color::LightMagenta)
-                .bg(Color::Rgb(30, 27, 75)),
-        ),
+        Span::styled(" ╮", cap_style),
     ])
 }
 
-fn render_diff_code_row(row: &DiffRow, max_len: usize) -> Line<'static> {
+fn render_diff_code_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Line<'static> {
     let old_line = row
         .old_line
         .map(|value| value.to_string())
@@ -2106,73 +2098,80 @@ fn render_diff_code_row(row: &DiffRow, max_len: usize) -> Line<'static> {
         DiffRowKind::Add | DiffRowKind::Remove => "▌",
         _ => "│",
     };
-    let (gutter_style, sign_style, text_style) = match row.kind {
+    let (gutter_style, band_style, sign_style, text_style) = match row.kind {
         DiffRowKind::Add => (
             Style::default()
-                .fg(UI_TOKENS.semantic_success)
-                .bg(Color::Rgb(5, 46, 22)),
+                .fg(tokens.semantic_success)
+                .bg(tokens.slate_bg0),
             Style::default()
-                .fg(Color::Rgb(187, 247, 208))
-                .bg(Color::Rgb(20, 83, 45))
+                .fg(tokens.semantic_success)
+                .bg(tokens.slate_bg0)
                 .add_modifier(Modifier::BOLD),
             Style::default()
-                .fg(Color::Rgb(187, 247, 208))
-                .bg(Color::Rgb(5, 46, 22)),
+                .fg(tokens.slate_bg0)
+                .bg(tokens.semantic_success)
+                .add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(tokens.semantic_success)
+                .bg(tokens.slate_bg0),
         ),
         DiffRowKind::Remove => (
             Style::default()
-                .fg(UI_TOKENS.semantic_error)
-                .bg(Color::Rgb(69, 10, 10)),
+                .fg(tokens.semantic_error)
+                .bg(tokens.slate_bg0),
             Style::default()
-                .fg(Color::Rgb(254, 202, 202))
-                .bg(Color::Rgb(127, 29, 29))
+                .fg(tokens.semantic_error)
+                .bg(tokens.slate_bg0)
                 .add_modifier(Modifier::BOLD),
             Style::default()
-                .fg(Color::Rgb(254, 202, 202))
-                .bg(Color::Rgb(69, 10, 10)),
+                .fg(tokens.slate_bg0)
+                .bg(tokens.semantic_error)
+                .add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(tokens.semantic_error)
+                .bg(tokens.slate_bg0),
         ),
         _ => (
-            Style::default().fg(UI_TOKENS.slate_text_muted),
-            Style::default().fg(UI_TOKENS.slate_text_muted),
-            Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
+            sidebar_muted_style(tokens),
+            sidebar_muted_style(tokens),
+            sidebar_muted_style(tokens),
+            Style::default()
+                .fg(tokens.slate_text_muted)
+                .bg(tokens.slate_bg0)
+                .add_modifier(Modifier::DIM),
         ),
     };
     let text_budget = max_len.saturating_sub(gutter.len() + 5);
     let content = row.text.strip_prefix(['+', '-', ' ']).unwrap_or(&row.text);
     Line::from(vec![
-        Span::styled(band, sign_style),
+        Span::styled(band, band_style),
         Span::styled(sign.to_string(), sign_style),
-        Span::styled(" ", Style::default().fg(UI_TOKENS.slate_text_muted)),
+        Span::styled(" ", sidebar_muted_style(tokens)),
         Span::styled(gutter, gutter_style),
-        Span::styled(" ", Style::default().fg(UI_TOKENS.slate_text_muted)),
+        Span::styled(" ", sidebar_muted_style(tokens)),
         Span::styled(truncate(content, text_budget), text_style),
     ])
 }
 
-fn render_diff_collapse_row(text: &str, max_len: usize) -> Line<'static> {
+fn render_diff_collapse_row(tokens: &UiTokens, text: &str, max_len: usize) -> Line<'static> {
     let label = format!(" ⋯ {} ", text.trim_start_matches('⋯').trim());
     let clipped = truncate(&label, max_len);
     let left = max_len.saturating_sub(clipped.len()) / 2;
     let right = max_len.saturating_sub(clipped.len() + left);
     Line::from(vec![
-        Span::styled(
-            "─".repeat(left),
-            Style::default().fg(UI_TOKENS.slate_text_muted),
-        ),
+        Span::styled("─".repeat(left), sidebar_muted_style(tokens)),
         Span::styled(
             clipped,
             Style::default()
-                .fg(UI_TOKENS.semantic_warn)
-                .bg(Color::Rgb(66, 32, 6)),
+                .fg(tokens.semantic_warn)
+                .bg(tokens.slate_bg2),
         ),
-        Span::styled(
-            "─".repeat(right),
-            Style::default().fg(UI_TOKENS.slate_text_muted),
-        ),
+        Span::styled("─".repeat(right), sidebar_muted_style(tokens)),
     ])
 }
 
 fn render_diff_viewport_bar(
+    tokens: &UiTokens,
     scroll: usize,
     end: usize,
     total: usize,
@@ -2189,8 +2188,8 @@ fn render_diff_viewport_bar(
     Line::from(vec![Span::styled(
         format!(" {:<width$}", clipped, width = max_len.saturating_sub(1)),
         Style::default()
-            .fg(UI_TOKENS.slate_text)
-            .bg(UI_TOKENS.slate_bg2)
+            .fg(tokens.slate_text)
+            .bg(tokens.slate_bg2)
             .add_modifier(Modifier::BOLD),
     )])
 }
@@ -2221,6 +2220,7 @@ fn render_scroll_handle(scroll: usize, end: usize, total: usize, slots: usize) -
 }
 
 fn render_diff_scroll_range(
+    tokens: &UiTokens,
     scroll: usize,
     end: usize,
     total: usize,
@@ -2231,10 +2231,11 @@ fn render_diff_scroll_range(
     } else {
         format!("diff rows {}-{} of {}", scroll + 1, end, total)
     };
-    render_diff_metadata(&truncate(&label, max_len), max_len)
+    render_diff_metadata(tokens, &truncate(&label, max_len), max_len)
 }
 
 fn render_diff_anchor_label(
+    tokens: &UiTokens,
     rows: &[DiffRow],
     scroll: usize,
     max_len: usize,
@@ -2262,8 +2263,8 @@ fn render_diff_anchor_label(
     Some(Line::from(vec![Span::styled(
         format!(" {:<width$}", clipped, width = max_len.saturating_sub(1)),
         Style::default()
-            .fg(Color::Rgb(191, 219, 254))
-            .bg(Color::Rgb(15, 23, 42))
+            .fg(tokens.semantic_info)
+            .bg(tokens.slate_bg2)
             .add_modifier(Modifier::BOLD),
     )]))
 }
@@ -2357,10 +2358,35 @@ mod tests {
 
     #[test]
     fn diff_viewport_bar_uses_old_panel_tokens() {
-        let line = render_diff_viewport_bar(0, 10, 40, 80);
+        let line = render_diff_viewport_bar(&UI_TOKENS, 0, 10, 40, 80);
         for span in &line.spans {
             assert_eq!(span.style.bg, Some(UI_TOKENS.slate_bg2));
         }
+    }
+
+    #[test]
+    fn diff_renderer_styles_use_active_theme_tokens() {
+        let theme = UiTokens::named("catppuccin");
+        let viewport = render_diff_viewport_bar(&theme, 0, 10, 40, 80);
+        assert_eq!(
+            viewport.spans[0].style.bg,
+            Some(Color::Rgb(0x31, 0x32, 0x44))
+        );
+        assert_eq!(
+            viewport.spans[0].style.fg,
+            Some(Color::Rgb(0xcd, 0xd6, 0xf4))
+        );
+
+        let add_row = DiffRow {
+            kind: DiffRowKind::Add,
+            file_index: 0,
+            hunk_index: Some(0),
+            old_line: None,
+            new_line: Some(1),
+            text: "+added".to_string(),
+        };
+        let line = render_diff_code_row(&theme, &add_row, 80);
+        assert_eq!(line.spans[0].style.fg, Some(Color::Rgb(0xa6, 0xe3, 0xa1)));
     }
 
     #[test]
