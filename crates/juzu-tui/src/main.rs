@@ -1289,8 +1289,9 @@ fn render_diff_pane(
             let visible_count = height.saturating_sub(lines.len()).max(1);
             let max_scroll = rows.len().saturating_sub(visible_count);
             let scroll = app.diff_scroll.min(max_scroll);
+            let gutter_width = diff_line_number_gutter_width(&rows);
             for row in rows.iter().skip(scroll).take(visible_count) {
-                for rendered in render_full_diff_row(t, row, width) {
+                for rendered in render_full_diff_row_with_gutter(t, row, width, gutter_width) {
                     if lines.len() >= height {
                         break;
                     }
@@ -2368,9 +2369,56 @@ fn render_diff_preview_lines(
     }
 }
 
+#[cfg(test)]
+fn render_full_diff_rows(
+    tokens: &UiTokens,
+    rows: &[DiffRow],
+    max_len: usize,
+) -> Vec<Line<'static>> {
+    let gutter_width = diff_line_number_gutter_width(rows);
+    rows.iter()
+        .flat_map(|row| render_full_diff_row_with_gutter(tokens, row, max_len, gutter_width))
+        .collect()
+}
+
+fn diff_line_number_gutter_width(rows: &[DiffRow]) -> usize {
+    rows.iter()
+        .filter_map(diff_row_line_number)
+        .map(|value| value.to_string().chars().count())
+        .max()
+        .unwrap_or(0)
+        .max(3)
+}
+
+fn diff_row_line_number(row: &DiffRow) -> Option<usize> {
+    match row.kind {
+        DiffRowKind::Remove => row.old_line,
+        DiffRowKind::Add | DiffRowKind::Context => row.new_line.or(row.old_line),
+        _ => row.new_line.or(row.old_line),
+    }
+}
+
+#[cfg(test)]
 fn render_full_diff_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Vec<Line<'static>> {
+    let gutter_width = diff_row_line_number(row)
+        .map(|value| value.to_string().chars().count())
+        .unwrap_or(0)
+        .max(3);
+    render_full_diff_row_with_gutter(tokens, row, max_len, gutter_width)
+}
+
+fn render_full_diff_row_with_gutter(
+    tokens: &UiTokens,
+    row: &DiffRow,
+    max_len: usize,
+    gutter_width: usize,
+) -> Vec<Line<'static>> {
     if is_no_newline_marker(row) {
-        return vec![render_diff_no_newline_marker(tokens, max_len)];
+        return vec![render_diff_no_newline_marker_with_gutter(
+            tokens,
+            max_len,
+            gutter_width,
+        )];
     }
     if !matches!(
         row.kind,
@@ -2378,14 +2426,9 @@ fn render_full_diff_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Vec
     ) {
         return vec![render_diff_row(tokens, row, max_len)];
     }
-    let line_number = match row.kind {
-        DiffRowKind::Remove => row.old_line,
-        DiffRowKind::Add | DiffRowKind::Context => row.new_line.or(row.old_line),
-        _ => row.new_line.or(row.old_line),
-    }
-    .map(|value| value.to_string())
-    .unwrap_or_default();
-    let gutter_width = line_number.chars().count().max(3);
+    let line_number = diff_row_line_number(row)
+        .map(|value| value.to_string())
+        .unwrap_or_default();
     let sign_width = 3usize;
     let text_budget = max_len.saturating_sub(gutter_width + sign_width);
     if text_budget == 0 {
@@ -2574,8 +2617,11 @@ fn render_diff_code_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Lin
     ])
 }
 
-fn render_diff_no_newline_marker(tokens: &UiTokens, max_len: usize) -> Line<'static> {
-    let gutter_width = 3usize;
+fn render_diff_no_newline_marker_with_gutter(
+    tokens: &UiTokens,
+    max_len: usize,
+    gutter_width: usize,
+) -> Line<'static> {
     let sign_width = 3usize;
     let text_budget = max_len.saturating_sub(gutter_width + sign_width);
     let content = truncate(r"\ No newline at end of file", text_budget);
@@ -3043,6 +3089,41 @@ mod tests {
         assert!(!visible
             .iter()
             .any(|row| row.text.contains("diff --git") || row.text.contains("@@")));
+    }
+
+    #[test]
+    fn full_diff_rows_share_larger_bun_line_number_gutter() {
+        let rows = vec![
+            DiffRow {
+                kind: DiffRowKind::Add,
+                file_index: 0,
+                hunk_index: Some(0),
+                old_line: None,
+                new_line: Some(9),
+                text: "+abcdef".to_string(),
+            },
+            DiffRow {
+                kind: DiffRowKind::Add,
+                file_index: 0,
+                hunk_index: Some(0),
+                old_line: None,
+                new_line: Some(1200),
+                text: "+ghijkl".to_string(),
+            },
+        ];
+        let rendered: Vec<String> = render_full_diff_rows(&UI_TOKENS, &rows, 12)
+            .iter()
+            .map(|line| {
+                line.spans
+                    .iter()
+                    .map(|span| span.content.as_ref())
+                    .collect()
+            })
+            .collect();
+        assert_eq!(rendered[0], "   9 + abcde");
+        assert_eq!(rendered[1], "       f    ");
+        assert_eq!(rendered[2], "1200 + ghijk");
+        assert_eq!(rendered[3], "       l    ");
     }
 
     #[test]
