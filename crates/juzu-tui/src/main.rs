@@ -36,6 +36,9 @@ struct UiTokens {
     semantic_warn: Color,
     semantic_error: Color,
     semantic_mode_log: Color,
+    semantic_file_add: Color,
+    semantic_file_del: Color,
+    slate_bg1: Color,
     graph_lanes: [Color; 8],
     graph_text_desc: Color,
     graph_text_muted: Color,
@@ -60,6 +63,9 @@ const UI_TOKENS: UiTokens = UiTokens {
     semantic_warn: Color::Rgb(0xc9, 0xa8, 0x6a),
     semantic_error: Color::Rgb(0xce, 0x6f, 0x7c),
     semantic_mode_log: Color::Rgb(0x6f, 0x89, 0xad),
+    semantic_file_add: Color::Rgb(0x22, 0xc5, 0x5e),
+    semantic_file_del: Color::Rgb(0xef, 0x44, 0x44),
+    slate_bg1: Color::Rgb(0x16, 0x1b, 0x22),
     graph_lanes: [
         Color::Rgb(0x00, 0xf0, 0xff),
         Color::Rgb(0xff, 0x00, 0x55),
@@ -181,6 +187,7 @@ impl UiTokens {
     fn apply_theme_token(&mut self, section: &str, key: &str, color: Color) {
         match (section, key) {
             ("slate", "bg0") => self.slate_bg0 = color,
+            ("slate", "bg1") => self.slate_bg1 = color,
             ("slate", "bg2") => self.slate_bg2 = color,
             ("slate", "panel") => self.slate_panel = color,
             ("slate", "borderSoft") => self.slate_border_soft = color,
@@ -192,14 +199,23 @@ impl UiTokens {
             ("semantic", "error") => self.semantic_error = color,
             ("semantic", "info" | "modeOps" | "modeView") => self.semantic_info = color,
             ("semantic", "modeLog") => self.semantic_mode_log = color,
-            ("semantic", "fileAdd") => self.graph_file_add = color,
+            ("semantic", "fileAdd") => {
+                self.semantic_file_add = color;
+                self.graph_file_add = color;
+            }
             ("semantic", "fileMod") => self.graph_file_mod = color,
-            ("semantic", "fileDel") => self.graph_file_del = color,
+            ("semantic", "fileDel") => {
+                self.semantic_file_del = color;
+                self.graph_file_del = color;
+            }
             ("graph", "text") => self.graph_text_muted = color,
             ("graph", "textDesc") => self.graph_text_desc = color,
             ("graph", "nodeBorder") => self.graph_commit_id = color,
             ("graph", "bookmark") => self.graph_bookmark = color,
             ("graph", "bookmarkSelected") => self.graph_bookmark_selected = color,
+            ("graph", "fileAdd") => self.graph_file_add = color,
+            ("graph", "fileMod") => self.graph_file_mod = color,
+            ("graph", "fileDel") => self.graph_file_del = color,
             _ => {}
         }
     }
@@ -2386,7 +2402,7 @@ fn render_diff_hunk_header(_tokens: &UiTokens, row: &DiffRow, max_len: usize) ->
     ])
 }
 
-fn render_diff_code_row(_tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Line<'static> {
+fn render_diff_code_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Line<'static> {
     let old_line = row
         .old_line
         .map(|value| value.to_string())
@@ -2405,35 +2421,37 @@ fn render_diff_code_row(_tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Li
         DiffRowKind::Add | DiffRowKind::Remove => "▌",
         _ => "│",
     };
+    let add_bg = mix_color(tokens.slate_bg0, tokens.semantic_file_add, 0.48);
+    let remove_bg = mix_color(tokens.slate_bg0, tokens.semantic_file_del, 0.48);
     let (gutter_style, sign_style, text_style) = match row.kind {
         DiffRowKind::Add => (
             Style::default()
-                .fg(UI_TOKENS.semantic_success)
-                .bg(Color::Rgb(5, 46, 22)),
+                .fg(tokens.slate_text_muted)
+                .bg(tokens.slate_bg1),
             Style::default()
-                .fg(Color::Rgb(187, 247, 208))
-                .bg(Color::Rgb(20, 83, 45))
+                .fg(tokens.semantic_file_add)
+                .bg(add_bg)
                 .add_modifier(Modifier::BOLD),
-            Style::default()
-                .fg(Color::Rgb(187, 247, 208))
-                .bg(Color::Rgb(5, 46, 22)),
+            Style::default().fg(tokens.slate_text).bg(add_bg),
         ),
         DiffRowKind::Remove => (
             Style::default()
-                .fg(UI_TOKENS.semantic_error)
-                .bg(Color::Rgb(69, 10, 10)),
+                .fg(tokens.slate_text_muted)
+                .bg(tokens.slate_bg1),
             Style::default()
-                .fg(Color::Rgb(254, 202, 202))
-                .bg(Color::Rgb(127, 29, 29))
+                .fg(tokens.semantic_file_del)
+                .bg(remove_bg)
                 .add_modifier(Modifier::BOLD),
-            Style::default()
-                .fg(Color::Rgb(254, 202, 202))
-                .bg(Color::Rgb(69, 10, 10)),
+            Style::default().fg(tokens.slate_text).bg(remove_bg),
         ),
         _ => (
-            Style::default().fg(UI_TOKENS.slate_text_muted),
-            Style::default().fg(UI_TOKENS.slate_text_muted),
-            Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
+            Style::default()
+                .fg(tokens.slate_text_muted)
+                .bg(tokens.slate_bg1),
+            Style::default()
+                .fg(tokens.slate_text_muted)
+                .bg(tokens.slate_bg0),
+            Style::default().fg(tokens.slate_text).bg(tokens.slate_bg0),
         ),
     };
     let text_budget = max_len.saturating_sub(gutter.len() + 5);
@@ -2825,8 +2843,46 @@ mod tests {
     }
 
     #[test]
-    fn diff_code_rows_keep_readable_pre_theme_backgrounds() {
+    fn diff_code_rows_match_bun_diffview_palette() {
+        let add_bg = mix_color(UI_TOKENS.slate_bg0, UI_TOKENS.semantic_file_add, 0.48);
+        let remove_bg = mix_color(UI_TOKENS.slate_bg0, UI_TOKENS.semantic_file_del, 0.48);
+        assert_eq!(add_bg, Color::Rgb(25, 104, 58));
+        assert_eq!(remove_bg, Color::Rgb(124, 43, 45));
+
+        let add_row = DiffRow {
+            kind: DiffRowKind::Add,
+            file_index: 0,
+            hunk_index: Some(0),
+            old_line: None,
+            new_line: Some(1),
+            text: "+added".to_string(),
+        };
+        let line = render_diff_code_row(&UI_TOKENS, &add_row, 80);
+        assert_eq!(line.spans[3].style.bg, Some(UI_TOKENS.slate_bg1));
+        assert_eq!(line.spans[0].style.bg, Some(add_bg));
+        assert_eq!(line.spans[5].style.bg, Some(add_bg));
+        assert_eq!(line.spans[0].style.fg, Some(UI_TOKENS.semantic_file_add));
+
+        let remove_row = DiffRow {
+            kind: DiffRowKind::Remove,
+            file_index: 0,
+            hunk_index: Some(0),
+            old_line: Some(1),
+            new_line: None,
+            text: "-removed".to_string(),
+        };
+        let line = render_diff_code_row(&UI_TOKENS, &remove_row, 80);
+        assert_eq!(line.spans[3].style.bg, Some(UI_TOKENS.slate_bg1));
+        assert_eq!(line.spans[0].style.bg, Some(remove_bg));
+        assert_eq!(line.spans[5].style.bg, Some(remove_bg));
+        assert_eq!(line.spans[0].style.fg, Some(UI_TOKENS.semantic_file_del));
+    }
+
+    #[test]
+    fn diff_code_rows_keep_readable_non_black_mutation_backgrounds() {
         let theme = UiTokens::named("catppuccin");
+        let add_bg = mix_color(theme.slate_bg0, theme.semantic_file_add, 0.48);
+        let remove_bg = mix_color(theme.slate_bg0, theme.semantic_file_del, 0.48);
         let add_row = DiffRow {
             kind: DiffRowKind::Add,
             file_index: 0,
@@ -2836,9 +2892,10 @@ mod tests {
             text: "+added".to_string(),
         };
         let line = render_diff_code_row(&theme, &add_row, 80);
-        assert_eq!(line.spans[0].style.bg, Some(Color::Rgb(20, 83, 45)));
-        assert_eq!(line.spans[5].style.bg, Some(Color::Rgb(5, 46, 22)));
+        assert_eq!(line.spans[0].style.bg, Some(add_bg));
+        assert_eq!(line.spans[5].style.bg, Some(add_bg));
         assert_ne!(line.spans[5].style.bg, Some(theme.slate_bg0));
+        assert_eq!(line.spans[5].style.fg, Some(theme.slate_text));
 
         let remove_row = DiffRow {
             kind: DiffRowKind::Remove,
@@ -2849,9 +2906,10 @@ mod tests {
             text: "-removed".to_string(),
         };
         let line = render_diff_code_row(&theme, &remove_row, 80);
-        assert_eq!(line.spans[0].style.bg, Some(Color::Rgb(127, 29, 29)));
-        assert_eq!(line.spans[5].style.bg, Some(Color::Rgb(69, 10, 10)));
+        assert_eq!(line.spans[0].style.bg, Some(remove_bg));
+        assert_eq!(line.spans[5].style.bg, Some(remove_bg));
         assert_ne!(line.spans[5].style.bg, Some(theme.slate_bg0));
+        assert_eq!(line.spans[5].style.fg, Some(theme.slate_text));
     }
 
     #[test]
