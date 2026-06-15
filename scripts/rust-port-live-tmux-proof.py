@@ -23,6 +23,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", default="juzu:rust-tui")
     parser.add_argument("--expect", default="LOG,Change:")
+    parser.add_argument("--require-command", default="juzu-tui")
     parser.add_argument("--lines", type=int, default=160)
     args = parser.parse_args()
 
@@ -30,6 +31,8 @@ def main() -> None:
     command = run(["tmux", "display-message", "-p", "-t", args.target, "#{pane_current_command}"], check=False).stdout.strip()
     expected = [needle.strip() for needle in args.expect.split(",") if needle.strip()]
     missing = [needle for needle in expected if needle not in capture]
+    if args.require_command and args.require_command not in command:
+        missing.append(f"pane command containing {args.require_command!r}")
     stamp = dt.datetime.now(dt.UTC).isoformat(timespec="milliseconds").replace(":", "-").replace("+00-00", "Z")
     out_dir = ROOT / "bench/results/rust-port/live-tmux" / stamp
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -44,7 +47,7 @@ h1 {{ margin:0 0 6px; }} .meta {{ color:var(--muted); margin-bottom:18px; }} .st
 pre {{ background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; }} code {{ color:var(--info); }}
 </style></head><body>
 <h1>JUZU Rust live tmux proof · <span class='status {'pass' if not missing else 'fail'}'>{status}</span></h1>
-<div class='meta'>Target: <code>{html.escape(args.target)}</code> · pane command: <code>{html.escape(command)}</code> · expected: <code>{html.escape(', '.join(expected))}</code> · missing: <code>{html.escape(', '.join(missing) or 'none')}</code></div>
+<div class='meta'>Target: <code>{html.escape(args.target)}</code> · pane command: <code>{html.escape(command)}</code> · required command: <code>{html.escape(args.require_command or 'none')}</code> · expected: <code>{html.escape(', '.join(expected))}</code> · missing: <code>{html.escape(', '.join(missing) or 'none')}</code></div>
 <section class='card'><pre>{html.escape(capture)}</pre></section>
 </body></html>"""
     path = out_dir / "live-tmux-proof.html"
