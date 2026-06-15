@@ -2446,10 +2446,12 @@ fn render_diff_code_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Lin
     let sign_cell = format!(" {sign}");
     let text_budget = max_len.saturating_sub(gutter.len() + sign_cell.len());
     let content = row.text.strip_prefix(['+', '-', ' ']).unwrap_or(&row.text);
+    let content = truncate(content, text_budget);
+    let content = format!("{content:<width$}", width = text_budget);
     Line::from(vec![
         Span::styled(gutter, gutter_style),
         Span::styled(sign_cell, sign_style),
-        Span::styled(truncate(content, text_budget), text_style),
+        Span::styled(content, text_style),
     ])
 }
 
@@ -2874,6 +2876,29 @@ mod tests {
         assert_eq!(line.spans[0].style.bg, Some(UI_TOKENS.slate_bg1));
         assert_eq!(line.spans[1].style.fg, Some(UI_TOKENS.semantic_file_del));
         assert_eq!(line.spans[2].style.bg, Some(remove_bg));
+    }
+
+    #[test]
+    fn diff_code_rows_fill_remaining_width_like_bun_diffview() {
+        let add_bg = mix_color(UI_TOKENS.slate_bg0, UI_TOKENS.semantic_file_add, 0.48);
+        let row = DiffRow {
+            kind: DiffRowKind::Add,
+            file_index: 0,
+            hunk_index: Some(0),
+            old_line: None,
+            new_line: Some(3),
+            text: "+short".to_string(),
+        };
+        let line = render_diff_code_row(&UI_TOKENS, &row, 24);
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+        assert_eq!(rendered.len(), 24);
+        assert!(rendered.starts_with("   3 +short"), "{rendered:?}");
+        assert!(line.spans[2].content.ends_with(' '));
+        assert_eq!(line.spans[2].style.bg, Some(add_bg));
     }
 
     #[test]
