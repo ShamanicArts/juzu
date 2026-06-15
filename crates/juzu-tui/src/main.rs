@@ -2403,44 +2403,35 @@ fn render_diff_hunk_header(_tokens: &UiTokens, row: &DiffRow, max_len: usize) ->
 }
 
 fn render_diff_code_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Line<'static> {
-    let old_line = row
-        .old_line
-        .map(|value| value.to_string())
-        .unwrap_or_else(|| " ".to_string());
-    let new_line = row
-        .new_line
-        .map(|value| value.to_string())
-        .unwrap_or_else(|| " ".to_string());
-    let gutter = format!("{old_line:>4} {new_line:>4}");
+    let line_number = match row.kind {
+        DiffRowKind::Remove => row.old_line,
+        DiffRowKind::Add | DiffRowKind::Context => row.new_line.or(row.old_line),
+        _ => row.new_line.or(row.old_line),
+    }
+    .map(|value| value.to_string())
+    .unwrap_or_default();
     let sign = match row.kind {
         DiffRowKind::Add => "+",
         DiffRowKind::Remove => "-",
         _ => " ",
     };
-    let band = match row.kind {
-        DiffRowKind::Add | DiffRowKind::Remove => "▌",
-        _ => "│",
-    };
     let add_bg = mix_color(tokens.slate_bg0, tokens.semantic_file_add, 0.48);
     let remove_bg = mix_color(tokens.slate_bg0, tokens.semantic_file_del, 0.48);
-    let (gutter_style, sign_style, text_style) = match row.kind {
+    let gutter_style = Style::default()
+        .fg(tokens.slate_text_muted)
+        .bg(tokens.slate_bg1);
+    let (sign_style, text_style) = match row.kind {
         DiffRowKind::Add => (
             Style::default()
-                .fg(tokens.slate_text_muted)
-                .bg(tokens.slate_bg1),
-            Style::default()
                 .fg(tokens.semantic_file_add)
-                .bg(add_bg)
+                .bg(tokens.slate_bg1)
                 .add_modifier(Modifier::BOLD),
             Style::default().fg(tokens.slate_text).bg(add_bg),
         ),
         DiffRowKind::Remove => (
             Style::default()
-                .fg(tokens.slate_text_muted)
-                .bg(tokens.slate_bg1),
-            Style::default()
                 .fg(tokens.semantic_file_del)
-                .bg(remove_bg)
+                .bg(tokens.slate_bg1)
                 .add_modifier(Modifier::BOLD),
             Style::default().fg(tokens.slate_text).bg(remove_bg),
         ),
@@ -2448,20 +2439,16 @@ fn render_diff_code_row(tokens: &UiTokens, row: &DiffRow, max_len: usize) -> Lin
             Style::default()
                 .fg(tokens.slate_text_muted)
                 .bg(tokens.slate_bg1),
-            Style::default()
-                .fg(tokens.slate_text_muted)
-                .bg(tokens.slate_bg0),
             Style::default().fg(tokens.slate_text).bg(tokens.slate_bg0),
         ),
     };
-    let text_budget = max_len.saturating_sub(gutter.len() + 5);
+    let gutter = format!("{line_number:>4}");
+    let sign_cell = format!(" {sign}");
+    let text_budget = max_len.saturating_sub(gutter.len() + sign_cell.len());
     let content = row.text.strip_prefix(['+', '-', ' ']).unwrap_or(&row.text);
     Line::from(vec![
-        Span::styled(band, sign_style),
-        Span::styled(sign.to_string(), sign_style),
-        Span::styled(" ", Style::default().fg(UI_TOKENS.slate_text_muted)),
         Span::styled(gutter, gutter_style),
-        Span::styled(" ", Style::default().fg(UI_TOKENS.slate_text_muted)),
+        Span::styled(sign_cell, sign_style),
         Span::styled(truncate(content, text_budget), text_style),
     ])
 }
@@ -2843,7 +2830,7 @@ mod tests {
     }
 
     #[test]
-    fn diff_code_rows_match_bun_diffview_palette() {
+    fn diff_code_rows_match_bun_diffview_gutter_order_and_palette() {
         let add_bg = mix_color(UI_TOKENS.slate_bg0, UI_TOKENS.semantic_file_add, 0.48);
         let remove_bg = mix_color(UI_TOKENS.slate_bg0, UI_TOKENS.semantic_file_del, 0.48);
         assert_eq!(add_bg, Color::Rgb(25, 104, 58));
@@ -2854,28 +2841,39 @@ mod tests {
             file_index: 0,
             hunk_index: Some(0),
             old_line: None,
-            new_line: Some(1),
+            new_line: Some(12),
             text: "+added".to_string(),
         };
-        let line = render_diff_code_row(&UI_TOKENS, &add_row, 80);
-        assert_eq!(line.spans[3].style.bg, Some(UI_TOKENS.slate_bg1));
-        assert_eq!(line.spans[0].style.bg, Some(add_bg));
-        assert_eq!(line.spans[5].style.bg, Some(add_bg));
-        assert_eq!(line.spans[0].style.fg, Some(UI_TOKENS.semantic_file_add));
+        let line = render_diff_code_row(&UI_TOKENS, &add_row, 32);
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+        assert!(rendered.starts_with("  12 +added"), "{rendered:?}");
+        assert!(!rendered.contains("▌+"), "Bun DiffView uses line-number gutter signs, not a custom left mutation band: {rendered:?}");
+        assert_eq!(line.spans[0].style.bg, Some(UI_TOKENS.slate_bg1));
+        assert_eq!(line.spans[1].style.fg, Some(UI_TOKENS.semantic_file_add));
+        assert_eq!(line.spans[2].style.bg, Some(add_bg));
 
         let remove_row = DiffRow {
             kind: DiffRowKind::Remove,
             file_index: 0,
             hunk_index: Some(0),
-            old_line: Some(1),
+            old_line: Some(9),
             new_line: None,
             text: "-removed".to_string(),
         };
-        let line = render_diff_code_row(&UI_TOKENS, &remove_row, 80);
-        assert_eq!(line.spans[3].style.bg, Some(UI_TOKENS.slate_bg1));
-        assert_eq!(line.spans[0].style.bg, Some(remove_bg));
-        assert_eq!(line.spans[5].style.bg, Some(remove_bg));
-        assert_eq!(line.spans[0].style.fg, Some(UI_TOKENS.semantic_file_del));
+        let line = render_diff_code_row(&UI_TOKENS, &remove_row, 32);
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+        assert!(rendered.starts_with("   9 -removed"), "{rendered:?}");
+        assert_eq!(line.spans[0].style.bg, Some(UI_TOKENS.slate_bg1));
+        assert_eq!(line.spans[1].style.fg, Some(UI_TOKENS.semantic_file_del));
+        assert_eq!(line.spans[2].style.bg, Some(remove_bg));
     }
 
     #[test]
@@ -2892,10 +2890,10 @@ mod tests {
             text: "+added".to_string(),
         };
         let line = render_diff_code_row(&theme, &add_row, 80);
-        assert_eq!(line.spans[0].style.bg, Some(add_bg));
-        assert_eq!(line.spans[5].style.bg, Some(add_bg));
-        assert_ne!(line.spans[5].style.bg, Some(theme.slate_bg0));
-        assert_eq!(line.spans[5].style.fg, Some(theme.slate_text));
+        assert_eq!(line.spans[0].style.bg, Some(theme.slate_bg1));
+        assert_eq!(line.spans[2].style.bg, Some(add_bg));
+        assert_ne!(line.spans[2].style.bg, Some(theme.slate_bg0));
+        assert_eq!(line.spans[2].style.fg, Some(theme.slate_text));
 
         let remove_row = DiffRow {
             kind: DiffRowKind::Remove,
@@ -2906,10 +2904,10 @@ mod tests {
             text: "-removed".to_string(),
         };
         let line = render_diff_code_row(&theme, &remove_row, 80);
-        assert_eq!(line.spans[0].style.bg, Some(remove_bg));
-        assert_eq!(line.spans[5].style.bg, Some(remove_bg));
-        assert_ne!(line.spans[5].style.bg, Some(theme.slate_bg0));
-        assert_eq!(line.spans[5].style.fg, Some(theme.slate_text));
+        assert_eq!(line.spans[0].style.bg, Some(theme.slate_bg1));
+        assert_eq!(line.spans[2].style.bg, Some(remove_bg));
+        assert_ne!(line.spans[2].style.bg, Some(theme.slate_bg0));
+        assert_eq!(line.spans[2].style.fg, Some(theme.slate_text));
     }
 
     #[test]

@@ -16,6 +16,7 @@ import argparse
 import html
 import json
 import os
+import re
 import subprocess
 import time
 from pathlib import Path
@@ -136,8 +137,8 @@ def assert_footer_info_contract(text: str, width: int, failures: list[str]) -> N
 
 
 def assert_sidebar_details_rhythm_contract(text: str, width: int, failures: list[str]) -> None:
-    if "Selected" in text:
-        failures.append(f"sidebar rhythm at {width} cols: old Bun details pane does not render a redundant 'Selected' content heading")
+    if any(line.strip() == "Selected" for line in text.splitlines()):
+        failures.append(f"sidebar rhythm at {width} cols: old Bun details pane does not render a redundant standalone 'Selected' content heading")
     if "Change:" not in text:
         failures.append(f"sidebar rhythm at {width} cols: details pane should start with Change metadata")
     if "Bookmarks\n—" in text or "Bookmarks\r\n—" in text:
@@ -163,8 +164,10 @@ def assert_diff_panel_contract(text: str, width: int, failures: list[str]) -> No
 
 
 def assert_diff_code_band_contract(text: str, width: int, failures: list[str]) -> None:
-    if "▌+" not in text:
-        failures.append(f"diff code bands at {width} cols: added rows need a continuous left band marker")
+    if "▌+" in text or "▌-" in text:
+        failures.append(f"diff code gutters at {width} cols: Bun DiffView uses gutter signs, not a custom left mutation band")
+    if not re.search(r"\s\d+\s+[+-]", text):
+        failures.append(f"diff code gutters at {width} cols: expected Bun-style line number followed by +/- sign")
 
 
 def scroll_indicator_line(text: str) -> str:
