@@ -1018,24 +1018,7 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             Span::styled(" Close ", item_style),
         ])]
     } else if app.view_mode == ViewMode::Diff {
-        vec![Line::from(vec![
-            Span::styled(" DIFF ", mode_style),
-            Span::raw("  "),
-            Span::styled("^d", key_style),
-            Span::styled(" Log ", item_style),
-            Span::raw(" "),
-            Span::styled("[ ]", key_style),
-            Span::styled(" File ", item_style),
-            Span::raw(" "),
-            Span::styled("j/k", key_style),
-            Span::styled(" Move ", item_style),
-            Span::raw(" "),
-            Span::styled("{/}", key_style),
-            Span::styled(" Hunk ", item_style),
-            Span::raw(" "),
-            Span::styled("Esc", key_style),
-            Span::styled(" Exit ", item_style),
-        ])]
+        vec![diff_status_bar_line(mode_style, key_style, item_style)]
     } else if let Some(leader) = app.active_leader_mode {
         let active_mode_style = Style::default()
             .fg(t.slate_bg0)
@@ -1146,6 +1129,24 @@ fn mix_color(base: Color, overlay: Color, ratio: f32) -> Color {
     let t = ratio.clamp(0.0, 1.0);
     let mix = |a: u8, b: u8| -> u8 { (a as f32 + (b as f32 - a as f32) * t).round() as u8 };
     Color::Rgb(mix(br, or), mix(bg, og), mix(bb, ob))
+}
+
+fn diff_status_bar_line(mode_style: Style, key_style: Style, item_style: Style) -> Line<'static> {
+    Line::from(vec![
+        Span::styled(" DIFF ", mode_style),
+        Span::raw("  "),
+        Span::styled("^d", key_style),
+        Span::styled(" Log ", item_style),
+        Span::raw("  "),
+        Span::styled("[]", key_style),
+        Span::styled(" File ", item_style),
+        Span::raw("  "),
+        Span::styled("j/k", key_style),
+        Span::styled(" Move ", item_style),
+        Span::raw("  "),
+        Span::styled("escape", key_style),
+        Span::styled(" Exit ", item_style),
+    ])
 }
 
 fn view_leader_status_lines(t: &UiTokens) -> Vec<Line<'static>> {
@@ -2980,6 +2981,25 @@ mod tests {
         let style = status_item_style(&UI_TOKENS, LeaderMode::View);
         assert_eq!(style.bg, Some(Color::Rgb(0x3f, 0x4f, 0x65)));
         assert_eq!(style.fg, Some(Color::Rgb(0xa8, 0xb7, 0xcd)));
+    }
+
+    #[test]
+    fn diff_status_bar_matches_bun_chrome_labels() {
+        let line = diff_status_bar_line(
+            status_mode_style(&UI_TOKENS, None),
+            status_key_style(&UI_TOKENS),
+            status_item_style(&UI_TOKENS, LeaderMode::View),
+        );
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+        assert!(rendered.contains("[] File"), "{rendered:?}");
+        assert!(rendered.contains("escape Exit"), "{rendered:?}");
+        assert!(!rendered.contains("Hunk"), "{rendered:?}");
+        assert!(!rendered.contains("{/}"), "{rendered:?}");
+        assert!(!rendered.contains("Esc"), "{rendered:?}");
     }
 
     #[test]

@@ -119,9 +119,12 @@ def assert_diff_title_contract(text: str, width: int, failures: list[str]) -> No
 
 def assert_diff_status_bar_contract(text: str, width: int, failures: list[str]) -> None:
     top = "\n".join(text.splitlines()[:4])
-    for needle in ["DIFF", "^d", "Log", "[ ]", "File", "j/k", "Move", "{/}", "Hunk", "Esc", "Exit"]:
+    for needle in ["DIFF", "^d", "Log", "[]", "File", "j/k", "Move", "escape", "Exit"]:
         if needle not in top:
             failures.append(f"diff status bar at {width} cols: top status row missing {needle!r}")
+    for forbidden in ["{/}", "Hunk", "Esc"]:
+        if forbidden in top:
+            failures.append(f"diff status bar at {width} cols: top status row should not contain {forbidden!r} once matching Bun chrome")
 
 
 def assert_footer_info_contract(text: str, width: int, failures: list[str]) -> None:
