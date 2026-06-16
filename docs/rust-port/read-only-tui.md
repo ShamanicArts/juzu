@@ -53,11 +53,15 @@ Latest diff render review:
 
 Latest modal parity proof:
 
-`bench/results/rust-port/tui-modal-parity/2026-06-16T19-08-03-807Z/diff-status-chrome-parity-report.html`
+`bench/results/rust-port/tui-modal-parity/2026-06-16T20-35-20-260Z/revset-refresh-parity-report.html`
 
 Latest diff scroll sequence proof:
 
 `bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-scroll-sequence-review.html`
+
+Latest revset sequence proof:
+
+`bench/results/rust-port/revset-sequence/2026-06-16T20-37-01.574+00-00/revset-sequence-review.html`
 
 Latest multi-state status/chrome proof:
 
@@ -73,7 +77,7 @@ Latest bundled theme review:
 
 Latest live tmux proof:
 
-`bench/results/rust-port/live-tmux/2026-06-16T19-19-39.524Z/live-tmux-proof.html`
+`bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmux-proof.html`
 
 Static state proofs are HTML/tmux captures; MP4 is reserved for real app motion. The live review surface is the tmux window.
 

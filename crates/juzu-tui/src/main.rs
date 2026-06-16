@@ -392,6 +392,7 @@ struct App {
     theme_picker_index: usize,
     current_theme: String,
     theme: UiTokens,
+    log_limit: usize,
     revset_mode: bool,
     revset_value: String,
     revset_query: String,
@@ -455,6 +456,7 @@ fn main() -> Result<()> {
             .unwrap_or(0),
         current_theme: "slate".to_string(),
         theme: UiTokens::named("slate"),
+        log_limit: limit,
         revset_mode: false,
         revset_value: String::new(),
         revset_query: String::new(),
@@ -537,8 +539,13 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
                 app.revset_value.clear();
             }
             KeyCode::Enter => {
+                let previous_query = app.revset_query.clone();
                 app.revset_query = app.revset_value.trim().to_string();
                 app.revset_mode = false;
+                if reload_app_nodes(app).is_err() {
+                    app.revset_query = previous_query;
+                    let _ = reload_app_nodes(app);
+                }
             }
             KeyCode::Backspace => {
                 app.revset_value.pop();
@@ -615,6 +622,11 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
             KeyCode::Char('/') => {
                 app.revset_mode = true;
                 app.revset_value = app.revset_query.clone();
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('r') => {
+                let _ = reload_app_nodes(app);
                 app.active_leader_mode = None;
                 return false;
             }
@@ -756,6 +768,7 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "revsetMode": app.revset_mode,
         "revsetValue": app.revset_value,
         "revsetQuery": app.revset_query,
+        "visibleNodeCount": app.nodes.len(),
         "selectedIndex": app.selected,
         "selectedChange": selected.map(|node| node.change_id.as_str()).unwrap_or(""),
         "selectedCommit": selected.map(|node| node.commit_id.as_str()).unwrap_or(""),
@@ -894,6 +907,57 @@ fn cycle_diff_file(app: &mut App, dir: isize) {
 fn selected_diff(app: &App) -> Option<&DiffPreview> {
     let node = app.nodes.get(app.selected)?;
     app.diffs_by_change.get(&node.change_id)
+}
+
+fn normalize_revset_query(query: &str) -> Option<String> {
+    let trimmed = query.trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
+    }
+}
+
+fn reload_app_nodes_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let previous_selected_change = app
+        .nodes
+        .get(app.selected)
+        .map(|node| node.change_id.clone());
+    let revset = normalize_revset_query(&app.revset_query);
+    let nodes = futures_executor::block_on(backend.log(LogQuery {
+        cwd: app.path.clone(),
+        limit: app.log_limit,
+        revset,
+    }))?;
+    let mut files_by_change = HashMap::new();
+    for node in &nodes {
+        let files = futures_executor::block_on(backend.files(ChangeQuery {
+            cwd: app.path.clone(),
+            change_id: node.change_id.clone(),
+        }))
+        .unwrap_or_default();
+        files_by_change.insert(node.change_id.clone(), files);
+    }
+    app.nodes = nodes;
+    app.files_by_change = files_by_change;
+    app.diffs_by_change.clear();
+    app.selected = previous_selected_change
+        .and_then(|change_id| {
+            app.nodes
+                .iter()
+                .position(|node| node.change_id == change_id)
+        })
+        .or_else(|| app.nodes.iter().position(|node| node.is_working_copy))
+        .unwrap_or(0);
+    app.diff_scroll = 0;
+    app.diff_file_index = 0;
+    ensure_selected_diff(app, app.view_mode == ViewMode::Diff);
+    Ok(())
+}
+
+fn reload_app_nodes(app: &mut App) -> Result<()> {
+    let backend = NativeJjBackend::new();
+    reload_app_nodes_with_backend(app, &backend)
 }
 
 fn clamp_diff_scroll_to_viewport(app: &mut App) {
@@ -3059,6 +3123,7 @@ mod tests {
             theme_picker_index: 0,
             current_theme: "slate".to_string(),
             theme: UI_TOKENS,
+            log_limit: 40,
             revset_mode: false,
             revset_value: String::new(),
             revset_query: String::new(),
@@ -3328,6 +3393,7 @@ mod tests {
             theme_picker_index: 0,
             current_theme: "slate".to_string(),
             theme: UI_TOKENS,
+            log_limit: 40,
             revset_mode: false,
             revset_value: String::new(),
             revset_query: String::new(),

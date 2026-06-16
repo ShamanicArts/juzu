@@ -5,14 +5,21 @@
 //! slices have a real native backend anchor.
 
 use async_trait::async_trait;
+use chrono::Local;
 use futures::{io::AsyncReadExt, StreamExt};
 use jj_lib::backend::TreeValue;
 use jj_lib::config::StackedConfig;
+use jj_lib::fileset::FilesetAliasesMap;
 use jj_lib::matchers::EverythingMatcher;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::{ReadonlyRepo, Repo, StoreFactories};
-use jj_lib::revset::{RevsetExpression, RevsetStreamExt};
+use jj_lib::repo_path::RepoPathUiConverter;
+use jj_lib::revset::{
+    RevsetAliasesMap, RevsetDiagnostics, RevsetExpression, RevsetExtensions, RevsetParseContext,
+    RevsetStreamExt, SymbolResolver,
+};
 use jj_lib::settings::UserSettings;
+use jj_lib::time_util::DatePatternContext;
 use jj_lib::workspace::{default_working_copy_factories, Workspace};
 use juzu_core::{
     ChangeQuery, CommitNode, FileEntry, JjBackend, JuzuError, LogQuery, Mutation, MutationResult,
@@ -216,6 +223,57 @@ impl NativeJjBackend {
         Ok(output)
     }
 
+    fn evaluate_user_revset<'a>(
+        &self,
+        repo: &'a Arc<ReadonlyRepo>,
+        workspace: &'a Workspace,
+        cwd: &Path,
+        revset_str: &str,
+    ) -> Result<Box<dyn jj_lib::revset::Revset + 'a>> {
+        let aliases_map = RevsetAliasesMap::new();
+        let fileset_aliases_map = FilesetAliasesMap::new();
+        let extensions = RevsetExtensions::default();
+        let path_converter = RepoPathUiConverter::Fs {
+            cwd: cwd.to_path_buf(),
+            base: workspace.workspace_root().to_path_buf(),
+        };
+        let context = RevsetParseContext {
+            aliases_map: &aliases_map,
+            local_variables: std::collections::HashMap::new(),
+            user_email: "",
+            date_pattern_context: DatePatternContext::from(Local::now()),
+            default_ignored_remote: None,
+            fileset_aliases_map: &fileset_aliases_map,
+            use_glob_by_default: true,
+            extensions: &extensions,
+            workspace: Some(jj_lib::revset::RevsetWorkspaceContext {
+                path_converter: &path_converter,
+                workspace_name: workspace.workspace_name(),
+            }),
+        };
+        let mut diagnostics = RevsetDiagnostics::new();
+        let expression =
+            jj_lib::revset::parse(&mut diagnostics, revset_str, &context).map_err(|err| {
+                JuzuError::Backend(format!(
+                    "failed to parse native jj revset `{revset_str}`: {err}"
+                ))
+            })?;
+        let symbol_resolver =
+            SymbolResolver::new(repo.as_ref(), context.extensions.symbol_resolvers());
+        let resolved = expression
+            .resolve_user_expression(repo.as_ref(), &symbol_resolver)
+            .map_err(|err| {
+                JuzuError::Backend(format!(
+                    "failed to resolve native jj revset `{revset_str}`: {err}"
+                ))
+            })?;
+        resolved.evaluate(repo.as_ref()).map_err(|err| {
+            JuzuError::Backend(format!(
+                "failed to evaluate native jj revset `{revset_str}`: {err}"
+            ))
+        })
+    }
+
     async fn find_commit_by_change_or_commit_id(
         &self,
         repo: &Arc<ReadonlyRepo>,
@@ -250,11 +308,6 @@ impl JjBackend for NativeJjBackend {
     }
 
     async fn log(&self, query: LogQuery) -> Result<Vec<CommitNode>> {
-        if query.revset.is_some() {
-            return Err(JuzuError::Unsupported(
-                "custom native jj revset parsing is not wired yet",
-            ));
-        }
         let workspace_root = self
             .find_root_blocking(&query.cwd)
             .ok_or_else(|| JuzuError::RepoNotFound(query.cwd.clone()))?;
@@ -264,11 +317,20 @@ impl JjBackend for NativeJjBackend {
             .load_at_head()
             .await
             .map_err(|err| JuzuError::Backend(format!("failed to load jj repo head: {err}")))?;
-        let revset = RevsetExpression::all()
-            .evaluate(repo.as_ref())
-            .map_err(|err| {
-                JuzuError::Backend(format!("failed to evaluate native jj revset: {err}"))
-            })?;
+        let revset_query = query
+            .revset
+            .as_deref()
+            .map(str::trim)
+            .filter(|q| !q.is_empty());
+        let revset = if let Some(revset_str) = revset_query {
+            self.evaluate_user_revset(&repo, &workspace, &query.cwd, revset_str)?
+        } else {
+            RevsetExpression::all()
+                .evaluate(repo.as_ref())
+                .map_err(|err| {
+                    JuzuError::Backend(format!("failed to evaluate native jj revset: {err}"))
+                })?
+        };
         let mut stream = revset.stream().commits(repo.store()).boxed_local();
         let mut nodes = Vec::new();
         while let Some(commit_result) = stream.next().await {
@@ -441,5 +503,31 @@ mod tests {
             .unwrap();
         assert!(info.workspace_root.ends_with("juzu"));
         assert!(info.repo_path.ends_with(".jj/repo"));
+    }
+
+    #[test]
+    fn native_revset_query_filters_log_results() {
+        let backend = NativeJjBackend::new();
+        let nodes = futures::executor::block_on(backend.log(LogQuery {
+            cwd: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+            limit: 20,
+            revset: Some("none()".to_string()),
+        }))
+        .unwrap();
+        assert!(
+            nodes.is_empty(),
+            "none() revset should produce no log nodes"
+        );
+    }
+
+    #[test]
+    fn native_revset_query_filters_node_count() {
+        let backend = NativeJjBackend::new();
+        let count = futures::executor::block_on(backend.node_count(NodeCountQuery {
+            cwd: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+            revset: Some("none()".to_string()),
+        }))
+        .unwrap();
+        assert_eq!(count, 0, "none() revset should produce zero visible nodes");
     }
 }

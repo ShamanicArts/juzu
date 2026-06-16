@@ -465,7 +465,8 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         "viewThemePickerDownApplyStaysOpen": "C-l,t,j,Enter",
         "viewThemePickerEscCancels": "C-l,t,j,Esc",
         "viewRevsetFilter": "C-l,/",
-        "viewRevsetTextSubmit": "C-l,/,m,a,i,n,Enter",
+        "viewRevsetTextSubmit": "C-l,/,a,l,l,(,),Enter",
+        "viewRevsetNoneSubmit": "C-l,/,n,o,n,e,(,),Enter",
         "viewRevsetCancel": "C-l,/,x,Esc",
         "viewDiffShortcut": "C-l,C-d",
         "enterScrollFileExit": "C-d,j,],Esc",
@@ -537,9 +538,20 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
             failures.append("debug-state C-l,t,j,Esc should not apply unconfirmed theme")
         revset_submit = debug_states["viewRevsetTextSubmit"]
         if revset_submit.get("revsetMode") is not False:
-            failures.append("debug-state C-l,/,m,a,i,n,Enter should close revset mode")
-        if revset_submit.get("revsetQuery") != "main":
-            failures.append("debug-state C-l,/,m,a,i,n,Enter should store revset query text")
+            failures.append("debug-state C-l,/,a,l,l,(,),Enter should close revset mode")
+        if revset_submit.get("revsetQuery") != "all()":
+            failures.append("debug-state C-l,/,a,l,l,(,),Enter should store all() revset query text")
+        if revset_submit.get("visibleNodeCount", 0) <= 0:
+            failures.append("debug-state C-l,/,a,l,l,(,),Enter should keep a non-empty visible log for valid revsets")
+        revset_none = debug_states["viewRevsetNoneSubmit"]
+        if revset_none.get("revsetMode") is not False:
+            failures.append("debug-state C-l,/,n,o,n,e,(,),Enter should close revset mode")
+        if revset_none.get("revsetQuery") != "none()":
+            failures.append("debug-state C-l,/,n,o,n,e,(,),Enter should store none() revset query text")
+        if revset_none.get("visibleNodeCount") != 0:
+            failures.append("debug-state C-l,/,n,o,n,e,(,),Enter should refresh the log to zero visible nodes")
+        if revset_none.get("selectedChange"):
+            failures.append("debug-state C-l,/,n,o,n,e,(,),Enter should clear selected change once the filtered log is empty")
         revset_cancel = debug_states["viewRevsetCancel"]
         if revset_cancel.get("revsetMode") is not False:
             failures.append("debug-state C-l,/,x,Esc should close revset mode")
