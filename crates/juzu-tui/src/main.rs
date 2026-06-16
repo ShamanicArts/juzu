@@ -401,6 +401,7 @@ struct App {
     selected: usize,
     diff_scroll: usize,
     diff_file_index: usize,
+    diff_viewport_rows: usize,
 }
 
 fn main() -> Result<()> {
@@ -463,6 +464,7 @@ fn main() -> Result<()> {
         selected,
         diff_scroll: 0,
         diff_file_index: 0,
+        diff_viewport_rows: 1,
     };
     ensure_selected_diff(&mut app, false);
 
@@ -632,9 +634,12 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
         }
         KeyCode::Char('q') | KeyCode::Esc => return true,
         KeyCode::Char('j') | KeyCode::Down if app.view_mode == ViewMode::Diff => {
+            clamp_diff_scroll_to_viewport(app);
             app.diff_scroll = app.diff_scroll.saturating_add(1);
+            clamp_diff_scroll_to_viewport(app);
         }
         KeyCode::Char('k') | KeyCode::Up if app.view_mode == ViewMode::Diff => {
+            clamp_diff_scroll_to_viewport(app);
             app.diff_scroll = app.diff_scroll.saturating_sub(1);
         }
         KeyCode::Char('j') | KeyCode::Down => {
@@ -648,9 +653,12 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
             ensure_selected_diff(app, false);
         }
         KeyCode::PageDown if app.view_mode == ViewMode::Diff => {
+            clamp_diff_scroll_to_viewport(app);
             app.diff_scroll = app.diff_scroll.saturating_add(10);
+            clamp_diff_scroll_to_viewport(app);
         }
         KeyCode::PageUp if app.view_mode == ViewMode::Diff => {
+            clamp_diff_scroll_to_viewport(app);
             app.diff_scroll = app.diff_scroll.saturating_sub(10);
         }
         KeyCode::Char(']') if app.view_mode == ViewMode::Diff => {
@@ -888,6 +896,20 @@ fn selected_diff(app: &App) -> Option<&DiffPreview> {
     app.diffs_by_change.get(&node.change_id)
 }
 
+fn clamp_diff_scroll_to_viewport(app: &mut App) {
+    if app.view_mode != ViewMode::Diff {
+        app.diff_scroll = 0;
+        return;
+    }
+    let Some(diff) = selected_diff(app) else {
+        app.diff_scroll = 0;
+        return;
+    };
+    let rows = full_diff_pane_rows(diff, app.diff_file_index, app.diff_scaffold);
+    let max_scroll = rows.len().saturating_sub(app.diff_viewport_rows.max(1));
+    app.diff_scroll = app.diff_scroll.min(max_scroll);
+}
+
 fn cap_diff_preview_rows(rows: Vec<DiffRow>, cap: usize) -> Vec<DiffRow> {
     if rows.len() <= cap {
         return rows;
@@ -962,7 +984,7 @@ fn jump_selected_diff(app: &mut App, jump: DiffJump) {
     }
 }
 
-fn render(frame: &mut Frame, app: &App) {
+fn render(frame: &mut Frame, app: &mut App) {
     let layout = calculate_default_layout(app.mode, &app.nodes);
     let status_height = if app.active_leader_mode == Some(LeaderMode::View) {
         2
@@ -1217,7 +1239,12 @@ fn leader_mode_color(mode: LeaderMode, t: &UiTokens) -> Color {
     }
 }
 
-fn render_body(frame: &mut Frame, area: Rect, app: &App, layout: &juzu_core::layout::LayoutResult) {
+fn render_body(
+    frame: &mut Frame,
+    area: Rect,
+    app: &mut App,
+    layout: &juzu_core::layout::LayoutResult,
+) {
     let constraints = if app.sidebar_collapsed {
         [Constraint::Min(8), Constraint::Length(6)]
     } else {
@@ -1246,7 +1273,7 @@ fn render_body(frame: &mut Frame, area: Rect, app: &App, layout: &juzu_core::lay
 fn render_diff_pane(
     frame: &mut Frame,
     area: Rect,
-    app: &App,
+    app: &mut App,
     layout: &juzu_core::layout::LayoutResult,
 ) {
     let t = &app.theme;
@@ -1288,6 +1315,7 @@ fn render_diff_pane(
         } else {
             let rows = full_diff_pane_rows(diff, app.diff_file_index, app.diff_scaffold);
             let visible_count = height.saturating_sub(lines.len()).max(1);
+            app.diff_viewport_rows = visible_count;
             let max_scroll = rows.len().saturating_sub(visible_count);
             let scroll = app.diff_scroll.min(max_scroll);
             let gutter_width = diff_line_number_gutter_width(&rows);
@@ -1304,6 +1332,7 @@ fn render_diff_pane(
             }
         }
     } else {
+        app.diff_viewport_rows = height.saturating_sub(lines.len()).max(1);
         lines.push(render_diff_metadata(
             t,
             "No diff available for selected change",
@@ -2984,6 +3013,101 @@ mod tests {
     }
 
     #[test]
+    fn diff_scroll_up_from_bottom_moves_immediately_after_overshoot() {
+        fn effective_scroll(requested: usize, row_count: usize, visible_count: usize) -> usize {
+            requested.min(row_count.saturating_sub(visible_count))
+        }
+
+        let row_count = 20usize;
+        let visible_count = 5usize;
+        let change_id = "change-1".to_string();
+        let mut diffs_by_change = HashMap::new();
+        diffs_by_change.insert(
+            change_id.clone(),
+            DiffPreview {
+                raw_line_count: row_count,
+                file_count: 1,
+                row_count,
+                full_rows: Some(
+                    (0..row_count)
+                        .map(|idx| DiffRow {
+                            kind: DiffRowKind::Context,
+                            file_index: 0,
+                            hunk_index: Some(0),
+                            old_line: Some(idx + 1),
+                            new_line: Some(idx + 1),
+                            text: format!(" line-{idx}"),
+                        })
+                        .collect(),
+                ),
+                preview_rows: Vec::new(),
+                parse_error: None,
+            },
+        );
+        let mut app = App {
+            path: PathBuf::from("/tmp"),
+            mode: LayoutMode::Mainline,
+            view_mode: ViewMode::Diff,
+            active_leader_mode: None,
+            sidebar_collapsed: false,
+            files_expanded: true,
+            desc_expanded: false,
+            show_help: false,
+            boxed_chrome: false,
+            diff_scaffold: false,
+            theme_picker_mode: false,
+            theme_picker_index: 0,
+            current_theme: "slate".to_string(),
+            theme: UI_TOKENS,
+            revset_mode: false,
+            revset_value: String::new(),
+            revset_query: String::new(),
+            nodes: vec![juzu_core::CommitNode {
+                change_id: change_id.clone(),
+                commit_id: "commit-1".to_string(),
+                parents: vec![],
+                author: "test".to_string(),
+                time: "now".to_string(),
+                bookmarks: vec![],
+                git_branches: vec![],
+                description_title: "test".to_string(),
+                description_full: "test".to_string(),
+                is_empty: false,
+                is_conflict: false,
+                is_hidden: false,
+                is_root: false,
+                is_working_copy: false,
+                x: None,
+                y: None,
+                lane: Some(0),
+                extra_height: None,
+                is_pinned: false,
+            }],
+            files_by_change: HashMap::new(),
+            diffs_by_change,
+            selected: 0,
+            diff_scroll: 0,
+            diff_file_index: 0,
+            diff_viewport_rows: visible_count,
+        };
+
+        handle_key(&mut app, KeyCode::PageDown, KeyModifiers::NONE);
+        handle_key(&mut app, KeyCode::PageDown, KeyModifiers::NONE);
+        handle_key(&mut app, KeyCode::PageDown, KeyModifiers::NONE);
+        assert_eq!(
+            effective_scroll(app.diff_scroll, row_count, visible_count),
+            15
+        );
+
+        handle_key(&mut app, KeyCode::Char('k'), KeyModifiers::NONE);
+        assert_eq!(
+            effective_scroll(app.diff_scroll, row_count, visible_count),
+            14,
+            "once the full diff pane is at bottom, one upward move should immediately reveal earlier rows"
+        );
+    }
+
+    #[test]
     fn diff_status_bar_matches_bun_chrome_labels() {
         let line = diff_status_bar_line(
             status_mode_style(&UI_TOKENS, None),
@@ -3213,6 +3337,7 @@ mod tests {
             selected: 0,
             diff_scroll: 0,
             diff_file_index: 0,
+            diff_viewport_rows: 1,
         };
         assert!(sidebar_shows_inline_diff_preview(&app));
         app.view_mode = ViewMode::Diff;
