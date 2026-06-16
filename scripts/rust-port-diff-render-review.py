@@ -36,33 +36,56 @@ def row_class(kind: str) -> str:
     return kind.replace("-", "_")
 
 
-def terminal_row(row: dict[str, Any], width: int) -> str:
+def is_no_newline_marker(row: dict[str, Any]) -> bool:
+    return row.get("kind") == "metadata" and row.get("text") == r"\ No newline at end of file"
+
+
+def clean_full_pane_rows(rows: list[dict[str, Any]], file_index: int = 0) -> list[dict[str, Any]]:
+    clean: list[dict[str, Any]] = []
+    for row in rows:
+        if row.get("fileIndex") != file_index:
+            continue
+        if row.get("kind") in {"context", "add", "remove", "collapse"} or is_no_newline_marker(row):
+            clean.append(row)
+    return clean
+
+
+def gutter_width(rows: list[dict[str, Any]]) -> int:
+    width = 3
+    for row in rows:
+        if row.get("kind") == "remove":
+            value = row.get("oldLine")
+        else:
+            value = row.get("newLine") or row.get("oldLine")
+        if value is not None:
+            width = max(width, len(str(value)))
+    return width
+
+
+def terminal_row(row: dict[str, Any], width: int, gutter: int) -> str:
     kind = row["kind"]
     text = row.get("text") or ""
-    if kind == "file-header":
-        label = f"◆ {text}"
-        return f"╭ {label[: max(0, width - 4)]:<{max(0, width - 4)}} ╮"
-    if kind == "metadata":
-        return f"  · {text}"[:width]
-    if kind == "hunk-header":
-        return f"╭─ {text}"[:width]
     if kind == "collapse":
         label = f" ⋯ {text.lstrip('⋯').strip()} "
         pad = max(0, width - len(label))
         return "─" * (pad // 2) + label + "─" * (pad - pad // 2)
+    if is_no_newline_marker(row):
+        prefix = " " * gutter + "   "
+        return f"{prefix}{text[: max(0, width - len(prefix))]:<{max(0, width - len(prefix))}}"[:width]
 
     line_number = row.get("oldLine") if kind == "remove" else (row.get("newLine") or row.get("oldLine"))
     line_number = "" if line_number is None else str(line_number)
     sign = "+" if kind == "add" else "-" if kind == "remove" else " "
     body = text[1:] if text.startswith(("+", "-", " ")) else text
-    prefix = f"{line_number:>3} {sign} "
+    prefix = f"{line_number:>{gutter}} {sign} "
     return f"{prefix}{body[: max(0, width - len(prefix))]:<{max(0, width - len(prefix))}}"[:width]
 
 
 def render_terminal(rows: list[dict[str, Any]], width: int, limit: int) -> str:
     bits = []
+    gutter = gutter_width(rows)
     for row in rows[:limit]:
-        bits.append(f"<div class='term-row {row_class(row['kind'])}'>{html.escape(terminal_row(row, width))}</div>")
+        bits.append(f"<div class='term-row {row_class(row['kind'])}'>{html.escape(terminal_row(row, width, gutter))}</div>")
     if len(rows) > limit:
         bits.append(f"<div class='term-row collapse'>⋯ {len(rows) - limit} more rows omitted</div>")
     return "\n".join(bits)
@@ -83,6 +106,7 @@ def render_model_table(rows: list[dict[str, Any]], limit: int) -> str:
 def render_html(report: dict[str, Any]) -> str:
     raw_first = "\n".join(report["rawDiff"].splitlines()[:100])
     rows = report["collapsedRows"]
+    clean_rows = clean_full_pane_rows(rows)
     return f"""<!doctype html>
 <html><head><meta charset='utf-8'><title>JUZU Rust diff render review</title>
 <style>
@@ -100,10 +124,10 @@ table {{ width:100%; border-collapse:collapse; font-size:12px; }} th {{ text-ali
 </style></head><body>
 <h1>JUZU Rust diff render review</h1>
 <div class='meta'>Repo: {html.escape(report['repo'])} · Change: {html.escape(report['changeId'])} · Generated: {html.escape(report['generatedAt'])}</div>
-<div class='statbar'><div class='stat'><strong>{report['summary']['fileCount']}</strong> files</div><div class='stat'><strong>{report['summary']['rawLineCount']}</strong> raw lines</div><div class='stat'><strong>{report['summary']['collapsedRowCount']}</strong> rendered rows</div><div class='stat'><strong>{report['summary']['terminalWidth']}</strong> terminal columns</div></div>
+<div class='statbar'><div class='stat'><strong>{report['summary']['fileCount']}</strong> files</div><div class='stat'><strong>{report['summary']['rawLineCount']}</strong> raw lines</div><div class='stat'><strong>{report['summary']['collapsedRowCount']}</strong> structured rows</div><div class='stat'><strong>{len(clean_rows)}</strong> clean-pane rows</div><div class='stat'><strong>{report['summary']['terminalWidth']}</strong> terminal columns</div></div>
 <div class='grid'>
-<section class='card'><h2>Terminal-style rendered preview</h2><div class='terminal'>{render_terminal(rows, report['summary']['terminalWidth'], 160)}</div></section>
-<section class='card'><h2>Pierre/JUZU design mapping</h2><ul class='notes'><li>The structured model still retains file/hunk hierarchy for sidebar previews, hunk jumps, and future virtualization.</li><li>The full Rust diff pane now filters those scaffold rows and starts with Bun/OpenTUI-style code rows under the file title.</li><li>Unified gutters follow Bun DiffView ordering: one active line number, then the +/- sign, then code content.</li><li>Add/remove/context content spans fill the remaining row width, matching the Bun `<diff>` component's full-row background treatment.</li><li>Collapse rows remain available for capped sidebar previews, not the uncapped full pane.</li></ul><div class='mapping'><div><strong>From Pierre</strong><br>structured model, file/hunk hierarchy, collapsed regions, patch reading rhythm.</div><div><strong>From JUZU</strong><br>sharp terminal density, low chrome, Bun DiffView-like full pane.</div></div></section>
+<section class='card'><h2>Clean full diff pane preview</h2><div class='terminal'>{render_terminal(clean_rows, report['summary']['terminalWidth'], 160)}</div></section>
+<section class='card'><h2>Pierre/JUZU design mapping</h2><ul class='notes'><li>The structured model still retains file/hunk hierarchy for sidebar previews, hunk jumps, and future virtualization.</li><li>The review preview now mirrors the Rust product surface more honestly: scaffold rows are filtered out exactly like the clean full diff pane, while real content markers like <code>\\ No newline at end of file</code> remain visible.</li><li>Unified gutters follow Bun DiffView ordering: one active line number, then the +/- sign, then code content, with one shared gutter width across the visible file rows.</li><li>Add/remove/context content spans fill the remaining row width, matching the Bun <code>&lt;diff&gt;</code> component's full-row background treatment.</li><li>Collapse rows remain available for capped sidebar previews, not the uncapped full pane.</li></ul><div class='mapping'><div><strong>From Pierre</strong><br>structured model, file/hunk hierarchy, collapsed regions, patch reading rhythm.</div><div><strong>From JUZU</strong><br>sharp terminal density, low chrome, Bun DiffView-like full pane.</div></div></section>
 </div>
 <div class='grid'>
 <section class='card'><h2>Raw native diff first section</h2><pre>{html.escape(raw_first)}</pre></section>

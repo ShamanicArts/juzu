@@ -49,7 +49,7 @@ Latest token parity swatch:
 
 Latest diff render review:
 
-`bench/results/rust-port/diff-render/2026-06-16T17-15-16.056Z/diff-render-review.html`
+`bench/results/rust-port/diff-render/2026-06-16T17-18-52.829Z/diff-render-review.html`
 
 Latest modal parity proof:
 
