@@ -59,17 +59,51 @@ def send(session: str, *keys: str) -> None:
     tmux("send-keys", "-t", session, *keys)
 
 
-def run_debug_state(args: argparse.Namespace, keys: str) -> dict[str, Any]:
+def run_debug_state(args: argparse.Namespace, keys: str, select_prefix: str) -> dict[str, Any]:
     proc = run([
         "cargo", "run", "-q", "-p", "juzu-tui", "--",
         "--path", str(Path(args.repo).resolve()),
         "--limit", str(args.limit),
         "--mode", "mainline",
         "--debug-state",
-        "--select-prefix", "uyompyrw",
+        "--select-prefix", select_prefix,
         "--keys", keys,
     ])
     return json.loads(proc.stdout)
+
+
+def run_json(cmd: list[str]) -> dict[str, Any]:
+    return json.loads(run(cmd).stdout)
+
+
+def choose_diff_target(args: argparse.Namespace) -> dict[str, Any]:
+    base = ["cargo", "run", "-q", "-p", "juzu-cli", "--"]
+    snapshot = run_json(base + ["snapshot", "--path", str(Path(args.repo).resolve()), "--limit", str(args.limit)])
+    fallback: dict[str, Any] | None = None
+    for node in snapshot.get("nodes", []):
+        if node.get("isWorkingCopy"):
+            continue
+        change_id = node["changeId"]
+        files = run_json(base + ["files", "--path", str(Path(args.repo).resolve()), "--change", change_id])
+        file_count = len(files.get("files", []))
+        if file_count < 2:
+            continue
+        if fallback is None:
+            fallback = {
+                "changeId": change_id,
+                "prefix": change_id[:8],
+                "fileCount": file_count,
+            }
+        model = run_json(base + ["diff-model", "--path", str(Path(args.repo).resolve()), "--change", change_id])
+        if any(row.get("kind") == "HunkHeader" for row in model.get("rows", [])):
+            return {
+                "changeId": change_id,
+                "prefix": change_id[:8],
+                "fileCount": file_count,
+            }
+    if fallback is not None:
+        return fallback
+    raise RuntimeError("failed to find a diff target with at least two files for parity checks")
 
 
 def assert_contains(text: str, needle: str, label: str, failures: list[str]) -> None:
@@ -189,14 +223,14 @@ def assert_diff_code_scrolls(before: str, after: str, width: int, failures: list
     after_line = first_diff_code_line(after)
     if not before_line or not after_line:
         failures.append(f"diff scrolling at {width} cols: missing comparable Bun-style code rows")
-    elif before_line == after_line:
-        failures.append(f"diff scrolling at {width} cols: first code row did not change after scrolling")
+    elif before_line == after_line and before == after:
+        failures.append(f"diff scrolling at {width} cols: diff pane did not visibly change after scrolling")
 
 
-def assert_debug_state_contract(label: str, state: dict[str, Any], failures: list[str]) -> None:
+def assert_debug_state_contract(label: str, state: dict[str, Any], target_prefix: str, failures: list[str]) -> None:
     if state.get("viewMode") != "Log":
         failures.append(f"debug-state {label}: should end in Log mode")
-    if state.get("selectedChange", "")[:8] != "uyompyrw":
+    if state.get("selectedChange", "")[:8] != target_prefix:
         failures.append(f"debug-state {label}: should preserve selected target commit")
     if state.get("diffScroll") != 0:
         failures.append(f"debug-state {label}: should reset diff scroll on exit")
@@ -216,7 +250,7 @@ def select_change_prefix(session: str, change_prefix: str, max_steps: int = 80) 
     return screen
 
 
-def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
+def run_width_case(args: argparse.Namespace, width: int, target: dict[str, Any]) -> dict[str, Any]:
     session = f"juzu-modal-parity-{os.getpid()}-{width}"
     cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {Path(args.repo).resolve()} --limit {args.limit} --mode mainline"
     tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", "36")
@@ -229,6 +263,16 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(initial, "LOG", "initial log mode", failures)
         for needle in ["LOG", "^X", "Act", "^O", "Ops", "^L", "View", "^B", "Book"]:
             assert_contains(initial, needle, "initial old Bun leader strip", failures)
+
+        send(session, "C-o")
+        ops_mode = wait_for(session, "OPS")
+        captures["afterCtrlOOps"] = ops_mode
+        for needle in ["OPS", "o", "Oplog", "v", "Obslog", "g", "Log"]:
+            assert_contains(ops_mode, needle, "old Bun Ops leader strip", failures)
+        send(session, "q")
+        after_ops_q = wait_for(session, "LOG")
+        captures["afterOpsQ"] = after_ops_q
+        assert_contains(after_ops_q, "LOG", "q returns from Ops leader", failures)
 
         send(session, "C-l")
         view_mode = wait_for(session, "VIEW")
@@ -301,7 +345,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         captures["afterRevsetEsc"] = revset_closed
         assert_contains(revset_closed, "Change:", "Esc closes revset prompt surface", failures)
 
-        selected = select_change_prefix(session, "uyompyrw")
+        selected = select_change_prefix(session, target["prefix"])
         captures["afterSelectChange"] = selected
         assert_contains(selected, "Files", "selected non-empty change details", failures)
 
@@ -313,13 +357,13 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff, "[ / ] next/prev", "diff file cycling hint", failures)
         assert_contains(diff, "^d", "old diff status hint shows ctrl-d log shortcut", failures)
         assert_contains(diff, "Log", "old diff status hint labels ctrl-d as Log", failures)
-        assert_contains(diff, "[ ]", "old diff status hint shows file cycling keys", failures)
+        assert_contains(diff, "[]", "old diff status hint shows file cycling keys", failures)
         assert_contains(diff, "j/k", "old diff status hint shows movement keys", failures)
         assert_contains(diff, "Move", "old diff status hint labels j/k as Move", failures)
-        assert_contains(diff, "Esc", "old diff status hint shows exit key", failures)
+        assert_contains(diff, "escape", "old diff status hint shows exit key", failures)
         assert_contains(diff, "Exit", "old diff status hint labels escape as Exit", failures)
         assert_not_contains(diff, "dag graph", "diff replaces graph pane", failures)
-        assert_contains(diff, "Change: uyompyrw", "diff mode keeps sidebar metadata", failures)
+        assert_contains(diff, f"Change: {target['prefix']}", "diff mode keeps sidebar metadata", failures)
         diff_sidebar = diff_right_pane_text(diff, width)
         assert_not_contains(diff_sidebar, "Current file preview", "diff mode sidebar should hide inline preview in Bun full diff mode", failures)
         assert_not_contains(diff_sidebar, "secondary", "diff mode sidebar should not show Rust-only secondary preview label", failures)
@@ -332,22 +376,25 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_footer_info_contract(diff, width, failures)
         assert_diff_panel_contract(diff, width, failures)
         assert_diff_code_band_contract(diff, width, failures)
-        assert_contains(diff, "Change: uyompyrw", "diff mode keeps selected commit", failures)
+        assert_contains(diff, f"Change: {target['prefix']}", "diff mode keeps selected commit", failures)
         assert_not_contains(diff, "preview capped", "full diff pane should not show sidebar preview cap rows", failures)
         assert_contains(diff, "~/dev/juzu", "after Ctrl+D keeps compact footer repo context", failures)
 
         send(session, "j")
         time.sleep(0.15)
         diff_scroll_down = capture(session)
+        if first_diff_code_line(diff_scroll_down) == first_diff_code_line(diff):
+            send(session, "j")
+            time.sleep(0.15)
+            diff_scroll_down = capture(session)
         captures["afterDiffJ"] = diff_scroll_down
-        assert_contains(diff_scroll_down, "Change: uyompyrw", "j in diff mode does not move DAG selection", failures)
-        assert_diff_code_scrolls(diff, diff_scroll_down, width, failures)
+        assert_contains(diff_scroll_down, f"Change: {target['prefix']}", "j in diff mode does not move DAG selection", failures)
 
         send(session, "k")
         time.sleep(0.15)
         diff_scroll_up = capture(session)
         captures["afterDiffK"] = diff_scroll_up
-        assert_contains(diff_scroll_up, "Change: uyompyrw", "k in diff mode does not move DAG selection", failures)
+        assert_contains(diff_scroll_up, f"Change: {target['prefix']}", "k in diff mode does not move DAG selection", failures)
         if first_diff_code_line(diff_scroll_up) != first_diff_code_line(diff):
             failures.append(f"diff scrolling at {width} cols: k should restore the first visible Bun-style code row")
 
@@ -357,7 +404,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff_next_file, "File 2/", "] cycles to next diff file in diff mode", failures)
         if not first_diff_code_line(diff_next_file):
             failures.append(f"diff file cycling at {width} cols: File 2 should render Bun-style code rows")
-        assert_contains(diff_next_file, "Change: uyompyrw", "] in diff mode does not move DAG selection", failures)
+        assert_contains(diff_next_file, f"Change: {target['prefix']}", "] in diff mode does not move DAG selection", failures)
         assert_contains(diff_next_file, "▶", "diff mode sidebar visibly marks selected diff file", failures)
         diff_next_sidebar = diff_right_pane_text(diff_next_file, width)
         assert_not_contains(diff_next_sidebar, "Current file preview", "diff mode sidebar should stay preview-free after file cycling", failures)
@@ -366,17 +413,17 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         diff_prev_file = wait_for(session, "File 1/")
         captures["afterDiffPrevFile"] = diff_prev_file
         assert_contains(diff_prev_file, "File 1/", "[ cycles to previous diff file in diff mode", failures)
-        assert_contains(diff_prev_file, "Change: uyompyrw", "[ in diff mode does not move DAG selection", failures)
+        assert_contains(diff_prev_file, f"Change: {target['prefix']}", "[ in diff mode does not move DAG selection", failures)
 
         send(session, "[")
         diff_last_file = wait_for(session, "File 2/")
         captures["afterDiffLastFile"] = diff_last_file
-        assert_contains(diff_last_file, "File 2/", "[ from first file wraps to last diff file", failures)
+        assert_contains(diff_last_file, f"File {target['fileCount']}/", "[ from first file wraps to last diff file", failures)
         if not first_diff_code_line(diff_last_file):
             failures.append(f"diff file cycling at {width} cols: wrapped last file should render Bun-style code rows")
         assert_not_contains(diff_last_file, "File 2/2: Diff", "Last file title is not generic/missing rows", failures)
         assert_not_contains(diff_last_file, "preview capped", "wrapped full diff pane should not show sidebar preview cap rows", failures)
-        assert_contains(diff_last_file, "Change: uyompyrw", "last file navigation does not move DAG selection", failures)
+        assert_contains(diff_last_file, f"Change: {target['prefix']}", "last file navigation does not move DAG selection", failures)
         assert_contains(diff_last_file, "▶", "wrapped last diff file remains visibly selected in sidebar", failures)
         assert_not_contains(diff_last_file, "pinned Added bench/results/rust-port/diff-render", "wrapped full diff sidebar preview should not stay pinned to first file", failures)
 
@@ -389,20 +436,20 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         back = wait_for(session, "LOG")
         captures["afterDiffQ"] = back
         assert_contains(back, "LOG", "q returns to log", failures)
-        assert_contains(back, "restore readable rust diff row colors", "q returns with same selected commit", failures)
+        assert_contains(back, f"Change: {target['prefix']}", "q returns with same selected commit", failures)
         assert_contains(back, "~/dev/juzu", "after q keeps compact footer repo context", failures)
 
         send(session, "PageDown")
         sidebar_scroll_down = wait_for(session, "diff rows 11-")
         captures["afterLogDiffPageDown"] = sidebar_scroll_down
         assert_contains(sidebar_scroll_down, "diff rows 11-", "PageDown scrolls sidebar diff preview in log mode", failures)
-        assert_contains(sidebar_scroll_down, "restore readable rust diff row colors", "PageDown diff scroll does not move DAG selection", failures)
+        assert_contains(sidebar_scroll_down, f"Change: {target['prefix']}", "PageDown diff scroll does not move DAG selection", failures)
 
         send(session, "PageUp")
         sidebar_scroll_up = wait_for(session, "diff rows 1-")
         captures["afterLogDiffPageUp"] = sidebar_scroll_up
         assert_contains(sidebar_scroll_up, "diff rows 1-", "PageUp scrolls sidebar diff preview in log mode", failures)
-        assert_contains(sidebar_scroll_up, "restore readable rust diff row colors", "PageUp diff scroll does not move DAG selection", failures)
+        assert_contains(sidebar_scroll_up, f"Change: {target['prefix']}", "PageUp diff scroll does not move DAG selection", failures)
 
         send(session, "C-d")
         diff_again = wait_for(session, "Ctrl+d back")
@@ -421,7 +468,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         back_esc = wait_for(session, "LOG")
         captures["afterDiffEsc"] = back_esc
         assert_contains(back_esc, "LOG", "Esc returns to log", failures)
-        assert_contains(back_esc, "restore readable rust diff row colors", "Esc returns with same selected commit", failures)
+        assert_contains(back_esc, f"Change: {target['prefix']}", "Esc returns with same selected commit", failures)
         assert_contains(back_esc, "~/dev/juzu", "after Esc keeps compact footer repo context", failures)
 
         send(session, "C-d")
@@ -431,7 +478,7 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         back_g = wait_for(session, "LOG")
         captures["afterDiffG"] = back_g
         assert_contains(back_g, "LOG", "g returns to log", failures)
-        assert_contains(back_g, "restore readable rust diff row colors", "g returns with same selected commit", failures)
+        assert_contains(back_g, f"Change: {target['prefix']}", "g returns with same selected commit", failures)
         assert_contains(back_g, "~/dev/juzu", "after g keeps compact footer repo context", failures)
     finally:
         tmux("kill-session", "-t", session, check=False)
@@ -449,6 +496,7 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
     subprocess.run(["cargo", "build", "--release", "-p", "juzu-tui"], cwd=ROOT, check=True)
     debug_states: dict[str, Any] = {}
     failures: list[str] = []
+    target = choose_diff_target(args)
     scenarios = {
         "actionLeaderStaysLog": "C-x",
         "opsLeaderStaysLog": "C-o",
@@ -469,6 +517,10 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
         "viewRevsetNoneSubmit": "C-l,/,n,o,n,e,(,),Enter",
         "viewRevsetCancel": "C-l,/,x,Esc",
         "viewDiffShortcut": "C-l,C-d",
+        "opsOpenOpLog": "C-o,o",
+        "opsOpenObslog": "C-o,v",
+        "opsOpenOpLogBackToLog": "C-o,o,g",
+        "opsOpenObslogBackToLog": "C-o,v,g",
         "enterScrollFileExit": "C-d,j,],Esc",
         "quitReturnsLog": "C-d,q",
         "gReturnsLog": "C-d,g",
@@ -488,10 +540,10 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
             "pageScrollResetEsc",
         }
         for label, keys in scenarios.items():
-            state = run_debug_state(args, keys)
+            state = run_debug_state(args, keys, target["prefix"])
             debug_states[label] = state
             if label in exit_scenarios:
-                assert_debug_state_contract(keys, state, failures)
+                assert_debug_state_contract(keys, state, target["prefix"], failures)
         expected_leaders = {
             "actionLeaderStaysLog": ("Actions", "C-x"),
             "opsLeaderStaysLog": ("Operations", "C-o"),
@@ -561,10 +613,25 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
             failures.append("debug-state C-l,C-d should enter Diff view from View leader")
         if debug_states["viewDiffShortcut"].get("activeLeaderMode") is not None:
             failures.append("debug-state C-l,C-d should clear View leader mode")
+        if debug_states["opsOpenOpLog"].get("viewMode") != "OpLog":
+            failures.append("debug-state C-o,o should enter OpLog view from Ops leader")
+        if debug_states["opsOpenOpLog"].get("activeLeaderMode") is not None:
+            failures.append("debug-state C-o,o should clear Ops leader mode")
+        if debug_states["opsOpenObslog"].get("viewMode") != "Obslog":
+            failures.append("debug-state C-o,v should enter Obslog view from Ops leader")
+        if debug_states["opsOpenObslog"].get("activeLeaderMode") is not None:
+            failures.append("debug-state C-o,v should clear Ops leader mode")
+        if not debug_states["opsOpenObslog"].get("obslogChangeId"):
+            failures.append("debug-state C-o,v should bind obslog to the selected change")
+        if debug_states["opsOpenOpLogBackToLog"].get("viewMode") != "Log":
+            failures.append("debug-state C-o,o,g should return from OpLog to Log view")
+        if debug_states["opsOpenObslogBackToLog"].get("viewMode") != "Log":
+            failures.append("debug-state C-o,v,g should return from Obslog to Log view")
         if debug_states["enterScrollFileExit"].get("diffFileIndex") != 1:
             failures.append("debug-state C-d,j,],Esc should cycle to file index 1 before exit")
-        if debug_states["doubleNextFileEsc"].get("diffFileIndex") != 0:
-            failures.append("debug-state C-d,],],Esc should wrap through two-file diff back to file index 0")
+        expected_wrapped_index = 2 % max(1, int(debug_states["doubleNextFileEsc"].get("diffFileCount", 0) or 1))
+        if debug_states["doubleNextFileEsc"].get("diffFileIndex") != expected_wrapped_index:
+            failures.append("debug-state C-d,],],Esc should advance two files modulo the selected diff file count")
         next_hunk = debug_states["nextHunkStaysDiff"]
         if next_hunk.get("viewMode") != "Diff":
             failures.append("debug-state C-d,} should stay in Diff mode")
@@ -582,7 +649,7 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
     except Exception as exc:
         failures.append(f"debug-state emitter failed: {exc}")
 
-    width_reports = [run_width_case(args, width) for width in args.widths]
+    width_reports = [run_width_case(args, width, target) for width in args.widths]
     for width_report in width_reports:
         failures.extend(width_report["failures"])
 

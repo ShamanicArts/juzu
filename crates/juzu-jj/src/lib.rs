@@ -4,6 +4,8 @@
 //! discovery/opening is wired through `jj-lib` here so future log/diff/mutation
 //! slices have a real native backend anchor.
 
+mod cli_fallback;
+
 use async_trait::async_trait;
 use chrono::Local;
 use futures::{io::AsyncReadExt, StreamExt};
@@ -471,12 +473,12 @@ impl JjBackend for NativeJjBackend {
         self.diff_with_line_limit(query, None).await
     }
 
-    async fn op_log(&self, _query: OpLogQuery) -> Result<Vec<OpLogEntry>> {
-        Err(JuzuError::Unsupported("native jj op_log is not wired yet"))
+    async fn op_log(&self, query: OpLogQuery) -> Result<Vec<OpLogEntry>> {
+        cli_fallback::fetch_op_log(&query.cwd, query.limit)
     }
 
-    async fn obslog(&self, _query: ObslogQuery) -> Result<Vec<ObslogEntry>> {
-        Err(JuzuError::Unsupported("native jj obslog is not wired yet"))
+    async fn obslog(&self, query: ObslogQuery) -> Result<Vec<ObslogEntry>> {
+        cli_fallback::fetch_obslog(&query.cwd, &query.change_id, query.limit)
     }
 
     async fn mutate(&self, _mutation: Mutation) -> Result<MutationResult> {
@@ -529,5 +531,49 @@ mod tests {
         }))
         .unwrap();
         assert_eq!(count, 0, "none() revset should produce zero visible nodes");
+    }
+
+    #[test]
+    fn native_op_log_returns_entries_for_current_workspace() {
+        let backend = NativeJjBackend::new();
+        let entries = futures::executor::block_on(backend.op_log(OpLogQuery {
+            cwd: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+            limit: 5,
+        }))
+        .expect("native/fallback op log should load");
+        assert!(
+            !entries.is_empty(),
+            "expected native/fallback op log to return at least one entry"
+        );
+        assert!(
+            !entries[0].id.is_empty() && !entries[0].description.is_empty(),
+            "op log entries should include id and description"
+        );
+    }
+
+    #[test]
+    fn native_obslog_returns_entries_for_selected_change() {
+        let backend = NativeJjBackend::new();
+        let nodes = futures::executor::block_on(backend.log(LogQuery {
+            cwd: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+            limit: 5,
+            revset: None,
+        }))
+        .expect("native log should load");
+        let selected = nodes.iter().find(|node| !node.is_root).unwrap_or(&nodes[0]);
+        let entries = futures::executor::block_on(backend.obslog(ObslogQuery {
+            cwd: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+            change_id: selected.change_id.clone(),
+            limit: 5,
+        }))
+        .expect("native/fallback obslog should load");
+        assert!(
+            !entries.is_empty(),
+            "expected native/fallback obslog to return at least one entry"
+        );
+        assert!(
+            selected.change_id.starts_with(&entries[0].change_id),
+            "obslog entry change id should match the selected change prefix"
+        );
     }
 }

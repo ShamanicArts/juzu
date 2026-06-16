@@ -7,7 +7,8 @@ use crossterm::{
 use juzu_core::{
     diff::{collapsed_diff_rows, parse_git_patch, DiffRow, DiffRowKind},
     layout::calculate_default_layout,
-    ChangeQuery, FileEntry, JjBackend, LayoutMode, LogQuery,
+    ChangeQuery, FileEntry, JjBackend, LayoutMode, LogQuery, ObslogEntry, ObslogQuery, OpLogEntry,
+    OpLogQuery,
 };
 use juzu_jj::NativeJjBackend;
 use ratatui::{
@@ -355,6 +356,8 @@ fn parse_layout_mode(raw: Option<String>) -> LayoutMode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ViewMode {
     Log,
+    OpLog,
+    Obslog,
     Diff,
 }
 
@@ -399,6 +402,13 @@ struct App {
     nodes: Vec<juzu_core::CommitNode>,
     files_by_change: HashMap<String, Vec<FileEntry>>,
     diffs_by_change: HashMap<String, DiffPreview>,
+    op_log_entries: Vec<OpLogEntry>,
+    op_log_selected: usize,
+    op_log_scroll: usize,
+    obslog_entries: Vec<ObslogEntry>,
+    obslog_selected: usize,
+    obslog_scroll: usize,
+    obslog_change_id: Option<String>,
     selected: usize,
     diff_scroll: usize,
     diff_file_index: usize,
@@ -463,6 +473,13 @@ fn main() -> Result<()> {
         nodes,
         files_by_change,
         diffs_by_change,
+        op_log_entries: Vec::new(),
+        op_log_selected: 0,
+        op_log_scroll: 0,
+        obslog_entries: Vec::new(),
+        obslog_selected: 0,
+        obslog_scroll: 0,
+        obslog_change_id: None,
         selected,
         diff_scroll: 0,
         diff_file_index: 0,
@@ -578,6 +595,26 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
             _ => {}
         }
     }
+    if app.active_leader_mode == Some(LeaderMode::Ops) {
+        match code {
+            KeyCode::Char('o') => {
+                let _ = load_oplog(app);
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('v') => {
+                let _ = load_obslog(app);
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('g') => {
+                app.view_mode = ViewMode::Log;
+                app.active_leader_mode = None;
+                return false;
+            }
+            _ => {}
+        }
+    }
     if app.active_leader_mode == Some(LeaderMode::View) {
         match code {
             KeyCode::Char('c') => {
@@ -639,12 +676,43 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
     }
     match code {
         KeyCode::Char('g') | KeyCode::Char('q') | KeyCode::Esc
-            if app.view_mode == ViewMode::Diff =>
+            if matches!(
+                app.view_mode,
+                ViewMode::Diff | ViewMode::OpLog | ViewMode::Obslog
+            ) =>
         {
             app.view_mode = ViewMode::Log;
             app.diff_scroll = 0;
         }
         KeyCode::Char('q') | KeyCode::Esc => return true,
+        KeyCode::Char('j') | KeyCode::Down if app.view_mode == ViewMode::OpLog => {
+            app.op_log_selected =
+                (app.op_log_selected + 1).min(app.op_log_entries.len().saturating_sub(1));
+        }
+        KeyCode::Char('k') | KeyCode::Up if app.view_mode == ViewMode::OpLog => {
+            app.op_log_selected = app.op_log_selected.saturating_sub(1);
+        }
+        KeyCode::PageDown if app.view_mode == ViewMode::OpLog => {
+            app.op_log_selected =
+                (app.op_log_selected + 10).min(app.op_log_entries.len().saturating_sub(1));
+        }
+        KeyCode::PageUp if app.view_mode == ViewMode::OpLog => {
+            app.op_log_selected = app.op_log_selected.saturating_sub(10);
+        }
+        KeyCode::Char('j') | KeyCode::Down if app.view_mode == ViewMode::Obslog => {
+            app.obslog_selected =
+                (app.obslog_selected + 1).min(app.obslog_entries.len().saturating_sub(1));
+        }
+        KeyCode::Char('k') | KeyCode::Up if app.view_mode == ViewMode::Obslog => {
+            app.obslog_selected = app.obslog_selected.saturating_sub(1);
+        }
+        KeyCode::PageDown if app.view_mode == ViewMode::Obslog => {
+            app.obslog_selected =
+                (app.obslog_selected + 10).min(app.obslog_entries.len().saturating_sub(1));
+        }
+        KeyCode::PageUp if app.view_mode == ViewMode::Obslog => {
+            app.obslog_selected = app.obslog_selected.saturating_sub(10);
+        }
         KeyCode::Char('j') | KeyCode::Down if app.view_mode == ViewMode::Diff => {
             clamp_diff_scroll_to_viewport(app);
             app.diff_scroll = app.diff_scroll.saturating_add(1);
@@ -753,7 +821,12 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
     let scroll = app.diff_scroll.min(max_scroll);
     let current_row = active_rows.get(scroll);
     let payload = serde_json::json!({
-        "viewMode": match app.view_mode { ViewMode::Log => "Log", ViewMode::Diff => "Diff" },
+        "viewMode": match app.view_mode {
+            ViewMode::Log => "Log",
+            ViewMode::OpLog => "OpLog",
+            ViewMode::Obslog => "Obslog",
+            ViewMode::Diff => "Diff",
+        },
         "layoutMode": format!("{:?}", app.mode),
         "activeLeaderMode": app.active_leader_mode.map(|mode| mode.label()),
         "sidebarCollapsed": app.sidebar_collapsed,
@@ -772,6 +845,11 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "selectedIndex": app.selected,
         "selectedChange": selected.map(|node| node.change_id.as_str()).unwrap_or(""),
         "selectedCommit": selected.map(|node| node.commit_id.as_str()).unwrap_or(""),
+        "opLogEntryCount": app.op_log_entries.len(),
+        "opLogSelected": app.op_log_entries.get(app.op_log_selected).map(|entry| entry.id.as_str()).unwrap_or(""),
+        "obslogEntryCount": app.obslog_entries.len(),
+        "obslogChangeId": app.obslog_change_id.as_deref().unwrap_or(""),
+        "obslogSelectedCommit": app.obslog_entries.get(app.obslog_selected).map(|entry| entry.commit_id.as_str()).unwrap_or(""),
         "diffScroll": app.diff_scroll,
         "diffFileIndex": app.diff_file_index,
         "diffFileCount": diff.map(|preview| preview.file_count).unwrap_or(0),
@@ -960,6 +1038,46 @@ fn reload_app_nodes(app: &mut App) -> Result<()> {
     reload_app_nodes_with_backend(app, &backend)
 }
 
+fn load_oplog_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let entries = futures_executor::block_on(backend.op_log(OpLogQuery {
+        cwd: app.path.clone(),
+        limit: 100,
+    }))?;
+    app.op_log_entries = entries;
+    app.op_log_selected = 0;
+    app.op_log_scroll = 0;
+    app.view_mode = ViewMode::OpLog;
+    Ok(())
+}
+
+fn load_oplog(app: &mut App) -> Result<()> {
+    let backend = NativeJjBackend::new();
+    load_oplog_with_backend(app, &backend)
+}
+
+fn load_obslog_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return Ok(());
+    };
+    let change_id = node.change_id.clone();
+    let entries = futures_executor::block_on(backend.obslog(ObslogQuery {
+        cwd: app.path.clone(),
+        change_id: change_id.clone(),
+        limit: 50,
+    }))?;
+    app.obslog_entries = entries;
+    app.obslog_selected = 0;
+    app.obslog_scroll = 0;
+    app.obslog_change_id = Some(change_id);
+    app.view_mode = ViewMode::Obslog;
+    Ok(())
+}
+
+fn load_obslog(app: &mut App) -> Result<()> {
+    let backend = NativeJjBackend::new();
+    load_obslog_with_backend(app, &backend)
+}
+
 fn clamp_diff_scroll_to_viewport(app: &mut App) {
     if app.view_mode != ViewMode::Diff {
         app.diff_scroll = 0;
@@ -1105,6 +1223,32 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
         ])]
     } else if app.view_mode == ViewMode::Diff {
         vec![diff_status_bar_line(mode_style, key_style, item_style)]
+    } else if app.view_mode == ViewMode::OpLog {
+        vec![Line::from(vec![
+            Span::styled(" OPLOG ", mode_style),
+            Span::raw("  "),
+            Span::styled("g", key_style),
+            Span::styled(" Log ", status_item_style(t, LeaderMode::Ops)),
+            Span::raw(" "),
+            Span::styled("j/k", key_style),
+            Span::styled(" Move ", item_style),
+            Span::raw(" "),
+            Span::styled("Esc", key_style),
+            Span::styled(" Exit ", item_style),
+        ])]
+    } else if app.view_mode == ViewMode::Obslog {
+        vec![Line::from(vec![
+            Span::styled(" OBSLOG ", mode_style),
+            Span::raw("  "),
+            Span::styled("g", key_style),
+            Span::styled(" Log ", status_item_style(t, LeaderMode::Ops)),
+            Span::raw(" "),
+            Span::styled("j/k", key_style),
+            Span::styled(" Move ", item_style),
+            Span::raw(" "),
+            Span::styled("Esc", key_style),
+            Span::styled(" Exit ", item_style),
+        ])]
     } else if let Some(leader) = app.active_leader_mode {
         let active_mode_style = Style::default()
             .fg(t.slate_bg0)
@@ -1144,6 +1288,15 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
                 Span::raw(" "),
                 Span::styled("p", key_style),
                 Span::styled(" Push ", item_style),
+                Span::raw(" "),
+                Span::styled("o", key_style),
+                Span::styled(" Oplog ", item_style),
+                Span::raw(" "),
+                Span::styled("v", key_style),
+                Span::styled(" Obslog ", item_style),
+                Span::raw(" "),
+                Span::styled("g", key_style),
+                Span::styled(" Log ", item_style),
                 Span::raw(" "),
                 Span::styled("Esc/q", key_style),
                 Span::styled(" Exit ", item_style),
@@ -1324,6 +1477,10 @@ fn render_body(
             ..chunks[0]
         };
         render_diff_pane(frame, diff_area, app, layout);
+    } else if app.view_mode == ViewMode::OpLog {
+        render_oplog_pane(frame, chunks[0], app);
+    } else if app.view_mode == ViewMode::Obslog {
+        render_obslog_pane(frame, chunks[0], app);
     } else {
         render_graph_table(frame, chunks[0], app, layout);
     }
@@ -1332,6 +1489,158 @@ fn render_body(
     } else {
         render_sidebar(frame, chunks[1], app, layout);
     }
+}
+
+fn render_oplog_pane(frame: &mut Frame, area: Rect, app: &mut App) {
+    let t = &app.theme;
+    let height = area.height as usize;
+    let body_rows = height.saturating_sub(1).max(1);
+    let visible_rows = (body_rows / 3).max(1);
+    let max_start = app.op_log_entries.len().saturating_sub(visible_rows);
+    let start = app
+        .op_log_selected
+        .saturating_sub(visible_rows / 2)
+        .min(max_start);
+    app.op_log_scroll = start;
+    let mut lines = vec![Line::from(Span::styled(
+        format!(
+            " {:<width$}",
+            "Operation log",
+            width = area.width.saturating_sub(1) as usize
+        ),
+        Style::default()
+            .fg(t.semantic_info)
+            .bg(t.slate_bg2)
+            .add_modifier(Modifier::BOLD),
+    ))];
+    if app.op_log_entries.is_empty() {
+        lines.push(Line::from(Span::styled(
+            "No operation log entries",
+            sidebar_muted_style(t),
+        )));
+    } else {
+        for (offset, entry) in app
+            .op_log_entries
+            .iter()
+            .enumerate()
+            .skip(start)
+            .take(visible_rows)
+        {
+            let is_selected = offset == app.op_log_selected;
+            let row_style = if is_selected {
+                Style::default().fg(t.slate_bg0).bg(t.semantic_mode_log)
+            } else {
+                Style::default().fg(t.slate_text)
+            };
+            lines.push(Line::from(Span::styled(
+                truncate(
+                    &format!("> {}  {}  {}", entry.id, entry.user, entry.time),
+                    area.width as usize,
+                ),
+                row_style,
+            )));
+            lines.push(Line::from(Span::styled(
+                truncate(&format!("  {}", entry.description), area.width as usize),
+                if is_selected {
+                    row_style
+                } else {
+                    Style::default().fg(t.slate_text_muted)
+                },
+            )));
+            lines.push(Line::from(""));
+        }
+    }
+    frame.render_widget(
+        Paragraph::new(lines)
+            .style(Style::default().fg(t.slate_text).bg(t.slate_bg0))
+            .block(
+                Block::default()
+                    .borders(default_chrome_borders(app.boxed_chrome))
+                    .border_style(Style::default().fg(t.slate_border_soft))
+                    .style(Style::default().bg(t.slate_bg0)),
+            ),
+        area,
+    );
+}
+
+fn render_obslog_pane(frame: &mut Frame, area: Rect, app: &mut App) {
+    let t = &app.theme;
+    let height = area.height as usize;
+    let body_rows = height.saturating_sub(1).max(1);
+    let visible_rows = (body_rows / 3).max(1);
+    let max_start = app.obslog_entries.len().saturating_sub(visible_rows);
+    let start = app
+        .obslog_selected
+        .saturating_sub(visible_rows / 2)
+        .min(max_start);
+    app.obslog_scroll = start;
+    let title = app
+        .obslog_change_id
+        .as_ref()
+        .map(|id| format!("Obslog {}", id.chars().take(8).collect::<String>()))
+        .unwrap_or_else(|| "Obslog".to_string());
+    let mut lines = vec![Line::from(Span::styled(
+        format!(
+            " {:<width$}",
+            title,
+            width = area.width.saturating_sub(1) as usize
+        ),
+        Style::default()
+            .fg(t.semantic_info)
+            .bg(t.slate_bg2)
+            .add_modifier(Modifier::BOLD),
+    ))];
+    if app.obslog_entries.is_empty() {
+        lines.push(Line::from(Span::styled(
+            "No obslog entries",
+            sidebar_muted_style(t),
+        )));
+    } else {
+        for (offset, entry) in app
+            .obslog_entries
+            .iter()
+            .enumerate()
+            .skip(start)
+            .take(visible_rows)
+        {
+            let is_selected = offset == app.obslog_selected;
+            let row_style = if is_selected {
+                Style::default().fg(t.slate_bg0).bg(t.semantic_mode_log)
+            } else {
+                Style::default().fg(t.slate_text)
+            };
+            lines.push(Line::from(Span::styled(
+                truncate(
+                    &format!("> {}  {}", entry.commit_id, entry.time),
+                    area.width as usize,
+                ),
+                row_style,
+            )));
+            lines.push(Line::from(Span::styled(
+                truncate(
+                    &format!("  {}", entry.description_title),
+                    area.width as usize,
+                ),
+                if is_selected {
+                    row_style
+                } else {
+                    Style::default().fg(t.slate_text_muted)
+                },
+            )));
+            lines.push(Line::from(""));
+        }
+    }
+    frame.render_widget(
+        Paragraph::new(lines)
+            .style(Style::default().fg(t.slate_text).bg(t.slate_bg0))
+            .block(
+                Block::default()
+                    .borders(default_chrome_borders(app.boxed_chrome))
+                    .border_style(Style::default().fg(t.slate_border_soft))
+                    .style(Style::default().bg(t.slate_bg0)),
+            ),
+        area,
+    );
 }
 
 fn render_diff_pane(
@@ -2237,6 +2546,72 @@ fn render_sidebar(
             ],
             t,
         );
+        return;
+    }
+    if app.view_mode == ViewMode::OpLog {
+        let entry = app.op_log_entries.get(app.op_log_selected);
+        let mut lines = vec![
+            Line::from(Span::styled("OP LOG", sidebar_heading_style(t))),
+            Line::from(""),
+        ];
+        if let Some(entry) = entry {
+            lines.extend([
+                Line::from(Span::styled(
+                    format!("ID: {}", entry.id),
+                    sidebar_label_style(t),
+                )),
+                Line::from(Span::styled(
+                    format!("User: {}", entry.user),
+                    sidebar_label_style(t),
+                )),
+                Line::from(Span::styled(
+                    format!("Time: {}", entry.time),
+                    sidebar_label_style(t),
+                )),
+                Line::from(""),
+                Line::from(Span::styled("Description:", sidebar_label_style(t))),
+                Line::from(entry.description.clone()),
+                Line::from(""),
+                Line::from("g: back to log"),
+            ]);
+        } else {
+            lines.push(Line::from("No selected op log entry"));
+        }
+        render_sidebar_mode_panel(frame, area, " Details ", lines, t);
+        return;
+    }
+    if app.view_mode == ViewMode::Obslog {
+        let entry = app.obslog_entries.get(app.obslog_selected);
+        let mut lines = vec![
+            Line::from(Span::styled("OBS LOG", sidebar_heading_style(t))),
+            Line::from(""),
+        ];
+        if let Some(change_id) = &app.obslog_change_id {
+            lines.push(Line::from(Span::styled(
+                format!("Change: {}", change_id),
+                sidebar_label_style(t),
+            )));
+        }
+        if let Some(entry) = entry {
+            lines.extend([
+                Line::from(Span::styled(
+                    format!("Commit: {}", entry.commit_id),
+                    sidebar_label_style(t),
+                )),
+                Line::from(Span::styled(
+                    format!("Time: {}", entry.time),
+                    sidebar_label_style(t),
+                )),
+                Line::from(""),
+                Line::from(Span::styled("Description:", sidebar_label_style(t))),
+                Line::from(entry.description_title.clone()),
+                Line::from(""),
+                Line::from("g: back to log"),
+            ]);
+        } else {
+            lines.push(Line::from("No selected obslog entry"));
+        }
+        render_sidebar_mode_panel(frame, area, " Details ", lines, t);
         return;
     }
     let selected = app.selected.min(layout.nodes.len().saturating_sub(1));
@@ -3150,6 +3525,13 @@ mod tests {
             }],
             files_by_change: HashMap::new(),
             diffs_by_change,
+            op_log_entries: Vec::new(),
+            op_log_selected: 0,
+            op_log_scroll: 0,
+            obslog_entries: Vec::new(),
+            obslog_selected: 0,
+            obslog_scroll: 0,
+            obslog_change_id: None,
             selected: 0,
             diff_scroll: 0,
             diff_file_index: 0,
@@ -3400,6 +3782,13 @@ mod tests {
             nodes: vec![],
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
+            op_log_entries: Vec::new(),
+            op_log_selected: 0,
+            op_log_scroll: 0,
+            obslog_entries: Vec::new(),
+            obslog_selected: 0,
+            obslog_scroll: 0,
+            obslog_change_id: None,
             selected: 0,
             diff_scroll: 0,
             diff_file_index: 0,

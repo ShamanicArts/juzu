@@ -1,0 +1,88 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust live tmux proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --ok:#74b88c; --bad:#ce6f7c; --info:#7f9fbf; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .status.pass { color:var(--ok); } .status.fail { color:var(--bad); }
+.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; } code { color:var(--info); }
+</style></head><body>
+<h1>JUZU Rust live tmux proof · <span class='status pass'>PASS</span></h1>
+<div class='meta'>Target: <code>juzu:rust-tui</code> · pane command: <code>./target/release/juzu-tui</code> · required command: <code>juzu-tui</code> · expected: <code>LOG, Change:</code> · missing: <code>none</code></div>
+<section class='card'><pre> LOG   ^X Act  ^O Ops  ^L View  ^B Book
+              │                                                                                   Change: ptqlskwzuzqzsntssnxwsvvkrwwvrowu
+              o..... kuxtvllw 99a682d1                                                            Commit: 254752cac8dd24b64d652a2c64ebb638f5091241
+              │      match old juzu tui pane split parity                                         Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-14T04-12-18-527Z/idle-ma... Time: 2026-06-14T03:01:19+01:00
+              │
+              o..... ynskxnmo 896e76db                                                            Description (x expand):
+              │      add rust tui modal debug state emitter                                       style rust tui diff sidebar after pierre and juzu
+              │      M Cargo.lock  A bench/results/rust-port/rust-tui-bench/2026-06-14T04-08-4...
+              │                                                                                   Files (f collapse):
+              o..... zxymorvl ba67c447                                                            A bench/results/rust-port/diff-render/2026-06-14T02-06-39.815Z/di…
+              │      lock rust diff modal footer parity                                           A bench/results/rust-port/diff-render/2026-06-14T02-06-39.815Z/di…
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-14T04-04-15-012Z/idle-ma... A bench/results/rust-port/rust-tui-bench/2026-06-14T02-05-05-424Z…
+              │                                                                                   A bench/results/rust-port/rust-tui-bench/2026-06-14T02-05-05-424Z…
+              o..... pzxyqntz 9ecf253d                                                            … 14 more
+              │      preserve rust tui diff rows for later files
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-14T02-49-54-840Z/idle-ma... Diff
+              │                                                                                     · 18 files · 7470 raw · 7488 rows · 272 shown
+              o..... noxyxzkq a4727479                                                              · diff rows 1-14 of 272
+              │      fix rust tui diff navigation parity                                           STICKY ▸ top · Added bench/results/rust-port/diff-render/...
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-14T02-37-35-017Z/idle-ma... ╭ ◆ Added bench/results/rust-port/diff-render/2026-06-14T02...╮
+              │                                                                                     · diff --git a/bench/results/rust-port/diff-render/2026-0...
+              o..... swvzporx 5a68e5b4                                                              · new file mode 100644
+              │      restore old-style rust tui diff modal parity                                   · --- /dev/null
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-14T02-30-44-914Z/idle-ma...   · +++ b/bench/results/rust-port/diff-render/2026-06-14T02...
+              │                                                                                     · ++++ b/bench/results/rust-port/diff-model/2026-06-13T22...
+              o..... nqmmukmt d109b0cb                                                              · +++++ b/bench/results/rust-port/diff-parity/2026-06-13T...
+              │      cap rust tui structured diff preview rows                                      · +++{
+              │      A bench/results/rust-port/diff-render/2026-06-14T02-13-21.624Z/diff-rende...   · +++  &amp;amp;quot;schemaVersion&amp;amp;quot;: 1,
+              │                                                                                     · +++  &amp;amp;quot;repo&amp;amp;quot;: &amp;amp;quot;/home/shamanic...
+              o..... wlysuwqw 118f727a                                                              · +++  &amp;amp;quot;generatedAt&amp;amp;quot;: &amp;amp;quot;2026-06...
+              │      add rust tui diff viewport hunk navigation                                     · +++  &amp;amp;quot;limit&amp;amp;quot;: 20,
+              │      A bench/results/rust-port/diff-render/2026-06-14T02-09-24.245Z/diff-rende...   · +++  &amp;amp;quot;totalCases&amp;amp;quot;: 6,
+              │                                                                                     · +++  &amp;amp;quot;matchedCases&amp;amp;quot;: 6,
+              O....&gt; ptqlskwz 254752ca                                                            ────────────────── ⋯ 258 more rows below ───────────────────
+              │      style rust tui diff sidebar after pierre and juzu
+              │      A bench/results/rust-port/diff-render/2026-06-14T02-06-39.815Z/diff-rende...
+              │
+              o..... npxoznxq 0f2cc4e4
+              │      preserve hunk order in collapsed diff rows
+              │      A bench/results/rust-port/diff-model/2026-06-13T22-30-07.102Z/diff-model-...
+              │
+              o..... qrywwkrz 0237faa3
+              │      add rust tui structured diff scrolling
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-13T22-28-06-220Z/idle-ma...
+              │
+              o..... rswtwypy 4be537d4
+              │      render rust tui sidebar diffs from structured model
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-13T22-26-00-204Z/idle-ma...
+              │
+              o..... ywuuykyt 050b9104
+              │      add pierre-style rust diff model skeleton
+              │      A bench/results/rust-port/diff-model/2026-06-13T22-23-54.713Z/diff-model-...
+              │
+              o..... moxspvmx b0639e6c
+              │      cap rust tui sidebar diff previews
+              │      A bench/results/rust-port/diff-parity/2026-06-13T21-37-20.870Z/diff-parit...
+              │
+              o..... skxuumlr 6a8f6e65
+              │      hydrate rust tui sidebar diffs from native jj
+              │      M Cargo.lock  A bench/results/rust-port/diff-parity/2026-06-13T21-28-22.8...
+              │
+              o..... rznpmznl 0d708254
+              │      hydrate rust tui file rows from native jj
+              │      A bench/results/rust-port/files-parity/2026-06-13T21-03-35.740Z/files-par...
+              │
+              o..... ozponwlm 5b747beb
+              │      benchmark rust tui rendering performance
+              │      A bench/results/rust-port/layout-parity/2026-06-13T20-41-25-675Z/layout-p...
+              │
+
+              │
+              │
+              │
+ ~/dev/juzu  @kpxqlxuz                                                                                                                           mainline 186 nodes
+</pre></section>
+</body></html>

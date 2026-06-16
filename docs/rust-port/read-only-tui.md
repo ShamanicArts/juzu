@@ -13,6 +13,8 @@ Date: 2026-06-13
 - renders selected-node details sidebar
 - supports selection movement with `j/k` or arrow keys
 - supports live layout mode switching with `1` through `5`
+- opens read-only OpLog and Obslog views from the Ops leader (`Ctrl+O`, then `o` / `v`) using an explicit CLI fallback path in `juzu-jj`
+- returns from OpLog/Obslog to the main log with `g`, `q`, or `Esc`
 - quits with `q` or `Esc`
 
 ## Run command
@@ -53,7 +55,7 @@ Latest diff render review:
 
 Latest modal parity proof:
 
-`bench/results/rust-port/tui-modal-parity/2026-06-16T20-35-20-260Z/revset-refresh-parity-report.html`
+`bench/results/rust-port/tui-modal-parity/2026-06-16T21-31-53-148Z/ops-readonly-views-report.html`
 
 Latest diff scroll sequence proof:
 
@@ -65,7 +67,7 @@ Latest revset sequence proof:
 
 Latest multi-state status/chrome proof:
 
-`bench/results/rust-port/status-sequence/2026-06-15T20-31-19.413Z/status-sequence-proof.mp4`
+`bench/results/rust-port/status-sequence/2026-06-16T21-33-21.019Z/status-sequence-proof.mp4`
 
 Latest raw visual parity audit:
 
@@ -77,7 +79,7 @@ Latest bundled theme review:
 
 Latest live tmux proof:
 
-`bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmux-proof.html`
+`bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html`
 
 Static state proofs are HTML/tmux captures; MP4 is reserved for real app motion. The live review surface is the tmux window.
 
