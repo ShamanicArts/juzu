@@ -2271,16 +2271,11 @@ fn render_sidebar(
             lines.push(Line::from(format!("… {} more", files.len() - file_end)));
         }
     }
-    lines.push(Line::from(""));
-    if app.view_mode == ViewMode::Diff {
-        lines.push(Line::from(vec![
-            Span::styled("Current file preview", sidebar_heading_style(t)),
-            Span::styled("  secondary", sidebar_muted_style(t)),
-        ]));
-    } else {
+    if sidebar_shows_inline_diff_preview(app) {
+        lines.push(Line::from(""));
         lines.push(Line::from(Span::styled("Diff", sidebar_heading_style(t))));
+        render_diff_preview_lines(&mut lines, app, node, area.width as usize, 14, t);
     }
-    render_diff_preview_lines(&mut lines, app, node, area.width as usize, 14, t);
     frame.render_widget(
         Paragraph::new(lines)
             .style(Style::default().fg(t.slate_text).bg(t.slate_panel))
@@ -2292,6 +2287,10 @@ fn render_sidebar(
             ),
         area,
     );
+}
+
+fn sidebar_shows_inline_diff_preview(app: &App) -> bool {
+    app.view_mode != ViewMode::Diff
 }
 
 fn render_diff_preview_lines(
@@ -3166,6 +3165,38 @@ mod tests {
         assert_eq!(rendered[1], "       f    ");
         assert_eq!(rendered[2], "1200 + ghijk");
         assert_eq!(rendered[3], "       l    ");
+    }
+
+    #[test]
+    fn diff_mode_sidebar_hides_inline_diff_preview_like_bun() {
+        let mut app = App {
+            path: PathBuf::from("/tmp"),
+            mode: LayoutMode::Mainline,
+            view_mode: ViewMode::Log,
+            active_leader_mode: None,
+            sidebar_collapsed: false,
+            files_expanded: true,
+            desc_expanded: false,
+            show_help: false,
+            boxed_chrome: false,
+            diff_scaffold: false,
+            theme_picker_mode: false,
+            theme_picker_index: 0,
+            current_theme: "slate".to_string(),
+            theme: UI_TOKENS,
+            revset_mode: false,
+            revset_value: String::new(),
+            revset_query: String::new(),
+            nodes: vec![],
+            files_by_change: HashMap::new(),
+            diffs_by_change: HashMap::new(),
+            selected: 0,
+            diff_scroll: 0,
+            diff_file_index: 0,
+        };
+        assert!(sidebar_shows_inline_diff_preview(&app));
+        app.view_mode = ViewMode::Diff;
+        assert!(!sidebar_shows_inline_diff_preview(&app));
     }
 
     #[test]

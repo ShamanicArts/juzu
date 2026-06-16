@@ -150,6 +150,11 @@ def diff_left_pane_text(text: str, width: int) -> str:
     return "\n".join(line[:left_width] for line in text.splitlines())
 
 
+def diff_right_pane_text(text: str, width: int) -> str:
+    left_width = max(1, int(width * 0.60))
+    return "\n".join(line[left_width:] for line in text.splitlines())
+
+
 def assert_diff_panel_contract(text: str, width: int, failures: list[str]) -> None:
     left = diff_left_pane_text(text, width)
     if "File " not in left:
@@ -312,7 +317,11 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
         assert_contains(diff, "Exit", "old diff status hint labels escape as Exit", failures)
         assert_not_contains(diff, "dag graph", "diff replaces graph pane", failures)
         assert_contains(diff, "Change: uyompyrw", "diff mode keeps sidebar metadata", failures)
-        assert_contains(diff, "Current file preview", "diff mode sidebar labels preview as current-file context", failures)
+        diff_sidebar = diff_right_pane_text(diff, width)
+        assert_not_contains(diff_sidebar, "Current file preview", "diff mode sidebar should hide inline preview in Bun full diff mode", failures)
+        assert_not_contains(diff_sidebar, "secondary", "diff mode sidebar should not show Rust-only secondary preview label", failures)
+        assert_not_contains(diff_sidebar, "STICKY ▸", "diff mode sidebar should not show Rust-only sticky preview context", failures)
+        assert_not_contains(diff_sidebar, "diff rows ", "diff mode sidebar should not show inline preview row counters", failures)
         assert_details_split_matches_old(diff, width, failures)
         assert_sidebar_details_rhythm_contract(diff, width, failures)
         assert_diff_title_contract(diff, width, failures)
@@ -347,7 +356,8 @@ def run_width_case(args: argparse.Namespace, width: int) -> dict[str, Any]:
             failures.append(f"diff file cycling at {width} cols: File 2 should render Bun-style code rows")
         assert_contains(diff_next_file, "Change: uyompyrw", "] in diff mode does not move DAG selection", failures)
         assert_contains(diff_next_file, "▶", "diff mode sidebar visibly marks selected diff file", failures)
-        assert_contains(diff_next_file, "Current file preview", "diff mode sidebar remains scoped to current file after file cycling", failures)
+        diff_next_sidebar = diff_right_pane_text(diff_next_file, width)
+        assert_not_contains(diff_next_sidebar, "Current file preview", "diff mode sidebar should stay preview-free after file cycling", failures)
 
         send(session, "[")
         diff_prev_file = wait_for(session, "File 1/")

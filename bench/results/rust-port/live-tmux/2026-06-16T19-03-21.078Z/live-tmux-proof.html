@@ -1,0 +1,88 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust live tmux proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --ok:#74b88c; --bad:#ce6f7c; --info:#7f9fbf; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .status.pass { color:var(--ok); } .status.fail { color:var(--bad); }
+.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; } code { color:var(--info); }
+</style></head><body>
+<h1>JUZU Rust live tmux proof · <span class='status pass'>PASS</span></h1>
+<div class='meta'>Target: <code>juzu:rust-tui</code> · pane command: <code>./target/release/juzu-tui</code> · required command: <code>juzu-tui</code> · expected: <code>LOG, Change:</code> · missing: <code>none</code></div>
+<section class='card'><pre> LOG   ^X Act  ^O Ops  ^L View  ^B Book
+              │                                                                                   Change: zpzlzqyyxvxkvlrqkzvzmzrzrtylxwos
+              o..... zoywkzyl 9cccc34d                                                            Commit: 6fe2f101f1784858d128825ef5909bb17ad80aac
+              │      map rust tui chrome to old ui tokens                                         Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-15T01-20-33-601Z/idle-ma... Time: 2026-06-14T06:27:58+01:00
+              │
+              o..... qzxvpkxm 86187d8c                                                            Description (x expand):
+              │      assert rust diff hunk jump debug state                                       add rust diff pane scroll affordance
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-15T01-14-47-698Z/idle-ma...
+              │                                                                                   Files (f collapse):
+              o..... wtkpnnxm 3414c367                                                            A bench/results/rust-port/diff-render/2026-06-14T05-27-58.284Z/di…
+              │      match bun status and footer chrome parity                                    A bench/results/rust-port/diff-render/2026-06-14T05-27-58.284Z/di…
+              │      A bench/results/rust-port/diff-render/2026-06-15T00-45-20.631Z/diff-rende... A bench/results/rust-port/rust-tui-bench/2026-06-14T05-26-54-941Z…
+              │                                                                                   A bench/results/rust-port/rust-tui-bench/2026-06-14T05-26-54-941Z…
+              o..... ymozuuon ad533771                                                            … 15 more
+              │      show hunk jump controls in diff footer
+              │      A bench/results/rust-port/diff-render/2026-06-14T05-55-10.295Z/diff-rende... Diff
+              │                                                                                     · 19 files · 7454 raw · 7473 rows · 302 shown
+              o..... lylvumuu ffb09d7f                                                              · diff rows 1-14 of 302
+              │      add sticky diff context bar                                                   STICKY ▸ top · Added bench/results/rust-port/diff-render/...
+              │      A bench/results/rust-port/diff-render/2026-06-14T05-52-04.192Z/diff-rende... ╭ ◆ Added bench/results/rust-port/diff-render/2026-06-14T05...╮
+              │                                                                                     · diff --git a/bench/results/rust-port/diff-render/2026-0...
+              o..... kyzvtnol c673ceed                                                              · new file mode 100644
+              │      add continuous diff mutation bands                                             · --- /dev/null
+              │      A bench/results/rust-port/diff-render/2026-06-14T05-47-24.040Z/diff-rende...   · +++ b/bench/results/rust-port/diff-render/2026-06-14T05...
+              │                                                                                     · ++++ b/bench/results/rust-port/diff-render/2026-06-14T0...
+              o..... nspuokzv e7cd17a2                                                            ╭─ @@ -0,0 +1,646 @@                                         ╮
+              │      tighten rust diff row rhythm parity                                          ▌+         1 &lt;!doctype html&gt;
+              │      A bench/results/rust-port/diff-render/2026-06-14T05-33-55.827Z/diff-rende... ▌+         2 &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU...
+              │                                                                                   ▌+         3 &lt;style&gt;
+              o..... yoqulrlx 7de209fa                                                            ▌+         4 :root { color-scheme: dark; --bg:#0b1020; --p...
+              │      polish diff sidebar current-file preview                                     ▌+         5 body { margin:32px; background:radial-gradien...
+              │      A bench/results/rust-port/diff-render/2026-06-14T05-30-53.065Z/diff-rende... ▌+         6 h1 { margin:0 0 6px; letter-spacing:-0.03em; ...
+              │                                                                                   ▌+         7 .meta { color:var(--muted); margin-bottom:22p...
+              O....&gt; zpzlzqyy 6fe2f101                                                            ────────────────── ⋯ 288 more rows below ───────────────────
+              │      add rust diff pane scroll affordance
+              │      A bench/results/rust-port/diff-render/2026-06-14T05-27-58.284Z/diff-rende...
+              │
+              o..... uvkwwzrw 31fb0b41
+              │      style full diff pane as real panel
+              │      A bench/results/rust-port/diff-render/2026-06-14T05-23-51.751Z/diff-rende...
+              │
+              o..... xpuzqovq a5fd4e8a
+              │      sync diff sidebar preview with selected file
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-14T04-48-20-377Z/idle-ma...
+              │
+              o..... ypytuzom a4767d2b
+              │      keep full diff pane uncapped lazily
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-14T04-41-32-164Z/idle-ma...
+              │
+              o..... zlnqwpto 77c1014b
+              │      window selected diff file in rust sidebar
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-14T04-32-31-709Z/idle-ma...
+              │
+              o..... kvuwvsyu b2bc34fa
+              │      mark selected diff file in rust sidebar
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-14T04-29-19-487Z/idle-ma...
+              │
+              o..... lywlyrqy ab2c1446
+              │      lock rust diff modal width parity
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-14T04-25-37-059Z/idle-ma...
+              │
+              o..... kuxtvllw 99a682d1
+              │      match old juzu tui pane split parity
+              │      A bench/results/rust-port/rust-tui-bench/2026-06-14T04-12-18-527Z/idle-ma...
+              │
+              o..... ynskxnmo 896e76db
+              │      add rust tui modal debug state emitter
+              │      M Cargo.lock  A bench/results/rust-port/rust-tui-bench/2026-06-14T04-08-4...
+              │
+
+              │
+              │
+              │
+ ~/dev/juzu  @kpxqlxuz                                                                                                                           mainline 186 nodes
+</pre></section>
+</body></html>
