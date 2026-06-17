@@ -1491,11 +1491,181 @@ fn render_body(
     }
 }
 
+fn first_tag_with_prefix<'a>(tags: &'a [String], prefix: &str) -> Option<&'a str> {
+    tags.iter()
+        .find_map(|tag| tag.strip_prefix(prefix).map(|_| tag.as_str()))
+}
+
+fn first_additional_line(text: &str) -> Option<&str> {
+    text.lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .nth(1)
+}
+
+fn short_time_range(raw: &str) -> String {
+    raw.split(" - ").next().unwrap_or(raw).trim().to_string()
+}
+
+fn line_from_text(style: Style, text: String) -> Line<'static> {
+    Line::from(Span::styled(text, style))
+}
+
+fn blank_line() -> Line<'static> {
+    Line::from(Span::raw(""))
+}
+
+fn oplog_row_lines(
+    tokens: &UiTokens,
+    entry: &OpLogEntry,
+    is_selected: bool,
+    width: usize,
+) -> Vec<Line<'static>> {
+    let selected_style = Style::default()
+        .fg(tokens.slate_text)
+        .bg(tokens.semantic_mode_log);
+    let meta_style = if is_selected {
+        selected_style
+    } else {
+        Style::default().fg(tokens.slate_text_muted)
+    };
+    let title_style = if is_selected {
+        selected_style.add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(tokens.slate_text)
+    };
+    let accent_style = if is_selected {
+        selected_style
+    } else {
+        Style::default().fg(tokens.semantic_warn)
+    };
+
+    let prefix = if entry.is_current { '●' } else { ' ' };
+    let meta = truncate(
+        &format!(
+            "{prefix} {}  {}  {}  {}",
+            entry.id,
+            entry.user,
+            short_time_range(&entry.time),
+            entry.duration,
+        ),
+        width,
+    );
+    let desc = truncate(&format!("  {}", entry.description_title), width);
+    let detail = first_tag_with_prefix(&entry.tags, "args:")
+        .map(str::to_string)
+        .or_else(|| first_additional_line(&entry.description_full).map(str::to_string))
+        .unwrap_or_default();
+    let tags = entry
+        .tags
+        .iter()
+        .filter(|tag| !tag.to_lowercase().starts_with("args:"))
+        .take(2)
+        .cloned()
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    vec![
+        line_from_text(meta_style, meta),
+        line_from_text(title_style, desc),
+        line_from_text(accent_style, truncate(&format!("  {}", detail), width)),
+        line_from_text(accent_style, truncate(&format!("  {}", tags), width)),
+        blank_line(),
+    ]
+}
+
+fn obslog_row_lines(
+    tokens: &UiTokens,
+    entry: &ObslogEntry,
+    is_selected: bool,
+    width: usize,
+) -> Vec<Line<'static>> {
+    let selected_style = Style::default()
+        .fg(tokens.slate_text)
+        .bg(tokens.semantic_mode_log);
+    let meta_style = if is_selected {
+        selected_style
+    } else {
+        Style::default().fg(tokens.slate_text_muted)
+    };
+    let title_style = if is_selected {
+        selected_style.add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(tokens.slate_text)
+    };
+    let accent_style = if is_selected {
+        selected_style
+    } else {
+        Style::default().fg(tokens.semantic_info)
+    };
+    let status_style = if is_selected {
+        selected_style
+    } else if entry.is_conflict {
+        Style::default().fg(tokens.semantic_error)
+    } else {
+        Style::default().fg(tokens.semantic_warn)
+    };
+
+    let prefix = if entry.is_working_copy {
+        '@'
+    } else if is_selected {
+        '●'
+    } else {
+        ' '
+    };
+    let mut badges = Vec::new();
+    if entry.is_hidden {
+        badges.push("hidden".to_string());
+    }
+    if entry.is_conflict {
+        badges.push("[CONFLICT]".to_string());
+    } else if entry.is_empty {
+        badges.push("[empty]".to_string());
+    }
+    if !entry.bookmarks.is_empty() {
+        badges.push(format!("({})", entry.bookmarks.join(", ")));
+    }
+    let meta = truncate(
+        &format!(
+            "{prefix} {}  {}  {}  {}",
+            entry.change_id,
+            entry.commit_id,
+            short_time_range(&entry.time),
+            badges.join(" "),
+        ),
+        width,
+    );
+    let author = truncate(&format!("  {}", entry.author), width);
+    let desc = truncate(&format!("  {}", entry.description_title), width);
+    let op_text = truncate(
+        &format!(
+            "  op {}  {}",
+            entry.operation_id, entry.operation_description
+        ),
+        width,
+    );
+    let args = truncate(
+        &format!(
+            "  {}",
+            first_tag_with_prefix(&entry.operation_tags, "args:").unwrap_or("")
+        ),
+        width,
+    );
+
+    vec![
+        line_from_text(status_style, meta),
+        line_from_text(meta_style, author),
+        line_from_text(title_style, desc),
+        line_from_text(accent_style, op_text),
+        line_from_text(Style::default().fg(tokens.semantic_warn), args),
+    ]
+}
+
 fn render_oplog_pane(frame: &mut Frame, area: Rect, app: &mut App) {
     let t = &app.theme;
     let height = area.height as usize;
     let body_rows = height.saturating_sub(1).max(1);
-    let visible_rows = (body_rows / 3).max(1);
+    let visible_rows = (body_rows / 5).max(1);
     let max_start = app.op_log_entries.len().saturating_sub(visible_rows);
     let start = app
         .op_log_selected
@@ -1505,7 +1675,7 @@ fn render_oplog_pane(frame: &mut Frame, area: Rect, app: &mut App) {
     let mut lines = vec![Line::from(Span::styled(
         format!(
             " {:<width$}",
-            "Operation log",
+            "JJ Operation Log",
             width = area.width.saturating_sub(1) as usize
         ),
         Style::default()
@@ -1526,28 +1696,12 @@ fn render_oplog_pane(frame: &mut Frame, area: Rect, app: &mut App) {
             .skip(start)
             .take(visible_rows)
         {
-            let is_selected = offset == app.op_log_selected;
-            let row_style = if is_selected {
-                Style::default().fg(t.slate_bg0).bg(t.semantic_mode_log)
-            } else {
-                Style::default().fg(t.slate_text)
-            };
-            lines.push(Line::from(Span::styled(
-                truncate(
-                    &format!("> {}  {}  {}", entry.id, entry.user, entry.time),
-                    area.width as usize,
-                ),
-                row_style,
-            )));
-            lines.push(Line::from(Span::styled(
-                truncate(&format!("  {}", entry.description), area.width as usize),
-                if is_selected {
-                    row_style
-                } else {
-                    Style::default().fg(t.slate_text_muted)
-                },
-            )));
-            lines.push(Line::from(""));
+            lines.extend(oplog_row_lines(
+                t,
+                entry,
+                offset == app.op_log_selected,
+                area.width as usize,
+            ));
         }
     }
     frame.render_widget(
@@ -1567,7 +1721,7 @@ fn render_obslog_pane(frame: &mut Frame, area: Rect, app: &mut App) {
     let t = &app.theme;
     let height = area.height as usize;
     let body_rows = height.saturating_sub(1).max(1);
-    let visible_rows = (body_rows / 3).max(1);
+    let visible_rows = (body_rows / 5).max(1);
     let max_start = app.obslog_entries.len().saturating_sub(visible_rows);
     let start = app
         .obslog_selected
@@ -1577,8 +1731,13 @@ fn render_obslog_pane(frame: &mut Frame, area: Rect, app: &mut App) {
     let title = app
         .obslog_change_id
         .as_ref()
-        .map(|id| format!("Obslog {}", id.chars().take(8).collect::<String>()))
-        .unwrap_or_else(|| "Obslog".to_string());
+        .map(|id| {
+            format!(
+                "Observation Log for {}",
+                id.chars().take(8).collect::<String>()
+            )
+        })
+        .unwrap_or_else(|| "Observation Log".to_string());
     let mut lines = vec![Line::from(Span::styled(
         format!(
             " {:<width$}",
@@ -1603,31 +1762,12 @@ fn render_obslog_pane(frame: &mut Frame, area: Rect, app: &mut App) {
             .skip(start)
             .take(visible_rows)
         {
-            let is_selected = offset == app.obslog_selected;
-            let row_style = if is_selected {
-                Style::default().fg(t.slate_bg0).bg(t.semantic_mode_log)
-            } else {
-                Style::default().fg(t.slate_text)
-            };
-            lines.push(Line::from(Span::styled(
-                truncate(
-                    &format!("> {}  {}", entry.commit_id, entry.time),
-                    area.width as usize,
-                ),
-                row_style,
-            )));
-            lines.push(Line::from(Span::styled(
-                truncate(
-                    &format!("  {}", entry.description_title),
-                    area.width as usize,
-                ),
-                if is_selected {
-                    row_style
-                } else {
-                    Style::default().fg(t.slate_text_muted)
-                },
-            )));
-            lines.push(Line::from(""));
+            lines.extend(obslog_row_lines(
+                t,
+                entry,
+                offset == app.obslog_selected,
+                area.width as usize,
+            ));
         }
     }
     frame.render_widget(
@@ -2366,6 +2506,181 @@ fn render_collapsed_sidebar(frame: &mut Frame, area: Rect, app: &App) {
     );
 }
 
+fn oplog_sidebar_lines(tokens: &UiTokens, entry: &OpLogEntry) -> Vec<Line<'static>> {
+    let mut lines = vec![
+        Line::from(Span::styled("OP LOG", sidebar_heading_style(tokens))),
+        blank_line(),
+        Line::from(Span::styled(
+            format!("ID: {}", entry.id),
+            sidebar_label_style(tokens),
+        )),
+        Line::from(Span::styled(
+            format!("Time: {}", short_time_range(&entry.time)),
+            sidebar_label_style(tokens),
+        )),
+        Line::from(Span::styled(
+            format!("Duration: {}", entry.duration),
+            sidebar_muted_style(tokens),
+        )),
+        Line::from(Span::styled(
+            format!("User: {}", entry.user),
+            sidebar_label_style(tokens),
+        )),
+        Line::from(Span::styled(
+            format!("Current: {}", if entry.is_current { "Yes" } else { "No" }),
+            if entry.is_current {
+                Style::default().fg(tokens.semantic_success)
+            } else {
+                sidebar_muted_style(tokens)
+            },
+        )),
+        blank_line(),
+        Line::from(Span::styled("Description:", sidebar_label_style(tokens))),
+    ];
+    for line in entry.description_full.lines().take(5) {
+        lines.push(Line::from(line.to_string()));
+    }
+    if let Some(args) = first_tag_with_prefix(&entry.tags, "args:") {
+        lines.push(blank_line());
+        lines.push(Line::from(Span::styled(
+            "Command:",
+            sidebar_label_style(tokens),
+        )));
+        lines.push(Line::from(Span::styled(
+            args.to_string(),
+            Style::default().fg(tokens.semantic_warn),
+        )));
+    }
+    let other_tags = entry
+        .tags
+        .iter()
+        .filter(|tag| !tag.to_lowercase().starts_with("args:"))
+        .take(4)
+        .cloned()
+        .collect::<Vec<_>>();
+    if !other_tags.is_empty() {
+        lines.push(blank_line());
+        lines.push(Line::from(Span::styled(
+            "Tags:",
+            sidebar_label_style(tokens),
+        )));
+        for tag in other_tags {
+            lines.push(Line::from(Span::styled(
+                format!("  {tag}"),
+                Style::default().fg(tokens.semantic_warn),
+            )));
+        }
+    }
+    lines.push(blank_line());
+    lines.push(Line::from("r/Enter: restore selected op"));
+    lines.push(Line::from("g: back to log"));
+    lines
+}
+
+fn obslog_sidebar_lines(
+    tokens: &UiTokens,
+    change_id: Option<&str>,
+    entry: Option<&ObslogEntry>,
+) -> Vec<Line<'static>> {
+    let mut lines = vec![
+        Line::from(Span::styled("OBS LOG", sidebar_heading_style(tokens))),
+        blank_line(),
+    ];
+    if let Some(change_id) = change_id {
+        lines.push(Line::from(Span::styled(
+            format!("Change: {change_id}"),
+            sidebar_label_style(tokens),
+        )));
+    }
+    if let Some(entry) = entry {
+        lines.push(blank_line());
+        lines.push(Line::from(Span::styled(
+            format!("Commit: {}", entry.commit_id),
+            sidebar_label_style(tokens),
+        )));
+        if entry.is_working_copy {
+            lines.push(Line::from(Span::styled(
+                "@ working copy",
+                Style::default().fg(tokens.semantic_success),
+            )));
+        }
+        if entry.is_hidden {
+            lines.push(Line::from(Span::styled(
+                "hidden",
+                sidebar_muted_style(tokens),
+            )));
+        }
+        if entry.is_conflict {
+            lines.push(Line::from(Span::styled(
+                "! conflict",
+                Style::default().fg(tokens.semantic_error),
+            )));
+        } else if entry.is_empty {
+            lines.push(Line::from(Span::styled(
+                "empty",
+                sidebar_muted_style(tokens),
+            )));
+        }
+        lines.push(blank_line());
+        lines.push(Line::from(Span::styled(
+            format!("Op: {}", entry.operation_id),
+            Style::default().fg(tokens.semantic_warn),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("OpUser: {}", entry.operation_user),
+            sidebar_muted_style(tokens),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("OpDur: {}", entry.operation_duration),
+            sidebar_muted_style(tokens),
+        )));
+        lines.push(Line::from(Span::styled(
+            "Operation:",
+            sidebar_label_style(tokens),
+        )));
+        for line in entry.operation_description_full.lines().take(4) {
+            lines.push(Line::from(line.to_string()));
+        }
+        if let Some(args) = first_tag_with_prefix(&entry.operation_tags, "args:") {
+            lines.push(blank_line());
+            lines.push(Line::from(Span::styled(
+                "Command:",
+                sidebar_label_style(tokens),
+            )));
+            lines.push(Line::from(Span::styled(
+                args.to_string(),
+                Style::default().fg(tokens.semantic_warn),
+            )));
+        }
+        lines.push(blank_line());
+        lines.push(Line::from(Span::styled(
+            format!("Time: {}", short_time_range(&entry.time)),
+            sidebar_label_style(tokens),
+        )));
+        lines.push(Line::from(Span::styled(
+            format!("Author: {}", entry.author),
+            sidebar_label_style(tokens),
+        )));
+        lines.push(blank_line());
+        lines.push(Line::from(Span::styled(
+            "Description:",
+            sidebar_label_style(tokens),
+        )));
+        for line in entry.description_full.lines().take(6) {
+            lines.push(Line::from(line.to_string()));
+        }
+    } else {
+        lines.push(Line::from(Span::styled(
+            "Loading obslog...",
+            sidebar_muted_style(tokens),
+        )));
+    }
+    lines.push(blank_line());
+    lines.push(Line::from("j/k: move  PgUp/PgDn: jump"));
+    lines.push(Line::from("g: back to log"));
+    lines
+}
+
 fn render_sidebar_mode_panel(
     frame: &mut Frame,
     area: Rect,
@@ -2549,68 +2864,20 @@ fn render_sidebar(
         return;
     }
     if app.view_mode == ViewMode::OpLog {
-        let entry = app.op_log_entries.get(app.op_log_selected);
-        let mut lines = vec![
-            Line::from(Span::styled("OP LOG", sidebar_heading_style(t))),
-            Line::from(""),
-        ];
-        if let Some(entry) = entry {
-            lines.extend([
-                Line::from(Span::styled(
-                    format!("ID: {}", entry.id),
-                    sidebar_label_style(t),
-                )),
-                Line::from(Span::styled(
-                    format!("User: {}", entry.user),
-                    sidebar_label_style(t),
-                )),
-                Line::from(Span::styled(
-                    format!("Time: {}", entry.time),
-                    sidebar_label_style(t),
-                )),
-                Line::from(""),
-                Line::from(Span::styled("Description:", sidebar_label_style(t))),
-                Line::from(entry.description.clone()),
-                Line::from(""),
-                Line::from("g: back to log"),
-            ]);
-        } else {
-            lines.push(Line::from("No selected op log entry"));
-        }
+        let lines = app
+            .op_log_entries
+            .get(app.op_log_selected)
+            .map(|entry| oplog_sidebar_lines(t, entry))
+            .unwrap_or_else(|| vec![Line::from("No selected op log entry")]);
         render_sidebar_mode_panel(frame, area, " Details ", lines, t);
         return;
     }
     if app.view_mode == ViewMode::Obslog {
-        let entry = app.obslog_entries.get(app.obslog_selected);
-        let mut lines = vec![
-            Line::from(Span::styled("OBS LOG", sidebar_heading_style(t))),
-            Line::from(""),
-        ];
-        if let Some(change_id) = &app.obslog_change_id {
-            lines.push(Line::from(Span::styled(
-                format!("Change: {}", change_id),
-                sidebar_label_style(t),
-            )));
-        }
-        if let Some(entry) = entry {
-            lines.extend([
-                Line::from(Span::styled(
-                    format!("Commit: {}", entry.commit_id),
-                    sidebar_label_style(t),
-                )),
-                Line::from(Span::styled(
-                    format!("Time: {}", entry.time),
-                    sidebar_label_style(t),
-                )),
-                Line::from(""),
-                Line::from(Span::styled("Description:", sidebar_label_style(t))),
-                Line::from(entry.description_title.clone()),
-                Line::from(""),
-                Line::from("g: back to log"),
-            ]);
-        } else {
-            lines.push(Line::from("No selected obslog entry"));
-        }
+        let lines = obslog_sidebar_lines(
+            t,
+            app.obslog_change_id.as_deref(),
+            app.obslog_entries.get(app.obslog_selected),
+        );
         render_sidebar_mode_panel(frame, area, " Details ", lines, t);
         return;
     }
@@ -3235,6 +3502,13 @@ fn render_diff_anchor_label(
 mod tests {
     use super::*;
 
+    fn line_to_plain_text(line: Line<'static>) -> String {
+        line.spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>()
+    }
+
     #[test]
     fn rust_ui_tokens_match_old_juzu_defaults() {
         assert_eq!(UI_TOKENS.slate_bg0, Color::Rgb(0x11, 0x13, 0x18));
@@ -3355,6 +3629,71 @@ mod tests {
         assert!(rendered.starts_with("M crates/juzu-tui"));
         assert!(rendered.ends_with('…'));
         assert!(!rendered.starts_with("  M"));
+    }
+
+    #[test]
+    fn oplog_sidebar_lines_include_command_and_restore_hint() {
+        let entry = OpLogEntry {
+            id: "op-123456789abc".to_string(),
+            short_id: "op-12345".to_string(),
+            time: "2026-06-16 12:00:00 +00:00 - 2026-06-16 12:00:02 +00:00".to_string(),
+            duration: "2s".to_string(),
+            tags: vec![
+                "args: jj op restore op-12345".to_string(),
+                "undo".to_string(),
+            ],
+            description_title: "restore op".to_string(),
+            description_full: "restore op\nwith detail".to_string(),
+            is_current: true,
+            user: "alice@example.com".to_string(),
+        };
+
+        let rendered = oplog_sidebar_lines(&UI_TOKENS, &entry)
+            .into_iter()
+            .map(line_to_plain_text)
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("Current: Yes"));
+        assert!(rendered.contains("Command:"));
+        assert!(rendered.contains("args: jj op restore op-12345"));
+        assert!(rendered.contains("r/Enter: restore selected op"));
+    }
+
+    #[test]
+    fn obslog_sidebar_lines_include_operation_metadata_and_status() {
+        let entry = ObslogEntry {
+            change_id: "change123".to_string(),
+            commit_id: "commit456".to_string(),
+            operation_id: "op789".to_string(),
+            operation_description: "op title".to_string(),
+            operation_description_full: "op title\nfull detail".to_string(),
+            operation_user: "alice@example.com".to_string(),
+            operation_duration: "5m".to_string(),
+            operation_tags: vec!["args: jj squash".to_string(), "rewrite".to_string()],
+            time: "2026-06-16 12:00:00 +00:00".to_string(),
+            author: "bob@example.com".to_string(),
+            bookmarks: vec![],
+            description_title: "desc title".to_string(),
+            description_full: "desc title\nfull body".to_string(),
+            is_working_copy: true,
+            is_empty: false,
+            is_conflict: true,
+            is_hidden: false,
+        };
+
+        let rendered = obslog_sidebar_lines(&UI_TOKENS, Some("change123"), Some(&entry))
+            .into_iter()
+            .map(line_to_plain_text)
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("Change: change123"));
+        assert!(rendered.contains("@ working copy"));
+        assert!(rendered.contains("! conflict"));
+        assert!(rendered.contains("Command:"));
+        assert!(rendered.contains("args: jj squash"));
+        assert!(rendered.contains("Operation:"));
     }
 
     #[test]

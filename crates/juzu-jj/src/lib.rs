@@ -546,8 +546,12 @@ mod tests {
             "expected native/fallback op log to return at least one entry"
         );
         assert!(
-            !entries[0].id.is_empty() && !entries[0].description.is_empty(),
+            !entries[0].id.is_empty() && !entries[0].description_title.is_empty(),
             "op log entries should include id and description"
+        );
+        assert!(
+            !entries[0].short_id.is_empty() && !entries[0].duration.is_empty(),
+            "op log entries should include short id and duration"
         );
     }
 
@@ -574,6 +578,10 @@ mod tests {
         assert!(
             selected.change_id.starts_with(&entries[0].change_id),
             "obslog entry change id should match the selected change prefix"
+        );
+        assert!(
+            !entries[0].operation_id.is_empty() && !entries[0].description_title.is_empty(),
+            "obslog entry should include operation metadata and description"
         );
     }
 }

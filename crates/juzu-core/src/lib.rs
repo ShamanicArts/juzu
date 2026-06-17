@@ -85,9 +85,14 @@ pub struct FileEntry {
 #[serde(rename_all = "camelCase")]
 pub struct OpLogEntry {
     pub id: String,
-    pub description: String,
-    pub user: String,
+    pub short_id: String,
     pub time: String,
+    pub duration: String,
+    pub tags: Vec<String>,
+    pub description_title: String,
+    pub description_full: String,
+    pub is_current: bool,
+    pub user: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -95,8 +100,21 @@ pub struct OpLogEntry {
 pub struct ObslogEntry {
     pub change_id: String,
     pub commit_id: String,
-    pub description_title: String,
+    pub operation_id: String,
+    pub operation_description: String,
+    pub operation_description_full: String,
+    pub operation_user: String,
+    pub operation_duration: String,
+    pub operation_tags: Vec<String>,
     pub time: String,
+    pub author: String,
+    pub bookmarks: Vec<String>,
+    pub description_title: String,
+    pub description_full: String,
+    pub is_working_copy: bool,
+    pub is_empty: bool,
+    pub is_conflict: bool,
+    pub is_hidden: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
