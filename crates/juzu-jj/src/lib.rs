@@ -508,6 +508,20 @@ impl JjBackend for NativeJjBackend {
                     message: format!("deleted bookmark {name}"),
                 })
             }
+            Mutation::Undo { cwd } => {
+                cli_fallback::undo(&cwd)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: "undid last operation".to_string(),
+                })
+            }
+            Mutation::Redo { cwd } => {
+                cli_fallback::redo(&cwd)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: "redid last operation".to_string(),
+                })
+            }
             _ => Err(JuzuError::Unsupported(
                 "native jj mutations are not wired yet",
             )),
@@ -768,6 +782,63 @@ mod tests {
                 .any(|line| line.contains("wip/test-bookmark|true")),
             "expected deleted bookmark to disappear from jj bookmark list, got: {bookmarks}"
         );
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_undo_and_redo_mutations_round_trip_last_operation() {
+        let repo = create_restore_fixture_repo();
+        let backend = NativeJjBackend::new();
+
+        let before = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "@",
+                "-T",
+                "description.first_line()",
+            ],
+        );
+        assert_eq!(before.trim(), "second desc");
+
+        let undo_result =
+            futures::executor::block_on(backend.mutate(Mutation::Undo { cwd: repo.clone() }))
+                .expect("undo mutation should succeed");
+        assert!(undo_result.changed, "undo mutation should report a change");
+
+        let after_undo = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "@",
+                "-T",
+                "description.first_line()",
+            ],
+        );
+        assert_eq!(after_undo.trim(), "first desc");
+
+        let redo_result =
+            futures::executor::block_on(backend.mutate(Mutation::Redo { cwd: repo.clone() }))
+                .expect("redo mutation should succeed");
+        assert!(redo_result.changed, "redo mutation should report a change");
+
+        let after_redo = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "@",
+                "-T",
+                "description.first_line()",
+            ],
+        );
+        assert_eq!(after_redo.trim(), "second desc");
 
         let _ = fs::remove_dir_all(&repo);
     }

@@ -144,6 +144,14 @@ pub fn bookmark_delete(cwd: &Path, name: &str) -> Result<()> {
     run_jj(cwd, &["bookmark", "delete", name]).map(|_| ())
 }
 
+pub fn undo(cwd: &Path) -> Result<()> {
+    run_jj(cwd, &["undo"]).map(|_| ())
+}
+
+pub fn redo(cwd: &Path) -> Result<()> {
+    run_jj(cwd, &["redo"]).map(|_| ())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{parse_obslog_text, parse_op_log_text};
