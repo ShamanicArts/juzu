@@ -136,6 +136,14 @@ pub fn restore_operation(cwd: &Path, operation_id: &str) -> Result<()> {
     run_jj(cwd, &["op", "restore", operation_id]).map(|_| ())
 }
 
+pub fn bookmark_set(cwd: &Path, name: &str, revision: &str) -> Result<()> {
+    run_jj(cwd, &["bookmark", "set", name, "-r", revision]).map(|_| ())
+}
+
+pub fn bookmark_delete(cwd: &Path, name: &str) -> Result<()> {
+    run_jj(cwd, &["bookmark", "delete", name]).map(|_| ())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{parse_obslog_text, parse_op_log_text};

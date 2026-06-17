@@ -490,6 +490,24 @@ impl JjBackend for NativeJjBackend {
                     message: format!("restored operation {operation_id}"),
                 })
             }
+            Mutation::BookmarkSet {
+                cwd,
+                name,
+                revision,
+            } => {
+                cli_fallback::bookmark_set(&cwd, &name, &revision)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: format!("set bookmark {name} -> {revision}"),
+                })
+            }
+            Mutation::BookmarkDelete { cwd, name } => {
+                cli_fallback::bookmark_delete(&cwd, &name)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: format!("deleted bookmark {name}"),
+                })
+            }
             _ => Err(JuzuError::Unsupported(
                 "native jj mutations are not wired yet",
             )),
@@ -680,6 +698,76 @@ mod tests {
             ],
         );
         assert_eq!(after.trim(), "first desc");
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_bookmark_set_mutation_creates_named_bookmark() {
+        let repo = create_restore_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::BookmarkSet {
+            cwd: repo.clone(),
+            name: "wip/test-bookmark".to_string(),
+            revision: change_id.clone(),
+        }))
+        .expect("bookmark set mutation should succeed");
+        assert!(result.changed, "bookmark set should report a change");
+
+        let bookmarks = run_jj(
+            &repo,
+            &[
+                "bookmark",
+                "list",
+                "-T",
+                "name ++ \"|\" ++ present ++ \"\\n\"",
+            ],
+        );
+        assert!(
+            bookmarks
+                .lines()
+                .any(|line| line.trim() == "wip/test-bookmark|true"),
+            "expected created bookmark to appear in jj bookmark list, got: {bookmarks}"
+        );
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_bookmark_delete_mutation_removes_named_bookmark() {
+        let repo = create_restore_fixture_repo();
+        run_jj(&repo, &["bookmark", "set", "wip/test-bookmark", "-r", "@"]);
+        let backend = NativeJjBackend::new();
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::BookmarkDelete {
+            cwd: repo.clone(),
+            name: "wip/test-bookmark".to_string(),
+        }))
+        .expect("bookmark delete mutation should succeed");
+        assert!(result.changed, "bookmark delete should report a change");
+
+        let bookmarks = run_jj(
+            &repo,
+            &[
+                "bookmark",
+                "list",
+                "-T",
+                "name ++ \"|\" ++ present ++ \"\\n\"",
+            ],
+        );
+        assert!(
+            !bookmarks
+                .lines()
+                .any(|line| line.contains("wip/test-bookmark|true")),
+            "expected deleted bookmark to disappear from jj bookmark list, got: {bookmarks}"
+        );
 
         let _ = fs::remove_dir_all(&repo);
     }

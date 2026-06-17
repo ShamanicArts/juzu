@@ -680,6 +680,21 @@ fn handle_key_with_backend<B: JjBackend>(
             _ => {}
         }
     }
+    if app.active_leader_mode == Some(LeaderMode::Bookmarks) {
+        match code {
+            KeyCode::Char('s') => {
+                let _ = set_selected_bookmark_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('d') => {
+                let _ = delete_selected_bookmark_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
+            _ => {}
+        }
+    }
     if app.active_leader_mode.is_some() && matches!(code, KeyCode::Char('q') | KeyCode::Esc) {
         app.active_leader_mode = None;
         return false;
@@ -1073,6 +1088,44 @@ fn restore_selected_oplog_with_backend<B: JjBackend>(app: &mut App, backend: &B)
     }))?;
     reload_app_nodes_with_backend(app, backend)?;
     load_oplog_with_backend(app, backend)
+}
+
+fn bookmark_name_for_change(change_id: &str) -> String {
+    let prefix: String = change_id.chars().take(8).collect();
+    format!("wip/{prefix}")
+}
+
+fn first_local_bookmark(node: &juzu_core::CommitNode) -> Option<String> {
+    node.bookmarks
+        .iter()
+        .find(|bookmark| !bookmark.contains('@'))
+        .cloned()
+}
+
+fn set_selected_bookmark_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return Ok(());
+    };
+    futures_executor::block_on(backend.mutate(Mutation::BookmarkSet {
+        cwd: app.path.clone(),
+        name: bookmark_name_for_change(&node.change_id),
+        revision: node.change_id.clone(),
+    }))?;
+    reload_app_nodes_with_backend(app, backend)
+}
+
+fn delete_selected_bookmark_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return Ok(());
+    };
+    let Some(name) = first_local_bookmark(node) else {
+        return Ok(());
+    };
+    futures_executor::block_on(backend.mutate(Mutation::BookmarkDelete {
+        cwd: app.path.clone(),
+        name,
+    }))?;
+    reload_app_nodes_with_backend(app, backend)
 }
 
 fn load_obslog_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
@@ -4635,6 +4688,202 @@ mod tests {
     #[test]
     fn oplog_restore_key_enter_reloads_state_from_backend() {
         assert_oplog_restore_shortcut(KeyCode::Enter);
+    }
+
+    struct BookmarkTestBackend {
+        mutate_calls: Mutex<Vec<juzu_core::Mutation>>,
+        before_nodes: Vec<juzu_core::CommitNode>,
+        after_set_nodes: Vec<juzu_core::CommitNode>,
+        after_delete_nodes: Vec<juzu_core::CommitNode>,
+    }
+
+    #[async_trait::async_trait(?Send)]
+    impl JjBackend for BookmarkTestBackend {
+        async fn find_root(&self, _start: &std::path::Path) -> juzu_core::Result<Option<PathBuf>> {
+            Ok(None)
+        }
+
+        async fn log(&self, _query: LogQuery) -> juzu_core::Result<Vec<juzu_core::CommitNode>> {
+            let calls = self.mutate_calls.lock().unwrap();
+            let last = calls.last();
+            Ok(match last {
+                Some(juzu_core::Mutation::BookmarkSet { .. }) => self.after_set_nodes.clone(),
+                Some(juzu_core::Mutation::BookmarkDelete { .. }) => self.after_delete_nodes.clone(),
+                _ => self.before_nodes.clone(),
+            })
+        }
+
+        async fn node_count(&self, _query: juzu_core::NodeCountQuery) -> juzu_core::Result<usize> {
+            Ok(self.before_nodes.len())
+        }
+
+        async fn description(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn files(&self, _query: ChangeQuery) -> juzu_core::Result<Vec<FileEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn diff(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn op_log(&self, _query: OpLogQuery) -> juzu_core::Result<Vec<OpLogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn obslog(&self, _query: ObslogQuery) -> juzu_core::Result<Vec<ObslogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn mutate(
+            &self,
+            mutation: juzu_core::Mutation,
+        ) -> juzu_core::Result<juzu_core::MutationResult> {
+            self.mutate_calls.lock().unwrap().push(mutation.clone());
+            match mutation {
+                juzu_core::Mutation::BookmarkSet { .. } => Ok(juzu_core::MutationResult {
+                    changed: true,
+                    message: "bookmark set".to_string(),
+                }),
+                juzu_core::Mutation::BookmarkDelete { .. } => Ok(juzu_core::MutationResult {
+                    changed: true,
+                    message: "bookmark deleted".to_string(),
+                }),
+                _ => Err(juzu_core::JuzuError::Unsupported(
+                    "unexpected test mutation",
+                )),
+            }
+        }
+    }
+
+    fn test_log_app(change_id: &str, bookmarks: Vec<&str>) -> App {
+        let mut node = test_commit(change_id, "selected node");
+        node.change_id = change_id.to_string();
+        node.commit_id = format!("{change_id}-commit");
+        node.bookmarks = bookmarks.into_iter().map(str::to_string).collect();
+        App {
+            path: PathBuf::from("/tmp/juzu-bookmark-test"),
+            mode: LayoutMode::Mainline,
+            view_mode: ViewMode::Log,
+            active_leader_mode: None,
+            sidebar_collapsed: false,
+            files_expanded: true,
+            desc_expanded: false,
+            show_help: false,
+            boxed_chrome: false,
+            diff_scaffold: false,
+            theme_picker_mode: false,
+            theme_picker_index: 0,
+            current_theme: "slate".to_string(),
+            theme: UI_TOKENS,
+            log_limit: 40,
+            revset_mode: false,
+            revset_value: String::new(),
+            revset_query: String::new(),
+            nodes: vec![node],
+            files_by_change: HashMap::new(),
+            diffs_by_change: HashMap::new(),
+            op_log_entries: Vec::new(),
+            op_log_selected: 0,
+            op_log_scroll: 0,
+            obslog_entries: Vec::new(),
+            obslog_selected: 0,
+            obslog_scroll: 0,
+            obslog_change_id: None,
+            selected: 0,
+            diff_scroll: 0,
+            diff_file_index: 0,
+            diff_viewport_rows: 1,
+        }
+    }
+
+    #[test]
+    fn bookmark_set_shortcut_mutates_and_reloads_log_state() {
+        let backend = BookmarkTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![test_commit("abcd1234rest", "selected node")],
+            after_set_nodes: vec![{
+                let mut node = test_commit("abcd1234rest", "selected node");
+                node.bookmarks = vec!["wip/abcd1234".to_string()];
+                node
+            }],
+            after_delete_nodes: vec![test_commit("abcd1234rest", "selected node")],
+        };
+        let mut app = test_log_app("abcd1234rest", vec![]);
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('b'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Bookmarks));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('s'),
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::BookmarkSet {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                name: "wip/abcd1234".to_string(),
+                revision: "abcd1234rest".to_string(),
+            }]
+        );
+        assert_eq!(app.view_mode, ViewMode::Log);
+        assert_eq!(app.active_leader_mode, None);
+        assert_eq!(app.nodes[0].bookmarks, vec!["wip/abcd1234".to_string()]);
+    }
+
+    #[test]
+    fn bookmark_delete_shortcut_mutates_and_reloads_log_state() {
+        let backend = BookmarkTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![{
+                let mut node = test_commit("abcd1234rest", "selected node");
+                node.bookmarks = vec!["wip/abcd1234".to_string(), "main@origin".to_string()];
+                node
+            }],
+            after_set_nodes: vec![test_commit("abcd1234rest", "selected node")],
+            after_delete_nodes: vec![{
+                let mut node = test_commit("abcd1234rest", "selected node");
+                node.bookmarks = vec!["main@origin".to_string()];
+                node
+            }],
+        };
+        let mut app = test_log_app("abcd1234rest", vec!["wip/abcd1234", "main@origin"]);
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('b'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Bookmarks));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('d'),
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::BookmarkDelete {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                name: "wip/abcd1234".to_string(),
+            }]
+        );
+        assert_eq!(app.view_mode, ViewMode::Log);
+        assert_eq!(app.active_leader_mode, None);
+        assert_eq!(app.nodes[0].bookmarks, vec!["main@origin".to_string()]);
     }
 
     fn color_hex(color: Color) -> String {

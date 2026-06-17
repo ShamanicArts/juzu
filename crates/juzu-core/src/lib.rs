@@ -194,6 +194,15 @@ pub enum Mutation {
         cwd: PathBuf,
         operation_id: String,
     },
+    BookmarkSet {
+        cwd: PathBuf,
+        name: String,
+        revision: String,
+    },
+    BookmarkDelete {
+        cwd: PathBuf,
+        name: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
