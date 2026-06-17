@@ -1,0 +1,373 @@
+<!doctype html><html><head><meta charset='utf-8'><title>JUZU Rust OpLog restore proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --info:#7f9fbf; --ok:#74b88c; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+a { color:var(--info); } code { color:#bfdbfe; }
+.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; margin:18px 0; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; }
+h1,h2,h3 { margin-top:0; } p { color:var(--muted); } strong { color:var(--ok); }
+</style></head><body>
+<h1>JUZU Rust OpLog restore proof</h1>
+<p>MP4: <a href='file:///home/shamanic/dev/juzu/bench/results/rust-port/op-restore/2026-06-17T21-36-49.248+00-00/op-restore-sequence-proof.mp4'>/home/shamanic/dev/juzu/bench/results/rust-port/op-restore/2026-06-17T21-36-49.248+00-00/op-restore-sequence-proof.mp4</a></p>
+<article class='card'><h2>r</h2><p>target op <code>4698be1e68b0</code> · before <code>second desc</code> · after <code>first desc</code> · restored <strong>yes</strong></p><section><h3>r · log before restore</h3><pre> LOG   ^X Act  ^O Ops  ^L View  ^B Book
+                                                                                                Change: vsxxxppyqtqzznkzqsrnnpyqxmputuoq (@)
+  @...@&gt; vsxxxppy f2276deb                                                                      Commit: f2276debbd7818d85cc17d28673725fd2bbc2d70
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      A note.txt                                                                             Time: 2026-06-17T22:36:49+01:00
+  │
+  o..... zzzzzzzz 00000000                                                                      Description (x expand):
+         (no description)                                                                       second desc
+         no file changes
+                                                                                                Files (f collapse):
+                                                                                                A note.txt
+
+                                                                                                Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note.txt
+                                                                                                ╭ ◆ Added note.txt                                          ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/op-restore/2026-06-17T21-36-49.248+00-00/fixture-r  @vsxxxppy                                              mainline 2 nodes
+</pre></section><section><h3>r · ops leader</h3><pre> OPS   u Undo  r Redo  f Fetch  p Push  o Oplog  v Obslog  g Log  Esc/q Exit
+                                                                                                Change: vsxxxppyqtqzznkzqsrnnpyqxmputuoq (@)
+  @...@&gt; vsxxxppy f2276deb                                                                      Commit: f2276debbd7818d85cc17d28673725fd2bbc2d70
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      A note.txt                                                                             Time: 2026-06-17T22:36:49+01:00
+  │
+  o..... zzzzzzzz 00000000                                                                      Description (x expand):
+         (no description)                                                                       second desc
+         no file changes
+                                                                                                Files (f collapse):
+                                                                                                A note.txt
+
+                                                                                                Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note.txt
+                                                                                                ╭ ◆ Added note.txt                                          ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/op-restore/2026-06-17T21-36-49.248+00-00/fixture-r  @vsxxxppy                                              mainline 2 nodes
+</pre></section><section><h3>r · oplog before restore</h3><pre> OPLOG   r/Enter Restore  g Log  j/k Move  Esc Exit
+ JJ Operation Log                                                                               ┌ Details ─────────────────────────────────────────────────────┐
+● fcb1cde40cf8  shamanic@wubulon  2026-06-17 22:36:49.364 +01:00  6 milliseconds                │OP LOG                                                        │
+  describe commit 1bde0b1e6a525993151f5b2b6509dc35518e2f11                                      │                                                              │
+  args: jj describe -m &#x27;second desc&#x27;                                                            │ID: 4698be1e68b0                                              │
+                                                                                                │Time: 2026-06-17 22:36:49.344 +01:00                          │
+                                                                                                │Duration: 8 milliseconds                                      │
+  4698be1e68b0  shamanic@wubulon  2026-06-17 22:36:49.344 +01:00  8 milliseconds                │User: shamanic@wubulon                                        │
+  snapshot working copy                                                                         │Current: No                                                   │
+  args: jj describe -m &#x27;second desc&#x27;                                                            │                                                              │
+                                                                                                │Description:                                                  │
+                                                                                                │snapshot working copy                                         │
+  8a85bde2fd1f  shamanic@wubulon  2026-06-17 22:36:49.314 +01:00  7 milliseconds                │                                                              │
+  describe commit d39e234ba96772aa638c7753569644c5df5802a9                                      │Command:                                                      │
+  args: jj describe -m &#x27;first desc&#x27;                                                             │args: jj describe -m &#x27;second desc&#x27;                            │
+                                                                                                │                                                              │
+                                                                                                │r/Enter: restore selected op                                  │
+  5ae733d13e16  shamanic@wubulon  2026-06-17 22:36:49.300 +01:00  5 milliseconds                │g: back to log                                                │
+  snapshot working copy                                                                         │                                                              │
+  args: jj describe -m &#x27;first desc&#x27;                                                             │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+  40902e9aab77  shamanic@wubulon  2026-06-17 22:36:49.265 +01:00  6 milliseconds                │                                                              │
+  add workspace &#x27;default&#x27;                                                                       │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+  000000000000  @  1970-01-01 00:00:00.000 +00:00  less than a microsecond                      │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu/bench/results/rust-port/op-restore/2026-06-17T21-36-49.248+00-00/fixture-r  @vsxxxppy                                              mainline 2 nodes
+</pre></section><section><h3>r · oplog after restore</h3><pre> OPLOG   r/Enter Restore  g Log  j/k Move  Esc Exit
+ JJ Operation Log                                                                               ┌ Details ─────────────────────────────────────────────────────┐
+● 06083b146984  shamanic@wubulon  2026-06-17 22:36:49.853 +01:00  8 milliseconds                │OP LOG                                                        │
+  restore to operation 4698be1e68b06c4c2e19c266fb4071446c66ec02c8bf7877bce6dd245271197bbaa12b...│                                                              │
+  args: jj op restore 4698be1e68b0                                                              │ID: 06083b146984                                              │
+                                                                                                │Time: 2026-06-17 22:36:49.853 +01:00                          │
+                                                                                                │Duration: 8 milliseconds                                      │
+  fcb1cde40cf8  shamanic@wubulon  2026-06-17 22:36:49.364 +01:00  6 milliseconds                │User: shamanic@wubulon                                        │
+  describe commit 1bde0b1e6a525993151f5b2b6509dc35518e2f11                                      │Current: Yes                                                  │
+  args: jj describe -m &#x27;second desc&#x27;                                                            │                                                              │
+                                                                                                │Description:                                                  │
+                                                                                                │restore to operation 4698be1e68b06c4c2e19c266fb4071446c66ec02c│
+  4698be1e68b0  shamanic@wubulon  2026-06-17 22:36:49.344 +01:00  8 milliseconds                │                                                              │
+  snapshot working copy                                                                         │Command:                                                      │
+  args: jj describe -m &#x27;second desc&#x27;                                                            │args: jj op restore 4698be1e68b0                              │
+                                                                                                │                                                              │
+                                                                                                │r/Enter: restore selected op                                  │
+  8a85bde2fd1f  shamanic@wubulon  2026-06-17 22:36:49.314 +01:00  7 milliseconds                │g: back to log                                                │
+  describe commit d39e234ba96772aa638c7753569644c5df5802a9                                      │                                                              │
+  args: jj describe -m &#x27;first desc&#x27;                                                             │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+  5ae733d13e16  shamanic@wubulon  2026-06-17 22:36:49.300 +01:00  5 milliseconds                │                                                              │
+  snapshot working copy                                                                         │                                                              │
+  args: jj describe -m &#x27;first desc&#x27;                                                             │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+  40902e9aab77  shamanic@wubulon  2026-06-17 22:36:49.265 +01:00  6 milliseconds                │                                                              │
+  add workspace &#x27;default&#x27;                                                                       │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu/bench/results/rust-port/op-restore/2026-06-17T21-36-49.248+00-00/fixture-r  @vsxxxppy                                              mainline 2 nodes
+</pre></section><section><h3>r · log after restore</h3><pre> LOG   ^X Act  ^O Ops  ^L View  ^B Book
+                                                                                                Change: vsxxxppyqtqzznkzqsrnnpyqxmputuoq (@)
+  @...@&gt; vsxxxppy 1bde0b1e                                                                      Commit: 1bde0b1e6a525993151f5b2b6509dc35518e2f11
+  │      first desc                                                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      A note.txt                                                                             Time: 2026-06-17T22:36:49+01:00
+  │
+  o..... zzzzzzzz 00000000                                                                      Description (x expand):
+         (no description)                                                                       first desc
+         no file changes
+                                                                                                Files (f collapse):
+                                                                                                A note.txt
+
+                                                                                                Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note.txt
+                                                                                                ╭ ◆ Added note.txt                                          ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/op-restore/2026-06-17T21-36-49.248+00-00/fixture-r  @vsxxxppy                                              mainline 2 nodes
+</pre></section></article><article class='card'><h2>Enter</h2><p>target op <code>581803b5902b</code> · before <code>second desc</code> · after <code>first desc</code> · restored <strong>yes</strong></p><section><h3>Enter · log before restore</h3><pre> LOG   ^X Act  ^O Ops  ^L View  ^B Book
+                                                                                                Change: qmmsskktuputymnlnnlmzxqmpxnxzwrq (@)
+  @...@&gt; qmmsskkt fc8ce83e                                                                      Commit: fc8ce83ec5fc6c65f7a44023fbc1da3f3d0124cb
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      A note.txt                                                                             Time: 2026-06-17T22:36:50+01:00
+  │
+  o..... zzzzzzzz 00000000                                                                      Description (x expand):
+         (no description)                                                                       second desc
+         no file changes
+                                                                                                Files (f collapse):
+                                                                                                A note.txt
+
+                                                                                                Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note.txt
+                                                                                                ╭ ◆ Added note.txt                                          ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/op-restore/2026-06-17T21-36-49.248+00-00/fixture-enter  @qmmsskkt                                          mainline 2 nodes
+</pre></section><section><h3>Enter · ops leader</h3><pre> OPS   u Undo  r Redo  f Fetch  p Push  o Oplog  v Obslog  g Log  Esc/q Exit
+                                                                                                Change: qmmsskktuputymnlnnlmzxqmpxnxzwrq (@)
+  @...@&gt; qmmsskkt fc8ce83e                                                                      Commit: fc8ce83ec5fc6c65f7a44023fbc1da3f3d0124cb
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      A note.txt                                                                             Time: 2026-06-17T22:36:50+01:00
+  │
+  o..... zzzzzzzz 00000000                                                                      Description (x expand):
+         (no description)                                                                       second desc
+         no file changes
+                                                                                                Files (f collapse):
+                                                                                                A note.txt
+
+                                                                                                Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note.txt
+                                                                                                ╭ ◆ Added note.txt                                          ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/op-restore/2026-06-17T21-36-49.248+00-00/fixture-enter  @qmmsskkt                                          mainline 2 nodes
+</pre></section><section><h3>Enter · oplog before restore</h3><pre> OPLOG   r/Enter Restore  g Log  j/k Move  Esc Exit
+ JJ Operation Log                                                                               ┌ Details ─────────────────────────────────────────────────────┐
+● 1d71575c1bed  shamanic@wubulon  2026-06-17 22:36:50.302 +01:00  9 milliseconds                │OP LOG                                                        │
+  describe commit fd0888256b7248b3eadcd27612607eb47df3152d                                      │                                                              │
+  args: jj describe -m &#x27;second desc&#x27;                                                            │ID: 581803b5902b                                              │
+                                                                                                │Time: 2026-06-17 22:36:50.285 +01:00                          │
+                                                                                                │Duration: 6 milliseconds                                      │
+  581803b5902b  shamanic@wubulon  2026-06-17 22:36:50.285 +01:00  6 milliseconds                │User: shamanic@wubulon                                        │
+  snapshot working copy                                                                         │Current: No                                                   │
+  args: jj describe -m &#x27;second desc&#x27;                                                            │                                                              │
+                                                                                                │Description:                                                  │
+                                                                                                │snapshot working copy                                         │
+  c1ed5a3b97bb  shamanic@wubulon  2026-06-17 22:36:50.256 +01:00  6 milliseconds                │                                                              │
+  describe commit dba19cdfb1262680472888b12fb32001d9d80bf7                                      │Command:                                                      │
+  args: jj describe -m &#x27;first desc&#x27;                                                             │args: jj describe -m &#x27;second desc&#x27;                            │
+                                                                                                │                                                              │
+                                                                                                │r/Enter: restore selected op                                  │
+  8af17db276f1  shamanic@wubulon  2026-06-17 22:36:50.238 +01:00  6 milliseconds                │g: back to log                                                │
+  snapshot working copy                                                                         │                                                              │
+  args: jj describe -m &#x27;first desc&#x27;                                                             │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+  ce6ef4166e6a  shamanic@wubulon  2026-06-17 22:36:50.201 +01:00  7 milliseconds                │                                                              │
+  add workspace &#x27;default&#x27;                                                                       │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+  000000000000  @  1970-01-01 00:00:00.000 +00:00  less than a microsecond                      │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu/bench/results/rust-port/op-restore/2026-06-17T21-36-49.248+00-00/fixture-enter  @qmmsskkt                                          mainline 2 nodes
+</pre></section><section><h3>Enter · oplog after restore</h3><pre> OPLOG   r/Enter Restore  g Log  j/k Move  Esc Exit
+ JJ Operation Log                                                                               ┌ Details ─────────────────────────────────────────────────────┐
+● dc8ca5556c31  shamanic@wubulon  2026-06-17 22:36:50.797 +01:00  6 milliseconds                │OP LOG                                                        │
+  restore to operation 581803b5902b1704e7c9256151ba443709cf5b143aca3f79b0fcf706f9434e9b5810d6...│                                                              │
+  args: jj op restore 581803b5902b                                                              │ID: dc8ca5556c31                                              │
+                                                                                                │Time: 2026-06-17 22:36:50.797 +01:00                          │
+                                                                                                │Duration: 6 milliseconds                                      │
+  1d71575c1bed  shamanic@wubulon  2026-06-17 22:36:50.302 +01:00  9 milliseconds                │User: shamanic@wubulon                                        │
+  describe commit fd0888256b7248b3eadcd27612607eb47df3152d                                      │Current: Yes                                                  │
+  args: jj describe -m &#x27;second desc&#x27;                                                            │                                                              │
+                                                                                                │Description:                                                  │
+                                                                                                │restore to operation 581803b5902b1704e7c9256151ba443709cf5b143│
+  581803b5902b  shamanic@wubulon  2026-06-17 22:36:50.285 +01:00  6 milliseconds                │                                                              │
+  snapshot working copy                                                                         │Command:                                                      │
+  args: jj describe -m &#x27;second desc&#x27;                                                            │args: jj op restore 581803b5902b                              │
+                                                                                                │                                                              │
+                                                                                                │r/Enter: restore selected op                                  │
+  c1ed5a3b97bb  shamanic@wubulon  2026-06-17 22:36:50.256 +01:00  6 milliseconds                │g: back to log                                                │
+  describe commit dba19cdfb1262680472888b12fb32001d9d80bf7                                      │                                                              │
+  args: jj describe -m &#x27;first desc&#x27;                                                             │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+  8af17db276f1  shamanic@wubulon  2026-06-17 22:36:50.238 +01:00  6 milliseconds                │                                                              │
+  snapshot working copy                                                                         │                                                              │
+  args: jj describe -m &#x27;first desc&#x27;                                                             │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+  ce6ef4166e6a  shamanic@wubulon  2026-06-17 22:36:50.201 +01:00  7 milliseconds                │                                                              │
+  add workspace &#x27;default&#x27;                                                                       │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu/bench/results/rust-port/op-restore/2026-06-17T21-36-49.248+00-00/fixture-enter  @qmmsskkt                                          mainline 2 nodes
+</pre></section><section><h3>Enter · log after restore</h3><pre> LOG   ^X Act  ^O Ops  ^L View  ^B Book
+                                                                                                Change: qmmsskktuputymnlnnlmzxqmpxnxzwrq (@)
+  @...@&gt; qmmsskkt fd088825                                                                      Commit: fd0888256b7248b3eadcd27612607eb47df3152d
+  │      first desc                                                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      A note.txt                                                                             Time: 2026-06-17T22:36:50+01:00
+  │
+  o..... zzzzzzzz 00000000                                                                      Description (x expand):
+         (no description)                                                                       first desc
+         no file changes
+                                                                                                Files (f collapse):
+                                                                                                A note.txt
+
+                                                                                                Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note.txt
+                                                                                                ╭ ◆ Added note.txt                                          ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/op-restore/2026-06-17T21-36-49.248+00-00/fixture-enter  @qmmsskkt                                          mainline 2 nodes
+</pre></section></article>
+</body></html>

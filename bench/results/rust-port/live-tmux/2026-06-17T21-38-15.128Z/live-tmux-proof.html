@@ -1,0 +1,88 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust live tmux proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --ok:#74b88c; --bad:#ce6f7c; --info:#7f9fbf; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .status.pass { color:var(--ok); } .status.fail { color:var(--bad); }
+.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; } code { color:var(--info); }
+</style></head><body>
+<h1>JUZU Rust live tmux proof · <span class='status pass'>PASS</span></h1>
+<div class='meta'>Target: <code>juzu:rust-tui</code> · pane command: <code>target/release/juzu-tui</code> · required command: <code>juzu-tui</code> · expected: <code>LOG, Change:</code> · missing: <code>none</code></div>
+<section class='card'><pre> LOG   ^X Act  ^O Ops  ^L View  ^B Book
+                                                                                                 Change: vqvtmvtyrnpqsoomzmtvunzlmmllukml
+  @....@ ovxoxqrl 9e397c52                                                                       Commit: 86ce65edd1e6373a36c9460feb52cd6dedd734f6
+  │      (no description)                                                                        Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      no file changes                                                                         Time: 2026-06-16T20:01:55+01:00
+  │
+  o..... pslutzup 13b1d287                                                                       Description (x expand):
+  │      enrich rust ops views with old juzu detail parity                                       hide rust diff sidebar preview in bun full diff mode
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  A...
+  │                                                                                              Files (f collapse):
+  o..... nwkkntop e5363bfc                                                                       A bench/results/rust-port/live-tmux/2026-06-16T19-03-21.078Z/liv…
+  │      wire rust ops leader into oplog and obslog views                                        A bench/results/rust-port/rust-tui-bench/2026-06-16T19-02-01-340…
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  A... A bench/results/rust-port/rust-tui-bench/2026-06-16T19-02-01-340…
+  │                                                                                              A bench/results/rust-port/rust-tui-bench/2026-06-16T19-02-01-340…
+  o..... wvpztmmo 06cca147                                                                       … 15 more
+  │      make rust revset prompt refresh native log state
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmux... Diff
+  │                                                                                                · 19 files · 5698 raw · 5717 rows · 302 shown
+  o..... lykpumpq db88dfef                                                                         · diff rows 1-14 of 302
+  │      clamp rust diff scroll overshoot at viewport bottom                                      STICKY ▸ top · Added bench/results/rust-port/live-tmux/2...
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-sc... ╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-16T19-...╮
+  │                                                                                                · diff --git a/bench/results/rust-port/live-tmux/2026-06...
+  o..... wlxtkslu dbba0fca                                                                         · new file mode 100644
+  │      match bun diff status chrome labels                                                       · --- /dev/null
+  │      A bench/results/rust-port/live-tmux/2026-06-16T19-10-07.422Z/live-tmux-proof.html  A...   · +++ b/bench/results/rust-port/live-tmux/2026-06-16T19-...
+  │                                                                                              ╭─ @@ -0,0 +1,88 @@                                         ╮
+  O....&gt; vqvtmvty 86ce65ed                                                                          1 + &lt;!doctype html&gt;
+  │      hide rust diff sidebar preview in bun full diff mode                                       2 + &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust ...
+  │      A bench/results/rust-port/live-tmux/2026-06-16T19-03-21.078Z/live-tmux-proof.html  A...    3 + &lt;style&gt;
+  │                                                                                                 4 + :root { color-scheme: dark; --bg:#111318; --panel:#...
+  o..... rkuxkvuu d00ad8e1                                                                          5 + body { margin:32px; background:radial-gradient(circ...
+  │      make diff render review mirror clean pane                                                  6 + h1 { margin:0 0 6px; } .meta { color:var(--muted); ...
+  │      A bench/results/rust-port/diff-render/2026-06-16T17-18-52.829Z/diff-render-review.html…    7 + .card { background:rgba(26,32,41,.96); border:1px s...
+  │                                                                                                 8 + pre { background:#050816; border:1pxtsolidr#2a3442;...
+  o..... kqppukyp da710ed6                                                                       ────────────────── ⋯ 288 more rows below ──────────────────
+  │      share sidebar diff gutter width across preview rows
+  │      A bench/results/rust-port/diff-render/2026-06-16T17-15-16.056Z/diff-render-review.html…
+  │
+  o..... omtyzonx 5d664f61
+  │      share bun diff gutter width across rows
+  │      A bench/results/rust-port/diff-render/2026-06-15T20-56-48.944Z/diff-render-review.html…
+  │
+  o..... ovlymutn 112f4ed4
+  │      preserve no newline markers in clean diff pane
+  │      A bench/results/rust-port/diff-render/2026-06-15T20-52-02.874Z/diff-render-review.html…
+  │
+  o..... ntpwtnzp 360a3f0e
+  │      align full diff wrapping with large gutters
+  │      A bench/results/rust-port/diff-render/2026-06-15T20-47-11.095Z/diff-render-review.html…
+  │
+  o..... uqvwwrvy 7fd5722f
+  │      gate full diff scaffold behind opt-in toggle
+  │      A bench/results/rust-port/live-tmux/2026-06-15T20-32-42.370Z/live-tmux-proof.html  A...
+  │
+  o..... ylvrnzyz 5d4e5c14
+  │      wrap full diff rows like bun diffview
+  │      A bench/results/rust-port/diff-render/2026-06-15T19-56-17.534Z/diff-render-review.html…
+  │
+  o..... pwqrmqsm 61eda292
+  │      hide rust diff scaffold from full pane
+  │      A bench/results/rust-port/diff-render/2026-06-15T19-53-22.109Z/diff-render-review.html…
+  │
+  o..... ptuuymsn 1140b5d3
+  │      match bun diffview gutter width
+  │      A bench/results/rust-port/diff-render/2026-06-15T19-23-55.237Z/diff-render-review.html…
+  │
+  o..... kwwyznmy 7a737a16
+  │      fill rust diff rows like bun diffview
+  │      A bench/results/rust-port/diff-render/2026-06-15T19-20-15.171Z/diff-render-review.html…
+  │
+
+  │
+  │
+  │
+ ~/dev/juzu  @ovxoxqrl                                                                                                                     chronological 80 nodes
+</pre></section>
+</body></html>

@@ -481,16 +481,66 @@ impl JjBackend for NativeJjBackend {
         cli_fallback::fetch_obslog(&query.cwd, &query.change_id, query.limit)
     }
 
-    async fn mutate(&self, _mutation: Mutation) -> Result<MutationResult> {
-        Err(JuzuError::Unsupported(
-            "native jj mutations are not wired yet",
-        ))
+    async fn mutate(&self, mutation: Mutation) -> Result<MutationResult> {
+        match mutation {
+            Mutation::RestoreOperation { cwd, operation_id } => {
+                cli_fallback::restore_operation(&cwd, &operation_id)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: format!("restored operation {operation_id}"),
+                })
+            }
+            _ => Err(JuzuError::Unsupported(
+                "native jj mutations are not wired yet",
+            )),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{
+        fs,
+        process::Command,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
+    fn unique_test_dir(label: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time should be after epoch")
+            .as_nanos();
+        std::env::temp_dir().join(format!("juzu-jj-{label}-{nanos}"))
+    }
+
+    fn run_jj(cwd: &Path, args: &[&str]) -> String {
+        let output = Command::new("jj")
+            .args(args)
+            .current_dir(cwd)
+            .output()
+            .expect("jj command should start in test fixture");
+        if !output.status.success() {
+            panic!(
+                "jj {:?} failed\nstdout:\n{}\nstderr:\n{}",
+                args,
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+        String::from_utf8_lossy(&output.stdout).into_owned()
+    }
+
+    fn create_restore_fixture_repo() -> PathBuf {
+        let repo = unique_test_dir("restore-op");
+        fs::create_dir_all(&repo).expect("fixture repo dir should be created");
+        run_jj(&repo, &["git", "init", "."]);
+        fs::write(repo.join("note.txt"), "one\n").expect("fixture file write should work");
+        run_jj(&repo, &["describe", "-m", "first desc"]);
+        fs::write(repo.join("note.txt"), "two\n").expect("fixture file rewrite should work");
+        run_jj(&repo, &["describe", "-m", "second desc"]);
+        repo
+    }
 
     #[test]
     fn backend_constructs() {
@@ -583,5 +633,54 @@ mod tests {
             !entries[0].operation_id.is_empty() && !entries[0].description_title.is_empty(),
             "obslog entry should include operation metadata and description"
         );
+    }
+
+    #[test]
+    fn native_restore_operation_mutation_restores_selected_op_state() {
+        let repo = create_restore_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let before = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "@",
+                "-T",
+                "description.first_line()",
+            ],
+        );
+        assert_eq!(before.trim(), "second desc");
+
+        let target = futures::executor::block_on(backend.op_log(OpLogQuery {
+            cwd: repo.clone(),
+            limit: 10,
+        }))
+        .expect("fixture op log should load")
+        .into_iter()
+        .find(|entry| entry.description_title == "snapshot working copy")
+        .expect("fixture should include the snapshot op that predates the second describe");
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::RestoreOperation {
+            cwd: repo.clone(),
+            operation_id: target.id.clone(),
+        }))
+        .expect("restore operation mutation should succeed");
+        assert!(result.changed, "restore mutation should report a change");
+
+        let after = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "@",
+                "-T",
+                "description.first_line()",
+            ],
+        );
+        assert_eq!(after.trim(), "first desc");
+
+        let _ = fs::remove_dir_all(&repo);
     }
 }

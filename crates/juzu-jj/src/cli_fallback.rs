@@ -132,6 +132,10 @@ pub fn fetch_obslog(cwd: &Path, change_id: &str, limit: usize) -> Result<Vec<Obs
     Ok(parse_obslog_text(&text, &wc_id))
 }
 
+pub fn restore_operation(cwd: &Path, operation_id: &str) -> Result<()> {
+    run_jj(cwd, &["op", "restore", operation_id]).map(|_| ())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{parse_obslog_text, parse_op_log_text};

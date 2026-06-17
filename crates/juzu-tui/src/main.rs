@@ -7,8 +7,8 @@ use crossterm::{
 use juzu_core::{
     diff::{collapsed_diff_rows, parse_git_patch, DiffRow, DiffRowKind},
     layout::calculate_default_layout,
-    ChangeQuery, FileEntry, JjBackend, LayoutMode, LogQuery, ObslogEntry, ObslogQuery, OpLogEntry,
-    OpLogQuery,
+    ChangeQuery, FileEntry, JjBackend, LayoutMode, LogQuery, Mutation, ObslogEntry, ObslogQuery,
+    OpLogEntry, OpLogQuery,
 };
 use juzu_jj::NativeJjBackend;
 use ratatui::{
@@ -520,6 +520,16 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
 }
 
 fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
+    let backend = NativeJjBackend::new();
+    handle_key_with_backend(app, &backend, code, modifiers)
+}
+
+fn handle_key_with_backend<B: JjBackend>(
+    app: &mut App,
+    backend: &B,
+    code: KeyCode,
+    modifiers: KeyModifiers,
+) -> bool {
     if modifiers.contains(KeyModifiers::CONTROL) && matches!(code, KeyCode::Char('d')) {
         app.active_leader_mode = None;
         toggle_diff_view(app);
@@ -598,12 +608,12 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
     if app.active_leader_mode == Some(LeaderMode::Ops) {
         match code {
             KeyCode::Char('o') => {
-                let _ = load_oplog(app);
+                let _ = load_oplog_with_backend(app, backend);
                 app.active_leader_mode = None;
                 return false;
             }
             KeyCode::Char('v') => {
-                let _ = load_obslog(app);
+                let _ = load_obslog_with_backend(app, backend);
                 app.active_leader_mode = None;
                 return false;
             }
@@ -663,7 +673,7 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
                 return false;
             }
             KeyCode::Char('r') => {
-                let _ = reload_app_nodes(app);
+                let _ = reload_app_nodes_with_backend(app, backend);
                 app.active_leader_mode = None;
                 return false;
             }
@@ -685,6 +695,9 @@ fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
             app.diff_scroll = 0;
         }
         KeyCode::Char('q') | KeyCode::Esc => return true,
+        KeyCode::Char('r') | KeyCode::Enter if app.view_mode == ViewMode::OpLog => {
+            let _ = restore_selected_oplog_with_backend(app, backend);
+        }
         KeyCode::Char('j') | KeyCode::Down if app.view_mode == ViewMode::OpLog => {
             app.op_log_selected =
                 (app.op_log_selected + 1).min(app.op_log_entries.len().saturating_sub(1));
@@ -1050,9 +1063,16 @@ fn load_oplog_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<(
     Ok(())
 }
 
-fn load_oplog(app: &mut App) -> Result<()> {
-    let backend = NativeJjBackend::new();
-    load_oplog_with_backend(app, &backend)
+fn restore_selected_oplog_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let Some(entry) = app.op_log_entries.get(app.op_log_selected) else {
+        return Ok(());
+    };
+    futures_executor::block_on(backend.mutate(Mutation::RestoreOperation {
+        cwd: app.path.clone(),
+        operation_id: entry.id.clone(),
+    }))?;
+    reload_app_nodes_with_backend(app, backend)?;
+    load_oplog_with_backend(app, backend)
 }
 
 fn load_obslog_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
@@ -1071,11 +1091,6 @@ fn load_obslog_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<
     app.obslog_change_id = Some(change_id);
     app.view_mode = ViewMode::Obslog;
     Ok(())
-}
-
-fn load_obslog(app: &mut App) -> Result<()> {
-    let backend = NativeJjBackend::new();
-    load_obslog_with_backend(app, &backend)
 }
 
 fn clamp_diff_scroll_to_viewport(app: &mut App) {
@@ -1227,6 +1242,9 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
         vec![Line::from(vec![
             Span::styled(" OPLOG ", mode_style),
             Span::raw("  "),
+            Span::styled("r/Enter", key_style),
+            Span::styled(" Restore ", status_item_style(t, LeaderMode::Ops)),
+            Span::raw(" "),
             Span::styled("g", key_style),
             Span::styled(" Log ", status_item_style(t, LeaderMode::Ops)),
             Span::raw(" "),
@@ -4407,6 +4425,216 @@ mod tests {
         let theme = UiTokens::named("definitely-not-real");
         assert_eq!(theme.slate_bg0, UI_TOKENS.slate_bg0);
         assert_eq!(theme.semantic_info, UI_TOKENS.semantic_info);
+    }
+
+    use std::sync::Mutex;
+
+    struct RestoreTestBackend {
+        restored: Mutex<bool>,
+        mutate_calls: Mutex<Vec<juzu_core::Mutation>>,
+        before_nodes: Vec<juzu_core::CommitNode>,
+        after_nodes: Vec<juzu_core::CommitNode>,
+        before_oplog: Vec<OpLogEntry>,
+        after_oplog: Vec<OpLogEntry>,
+    }
+
+    #[async_trait::async_trait(?Send)]
+    impl JjBackend for RestoreTestBackend {
+        async fn find_root(&self, _start: &std::path::Path) -> juzu_core::Result<Option<PathBuf>> {
+            Ok(None)
+        }
+
+        async fn log(&self, _query: LogQuery) -> juzu_core::Result<Vec<juzu_core::CommitNode>> {
+            Ok(if *self.restored.lock().unwrap() {
+                self.after_nodes.clone()
+            } else {
+                self.before_nodes.clone()
+            })
+        }
+
+        async fn node_count(&self, _query: juzu_core::NodeCountQuery) -> juzu_core::Result<usize> {
+            Ok(if *self.restored.lock().unwrap() {
+                self.after_nodes.len()
+            } else {
+                self.before_nodes.len()
+            })
+        }
+
+        async fn description(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn files(&self, _query: ChangeQuery) -> juzu_core::Result<Vec<FileEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn diff(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn op_log(&self, _query: OpLogQuery) -> juzu_core::Result<Vec<OpLogEntry>> {
+            Ok(if *self.restored.lock().unwrap() {
+                self.after_oplog.clone()
+            } else {
+                self.before_oplog.clone()
+            })
+        }
+
+        async fn obslog(&self, _query: ObslogQuery) -> juzu_core::Result<Vec<ObslogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn mutate(
+            &self,
+            mutation: juzu_core::Mutation,
+        ) -> juzu_core::Result<juzu_core::MutationResult> {
+            self.mutate_calls.lock().unwrap().push(mutation.clone());
+            match mutation {
+                juzu_core::Mutation::RestoreOperation { .. } => {
+                    *self.restored.lock().unwrap() = true;
+                    Ok(juzu_core::MutationResult {
+                        changed: true,
+                        message: "restored".to_string(),
+                    })
+                }
+                _ => Err(juzu_core::JuzuError::Unsupported(
+                    "unexpected test mutation",
+                )),
+            }
+        }
+    }
+
+    fn test_commit(change_id: &str, title: &str) -> juzu_core::CommitNode {
+        juzu_core::CommitNode {
+            change_id: change_id.to_string(),
+            commit_id: format!("{change_id}-commit"),
+            parents: vec![],
+            author: "tester@example.com".to_string(),
+            time: "2026-06-17T00:00:00Z".to_string(),
+            bookmarks: vec![],
+            git_branches: vec![],
+            description_title: title.to_string(),
+            description_full: title.to_string(),
+            is_empty: false,
+            is_conflict: false,
+            is_hidden: false,
+            is_root: false,
+            is_working_copy: true,
+            x: None,
+            y: None,
+            lane: Some(0),
+            extra_height: None,
+            is_pinned: false,
+        }
+    }
+
+    fn test_oplog_entry(id: &str, title: &str, is_current: bool) -> OpLogEntry {
+        OpLogEntry {
+            id: id.to_string(),
+            short_id: id.chars().take(8).collect(),
+            time: "2026-06-17 00:00:00 +00:00 - 2026-06-17 00:00:01 +00:00".to_string(),
+            duration: "1s".to_string(),
+            tags: vec![format!("args: jj op restore {id}")],
+            description_title: title.to_string(),
+            description_full: title.to_string(),
+            is_current,
+            user: "tester@example.com".to_string(),
+        }
+    }
+
+    fn test_app_with_oplog(entries: Vec<OpLogEntry>) -> App {
+        App {
+            path: PathBuf::from("/tmp/juzu-restore-test"),
+            mode: LayoutMode::Mainline,
+            view_mode: ViewMode::OpLog,
+            active_leader_mode: None,
+            sidebar_collapsed: false,
+            files_expanded: true,
+            desc_expanded: false,
+            show_help: false,
+            boxed_chrome: false,
+            diff_scaffold: false,
+            theme_picker_mode: false,
+            theme_picker_index: 0,
+            current_theme: "slate".to_string(),
+            theme: UI_TOKENS,
+            log_limit: 40,
+            revset_mode: false,
+            revset_value: String::new(),
+            revset_query: String::new(),
+            nodes: vec![test_commit("change-before", "before restore")],
+            files_by_change: HashMap::new(),
+            diffs_by_change: HashMap::new(),
+            op_log_entries: entries,
+            op_log_selected: 1,
+            op_log_scroll: 0,
+            obslog_entries: Vec::new(),
+            obslog_selected: 0,
+            obslog_scroll: 0,
+            obslog_change_id: None,
+            selected: 0,
+            diff_scroll: 0,
+            diff_file_index: 0,
+            diff_viewport_rows: 1,
+        }
+    }
+
+    fn assert_oplog_restore_shortcut(code: KeyCode) {
+        let before_oplog = vec![
+            test_oplog_entry("op-current", "current op", true),
+            test_oplog_entry("op-restore", "restore target", false),
+        ];
+        let after_oplog = vec![
+            test_oplog_entry("op-restored", "restored current", true),
+            test_oplog_entry("op-current", "old current", false),
+        ];
+        let backend = RestoreTestBackend {
+            restored: Mutex::new(false),
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![test_commit("change-before", "before restore")],
+            after_nodes: vec![test_commit("change-before", "after restore")],
+            before_oplog: before_oplog.clone(),
+            after_oplog: after_oplog.clone(),
+        };
+        let mut app = test_app_with_oplog(before_oplog);
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            code,
+            KeyModifiers::NONE
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.len(),
+            1,
+            "restore shortcut should issue exactly one mutation"
+        );
+        assert_eq!(
+            calls[0],
+            juzu_core::Mutation::RestoreOperation {
+                cwd: PathBuf::from("/tmp/juzu-restore-test"),
+                operation_id: "op-restore".to_string(),
+            }
+        );
+        assert_eq!(app.view_mode, ViewMode::OpLog);
+        assert_eq!(app.nodes[0].description_title, "after restore");
+        assert_eq!(app.op_log_entries[0].id, after_oplog[0].id);
+        assert_eq!(
+            app.op_log_selected, 0,
+            "reloaded oplog should reset to the current operation row"
+        );
+    }
+
+    #[test]
+    fn oplog_restore_key_r_reloads_state_from_backend() {
+        assert_oplog_restore_shortcut(KeyCode::Char('r'));
+    }
+
+    #[test]
+    fn oplog_restore_key_enter_reloads_state_from_backend() {
+        assert_oplog_restore_shortcut(KeyCode::Enter);
     }
 
     fn color_hex(color: Color) -> String {

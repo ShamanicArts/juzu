@@ -190,6 +190,10 @@ pub enum Mutation {
     Redo {
         cwd: PathBuf,
     },
+    RestoreOperation {
+        cwd: PathBuf,
+        operation_id: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

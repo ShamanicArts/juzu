@@ -269,6 +269,19 @@ def run_width_case(args: argparse.Namespace, width: int, target: dict[str, Any])
         captures["afterCtrlOOps"] = ops_mode
         for needle in ["OPS", "o", "Oplog", "v", "Obslog", "g", "Log"]:
             assert_contains(ops_mode, needle, "old Bun Ops leader strip", failures)
+        send(session, "o")
+        oplog_screen = wait_for(session, "OPLOG")
+        captures["afterOpsOpenOpLog"] = oplog_screen
+        for needle in ["OPLOG", "r/Enter", "Restore", "Current:", "Description:", "restore selected op"]:
+            assert_contains(oplog_screen, needle, "read-only OpLog restore surface", failures)
+        send(session, "g")
+        oplog_back = wait_for(session, "LOG")
+        captures["afterOpsOpenOpLogBack"] = oplog_back
+        assert_contains(oplog_back, "LOG", "g returns from OpLog", failures)
+
+        send(session, "C-o")
+        ops_mode_again = wait_for(session, "OPS")
+        captures["afterCtrlOOpsAgain"] = ops_mode_again
         send(session, "q")
         after_ops_q = wait_for(session, "LOG")
         captures["afterOpsQ"] = after_ops_q
