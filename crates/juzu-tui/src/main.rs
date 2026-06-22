@@ -1,9 +1,5 @@
 use anyhow::Result;
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind, KeyModifiers},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use juzu_core::{
     diff::{collapsed_diff_rows, parse_git_patch, DiffRow, DiffRowKind},
     layout::calculate_default_layout,
@@ -18,7 +14,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     DefaultTerminal, Frame,
 };
-use std::{collections::HashMap, io::stdout, path::PathBuf, time::Duration};
+use std::{collections::HashMap, path::PathBuf, time::Duration};
 
 const DIFF_PREVIEW_ROW_CAP: usize = 420;
 const DEFAULT_LOG_LIMIT: usize = 500;
@@ -492,13 +488,9 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    enable_raw_mode()?;
-    execute!(stdout(), EnterAlternateScreen)?;
     let terminal = ratatui::init();
     let result = run(terminal, &mut app);
     ratatui::restore();
-    execute!(stdout(), LeaveAlternateScreen)?;
-    disable_raw_mode()?;
     result
 }
 
@@ -3656,6 +3648,33 @@ mod tests {
             .iter()
             .map(|span| span.content.as_ref())
             .collect::<String>()
+    }
+
+    #[test]
+    fn terminal_lifecycle_is_owned_by_ratatui_helpers() {
+        let source = include_str!("main.rs");
+        let production_source = source
+            .split("#[cfg(test)]")
+            .next()
+            .expect("production source slice should exist");
+        assert!(production_source.contains("let terminal = ratatui::init();"));
+        assert!(production_source.contains("ratatui::restore();"));
+        assert!(
+            !production_source.contains("enable_raw_mode()?;"),
+            "manual raw-mode setup regressed and can wedge tmux panes"
+        );
+        assert!(
+            !production_source.contains("execute!(stdout(), EnterAlternateScreen)?;"),
+            "manual alternate-screen entry regressed and can wedge tmux panes"
+        );
+        assert!(
+            !production_source.contains("execute!(stdout(), LeaveAlternateScreen)?;"),
+            "manual alternate-screen exit regressed and can wedge tmux panes"
+        );
+        assert!(
+            !production_source.contains("disable_raw_mode()?;"),
+            "manual raw-mode teardown regressed and can wedge tmux panes"
+        );
     }
 
     #[test]

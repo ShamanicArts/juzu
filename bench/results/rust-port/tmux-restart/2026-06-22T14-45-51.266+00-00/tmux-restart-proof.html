@@ -1,0 +1,541 @@
+<!doctype html><html><head><meta charset='utf-8'><title>JUZU tmux restart proof</title><style>body{margin:32px;background:#111318;color:#d8dee8;font-family:Inter,system-ui,sans-serif}section{background:#1a2029;border:1px solid #2a3442;border-radius:16px;padding:16px;margin:16px 0}pre{font:12px/1.3 "JetBrains Mono",monospace;overflow:auto;background:#050816;padding:12px;border-radius:12px}a{color:#7f9fbf}</style></head><body><h1>JUZU tmux restart proof</h1><p>Pass: <strong>true</strong></p><p>JSON: <a href='file:///home/shamanic/dev/juzu/bench/results/rust-port/tmux-restart/2026-06-22T14-45-51.266+00-00/tmux-restart-report.json'>/home/shamanic/dev/juzu/bench/results/rust-port/tmux-restart/2026-06-22T14-45-51.266+00-00/tmux-restart-report.json</a></p><section><h2>Cycle 1 · idle</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: ozzwnvvmsxyvvmnxqxxtpwyvnrxzkxss (@)
+  @...@&gt; ozzwnvvm 3b57cd58                                                                      Commit: 3b57cd5841e5652b8066eee92aee145132978d4f
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-tui/src/main.rs                                                          Time: 2026-06-22T15:44:44+01:00
+  │
+  o..... nnpywurl 54f81450                                                                      Description (x expand):
+  │      wire rust actions leader into real new edit and duplicate actions
+  │      A bench/results/rust-port/action-leader/2026-06-22T12-36-10.584+00-00/action-leader...
+  │                                                                                             Files (f collapse):
+  o..... lulszxum 872cd534                                                                      M crates/juzu-tui/src/main.rs
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ……… Diff
+  │                                                                                               · 1 files · 71 raw · 72 rows · 72 shown
+  o..... nyuqpnql 53aeb0da                                                                        · diff rows 1-14 of 72
+  │      wire rust bookmarks leader into real set and delete actions                             STICKY ▸ top · Modified crates/juzu-tui/src/main.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... ╭ ◆ Modified crates/juzu-tui/src/main.rs                    ╮
+  │                                                                                               · diff --git a/crates/juzu-tui/src/main.rs b/crates/juz...
+  o..... ovxoxqrl 05dfff36                                                                        · --- a/crates/juzu-tui/src/main.rs
+  │      restore rust oplog actions through fallback mutation plumbing                            · +++ b/crates/juzu-tui/src/main.rs
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu... ╭─ @@ -1,9 +1,5 @@                                         ╮
+  │                                                                                                1   use anyhow::Result;
+  o..... pslutzup 13b1d287                                                                         2 - use crossterm::{
+  │      enrich rust ops views with old juzu detail parity                                         3 -     event::{self, Event, KeyCode, KeyEventKind, Ke...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………    4 -     execute,
+  │                                                                                                5 -     terminal::{disable_raw_mode, enable_raw_mode, ...
+  o..... nwkkntop e5363bfc                                                                         6 - };
+  │      wire rust ops leader into oplog and obslog views                                          2 + use crossterm::event::{self, Event, KeyCode, KeyEv...
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    3   use juzu_core::{
+  │                                                                                                4       diff::{collapsed_diff_rows, parse_git_patch, D...
+  o..... wvpztmmo 06cca147                                                                      ────────────────── ⋯ 58 more rows below ──────────────────
+  │      make rust revset prompt refresh native log state
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...
+  │
+
+ ~/dev/juzu  @ozzwnvvm                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>Cycle 1 · act</h2><pre> ACT   n New  e Edit  y Duplicate  Esc/q Exit
+                                                                                                Change: ozzwnvvmsxyvvmnxqxxtpwyvnrxzkxss (@)
+  @...@&gt; ozzwnvvm 3b57cd58                                                                      Commit: 3b57cd5841e5652b8066eee92aee145132978d4f
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-tui/src/main.rs                                                          Time: 2026-06-22T15:44:44+01:00
+  │
+  o..... nnpywurl 54f81450                                                                      Description (x expand):
+  │      wire rust actions leader into real new edit and duplicate actions
+  │      A bench/results/rust-port/action-leader/2026-06-22T12-36-10.584+00-00/action-leader...
+  │                                                                                             Files (f collapse):
+  o..... lulszxum 872cd534                                                                      M crates/juzu-tui/src/main.rs
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ……… Diff
+  │                                                                                               · 1 files · 71 raw · 72 rows · 72 shown
+  o..... nyuqpnql 53aeb0da                                                                        · diff rows 1-14 of 72
+  │      wire rust bookmarks leader into real set and delete actions                             STICKY ▸ top · Modified crates/juzu-tui/src/main.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... ╭ ◆ Modified crates/juzu-tui/src/main.rs                    ╮
+  │                                                                                               · diff --git a/crates/juzu-tui/src/main.rs b/crates/juz...
+  o..... ovxoxqrl 05dfff36                                                                        · --- a/crates/juzu-tui/src/main.rs
+  │      restore rust oplog actions through fallback mutation plumbing                            · +++ b/crates/juzu-tui/src/main.rs
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu... ╭─ @@ -1,9 +1,5 @@                                         ╮
+  │                                                                                                1   use anyhow::Result;
+  o..... pslutzup 13b1d287                                                                         2 - use crossterm::{
+  │      enrich rust ops views with old juzu detail parity                                         3 -     event::{self, Event, KeyCode, KeyEventKind, Ke...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………    4 -     execute,
+  │                                                                                                5 -     terminal::{disable_raw_mode, enable_raw_mode, ...
+  o..... nwkkntop e5363bfc                                                                         6 - };
+  │      wire rust ops leader into oplog and obslog views                                          2 + use crossterm::event::{self, Event, KeyCode, KeyEv...
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    3   use juzu_core::{
+  │                                                                                                4       diff::{collapsed_diff_rows, parse_git_patch, D...
+  o..... wvpztmmo 06cca147                                                                      ────────────────── ⋯ 58 more rows below ──────────────────
+  │      make rust revset prompt refresh native log state
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...
+  │
+
+ ~/dev/juzu  @ozzwnvvm                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>Cycle 1 · backFromAct</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: ozzwnvvmsxyvvmnxqxxtpwyvnrxzkxss (@)
+  @...@&gt; ozzwnvvm 3b57cd58                                                                      Commit: 3b57cd5841e5652b8066eee92aee145132978d4f
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-tui/src/main.rs                                                          Time: 2026-06-22T15:44:44+01:00
+  │
+  o..... nnpywurl 54f81450                                                                      Description (x expand):
+  │      wire rust actions leader into real new edit and duplicate actions
+  │      A bench/results/rust-port/action-leader/2026-06-22T12-36-10.584+00-00/action-leader...
+  │                                                                                             Files (f collapse):
+  o..... lulszxum 872cd534                                                                      M crates/juzu-tui/src/main.rs
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ……… Diff
+  │                                                                                               · 1 files · 71 raw · 72 rows · 72 shown
+  o..... nyuqpnql 53aeb0da                                                                        · diff rows 1-14 of 72
+  │      wire rust bookmarks leader into real set and delete actions                             STICKY ▸ top · Modified crates/juzu-tui/src/main.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... ╭ ◆ Modified crates/juzu-tui/src/main.rs                    ╮
+  │                                                                                               · diff --git a/crates/juzu-tui/src/main.rs b/crates/juz...
+  o..... ovxoxqrl 05dfff36                                                                        · --- a/crates/juzu-tui/src/main.rs
+  │      restore rust oplog actions through fallback mutation plumbing                            · +++ b/crates/juzu-tui/src/main.rs
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu... ╭─ @@ -1,9 +1,5 @@                                         ╮
+  │                                                                                                1   use anyhow::Result;
+  o..... pslutzup 13b1d287                                                                         2 - use crossterm::{
+  │      enrich rust ops views with old juzu detail parity                                         3 -     event::{self, Event, KeyCode, KeyEventKind, Ke...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………    4 -     execute,
+  │                                                                                                5 -     terminal::{disable_raw_mode, enable_raw_mode, ...
+  o..... nwkkntop e5363bfc                                                                         6 - };
+  │      wire rust ops leader into oplog and obslog views                                          2 + use crossterm::event::{self, Event, KeyCode, KeyEv...
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    3   use juzu_core::{
+  │                                                                                                4       diff::{collapsed_diff_rows, parse_git_patch, D...
+  o..... wvpztmmo 06cca147                                                                      ────────────────── ⋯ 58 more rows below ──────────────────
+  │      make rust revset prompt refresh native log state
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...
+  │
+
+ ~/dev/juzu  @ozzwnvvm                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>Cycle 1 · view</h2><pre> VIEW   1 Layout chronological  2 Layout mainline  3 Layout bookmark  4 Layout wc  5 Layout topological
+c Toggle sidebar  t Theme picker  f Toggle files  x Toggle description  h Toggle help  / Revset filter  ^d Diff view
+                                                                                                Change: ozzwnvvmsxyvvmnxqxxtpwyvnrxzkxss (@)
+  @...@&gt; ozzwnvvm 3b57cd58                                                                      Commit: 3b57cd5841e5652b8066eee92aee145132978d4f
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-tui/src/main.rs                                                          Time: 2026-06-22T15:44:44+01:00
+  │
+  o..... nnpywurl 54f81450                                                                      Description (x expand):
+  │      wire rust actions leader into real new edit and duplicate actions
+  │      A bench/results/rust-port/action-leader/2026-06-22T12-36-10.584+00-00/action-leader...
+  │                                                                                             Files (f collapse):
+  o..... lulszxum 872cd534                                                                      M crates/juzu-tui/src/main.rs
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ……… Diff
+  │                                                                                               · 1 files · 71 raw · 72 rows · 72 shown
+  o..... nyuqpnql 53aeb0da                                                                        · diff rows 1-14 of 72
+  │      wire rust bookmarks leader into real set and delete actions                             STICKY ▸ top · Modified crates/juzu-tui/src/main.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... ╭ ◆ Modified crates/juzu-tui/src/main.rs                    ╮
+  │                                                                                               · diff --git a/crates/juzu-tui/src/main.rs b/crates/juz...
+  o..... ovxoxqrl 05dfff36                                                                        · --- a/crates/juzu-tui/src/main.rs
+  │      restore rust oplog actions through fallback mutation plumbing                            · +++ b/crates/juzu-tui/src/main.rs
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu... ╭─ @@ -1,9 +1,5 @@                                         ╮
+  │                                                                                                1   use anyhow::Result;
+  o..... pslutzup 13b1d287                                                                         2 - use crossterm::{
+  │      enrich rust ops views with old juzu detail parity                                         3 -     event::{self, Event, KeyCode, KeyEventKind, Ke...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………    4 -     execute,
+  │                                                                                                5 -     terminal::{disable_raw_mode, enable_raw_mode, ...
+  o..... nwkkntop e5363bfc                                                                         6 - };
+  │      wire rust ops leader into oplog and obslog views                                          2 + use crossterm::event::{self, Event, KeyCode, KeyEv...
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    3   use juzu_core::{
+  │                                                                                                4       diff::{collapsed_diff_rows, parse_git_patch, D...
+                                                                                                ────────────────── ⋯ 58 more rows below ──────────────────
+  │
+  │
+  │
+ ~/dev/juzu  @ozzwnvvm                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>Cycle 1 · backFromView</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: ozzwnvvmsxyvvmnxqxxtpwyvnrxzkxss (@)
+  @...@&gt; ozzwnvvm 3b57cd58                                                                      Commit: 3b57cd5841e5652b8066eee92aee145132978d4f
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-tui/src/main.rs                                                          Time: 2026-06-22T15:44:44+01:00
+  │
+  o..... nnpywurl 54f81450                                                                      Description (x expand):
+  │      wire rust actions leader into real new edit and duplicate actions
+  │      A bench/results/rust-port/action-leader/2026-06-22T12-36-10.584+00-00/action-leader...
+  │                                                                                             Files (f collapse):
+  o..... lulszxum 872cd534                                                                      M crates/juzu-tui/src/main.rs
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ……… Diff
+  │                                                                                               · 1 files · 71 raw · 72 rows · 72 shown
+  o..... nyuqpnql 53aeb0da                                                                        · diff rows 1-14 of 72
+  │      wire rust bookmarks leader into real set and delete actions                             STICKY ▸ top · Modified crates/juzu-tui/src/main.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... ╭ ◆ Modified crates/juzu-tui/src/main.rs                    ╮
+  │                                                                                               · diff --git a/crates/juzu-tui/src/main.rs b/crates/juz...
+  o..... ovxoxqrl 05dfff36                                                                        · --- a/crates/juzu-tui/src/main.rs
+  │      restore rust oplog actions through fallback mutation plumbing                            · +++ b/crates/juzu-tui/src/main.rs
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu... ╭─ @@ -1,9 +1,5 @@                                         ╮
+  │                                                                                                1   use anyhow::Result;
+  o..... pslutzup 13b1d287                                                                         2 - use crossterm::{
+  │      enrich rust ops views with old juzu detail parity                                         3 -     event::{self, Event, KeyCode, KeyEventKind, Ke...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………    4 -     execute,
+  │                                                                                                5 -     terminal::{disable_raw_mode, enable_raw_mode, ...
+  o..... nwkkntop e5363bfc                                                                         6 - };
+  │      wire rust ops leader into oplog and obslog views                                          2 + use crossterm::event::{self, Event, KeyCode, KeyEv...
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    3   use juzu_core::{
+  │                                                                                                4       diff::{collapsed_diff_rows, parse_git_patch, D...
+  o..... wvpztmmo 06cca147                                                                      ────────────────── ⋯ 58 more rows below ──────────────────
+  │      make rust revset prompt refresh native log state
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...
+  │
+
+ ~/dev/juzu  @ozzwnvvm                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>Cycle 2 · idle</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: ozzwnvvmsxyvvmnxqxxtpwyvnrxzkxss (@)
+  @...@&gt; ozzwnvvm 3b57cd58                                                                      Commit: 3b57cd5841e5652b8066eee92aee145132978d4f
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-tui/src/main.rs                                                          Time: 2026-06-22T15:44:44+01:00
+  │
+  o..... nnpywurl 54f81450                                                                      Description (x expand):
+  │      wire rust actions leader into real new edit and duplicate actions
+  │      A bench/results/rust-port/action-leader/2026-06-22T12-36-10.584+00-00/action-leader...
+  │                                                                                             Files (f collapse):
+  o..... lulszxum 872cd534                                                                      M crates/juzu-tui/src/main.rs
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ……… Diff
+  │                                                                                               · 1 files · 71 raw · 72 rows · 72 shown
+  o..... nyuqpnql 53aeb0da                                                                        · diff rows 1-14 of 72
+  │      wire rust bookmarks leader into real set and delete actions                             STICKY ▸ top · Modified crates/juzu-tui/src/main.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... ╭ ◆ Modified crates/juzu-tui/src/main.rs                    ╮
+  │                                                                                               · diff --git a/crates/juzu-tui/src/main.rs b/crates/juz...
+  o..... ovxoxqrl 05dfff36                                                                        · --- a/crates/juzu-tui/src/main.rs
+  │      restore rust oplog actions through fallback mutation plumbing                            · +++ b/crates/juzu-tui/src/main.rs
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu... ╭─ @@ -1,9 +1,5 @@                                         ╮
+  │                                                                                                1   use anyhow::Result;
+  o..... pslutzup 13b1d287                                                                         2 - use crossterm::{
+  │      enrich rust ops views with old juzu detail parity                                         3 -     event::{self, Event, KeyCode, KeyEventKind, Ke...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………    4 -     execute,
+  │                                                                                                5 -     terminal::{disable_raw_mode, enable_raw_mode, ...
+  o..... nwkkntop e5363bfc                                                                         6 - };
+  │      wire rust ops leader into oplog and obslog views                                          2 + use crossterm::event::{self, Event, KeyCode, KeyEv...
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    3   use juzu_core::{
+  │                                                                                                4       diff::{collapsed_diff_rows, parse_git_patch, D...
+  o..... wvpztmmo 06cca147                                                                      ────────────────── ⋯ 58 more rows below ──────────────────
+  │      make rust revset prompt refresh native log state
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...
+  │
+
+ ~/dev/juzu  @ozzwnvvm                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>Cycle 2 · act</h2><pre> ACT   n New  e Edit  y Duplicate  Esc/q Exit
+                                                                                                Change: nyuqpnqlxtnykztlnwmrtknrnlsqsoow
+                                                                                @..@ ozzwnvvm 3bCommit: 53aeb0daaa2b1b9b30819eac364ea6b5c2184462
+                                                                                │    (no descripAuthor: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+                                                                                │    M crate... Time: 2026-06-17T23:48:01+01:00
+                                                                                │
+                                                                              o..... nnpywurl 54Description (x expand):
+                                                                              │      wire r...  wire rust bookmarks leader into real set and delete actions
+                                                                              │      A bench...
+                                                                              │                 Files (f collapse):
+                                                                            o....... lulszxum 87A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │        wire r...  A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │        A bench... A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │                   A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                          O........&gt; nyuqpnql 53… 49 more
+                                                                          │          wire r...
+                                                                          │          A bench... Diff
+                                                                          │                       · 53 files · 17902 raw · 17955 rows · 468 shown
+                                                                        o........... ovxoxqrl 05  · diff rows 1-14 of 468
+                                                                        │            restor...   STICKY ▸ top · Added bench/results/rust-port/bookmark-a...
+                                                                        │            M Cargo... ╭ ◆ Added bench/results/rust-port/bookmark-actions/2026-0...╮
+                                                                        │                         · diff --git a/bench/results/rust-port/bookmark-actions...
+                                                                      o............. pslutzup 13  · new file mode 100644
+                                                                      │              enrich...    · --- /dev/null
+                                                                      │              A bench...   · +++ b/bench/results/rust-port/bookmark-actions/2026-0...
+                                                                      │                         ╭─ @@ -0,0 +1,32 @@                                        ╮
+                                                                    o............... nwkkntop e5  1 + {
+                                                                    │                wire r...    2 +   &quot;changeId&quot;: &quot;llksuqxzunks&quot;,
+                                                                    │                A bench...  ⋯ preview capped · 30 additional rows omitted for this f...
+                                                                    │                           ╭ ◆ Added bench/results/rust-port/bookmark-actions/2026-0...╮
+                                                                  o................. wvpztmmo 06  · diff --git a/bench/results/rust-port/bookmark-actions...
+                                                                  │                  make r...    · new file mode 100644
+                                                                  │                  M Cargo...   · --- /dev/null
+                                                                  │                               · +++ b/bench/results/rust-port/bookmark-actions/2026-0...
+                                                                ┤─┘                             ───────────────── ⋯ 454 more rows below ──────────────────
+ ~/dev/juzu  @ozzwnvvm                                                                                                                       wcfocused 40 nodes
+</pre></section><section><h2>Cycle 2 · backFromAct</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: nyuqpnqlxtnykztlnwmrtknrnlsqsoow
+                                                                                @..@ ozzwnvvm 3bCommit: 53aeb0daaa2b1b9b30819eac364ea6b5c2184462
+                                                                                │    (no descripAuthor: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+                                                                                │    M crate... Time: 2026-06-17T23:48:01+01:00
+                                                                                │
+                                                                              o..... nnpywurl 54Description (x expand):
+                                                                              │      wire r...  wire rust bookmarks leader into real set and delete actions
+                                                                              │      A bench...
+                                                                              │                 Files (f collapse):
+                                                                            o....... lulszxum 87A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │        wire r...  A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │        A bench... A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │                   A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                          O........&gt; nyuqpnql 53… 49 more
+                                                                          │          wire r...
+                                                                          │          A bench... Diff
+                                                                          │                       · 53 files · 17902 raw · 17955 rows · 468 shown
+                                                                        o........... ovxoxqrl 05  · diff rows 1-14 of 468
+                                                                        │            restor...   STICKY ▸ top · Added bench/results/rust-port/bookmark-a...
+                                                                        │            M Cargo... ╭ ◆ Added bench/results/rust-port/bookmark-actions/2026-0...╮
+                                                                        │                         · diff --git a/bench/results/rust-port/bookmark-actions...
+                                                                      o............. pslutzup 13  · new file mode 100644
+                                                                      │              enrich...    · --- /dev/null
+                                                                      │              A bench...   · +++ b/bench/results/rust-port/bookmark-actions/2026-0...
+                                                                      │                         ╭─ @@ -0,0 +1,32 @@                                        ╮
+                                                                    o............... nwkkntop e5  1 + {
+                                                                    │                wire r...    2 +   &quot;changeId&quot;: &quot;llksuqxzunks&quot;,
+                                                                    │                A bench...  ⋯ preview capped · 30 additional rows omitted for this f...
+                                                                    │                           ╭ ◆ Added bench/results/rust-port/bookmark-actions/2026-0...╮
+                                                                  o................. wvpztmmo 06  · diff --git a/bench/results/rust-port/bookmark-actions...
+                                                                  │                  make r...    · new file mode 100644
+                                                                  │                  M Cargo...   · --- /dev/null
+                                                                  │                               · +++ b/bench/results/rust-port/bookmark-actions/2026-0...
+                                                                ┤─┘                             ───────────────── ⋯ 454 more rows below ──────────────────
+ ~/dev/juzu  @ozzwnvvm                                                                                                                       wcfocused 40 nodes
+</pre></section><section><h2>Cycle 2 · view</h2><pre> VIEW   1 Layout chronological  2 Layout mainline  3 Layout bookmark  4 Layout wc  5 Layout topological
+c Toggle sidebar  t Theme picker  f Toggle files  x Toggle description  h Toggle help  / Revset filter  ^d Diff view
+                                                                                                Change: nyuqpnqlxtnykztlnwmrtknrnlsqsoow
+                                                                                @..@ ozzwnvvm 3bCommit: 53aeb0daaa2b1b9b30819eac364ea6b5c2184462
+                                                                                │    (no descripAuthor: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+                                                                                │    M crate... Time: 2026-06-17T23:48:01+01:00
+                                                                                │
+                                                                              o..... nnpywurl 54Description (x expand):
+                                                                              │      wire r...  wire rust bookmarks leader into real set and delete actions
+                                                                              │      A bench...
+                                                                              │                 Files (f collapse):
+                                                                            o....... lulszxum 87A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │        wire r...  A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │        A bench... A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │                   A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                          O........&gt; nyuqpnql 53… 49 more
+                                                                          │          wire r...
+                                                                          │          A bench... Diff
+                                                                          │                       · 53 files · 17902 raw · 17955 rows · 468 shown
+                                                                        o........... ovxoxqrl 05  · diff rows 1-14 of 468
+                                                                        │            restor...   STICKY ▸ top · Added bench/results/rust-port/bookmark-a...
+                                                                        │            M Cargo... ╭ ◆ Added bench/results/rust-port/bookmark-actions/2026-0...╮
+                                                                        │                         · diff --git a/bench/results/rust-port/bookmark-actions...
+                                                                      o............. pslutzup 13  · new file mode 100644
+                                                                      │              enrich...    · --- /dev/null
+                                                                      │              A bench...   · +++ b/bench/results/rust-port/bookmark-actions/2026-0...
+                                                                      │                         ╭─ @@ -0,0 +1,32 @@                                        ╮
+                                                                    o............... nwkkntop e5  1 + {
+                                                                    │                wire r...    2 +   &quot;changeId&quot;: &quot;llksuqxzunks&quot;,
+                                                                    │                A bench...  ⋯ preview capped · 30 additional rows omitted for this f...
+                                                                    │                           ╭ ◆ Added bench/results/rust-port/bookmark-actions/2026-0...╮
+                                                                  ┤─┘                             · diff --git a/bench/results/rust-port/bookmark-actions...
+                                                                  │                               · new file mode 100644
+                                                                  │                               · --- /dev/null
+                                                                  │                               · +++ b/bench/results/rust-port/bookmark-actions/2026-0...
+ ~/dev/juzu  @ozzwnvvm                                                                                                                       wcfocused 40 nodes
+</pre></section><section><h2>Cycle 2 · backFromView</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: nyuqpnqlxtnykztlnwmrtknrnlsqsoow
+                                                                                @..@ ozzwnvvm 3bCommit: 53aeb0daaa2b1b9b30819eac364ea6b5c2184462
+                                                                                │    (no descripAuthor: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+                                                                                │    M crate... Time: 2026-06-17T23:48:01+01:00
+                                                                                │
+                                                                              o..... nnpywurl 54Description (x expand):
+                                                                              │      wire r...  wire rust bookmarks leader into real set and delete actions
+                                                                              │      A bench...
+                                                                              │                 Files (f collapse):
+                                                                            o....... lulszxum 87A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │        wire r...  A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │        A bench... A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │                   A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                          O........&gt; nyuqpnql 53… 49 more
+                                                                          │          wire r...
+                                                                          │          A bench... Diff
+                                                                          │                       · 53 files · 17902 raw · 17955 rows · 468 shown
+                                                                        o........... ovxoxqrl 05  · diff rows 1-14 of 468
+                                                                        │            restor...   STICKY ▸ top · Added bench/results/rust-port/bookmark-a...
+                                                                        │            M Cargo... ╭ ◆ Added bench/results/rust-port/bookmark-actions/2026-0...╮
+                                                                        │                         · diff --git a/bench/results/rust-port/bookmark-actions...
+                                                                      o............. pslutzup 13  · new file mode 100644
+                                                                      │              enrich...    · --- /dev/null
+                                                                      │              A bench...   · +++ b/bench/results/rust-port/bookmark-actions/2026-0...
+                                                                      │                         ╭─ @@ -0,0 +1,32 @@                                        ╮
+                                                                    o............... nwkkntop e5  1 + {
+                                                                    │                wire r...    2 +   &quot;changeId&quot;: &quot;llksuqxzunks&quot;,
+                                                                    │                A bench...  ⋯ preview capped · 30 additional rows omitted for this f...
+                                                                    │                           ╭ ◆ Added bench/results/rust-port/bookmark-actions/2026-0...╮
+                                                                  o................. wvpztmmo 06  · diff --git a/bench/results/rust-port/bookmark-actions...
+                                                                  │                  make r...    · new file mode 100644
+                                                                  │                  M Cargo...   · --- /dev/null
+                                                                  │                               · +++ b/bench/results/rust-port/bookmark-actions/2026-0...
+                                                                ┤─┘                             ───────────────── ⋯ 454 more rows below ──────────────────
+ ~/dev/juzu  @ozzwnvvm                                                                                                                       wcfocused 40 nodes
+</pre></section><section><h2>Cycle 3 · idle</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: nyuqpnqlxtnykztlnwmrtknrnlsqsoow
+                                                                                @..@ ozzwnvvm 3bCommit: 53aeb0daaa2b1b9b30819eac364ea6b5c2184462
+                                                                                │    (no descripAuthor: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+                                                                                │    M crate... Time: 2026-06-17T23:48:01+01:00
+                                                                                │
+                                                                              o..... nnpywurl 54Description (x expand):
+                                                                              │      wire r...  wire rust bookmarks leader into real set and delete actions
+                                                                              │      A bench...
+                                                                              │                 Files (f collapse):
+                                                                            o....... lulszxum 87A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │        wire r...  A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │        A bench... A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                            │                   A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.…
+                                                                          O........&gt; nyuqpnql 53… 49 more
+                                                                          │          wire r...
+                                                                          │          A bench... Diff
+                                                                          │                       · 53 files · 17902 raw · 17955 rows · 468 shown
+                                                                        o........... ovxoxqrl 05  · diff rows 1-14 of 468
+                                                                        │            restor...   STICKY ▸ top · Added bench/results/rust-port/bookmark-a...
+                                                                        │            M Cargo... ╭ ◆ Added bench/results/rust-port/bookmark-actions/2026-0...╮
+                                                                        │                         · diff --git a/bench/results/rust-port/bookmark-actions...
+                                                                      o............. pslutzup 13  · new file mode 100644
+                                                                      │              enrich...    · --- /dev/null
+                                                                      │              A bench...   · +++ b/bench/results/rust-port/bookmark-actions/2026-0...
+                                                                      │                         ╭─ @@ -0,0 +1,32 @@                                        ╮
+                                                                    o............... nwkkntop e5  1 + {
+                                                                    │                wire r...    2 +   &quot;changeId&quot;: &quot;llksuqxzunks&quot;,
+                                                                    │                A bench...  ⋯ preview capped · 30 additional rows omitted for this f...
+                                                                    │                           ╭ ◆ Added bench/results/rust-port/bookmark-actions/2026-0...╮
+                                                                  o................. wvpztmmo 06  · diff --git a/bench/results/rust-port/bookmark-actions...
+                                                                  │                  make r...    · new file mode 100644
+                                                                  │                  M Cargo...   · --- /dev/null
+                                                                  │                               · +++ b/bench/results/rust-port/bookmark-actions/2026-0...
+                                                                ┤─┘                             ───────────────── ⋯ 454 more rows below ──────────────────
+ ~/dev/juzu  @ozzwnvvm                                                                                                                       wcfocused 40 nodes
+</pre></section><section><h2>Cycle 3 · act</h2><pre> ACT   n New  e Edit  y Duplicate  Esc/q Exit
+                                                                              │                 Change: nwkkntopkrsrznwnswkxysyrzwolxntz
+                                                                            o....... lulszxum 87Commit: e5363bfcdfae1327eeb5fdb66a2d36bdda1f3260
+                                                                            │        wire r...  Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+                                                                            │        A bench... Time: 2026-06-16T22:15:26+01:00
+                                                                            │
+                                                                          o......... nyuqpnql 53Description (x expand):
+                                                                          │          wire r...  wire rust ops leader into oplog and obslog views
+                                                                          │          A bench...
+                                                                          │                     Files (f collapse):
+                                                                        o........... ovxoxqrl 05A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/li…
+                                                                        │            restor...  A bench/results/rust-port/rust-tui-bench/2026-06-16T21-33-35-37…
+                                                                        │            M Cargo... A bench/results/rust-port/rust-tui-bench/2026-06-16T21-33-35-37…
+                                                                        │                       A bench/results/rust-port/rust-tui-bench/2026-06-16T21-33-35-37…
+                                                                      o............. pslutzup 13… 40 more
+                                                                      │              enrich...
+                                                                      │              A bench... Diff
+                                                                      │                           · 44 files · 17199 raw · 17243 rows · 422 shown
+                                                                    O..............&gt; nwkkntop e5  · diff rows 1-14 of 422
+                                                                    │                wire r...   STICKY ▸ top · Added bench/results/rust-port/live-tmux/...
+                                                                    │                A bench... ╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-16T21...╮
+                                                                    │                             · diff --git a/bench/results/rust-port/live-tmux/2026-0...
+                                                                  o................. wvpztmmo 06  · new file mode 100644
+                                                                  │                  make r...    · --- /dev/null
+                                                                  │                  M Cargo...   · +++ b/bench/results/rust-port/live-tmux/2026-06-16T21...
+                                                                  │                             ╭─ @@ -0,0 +1,88 @@                                        ╮
+                                                                o................... lykpumpq db  1 + &lt;!doctype html&gt;
+                                                                │                    clamp ...    2 + &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust ...
+                                                                │                    A bench...   3 + &lt;style&gt;
+                                                                │                                ⋯ preview capped · 86 additional rows omitted for this f...
+                                                              o..................... wlxtkslu db╭ ◆ Added bench/results/rust-port/rust-tui-bench/2026-06-...╮
+                                                              │                      match ...    · diff --git a/bench/results/rust-port/rust-tui-bench/2...
+                                                              │                      A bench...   · new file mode 100644
+                                                              │                                   · --- /dev/null
+                                                            ┤─┘                                 ───────────────── ⋯ 408 more rows below ──────────────────
+ ~/dev/juzu  @ozzwnvvm                                                                                                                       wcfocused 40 nodes
+</pre></section><section><h2>Cycle 3 · backFromAct</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                              │                 Change: nwkkntopkrsrznwnswkxysyrzwolxntz
+                                                                            o....... lulszxum 87Commit: e5363bfcdfae1327eeb5fdb66a2d36bdda1f3260
+                                                                            │        wire r...  Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+                                                                            │        A bench... Time: 2026-06-16T22:15:26+01:00
+                                                                            │
+                                                                          o......... nyuqpnql 53Description (x expand):
+                                                                          │          wire r...  wire rust ops leader into oplog and obslog views
+                                                                          │          A bench...
+                                                                          │                     Files (f collapse):
+                                                                        o........... ovxoxqrl 05A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/li…
+                                                                        │            restor...  A bench/results/rust-port/rust-tui-bench/2026-06-16T21-33-35-37…
+                                                                        │            M Cargo... A bench/results/rust-port/rust-tui-bench/2026-06-16T21-33-35-37…
+                                                                        │                       A bench/results/rust-port/rust-tui-bench/2026-06-16T21-33-35-37…
+                                                                      o............. pslutzup 13… 40 more
+                                                                      │              enrich...
+                                                                      │              A bench... Diff
+                                                                      │                           · 44 files · 17199 raw · 17243 rows · 422 shown
+                                                                    O..............&gt; nwkkntop e5  · diff rows 1-14 of 422
+                                                                    │                wire r...   STICKY ▸ top · Added bench/results/rust-port/live-tmux/...
+                                                                    │                A bench... ╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-16T21...╮
+                                                                    │                             · diff --git a/bench/results/rust-port/live-tmux/2026-0...
+                                                                  o................. wvpztmmo 06  · new file mode 100644
+                                                                  │                  make r...    · --- /dev/null
+                                                                  │                  M Cargo...   · +++ b/bench/results/rust-port/live-tmux/2026-06-16T21...
+                                                                  │                             ╭─ @@ -0,0 +1,88 @@                                        ╮
+                                                                o................... lykpumpq db  1 + &lt;!doctype html&gt;
+                                                                │                    clamp ...    2 + &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust ...
+                                                                │                    A bench...   3 + &lt;style&gt;
+                                                                │                                ⋯ preview capped · 86 additional rows omitted for this f...
+                                                              o..................... wlxtkslu db╭ ◆ Added bench/results/rust-port/rust-tui-bench/2026-06-...╮
+                                                              │                      match ...    · diff --git a/bench/results/rust-port/rust-tui-bench/2...
+                                                              │                      A bench...   · new file mode 100644
+                                                              │                                   · --- /dev/null
+                                                            ┤─┘                                 ───────────────── ⋯ 408 more rows below ──────────────────
+ ~/dev/juzu  @ozzwnvvm                                                                                                                       wcfocused 40 nodes
+</pre></section><section><h2>Cycle 3 · view</h2><pre> VIEW   1 Layout chronological  2 Layout mainline  3 Layout bookmark  4 Layout wc  5 Layout topological
+c Toggle sidebar  t Theme picker  f Toggle files  x Toggle description  h Toggle help  / Revset filter  ^d Diff view
+                                                                            │                   Change: nwkkntopkrsrznwnswkxysyrzwolxntz
+                                                                          o......... nyuqpnql 53Commit: e5363bfcdfae1327eeb5fdb66a2d36bdda1f3260
+                                                                          │          wire r...  Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+                                                                          │          A bench... Time: 2026-06-16T22:15:26+01:00
+                                                                          │
+                                                                        o........... ovxoxqrl 05Description (x expand):
+                                                                        │            restor...  wire rust ops leader into oplog and obslog views
+                                                                        │            M Cargo...
+                                                                        │                       Files (f collapse):
+                                                                      o............. pslutzup 13A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/li…
+                                                                      │              enrich...  A bench/results/rust-port/rust-tui-bench/2026-06-16T21-33-35-37…
+                                                                      │              A bench... A bench/results/rust-port/rust-tui-bench/2026-06-16T21-33-35-37…
+                                                                      │                         A bench/results/rust-port/rust-tui-bench/2026-06-16T21-33-35-37…
+                                                                    O..............&gt; nwkkntop e5… 40 more
+                                                                    │                wire r...
+                                                                    │                A bench... Diff
+                                                                    │                             · 44 files · 17199 raw · 17243 rows · 422 shown
+                                                                  o................. wvpztmmo 06  · diff rows 1-14 of 422
+                                                                  │                  make r...   STICKY ▸ top · Added bench/results/rust-port/live-tmux/...
+                                                                  │                  M Cargo... ╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-16T21...╮
+                                                                  │                               · diff --git a/bench/results/rust-port/live-tmux/2026-0...
+                                                                o................... lykpumpq db  · new file mode 100644
+                                                                │                    clamp ...    · --- /dev/null
+                                                                │                    A bench...   · +++ b/bench/results/rust-port/live-tmux/2026-06-16T21...
+                                                                │                               ╭─ @@ -0,0 +1,88 @@                                        ╮
+                                                              o..................... wlxtkslu db  1 + &lt;!doctype html&gt;
+                                                              │                      match ...    2 + &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust ...
+                                                              │                      A bench...   3 + &lt;style&gt;
+                                                              │                                  ⋯ preview capped · 86 additional rows omitted for this f...
+                                                            ┤─┘                                 ╭ ◆ Added bench/results/rust-port/rust-tui-bench/2026-06-...╮
+                                                            │                                     · diff --git a/bench/results/rust-port/rust-tui-bench/2...
+                                                            │                                     · new file mode 100644
+                                                            │                                     · --- /dev/null
+ ~/dev/juzu  @ozzwnvvm                                                                                                                       wcfocused 40 nodes
+</pre></section><section><h2>Cycle 3 · backFromView</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                              │                 Change: nwkkntopkrsrznwnswkxysyrzwolxntz
+                                                                            o....... lulszxum 87Commit: e5363bfcdfae1327eeb5fdb66a2d36bdda1f3260
+                                                                            │        wire r...  Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+                                                                            │        A bench... Time: 2026-06-16T22:15:26+01:00
+                                                                            │
+                                                                          o......... nyuqpnql 53Description (x expand):
+                                                                          │          wire r...  wire rust ops leader into oplog and obslog views
+                                                                          │          A bench...
+                                                                          │                     Files (f collapse):
+                                                                        o........... ovxoxqrl 05A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/li…
+                                                                        │            restor...  A bench/results/rust-port/rust-tui-bench/2026-06-16T21-33-35-37…
+                                                                        │            M Cargo... A bench/results/rust-port/rust-tui-bench/2026-06-16T21-33-35-37…
+                                                                        │                       A bench/results/rust-port/rust-tui-bench/2026-06-16T21-33-35-37…
+                                                                      o............. pslutzup 13… 40 more
+                                                                      │              enrich...
+                                                                      │              A bench... Diff
+                                                                      │                           · 44 files · 17199 raw · 17243 rows · 422 shown
+                                                                    O..............&gt; nwkkntop e5  · diff rows 1-14 of 422
+                                                                    │                wire r...   STICKY ▸ top · Added bench/results/rust-port/live-tmux/...
+                                                                    │                A bench... ╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-16T21...╮
+                                                                    │                             · diff --git a/bench/results/rust-port/live-tmux/2026-0...
+                                                                  o................. wvpztmmo 06  · new file mode 100644
+                                                                  │                  make r...    · --- /dev/null
+                                                                  │                  M Cargo...   · +++ b/bench/results/rust-port/live-tmux/2026-06-16T21...
+                                                                  │                             ╭─ @@ -0,0 +1,88 @@                                        ╮
+                                                                o................... lykpumpq db  1 + &lt;!doctype html&gt;
+                                                                │                    clamp ...    2 + &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust ...
+                                                                │                    A bench...   3 + &lt;style&gt;
+                                                                │                                ⋯ preview capped · 86 additional rows omitted for this f...
+                                                              o..................... wlxtkslu db╭ ◆ Added bench/results/rust-port/rust-tui-bench/2026-06-...╮
+                                                              │                      match ...    · diff --git a/bench/results/rust-port/rust-tui-bench/2...
+                                                              │                      A bench...   · new file mode 100644
+                                                              │                                   · --- /dev/null
+                                                            ┤─┘                                 ───────────────── ⋯ 408 more rows below ──────────────────
+ ~/dev/juzu  @ozzwnvvm                                                                                                                       wcfocused 40 nodes
+</pre></section></body></html>

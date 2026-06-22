@@ -102,9 +102,13 @@ Latest bundled theme review:
 
 `bench/results/rust-port/theme-port/2026-06-15T03-51-15.876Z/theme-port-review.html`
 
+Latest tmux restart stability proof:
+
+`bench/results/rust-port/tmux-restart/2026-06-22T14-45-51.266+00-00/tmux-restart-proof.html`
+
 Latest live tmux proof:
 
-`bench/results/rust-port/live-tmux/2026-06-22T12-36-00.719Z/live-tmux-proof.html`
+`bench/results/rust-port/live-tmux/2026-06-22T14-46-13.120Z/live-tmux-proof.html`
 
 Static state proofs are HTML/tmux captures; MP4 is reserved for real app motion. The live review surface is the tmux window.
 
