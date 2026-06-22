@@ -639,6 +639,16 @@ fn handle_key_with_backend<B: JjBackend>(
                 app.active_leader_mode = None;
                 return false;
             }
+            KeyCode::Char('f') => {
+                let _ = git_fetch_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('p') => {
+                let _ = git_push_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
             KeyCode::Char('o') => {
                 let _ = load_oplog_with_backend(app, backend);
                 app.active_leader_mode = None;
@@ -1229,6 +1239,21 @@ fn undo_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
 fn redo_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
     futures_executor::block_on(backend.mutate(Mutation::Redo {
         cwd: app.path.clone(),
+    }))?;
+    reload_app_nodes_with_backend(app, backend)
+}
+
+fn git_fetch_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    futures_executor::block_on(backend.mutate(Mutation::GitFetch {
+        cwd: app.path.clone(),
+    }))?;
+    reload_app_nodes_with_backend(app, backend)
+}
+
+fn git_push_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    futures_executor::block_on(backend.mutate(Mutation::GitPush {
+        cwd: app.path.clone(),
+        bookmark: None,
     }))?;
     reload_app_nodes_with_backend(app, backend)
 }
@@ -5523,6 +5548,154 @@ mod tests {
         assert_eq!(app.view_mode, ViewMode::Log);
         assert_eq!(app.active_leader_mode, None);
         assert_eq!(app.nodes[0].description_title, "second desc");
+    }
+
+    struct FetchPushTestBackend {
+        mutate_calls: Mutex<Vec<juzu_core::Mutation>>,
+        before_nodes: Vec<juzu_core::CommitNode>,
+        after_fetch_nodes: Vec<juzu_core::CommitNode>,
+        after_push_nodes: Vec<juzu_core::CommitNode>,
+    }
+
+    #[async_trait::async_trait(?Send)]
+    impl JjBackend for FetchPushTestBackend {
+        async fn find_root(&self, _start: &std::path::Path) -> juzu_core::Result<Option<PathBuf>> {
+            Ok(None)
+        }
+
+        async fn log(&self, _query: LogQuery) -> juzu_core::Result<Vec<juzu_core::CommitNode>> {
+            let calls = self.mutate_calls.lock().unwrap();
+            let last = calls.last();
+            Ok(match last {
+                Some(juzu_core::Mutation::GitFetch { .. }) => self.after_fetch_nodes.clone(),
+                Some(juzu_core::Mutation::GitPush { .. }) => self.after_push_nodes.clone(),
+                _ => self.before_nodes.clone(),
+            })
+        }
+
+        async fn node_count(&self, _query: juzu_core::NodeCountQuery) -> juzu_core::Result<usize> {
+            Ok(self.before_nodes.len())
+        }
+
+        async fn description(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn files(&self, _query: ChangeQuery) -> juzu_core::Result<Vec<FileEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn diff(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn op_log(&self, _query: OpLogQuery) -> juzu_core::Result<Vec<OpLogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn obslog(&self, _query: ObslogQuery) -> juzu_core::Result<Vec<ObslogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn mutate(
+            &self,
+            mutation: juzu_core::Mutation,
+        ) -> juzu_core::Result<juzu_core::MutationResult> {
+            self.mutate_calls.lock().unwrap().push(mutation.clone());
+            match mutation {
+                juzu_core::Mutation::GitFetch { .. } => Ok(juzu_core::MutationResult {
+                    changed: true,
+                    message: "fetch".to_string(),
+                }),
+                juzu_core::Mutation::GitPush { .. } => Ok(juzu_core::MutationResult {
+                    changed: true,
+                    message: "push".to_string(),
+                }),
+                _ => Err(juzu_core::JuzuError::Unsupported(
+                    "unexpected test mutation",
+                )),
+            }
+        }
+    }
+
+    #[test]
+    fn ops_fetch_shortcut_mutates_and_reloads_log_state() {
+        let backend = FetchPushTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![test_commit("fetch123rest", "before fetch")],
+            after_fetch_nodes: vec![test_commit("fetch123rest", "after fetch")],
+            after_push_nodes: vec![test_commit("fetch123rest", "before fetch")],
+        };
+        let mut app = test_log_app("fetch123rest", vec![]);
+        app.nodes[0].description_title = "before fetch".to_string();
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('o'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Ops));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('f'),
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::GitFetch {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+            }]
+        );
+        assert_eq!(app.view_mode, ViewMode::Log);
+        assert_eq!(app.active_leader_mode, None);
+        assert_eq!(app.nodes[0].description_title, "after fetch");
+    }
+
+    #[test]
+    fn ops_push_shortcut_mutates_and_reloads_log_state() {
+        let backend = FetchPushTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![test_commit("push1234rest", "before push")],
+            after_fetch_nodes: vec![test_commit("push1234rest", "before push")],
+            after_push_nodes: vec![{
+                let mut node = test_commit("push1234rest", "pushed main");
+                node.bookmarks = vec!["main".to_string()];
+                node
+            }],
+        };
+        let mut app = test_log_app("push1234rest", vec![]);
+        app.nodes[0].description_title = "before push".to_string();
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('o'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Ops));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('p'),
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::GitPush {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                bookmark: None,
+            }]
+        );
+        assert_eq!(app.view_mode, ViewMode::Log);
+        assert_eq!(app.active_leader_mode, None);
+        assert_eq!(app.nodes[0].description_title, "pushed main");
+        assert_eq!(app.nodes[0].bookmarks, vec!["main".to_string()]);
     }
 
     fn color_hex(color: Color) -> String {

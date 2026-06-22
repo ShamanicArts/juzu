@@ -199,6 +199,19 @@ pub fn redo(cwd: &Path) -> Result<()> {
     run_jj(cwd, &["redo"]).map(|_| ())
 }
 
+pub fn git_fetch(cwd: &Path) -> Result<()> {
+    run_jj(cwd, &["git", "fetch"]).map(|_| ())
+}
+
+pub fn git_push(cwd: &Path, bookmark: Option<&str>) -> Result<()> {
+    let mut args = vec!["git".to_string(), "push".to_string()];
+    if let Some(bookmark) = bookmark {
+        args.push("--bookmark".to_string());
+        args.push(bookmark.to_string());
+    }
+    run_jj_owned(cwd, &args).map(|_| ())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{parse_obslog_text, parse_op_log_text};

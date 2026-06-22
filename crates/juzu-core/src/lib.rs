@@ -195,6 +195,13 @@ pub enum Mutation {
     Redo {
         cwd: PathBuf,
     },
+    GitFetch {
+        cwd: PathBuf,
+    },
+    GitPush {
+        cwd: PathBuf,
+        bookmark: Option<String>,
+    },
     RestoreOperation {
         cwd: PathBuf,
         operation_id: String,

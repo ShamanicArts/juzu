@@ -17,6 +17,7 @@ Date: 2026-06-13
 - matches the current Bun-visible leader triggers: `Ctrl+A` Actions, `Ctrl+O` Ops, `Ctrl+V` View, `Ctrl+B` Bookmarks (while keeping legacy `Ctrl+X` / `Ctrl+L` as hidden compatibility aliases)
 - renders richer OpLog/Obslog row content and sidebar details from old-JUZU-compatible fallback fields: short op ids, durations, args tags, operation descriptions, authors, and conflict/working-copy badges
 - performs real `jj undo` / `jj redo` from the Ops leader (`Ctrl+O`, then `u` / `r`) with immediate log reload
+- performs real `jj git fetch` / `jj git push` from the Ops leader (`Ctrl+O`, then `f` / `p`) with immediate log reload
 - restores the selected OpLog operation with `r` or `Enter`, reloading the log and refreshed OpLog state through explicit fallback mutation plumbing
 - sets a local `wip/<change-id-prefix>` bookmark from the Bookmarks leader (`Ctrl+B`, then `s`)
 - deletes the selected change's first local bookmark from the Bookmarks leader (`Ctrl+B`, then `d`)
@@ -84,6 +85,10 @@ Latest Ops undo/redo proof:
 
 `bench/results/rust-port/ops-undo-redo/2026-06-17T22-57-58.611+00-00/ops-undo-redo-review.html`
 
+Latest Ops fetch/push proof:
+
+`bench/results/rust-port/ops-fetch-push/2026-06-22T15-08-28.508+00-00/ops-fetch-push-review.html`
+
 Latest diff scroll sequence proof:
 
 `bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-scroll-sequence-review.html`
@@ -110,7 +115,7 @@ Latest tmux restart stability proof:
 
 Latest live tmux proof:
 
-`bench/results/rust-port/live-tmux/2026-06-22T14-59-57.706Z/live-tmux-proof.html`
+`bench/results/rust-port/live-tmux/2026-06-22T15-07-33.187Z/live-tmux-proof.html`
 
 Static state proofs are HTML/tmux captures; MP4 is reserved for real app motion. The live review surface is the tmux window.
 

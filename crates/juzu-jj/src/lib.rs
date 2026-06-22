@@ -565,6 +565,20 @@ impl JjBackend for NativeJjBackend {
                     message: "redid last operation".to_string(),
                 })
             }
+            Mutation::GitFetch { cwd } => {
+                cli_fallback::git_fetch(&cwd)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: "fetched from git remote".to_string(),
+                })
+            }
+            Mutation::GitPush { cwd, bookmark } => {
+                cli_fallback::git_push(&cwd, bookmark.as_deref())?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: "pushed to git remote".to_string(),
+                })
+            }
             _ => Err(JuzuError::Unsupported(
                 "native jj mutations are not wired yet",
             )),
@@ -642,6 +656,56 @@ mod tests {
         fs::write(repo.join("note.txt"), "three\n").expect("fixture file rewrite should work");
         run_jj(&repo, &["describe", "-m", "third desc"]);
         repo
+    }
+
+    fn run_git(cwd: &Path, args: &[&str]) -> String {
+        let output = Command::new("git")
+            .args(args)
+            .current_dir(cwd)
+            .output()
+            .expect("git command should start in test fixture");
+        if !output.status.success() {
+            panic!(
+                "git {:?} failed\nstdout:\n{}\nstderr:\n{}",
+                args,
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+        String::from_utf8_lossy(&output.stdout).into_owned()
+    }
+
+    fn create_git_remote_fixture() -> (PathBuf, PathBuf, PathBuf, PathBuf) {
+        let base = unique_test_dir("git-remote");
+        let remote_work = base.join("remote-work");
+        let remote_bare = base.join("remote.git");
+        let local = base.join("local");
+        fs::create_dir_all(&base).expect("base fixture dir should be created");
+        run_git(&base, &["init", remote_work.to_str().unwrap()]);
+        fs::write(remote_work.join("readme.txt"), "hi\n")
+            .expect("remote worktree file write should work");
+        run_git(&remote_work, &["add", "."]);
+        run_git(&remote_work, &["commit", "-m", "init"]);
+        run_git(&remote_work, &["branch", "-M", "main"]);
+        run_git(
+            &base,
+            &[
+                "clone",
+                "--bare",
+                remote_work.to_str().unwrap(),
+                remote_bare.to_str().unwrap(),
+            ],
+        );
+        run_jj(
+            &base,
+            &[
+                "git",
+                "clone",
+                remote_bare.to_str().unwrap(),
+                local.to_str().unwrap(),
+            ],
+        );
+        (base, local, remote_work, remote_bare)
     }
 
     #[test]
@@ -1103,6 +1167,75 @@ mod tests {
         );
 
         let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_git_fetch_mutation_imports_remote_bookmark_advance() {
+        let (base, local, remote_work, remote_bare) = create_git_remote_fixture();
+        let backend = NativeJjBackend::new();
+
+        fs::write(remote_work.join("readme.txt"), "hi\nmore\n")
+            .expect("remote worktree file rewrite should work");
+        run_git(&remote_work, &["add", "."]);
+        run_git(&remote_work, &["commit", "-m", "remote two"]);
+        run_git(
+            &remote_work,
+            &["push", remote_bare.to_str().unwrap(), "main"],
+        );
+
+        let result =
+            futures::executor::block_on(backend.mutate(Mutation::GitFetch { cwd: local.clone() }))
+                .expect("git fetch mutation should succeed");
+        assert!(result.changed, "git fetch mutation should report a change");
+
+        let main_desc = run_jj(
+            &local,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "main",
+                "-T",
+                "description.first_line()",
+            ],
+        );
+        assert_eq!(main_desc.trim(), "remote two");
+
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn native_git_push_mutation_updates_origin_bookmark_from_local_main() {
+        let (base, local, _remote_work, remote_bare) = create_git_remote_fixture();
+        let backend = NativeJjBackend::new();
+
+        fs::write(local.join("note2.txt"), "new\n").expect("local fixture write should work");
+        run_jj(&local, &["describe", "-m", "second desc"]);
+        run_jj(&local, &["bookmark", "set", "main", "-r", "@"]);
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::GitPush {
+            cwd: local.clone(),
+            bookmark: None,
+        }))
+        .expect("git push mutation should succeed");
+        assert!(result.changed, "git push mutation should report a change");
+
+        let remote_head = Command::new("git")
+            .arg("--git-dir")
+            .arg(&remote_bare)
+            .args(["log", "-1", "--format=%s", "refs/heads/main"])
+            .output()
+            .expect("remote git log should start");
+        assert!(
+            remote_head.status.success(),
+            "remote git log should succeed"
+        );
+        assert_eq!(
+            String::from_utf8_lossy(&remote_head.stdout).trim(),
+            "second desc"
+        );
+
+        let _ = fs::remove_dir_all(&base);
     }
 
     #[test]

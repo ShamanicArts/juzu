@@ -1,0 +1,240 @@
+<!doctype html><html><head><meta charset='utf-8'><title>JUZU Rust Ops fetch/push proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --info:#7f9fbf; --ok:#74b88c; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+a { color:var(--info); } code { color:#bfdbfe; }
+section { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; margin:18px 0; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; }
+strong { color:var(--ok); }
+</style></head><body>
+<h1>JUZU Rust Ops fetch/push proof</h1>
+<p>MP4: <a href='file:///home/shamanic/dev/juzu/bench/results/rust-port/ops-fetch-push/2026-06-22T15-08-28.508+00-00/ops-fetch-push-sequence-proof.mp4'>/home/shamanic/dev/juzu/bench/results/rust-port/ops-fetch-push/2026-06-22T15-08-28.508+00-00/ops-fetch-push-sequence-proof.mp4</a></p>
+<section>
+  <h2>Fetch</h2>
+  <p>Main before fetch: <strong>init</strong></p>
+  <p>Main after fetch: <strong>remote two</strong></p>
+</section>
+<section>
+  <h2>Push</h2>
+  <p>Remote main before push: <strong>init</strong></p>
+  <p>Remote main after push: <strong>second desc</strong></p>
+  <p>Current description after push: <strong>(empty)</strong></p>
+</section>
+<section><h2>01 log before fetch</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: zmmlsqkvyzlkuksvyoxzwrqutrvypmzv (@)
+  @...@&gt; zmmlsqkv 832eab5a                                                                      Commit: 832eab5a9442fc7a33fa4d04bcdee9d1395bf703
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      no file changes                                                                        Time: 2026-06-22T16:08:28+01:00
+  │
+  o..... wornywwx 13cf21d6                                                                      Description (x expand):
+  │      init (main,main@git,main@origin)
+  │      A readme.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      —
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 0 files · 0 raw · 0 rows · 0 shown
+                                                                                                  · clean patch
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/ops-fetch-push/2026-06-22T15-08-28.508+00-00/fetch-fixture/local  @zmmlsqkv                                mainline 3 nodes
+</pre></section><section><h2>02 ops leader before fetch</h2><pre> OPS   u Undo  r Redo  f Fetch  p Push  o Oplog  v Obslog  g Log  Esc/q Exit
+                                                                                                Change: zmmlsqkvyzlkuksvyoxzwrqutrvypmzv (@)
+  @...@&gt; zmmlsqkv 832eab5a                                                                      Commit: 832eab5a9442fc7a33fa4d04bcdee9d1395bf703
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      no file changes                                                                        Time: 2026-06-22T16:08:28+01:00
+  │
+  o..... wornywwx 13cf21d6                                                                      Description (x expand):
+  │      init (main,main@git,main@origin)
+  │      A readme.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      —
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 0 files · 0 raw · 0 rows · 0 shown
+                                                                                                  · clean patch
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/ops-fetch-push/2026-06-22T15-08-28.508+00-00/fetch-fixture/local  @zmmlsqkv                                mainline 3 nodes
+</pre></section><section><h2>03 log after fetch</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: zmmlsqkvyzlkuksvyoxzwrqutrvypmzv (@)
+      o..... onrukzks c52bdcb3                                                                  Commit: 832eab5a9442fc7a33fa4d04bcdee9d1395bf703
+      │      remote two (main,main@git,main@origin)                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+      │      M readme.txt                                                                       Time: 2026-06-22T16:08:28+01:00
+      │
+  @.......@&gt; zmmlsqkv 832eab5a                                                                  Description (x expand):
+  │   │      (no description)
+  │   │      no file changes
+  │   │                                                                                         Files (f collapse):
+  └───o..... wornywwx 13cf21d6                                                                  —
+      │      init
+      │      A readme.txt                                                                       Diff
+      │                                                                                           · 0 files · 0 raw · 0 rows · 0 shown
+      o..... zzzzzzzz 00000000                                                                    · clean patch
+             (no description)
+             no file changes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/ops-fetch-push/2026-06-22T15-08-28.508+00-00/fetch-fixture/local  @zmmlsqkv                                mainline 4 nodes
+</pre></section><section><h2>04 log before push</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: knsrluzoytrxxyyuoxwxpsnrylpoqtpx (@)
+  @...@&gt; knsrluzo f398a941                                                                      Commit: f398a9412cb5bd61b5bf95c1e298ab29ec230050
+  │      second desc (main,main@git)                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      A note2.txt                                                                            Time: 2026-06-22T16:08:29+01:00
+  │
+  o..... qnktzuwv 4cad72c3                                                                      Bookmarks:
+  │      init (main@origin)                                                                       main
+  │      A readme.txt                                                                             main@git
+  │
+  o..... zzzzzzzz 00000000                                                                      Description (x expand):
+         (no description)                                                                       second desc
+         no file changes
+                                                                                                Files (f collapse):
+                                                                                                A note2.txt
+
+                                                                                                Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note2.txt
+                                                                                                ╭ ◆ Added note2.txt                                         ╮
+                                                                                                  · diff --git a/note2.txt b/note2.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note2.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + new
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/ops-fetch-push/2026-06-22T15-08-28.508+00-00/push-fixture/local main @knsrluzo                             mainline 3 nodes
+</pre></section><section><h2>05 ops leader before push</h2><pre> OPS   u Undo  r Redo  f Fetch  p Push  o Oplog  v Obslog  g Log  Esc/q Exit
+                                                                                                Change: knsrluzoytrxxyyuoxwxpsnrylpoqtpx (@)
+  @...@&gt; knsrluzo f398a941                                                                      Commit: f398a9412cb5bd61b5bf95c1e298ab29ec230050
+  │      second desc (main,main@git)                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      A note2.txt                                                                            Time: 2026-06-22T16:08:29+01:00
+  │
+  o..... qnktzuwv 4cad72c3                                                                      Bookmarks:
+  │      init (main@origin)                                                                       main
+  │      A readme.txt                                                                             main@git
+  │
+  o..... zzzzzzzz 00000000                                                                      Description (x expand):
+         (no description)                                                                       second desc
+         no file changes
+                                                                                                Files (f collapse):
+                                                                                                A note2.txt
+
+                                                                                                Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note2.txt
+                                                                                                ╭ ◆ Added note2.txt                                         ╮
+                                                                                                  · diff --git a/note2.txt b/note2.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note2.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + new
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/ops-fetch-push/2026-06-22T15-08-28.508+00-00/push-fixture/local main @knsrluzo                             mainline 3 nodes
+</pre></section><section><h2>06 log after push</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: knsrluzoytrxxyyuoxwxpsnrylpoqtpx
+  @....@ twkokyzp 25c64cdc                                                                      Commit: f398a9412cb5bd61b5bf95c1e298ab29ec230050
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      no file changes                                                                        Time: 2026-06-22T16:08:29+01:00
+  │
+  O....&gt; knsrluzo f398a941                                                                      Bookmarks:
+  │      second desc (main,main@git,main@origin)                                                  main
+  │      A note2.txt                                                                              main@git
+  │                                                                                               main@origin
+  o..... qnktzuwv 4cad72c3
+  │      init                                                                                   Description (x expand):
+  │      A readme.txt                                                                           second desc
+  │
+  o..... zzzzzzzz 00000000                                                                      Files (f collapse):
+         (no description)                                                                       A note2.txt
+         no file changes
+                                                                                                Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note2.txt
+                                                                                                ╭ ◆ Added note2.txt                                         ╮
+                                                                                                  · diff --git a/note2.txt b/note2.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note2.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + new
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/ops-fetch-push/2026-06-22T15-08-28.508+00-00/push-fixture/local  @twkokyzp                                 mainline 4 nodes
+</pre></section>
+</body></html>
