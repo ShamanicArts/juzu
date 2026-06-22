@@ -483,6 +483,31 @@ impl JjBackend for NativeJjBackend {
 
     async fn mutate(&self, mutation: Mutation) -> Result<MutationResult> {
         match mutation {
+            Mutation::New {
+                cwd,
+                parent_id,
+                parent_ids,
+            } => {
+                cli_fallback::new_change(&cwd, parent_id.as_deref(), &parent_ids)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: "created new change".to_string(),
+                })
+            }
+            Mutation::Edit { cwd, change_id } => {
+                cli_fallback::edit(&cwd, &change_id)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: format!("editing change {change_id}"),
+                })
+            }
+            Mutation::Duplicate { cwd, change_id } => {
+                cli_fallback::duplicate(&cwd, &change_id)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: format!("duplicated change {change_id}"),
+                })
+            }
             Mutation::RestoreOperation { cwd, operation_id } => {
                 cli_fallback::restore_operation(&cwd, &operation_id)?;
                 Ok(MutationResult {
@@ -569,6 +594,18 @@ mod tests {
         run_jj(&repo, &["git", "init", "."]);
         fs::write(repo.join("note.txt"), "one\n").expect("fixture file write should work");
         run_jj(&repo, &["describe", "-m", "first desc"]);
+        fs::write(repo.join("note.txt"), "two\n").expect("fixture file rewrite should work");
+        run_jj(&repo, &["describe", "-m", "second desc"]);
+        repo
+    }
+
+    fn create_action_fixture_repo() -> PathBuf {
+        let repo = unique_test_dir("action-mutations");
+        fs::create_dir_all(&repo).expect("fixture repo dir should be created");
+        run_jj(&repo, &["git", "init", "."]);
+        fs::write(repo.join("note.txt"), "one\n").expect("fixture file write should work");
+        run_jj(&repo, &["describe", "-m", "first desc"]);
+        run_jj(&repo, &["new", "@"]).trim().to_string();
         fs::write(repo.join("note.txt"), "two\n").expect("fixture file rewrite should work");
         run_jj(&repo, &["describe", "-m", "second desc"]);
         repo
@@ -712,6 +749,129 @@ mod tests {
             ],
         );
         assert_eq!(after.trim(), "first desc");
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_new_mutation_creates_child_working_copy() {
+        let repo = create_action_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let parent_change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+        let before_count = run_jj(&repo, &["log", "-r", "::", "--count"])
+            .trim()
+            .parse::<usize>()
+            .expect("before count should parse");
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::New {
+            cwd: repo.clone(),
+            parent_id: Some(parent_change_id.clone()),
+            parent_ids: Vec::new(),
+        }))
+        .expect("new mutation should succeed");
+        assert!(result.changed, "new mutation should report a change");
+
+        let after_count = run_jj(&repo, &["log", "-r", "::", "--count"])
+            .trim()
+            .parse::<usize>()
+            .expect("after count should parse");
+        assert_eq!(after_count, before_count + 1);
+        let parent_after = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@-", "-T", "change_id.short()"],
+        );
+        assert_eq!(parent_after.trim(), parent_change_id);
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_edit_mutation_moves_working_copy_to_selected_change() {
+        let repo = create_action_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let target_change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@-", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::Edit {
+            cwd: repo.clone(),
+            change_id: target_change_id.clone(),
+        }))
+        .expect("edit mutation should succeed");
+        assert!(result.changed, "edit mutation should report a change");
+
+        let after = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "@",
+                "-T",
+                "change_id.short() ++ \"\\x01\" ++ description.first_line()",
+            ],
+        );
+        let mut parts = after.trim().split('\x01');
+        assert_eq!(parts.next(), Some(target_change_id.as_str()));
+        assert_eq!(parts.next(), Some("first desc"));
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_duplicate_mutation_creates_second_copy_of_selected_description() {
+        let repo = create_action_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let target_change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+        let before_count = run_jj(&repo, &["log", "-r", "::", "--count"])
+            .trim()
+            .parse::<usize>()
+            .expect("before count should parse");
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::Duplicate {
+            cwd: repo.clone(),
+            change_id: target_change_id,
+        }))
+        .expect("duplicate mutation should succeed");
+        assert!(result.changed, "duplicate mutation should report a change");
+
+        let after_count = run_jj(&repo, &["log", "-r", "::", "--count"])
+            .trim()
+            .parse::<usize>()
+            .expect("after count should parse");
+        assert_eq!(after_count, before_count + 1);
+        let duplicated_titles = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "::",
+                "-T",
+                "description.first_line() ++ \"\\n\"",
+            ],
+        );
+        assert!(
+            duplicated_titles
+                .lines()
+                .filter(|line| line.trim() == "second desc")
+                .count()
+                >= 2,
+            "expected duplicated description to appear at least twice, got: {duplicated_titles}"
+        );
 
         let _ = fs::remove_dir_all(&repo);
     }

@@ -45,9 +45,9 @@ statusContextOrder = ["oplog", "obslog", "diff", "merge", "rebase", "describe", 
 exitKeys = ["escape", "q"]
 
 [tui.keymap.leaders]
-action = "ctrl+x"
+action = "ctrl+a"
 ops = "ctrl+o"
-view = "ctrl+l"
+view = "ctrl+v"
 marks = "ctrl+b"
 
 [tui.keymap.modeBindings.action]

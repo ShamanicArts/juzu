@@ -586,7 +586,7 @@ fn handle_key_with_backend<B: JjBackend>(
     }
     if modifiers.contains(KeyModifiers::CONTROL) {
         match code {
-            KeyCode::Char('x') => {
+            KeyCode::Char('a') | KeyCode::Char('x') => {
                 app.active_leader_mode = Some(LeaderMode::Action);
                 return false;
             }
@@ -594,12 +594,32 @@ fn handle_key_with_backend<B: JjBackend>(
                 app.active_leader_mode = Some(LeaderMode::Ops);
                 return false;
             }
-            KeyCode::Char('l') => {
+            KeyCode::Char('v') | KeyCode::Char('l') => {
                 app.active_leader_mode = Some(LeaderMode::View);
                 return false;
             }
             KeyCode::Char('b') => {
                 app.active_leader_mode = Some(LeaderMode::Bookmarks);
+                return false;
+            }
+            _ => {}
+        }
+    }
+    if app.active_leader_mode == Some(LeaderMode::Action) {
+        match code {
+            KeyCode::Char('n') => {
+                let _ = new_selected_change_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('e') => {
+                let _ = edit_selected_change_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('y') => {
+                let _ = duplicate_selected_change_with_backend(app, backend);
+                app.active_leader_mode = None;
                 return false;
             }
             _ => {}
@@ -821,8 +841,10 @@ fn handle_key_with_backend<B: JjBackend>(
 fn parse_debug_key(raw: &str) -> Option<(KeyCode, KeyModifiers)> {
     match raw {
         "C-d" | "Ctrl+D" | "ctrl+d" => Some((KeyCode::Char('d'), KeyModifiers::CONTROL)),
+        "C-a" | "Ctrl+A" | "ctrl+a" => Some((KeyCode::Char('a'), KeyModifiers::CONTROL)),
         "C-x" | "Ctrl+X" | "ctrl+x" => Some((KeyCode::Char('x'), KeyModifiers::CONTROL)),
         "C-o" | "Ctrl+O" | "ctrl+o" => Some((KeyCode::Char('o'), KeyModifiers::CONTROL)),
+        "C-v" | "Ctrl+V" | "ctrl+v" => Some((KeyCode::Char('v'), KeyModifiers::CONTROL)),
         "C-l" | "Ctrl+L" | "ctrl+l" => Some((KeyCode::Char('l'), KeyModifiers::CONTROL)),
         "C-b" | "Ctrl+B" | "ctrl+b" => Some((KeyCode::Char('b'), KeyModifiers::CONTROL)),
         "Esc" | "Escape" => Some((KeyCode::Esc, KeyModifiers::NONE)),
@@ -1100,6 +1122,40 @@ fn restore_selected_oplog_with_backend<B: JjBackend>(app: &mut App, backend: &B)
     load_oplog_with_backend(app, backend)
 }
 
+fn new_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return Ok(());
+    };
+    futures_executor::block_on(backend.mutate(Mutation::New {
+        cwd: app.path.clone(),
+        parent_id: Some(node.change_id.clone()),
+        parent_ids: Vec::new(),
+    }))?;
+    reload_app_nodes_with_backend(app, backend)
+}
+
+fn edit_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return Ok(());
+    };
+    futures_executor::block_on(backend.mutate(Mutation::Edit {
+        cwd: app.path.clone(),
+        change_id: node.change_id.clone(),
+    }))?;
+    reload_app_nodes_with_backend(app, backend)
+}
+
+fn duplicate_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return Ok(());
+    };
+    futures_executor::block_on(backend.mutate(Mutation::Duplicate {
+        cwd: app.path.clone(),
+        change_id: node.change_id.clone(),
+    }))?;
+    reload_app_nodes_with_backend(app, backend)
+}
+
 fn bookmark_name_for_change(change_id: &str) -> String {
     let prefix: String = change_id.chars().take(8).collect();
     format!("wip/{prefix}")
@@ -1360,11 +1416,8 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
                 Span::styled("e", key_style),
                 Span::styled(" Edit ", item_style),
                 Span::raw(" "),
-                Span::styled("d", key_style),
-                Span::styled(" Describe ", item_style),
-                Span::raw(" "),
-                Span::styled("b", key_style),
-                Span::styled(" Rebase ", item_style),
+                Span::styled("y", key_style),
+                Span::styled(" Duplicate ", item_style),
                 Span::raw(" "),
                 Span::styled("Esc/q", key_style),
                 Span::styled(" Exit ", item_style),
@@ -1413,13 +1466,13 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
         vec![Line::from(vec![
             Span::styled(" LOG ", mode_style),
             Span::raw("  "),
-            Span::styled("^X", key_style),
+            Span::styled("^A", key_style),
             Span::styled(" Act ", status_item_style(t, LeaderMode::Action)),
             Span::raw(" "),
             Span::styled("^O", key_style),
             Span::styled(" Ops ", status_item_style(t, LeaderMode::Ops)),
             Span::raw(" "),
-            Span::styled("^L", key_style),
+            Span::styled("^V", key_style),
             Span::styled(" View ", status_item_style(t, LeaderMode::View)),
             Span::raw(" "),
             Span::styled("^B", key_style),
@@ -2585,7 +2638,7 @@ fn render_collapsed_sidebar(frame: &mut Frame, area: Rect, app: &App) {
     let t = &app.theme;
     let lines = vec![
         Line::from(Span::styled("[ ]", sidebar_heading_style(t))),
-        Line::from(Span::styled("^L c", sidebar_muted_style(t))),
+        Line::from(Span::styled("^V c", sidebar_muted_style(t))),
     ];
     frame.render_widget(
         Paragraph::new(lines)
@@ -2819,11 +2872,12 @@ fn render_sidebar(
                 Line::from("PgUp/PgDn   Scroll"),
                 Line::from(""),
                 Line::from(Span::styled("Leader Modes", sidebar_heading_style(t))),
-                Line::from("^X Actions  ^O Ops  ^L View  ^B Book"),
+                Line::from("^A Actions  ^O Ops  ^V View  ^B Book"),
                 Line::from(""),
                 Line::from(Span::styled("View", sidebar_heading_style(t))),
                 Line::from("c sidebar  f files  x description"),
                 Line::from("t theme  / revset  ^d diff"),
+                Line::from("n/e/y are live in Actions"),
                 Line::from(""),
                 Line::from("Press h, q, or Esc to close help"),
             ],
@@ -4821,6 +4875,256 @@ mod tests {
             diff_file_index: 0,
             diff_viewport_rows: 1,
         }
+    }
+
+    #[test]
+    fn direct_action_and_view_keys_match_bun_parity_triggers() {
+        let backend = BookmarkTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![test_commit("abcd1234rest", "selected node")],
+            after_set_nodes: vec![test_commit("abcd1234rest", "selected node")],
+            after_delete_nodes: vec![test_commit("abcd1234rest", "selected node")],
+        };
+        let mut app = test_log_app("abcd1234rest", vec![]);
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
+
+        app.active_leader_mode = None;
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('v'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::View));
+    }
+
+    struct ActionMutationTestBackend {
+        mutate_calls: Mutex<Vec<juzu_core::Mutation>>,
+        before_nodes: Vec<juzu_core::CommitNode>,
+        after_new_nodes: Vec<juzu_core::CommitNode>,
+        after_edit_nodes: Vec<juzu_core::CommitNode>,
+        after_duplicate_nodes: Vec<juzu_core::CommitNode>,
+    }
+
+    #[async_trait::async_trait(?Send)]
+    impl JjBackend for ActionMutationTestBackend {
+        async fn find_root(&self, _start: &std::path::Path) -> juzu_core::Result<Option<PathBuf>> {
+            Ok(None)
+        }
+
+        async fn log(&self, _query: LogQuery) -> juzu_core::Result<Vec<juzu_core::CommitNode>> {
+            let calls = self.mutate_calls.lock().unwrap();
+            let last = calls.last();
+            Ok(match last {
+                Some(juzu_core::Mutation::New { .. }) => self.after_new_nodes.clone(),
+                Some(juzu_core::Mutation::Edit { .. }) => self.after_edit_nodes.clone(),
+                Some(juzu_core::Mutation::Duplicate { .. }) => self.after_duplicate_nodes.clone(),
+                _ => self.before_nodes.clone(),
+            })
+        }
+
+        async fn node_count(&self, _query: juzu_core::NodeCountQuery) -> juzu_core::Result<usize> {
+            Ok(self.before_nodes.len())
+        }
+
+        async fn description(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn files(&self, _query: ChangeQuery) -> juzu_core::Result<Vec<FileEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn diff(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn op_log(&self, _query: OpLogQuery) -> juzu_core::Result<Vec<OpLogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn obslog(&self, _query: ObslogQuery) -> juzu_core::Result<Vec<ObslogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn mutate(
+            &self,
+            mutation: juzu_core::Mutation,
+        ) -> juzu_core::Result<juzu_core::MutationResult> {
+            self.mutate_calls.lock().unwrap().push(mutation.clone());
+            match mutation {
+                juzu_core::Mutation::New { .. } => Ok(juzu_core::MutationResult {
+                    changed: true,
+                    message: "new".to_string(),
+                }),
+                juzu_core::Mutation::Edit { .. } => Ok(juzu_core::MutationResult {
+                    changed: true,
+                    message: "edit".to_string(),
+                }),
+                juzu_core::Mutation::Duplicate { .. } => Ok(juzu_core::MutationResult {
+                    changed: true,
+                    message: "duplicate".to_string(),
+                }),
+                _ => Err(juzu_core::JuzuError::Unsupported(
+                    "unexpected test mutation",
+                )),
+            }
+        }
+    }
+
+    #[test]
+    fn action_new_shortcut_mutates_and_reloads_log_state() {
+        let backend = ActionMutationTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![test_commit("new1234rest", "selected node")],
+            after_new_nodes: vec![
+                {
+                    let mut node = test_commit("new1234rest", "selected node");
+                    node.is_working_copy = false;
+                    node
+                },
+                test_commit("new-child", ""),
+            ],
+            after_edit_nodes: vec![test_commit("new1234rest", "selected node")],
+            after_duplicate_nodes: vec![test_commit("new1234rest", "selected node")],
+        };
+        let mut app = test_log_app("new1234rest", vec![]);
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('n'),
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::New {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                parent_id: Some("new1234rest".to_string()),
+                parent_ids: Vec::new(),
+            }]
+        );
+        assert_eq!(app.active_leader_mode, None);
+        assert_eq!(app.nodes.len(), 2);
+        assert!(app
+            .nodes
+            .iter()
+            .any(|node| node.is_working_copy && node.change_id == "new-child"));
+    }
+
+    #[test]
+    fn action_edit_shortcut_mutates_and_reloads_log_state() {
+        let backend = ActionMutationTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![{
+                let mut selected = test_commit("edit1234rest", "selected node");
+                selected.is_working_copy = false;
+                let mut wc = test_commit("workingcopy", "current node");
+                wc.is_working_copy = true;
+                vec![selected, wc]
+            }]
+            .into_iter()
+            .flatten()
+            .collect(),
+            after_new_nodes: vec![test_commit("edit1234rest", "selected node")],
+            after_edit_nodes: vec![{
+                let mut selected = test_commit("edit1234rest", "selected node");
+                selected.is_working_copy = true;
+                let mut old_wc = test_commit("workingcopy", "current node");
+                old_wc.is_working_copy = false;
+                vec![selected, old_wc]
+            }]
+            .into_iter()
+            .flatten()
+            .collect(),
+            after_duplicate_nodes: vec![test_commit("edit1234rest", "selected node")],
+        };
+        let mut app = test_log_app("edit1234rest", vec![]);
+        app.nodes = backend.before_nodes.clone();
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('e'),
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::Edit {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                change_id: "edit1234rest".to_string(),
+            }]
+        );
+        assert_eq!(app.active_leader_mode, None);
+        assert!(app.nodes[0].is_working_copy);
+        assert_eq!(app.nodes[0].change_id, "edit1234rest");
+    }
+
+    #[test]
+    fn action_duplicate_shortcut_mutates_and_reloads_log_state() {
+        let backend = ActionMutationTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![test_commit("dup1234rest", "selected node")],
+            after_new_nodes: vec![test_commit("dup1234rest", "selected node")],
+            after_edit_nodes: vec![test_commit("dup1234rest", "selected node")],
+            after_duplicate_nodes: vec![test_commit("dup1234rest", "selected node"), {
+                let mut duplicate = test_commit("dup-copy", "selected node");
+                duplicate.is_working_copy = false;
+                duplicate
+            }],
+        };
+        let mut app = test_log_app("dup1234rest", vec![]);
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('y'),
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::Duplicate {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                change_id: "dup1234rest".to_string(),
+            }]
+        );
+        assert_eq!(app.active_leader_mode, None);
+        assert_eq!(app.nodes.len(), 2);
+        assert_eq!(app.nodes[1].description_title, "selected node");
     }
 
     #[test]

@@ -7,9 +7,8 @@ const OP_LOG_TEMPLATE: &str =
 const OBSLOG_TEMPLATE: &str =
     "commit.change_id().short() ++ \"\x01\" ++ commit.commit_id().short() ++ \"\x01\" ++ operation.id().short() ++ \"\x01\" ++ operation.description().first_line() ++ \"\x01\" ++ operation.description() ++ \"\x01\" ++ operation.user() ++ \"\x01\" ++ operation.time().duration() ++ \"\x01\" ++ operation.tags() ++ \"\x01\" ++ commit.author().timestamp() ++ \"\x01\" ++ commit.author().email() ++ \"\x01\" ++ commit.hidden() ++ \"\x01\" ++ commit.description().first_line() ++ \"\x01\" ++ commit.description() ++ \"\x01\" ++ commit.empty() ++ \"\x01\" ++ commit.conflict() ++ \"\n\x01<JJ-OBS-SEP>\x01\n\"";
 
-fn run_jj(cwd: &Path, args: &[&str]) -> Result<String> {
-    let output = Command::new("jj")
-        .args(args)
+fn run_jj_command(cwd: &Path, command: &mut Command, debug_args: String) -> Result<String> {
+    let output = command
         .current_dir(cwd)
         .output()
         .map_err(|err| JuzuError::Backend(format!("failed to spawn jj cli fallback: {err}")))?;
@@ -17,8 +16,8 @@ fn run_jj(cwd: &Path, args: &[&str]) -> Result<String> {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
         let msg = if stderr.is_empty() {
             format!(
-                "jj cli fallback failed with status {} for args {:?}",
-                output.status, args
+                "jj cli fallback failed with status {} for args {}",
+                output.status, debug_args
             )
         } else {
             stderr
@@ -26,6 +25,18 @@ fn run_jj(cwd: &Path, args: &[&str]) -> Result<String> {
         return Err(JuzuError::Backend(msg));
     }
     Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+}
+
+fn run_jj(cwd: &Path, args: &[&str]) -> Result<String> {
+    let mut command = Command::new("jj");
+    command.args(args);
+    run_jj_command(cwd, &mut command, format!("{:?}", args))
+}
+
+fn run_jj_owned(cwd: &Path, args: &[String]) -> Result<String> {
+    let mut command = Command::new("jj");
+    command.args(args);
+    run_jj_command(cwd, &mut command, format!("{:?}", args))
 }
 
 fn parse_multiline_field(raw: &str) -> Vec<String> {
@@ -130,6 +141,24 @@ pub fn fetch_obslog(cwd: &Path, change_id: &str, limit: usize) -> Result<Vec<Obs
         ],
     )?;
     Ok(parse_obslog_text(&text, &wc_id))
+}
+
+pub fn new_change(cwd: &Path, parent_id: Option<&str>, parent_ids: &[String]) -> Result<()> {
+    let mut args = vec!["new".to_string()];
+    if !parent_ids.is_empty() {
+        args.extend(parent_ids.iter().cloned());
+    } else if let Some(parent_id) = parent_id {
+        args.push(parent_id.to_string());
+    }
+    run_jj_owned(cwd, &args).map(|_| ())
+}
+
+pub fn edit(cwd: &Path, change_id: &str) -> Result<()> {
+    run_jj(cwd, &["edit", change_id]).map(|_| ())
+}
+
+pub fn duplicate(cwd: &Path, change_id: &str) -> Result<()> {
+    run_jj(cwd, &["duplicate", change_id]).map(|_| ())
 }
 
 pub fn restore_operation(cwd: &Path, operation_id: &str) -> Result<()> {

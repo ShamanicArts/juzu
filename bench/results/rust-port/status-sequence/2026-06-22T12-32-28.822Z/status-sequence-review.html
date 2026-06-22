@@ -1,0 +1,759 @@
+<!doctype html><html><head><meta charset='utf-8'><title>JUZU status sequence proof</title>
+<style>body{margin:32px;background:#111318;color:#d8dee8;font-family:Inter,system-ui,sans-serif}a{color:#7f9fbf}section{background:#1a2029;border:1px solid #2a3442;border-radius:16px;padding:16px;margin:16px 0}pre{font:12px/1.25 'JetBrains Mono',monospace;overflow:auto;background:#0b1017;padding:12px;border-radius:12px}</style></head>
+<body><h1>JUZU Rust status sequence proof</h1><p>MP4: <a href='file:///home/shamanic/dev/juzu/bench/results/rust-port/status-sequence/2026-06-22T12-32-28.822Z/status-sequence-proof.mp4'>/home/shamanic/dev/juzu/bench/results/rust-port/status-sequence/2026-06-22T12-32-28.822Z/status-sequence-proof.mp4</a></p><section><h2>01 LOG idle · ^A Act ^O Ops ^V View ^B Book</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 3 files · 663 raw · 666 rows · 353 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 353
+  │                                                                                              STICKY ▸ top · Modified crates/juzu-jj/src/cli_fallback.rs
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Modified crates/juzu-jj/src/cli_fallback.rs             ╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/crates/juzu-jj/src/cli_fallback.rs b/cra...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · --- a/crates/juzu-jj/src/cli_fallback.rs
+  │                                                                                               · +++ b/crates/juzu-jj/src/cli_fallback.rs
+  o..... nwkkntop e5363bfc                                                                      ╭─ @@ -7,9 +7,8 @@                                         ╮
+  │      wire rust ops leader into oplog and obslog views                                          7   const OBSLOG_TEMPLATE: &amp;str =
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    8       &quot;commit.change_id().short() ++ \&quot;\x01\&quot; ++ com...
+  │                                                                                                9
+  o..... wvpztmmo 06cca147                                                                        10 - fn run_jj(cwd: &amp;Path, args: &amp;[&amp;str]) -&gt; Result&lt;Str...
+  │      make rust revset prompt refresh native log state                                         11 -     let output = Command::new(&quot;jj&quot;)
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   12 -         .args(args)
+  │                                                                                               10 + fn run_jj_command(cwd: &amp;Path, command: &amp;mut Comman...
+  o..... lykpumpq db88dfef                                                                        11 +     let output = command
+  │      clamp rust diff scroll overshoot at viewport bottom                                      12           .current_dir(cwd)
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 339 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>02 Ctrl+A enters Act leader</h2><pre> ACT   n New  e Edit  y Duplicate  Esc/q Exit
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 3 files · 663 raw · 666 rows · 353 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 353
+  │                                                                                              STICKY ▸ top · Modified crates/juzu-jj/src/cli_fallback.rs
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Modified crates/juzu-jj/src/cli_fallback.rs             ╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/crates/juzu-jj/src/cli_fallback.rs b/cra...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · --- a/crates/juzu-jj/src/cli_fallback.rs
+  │                                                                                               · +++ b/crates/juzu-jj/src/cli_fallback.rs
+  o..... nwkkntop e5363bfc                                                                      ╭─ @@ -7,9 +7,8 @@                                         ╮
+  │      wire rust ops leader into oplog and obslog views                                          7   const OBSLOG_TEMPLATE: &amp;str =
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    8       &quot;commit.change_id().short() ++ \&quot;\x01\&quot; ++ com...
+  │                                                                                                9
+  o..... wvpztmmo 06cca147                                                                        10 - fn run_jj(cwd: &amp;Path, args: &amp;[&amp;str]) -&gt; Result&lt;Str...
+  │      make rust revset prompt refresh native log state                                         11 -     let output = Command::new(&quot;jj&quot;)
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   12 -         .args(args)
+  │                                                                                               10 + fn run_jj_command(cwd: &amp;Path, command: &amp;mut Comman...
+  o..... lykpumpq db88dfef                                                                        11 +     let output = command
+  │      clamp rust diff scroll overshoot at viewport bottom                                      12           .current_dir(cwd)
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 339 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>03 q exits Act leader back to Log</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 3 files · 663 raw · 666 rows · 353 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 353
+  │                                                                                              STICKY ▸ top · Modified crates/juzu-jj/src/cli_fallback.rs
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Modified crates/juzu-jj/src/cli_fallback.rs             ╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/crates/juzu-jj/src/cli_fallback.rs b/cra...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · --- a/crates/juzu-jj/src/cli_fallback.rs
+  │                                                                                               · +++ b/crates/juzu-jj/src/cli_fallback.rs
+  o..... nwkkntop e5363bfc                                                                      ╭─ @@ -7,9 +7,8 @@                                         ╮
+  │      wire rust ops leader into oplog and obslog views                                          7   const OBSLOG_TEMPLATE: &amp;str =
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    8       &quot;commit.change_id().short() ++ \&quot;\x01\&quot; ++ com...
+  │                                                                                                9
+  o..... wvpztmmo 06cca147                                                                        10 - fn run_jj(cwd: &amp;Path, args: &amp;[&amp;str]) -&gt; Result&lt;Str...
+  │      make rust revset prompt refresh native log state                                         11 -     let output = Command::new(&quot;jj&quot;)
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   12 -         .args(args)
+  │                                                                                               10 + fn run_jj_command(cwd: &amp;Path, command: &amp;mut Comman...
+  o..... lykpumpq db88dfef                                                                        11 +     let output = command
+  │      clamp rust diff scroll overshoot at viewport bottom                                      12           .current_dir(cwd)
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 339 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>04 Ctrl+O enters Ops leader</h2><pre> OPS   u Undo  r Redo  f Fetch  p Push  o Oplog  v Obslog  g Log  Esc/q Exit
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 3 files · 663 raw · 666 rows · 353 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 353
+  │                                                                                              STICKY ▸ top · Modified crates/juzu-jj/src/cli_fallback.rs
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Modified crates/juzu-jj/src/cli_fallback.rs             ╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/crates/juzu-jj/src/cli_fallback.rs b/cra...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · --- a/crates/juzu-jj/src/cli_fallback.rs
+  │                                                                                               · +++ b/crates/juzu-jj/src/cli_fallback.rs
+  o..... nwkkntop e5363bfc                                                                      ╭─ @@ -7,9 +7,8 @@                                         ╮
+  │      wire rust ops leader into oplog and obslog views                                          7   const OBSLOG_TEMPLATE: &amp;str =
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    8       &quot;commit.change_id().short() ++ \&quot;\x01\&quot; ++ com...
+  │                                                                                                9
+  o..... wvpztmmo 06cca147                                                                        10 - fn run_jj(cwd: &amp;Path, args: &amp;[&amp;str]) -&gt; Result&lt;Str...
+  │      make rust revset prompt refresh native log state                                         11 -     let output = Command::new(&quot;jj&quot;)
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   12 -         .args(args)
+  │                                                                                               10 + fn run_jj_command(cwd: &amp;Path, command: &amp;mut Comman...
+  o..... lykpumpq db88dfef                                                                        11 +     let output = command
+  │      clamp rust diff scroll overshoot at viewport bottom                                      12           .current_dir(cwd)
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 339 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>05 o opens read-only OpLog view</h2><pre> OPLOG   r/Enter Restore  g Log  j/k Move  Esc Exit
+ JJ Operation Log                                                                               ┌ Details ─────────────────────────────────────────────────────┐
+  51948c81e1ee  &quot; ++ tags ++ &quot;  2026-06-22 13:32:33.929 +01:00  11 milliseconds                 │OP LOG                                                        │
+  &quot; ++ id.short(8) ++ &quot;                                                                         │                                                              │
+  args: jj op log --no-graph --limit 100 -T &#x27;id.short() ++ &quot;                                    │ID: 51948c81e1ee                                              │
+                                                                                                │Time: 2026-06-22 13:32:33.929 +01:00                          │
+                                                                                                │Duration: 11 milliseconds                                     │
+  06445b9173d3  &quot; ++ tags ++ &quot;  2026-06-22 13:29:39.421 +01:00  13 milliseconds                 │User: &quot; ++ tags ++ &quot;                                          │
+  &quot; ++ id.short(8) ++ &quot;                                                                         │Current: No                                                   │
+  args: jj op log --no-graph --limit 5 -T &#x27;id.short() ++ &quot;                                      │                                                              │
+                                                                                                │Description:                                                  │
+                                                                                                │&quot; ++ time ++ &quot;                                                │
+  c3229c654039  shamanic@wubulon  2026-06-18 00:02:43.500 +01:00  23 milliseconds               │                                                              │
+  new empty commit                                                                              │Command:                                                      │
+  args: jj new                                                                                  │args: jj op log --no-graph --limit 100 -T &#x27;id.short() ++ &quot;    │
+                                                                                                │                                                              │
+                                                                                                │r/Enter: restore selected op                                  │
+  e5aa53cf760d  shamanic@wubulon  2026-06-18 00:02:43.428 +01:00  29 milliseconds               │g: back to log                                                │
+  describe commit 109761024ffaaa2ec6b82db615195565d2a1b90e                                      │                                                              │
+  args: jj describe -m &#x27;wire rust ops leader into real undo and redo actions&#x27;                   │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+  8b637efa8ce9  shamanic@wubulon  2026-06-18 00:02:40.239 +01:00  20 milliseconds               │                                                              │
+  snapshot working copy                                                                         │                                                              │
+  args: jj status                                                                               │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+  3a1e96e142e1  &quot; ++ tags ++ &quot;  2026-06-17 23:59:23.685 +01:00  21 milliseconds                 │                                                              │
+  &quot; ++ id.short(8) ++ &quot;                                                                         │                                                              │
+  args: jj op log --no-graph --limit 100 -T &#x27;id.short() ++ &quot;                                    │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>06 g returns from OpLog to Log</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 3 files · 663 raw · 666 rows · 353 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 353
+  │                                                                                              STICKY ▸ top · Modified crates/juzu-jj/src/cli_fallback.rs
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Modified crates/juzu-jj/src/cli_fallback.rs             ╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/crates/juzu-jj/src/cli_fallback.rs b/cra...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · --- a/crates/juzu-jj/src/cli_fallback.rs
+  │                                                                                               · +++ b/crates/juzu-jj/src/cli_fallback.rs
+  o..... nwkkntop e5363bfc                                                                      ╭─ @@ -7,9 +7,8 @@                                         ╮
+  │      wire rust ops leader into oplog and obslog views                                          7   const OBSLOG_TEMPLATE: &amp;str =
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    8       &quot;commit.change_id().short() ++ \&quot;\x01\&quot; ++ com...
+  │                                                                                                9
+  o..... wvpztmmo 06cca147                                                                        10 - fn run_jj(cwd: &amp;Path, args: &amp;[&amp;str]) -&gt; Result&lt;Str...
+  │      make rust revset prompt refresh native log state                                         11 -     let output = Command::new(&quot;jj&quot;)
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   12 -         .args(args)
+  │                                                                                               10 + fn run_jj_command(cwd: &amp;Path, command: &amp;mut Comman...
+  o..... lykpumpq db88dfef                                                                        11 +     let output = command
+  │      clamp rust diff scroll overshoot at viewport bottom                                      12           .current_dir(cwd)
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 339 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>07 Ctrl+O re-enters Ops leader</h2><pre> OPS   u Undo  r Redo  f Fetch  p Push  o Oplog  v Obslog  g Log  Esc/q Exit
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 3 files · 663 raw · 666 rows · 353 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 353
+  │                                                                                              STICKY ▸ top · Modified crates/juzu-jj/src/cli_fallback.rs
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Modified crates/juzu-jj/src/cli_fallback.rs             ╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/crates/juzu-jj/src/cli_fallback.rs b/cra...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · --- a/crates/juzu-jj/src/cli_fallback.rs
+  │                                                                                               · +++ b/crates/juzu-jj/src/cli_fallback.rs
+  o..... nwkkntop e5363bfc                                                                      ╭─ @@ -7,9 +7,8 @@                                         ╮
+  │      wire rust ops leader into oplog and obslog views                                          7   const OBSLOG_TEMPLATE: &amp;str =
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    8       &quot;commit.change_id().short() ++ \&quot;\x01\&quot; ++ com...
+  │                                                                                                9
+  o..... wvpztmmo 06cca147                                                                        10 - fn run_jj(cwd: &amp;Path, args: &amp;[&amp;str]) -&gt; Result&lt;Str...
+  │      make rust revset prompt refresh native log state                                         11 -     let output = Command::new(&quot;jj&quot;)
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   12 -         .args(args)
+  │                                                                                               10 + fn run_jj_command(cwd: &amp;Path, command: &amp;mut Comman...
+  o..... lykpumpq db88dfef                                                                        11 +     let output = command
+  │      clamp rust diff scroll overshoot at viewport bottom                                      12           .current_dir(cwd)
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 339 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>08 v opens read-only Obslog view</h2><pre> OPS   u Undo  r Redo  f Fetch  p Push  o Oplog  v Obslog  g Log  Esc/q Exit
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 3 files · 663 raw · 666 rows · 353 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 353
+  │                                                                                              STICKY ▸ top · Modified crates/juzu-jj/src/cli_fallback.rs
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Modified crates/juzu-jj/src/cli_fallback.rs             ╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/crates/juzu-jj/src/cli_fallback.rs b/cra...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · --- a/crates/juzu-jj/src/cli_fallback.rs
+  │                                                                                               · +++ b/crates/juzu-jj/src/cli_fallback.rs
+  o..... nwkkntop e5363bfc                                                                      ╭─ @@ -7,9 +7,8 @@                                         ╮
+  │      wire rust ops leader into oplog and obslog views                                          7   const OBSLOG_TEMPLATE: &amp;str =
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    8       &quot;commit.change_id().short() ++ \&quot;\x01\&quot; ++ com...
+  │                                                                                                9
+  o..... wvpztmmo 06cca147                                                                        10 - fn run_jj(cwd: &amp;Path, args: &amp;[&amp;str]) -&gt; Result&lt;Str...
+  │      make rust revset prompt refresh native log state                                         11 -     let output = Command::new(&quot;jj&quot;)
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   12 -         .args(args)
+  │                                                                                               10 + fn run_jj_command(cwd: &amp;Path, command: &amp;mut Comman...
+  o..... lykpumpq db88dfef                                                                        11 +     let output = command
+  │      clamp rust diff scroll overshoot at viewport bottom                                      12           .current_dir(cwd)
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 339 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>09 g returns from Obslog to Log</h2><pre> OPS   u Undo  r Redo  f Fetch  p Push  o Oplog  v Obslog  g Log  Esc/q Exit
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 3 files · 663 raw · 666 rows · 353 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 353
+  │                                                                                              STICKY ▸ top · Modified crates/juzu-jj/src/cli_fallback.rs
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Modified crates/juzu-jj/src/cli_fallback.rs             ╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/crates/juzu-jj/src/cli_fallback.rs b/cra...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · --- a/crates/juzu-jj/src/cli_fallback.rs
+  │                                                                                               · +++ b/crates/juzu-jj/src/cli_fallback.rs
+  o..... nwkkntop e5363bfc                                                                      ╭─ @@ -7,9 +7,8 @@                                         ╮
+  │      wire rust ops leader into oplog and obslog views                                          7   const OBSLOG_TEMPLATE: &amp;str =
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    8       &quot;commit.change_id().short() ++ \&quot;\x01\&quot; ++ com...
+  │                                                                                                9
+  o..... wvpztmmo 06cca147                                                                        10 - fn run_jj(cwd: &amp;Path, args: &amp;[&amp;str]) -&gt; Result&lt;Str...
+  │      make rust revset prompt refresh native log state                                         11 -     let output = Command::new(&quot;jj&quot;)
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   12 -         .args(args)
+  │                                                                                               10 + fn run_jj_command(cwd: &amp;Path, command: &amp;mut Comman...
+  o..... lykpumpq db88dfef                                                                        11 +     let output = command
+  │      clamp rust diff scroll overshoot at viewport bottom                                      12           .current_dir(cwd)
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 339 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>10 Ctrl+V enters View leader</h2><pre> VIEW   1 Layout chronological  2 Layout mainline  3 Layout bookmark  4 Layout wc  5 Layout topological
+c Toggle sidebar  t Theme picker  f Toggle files  x Toggle description  h Toggle help  / Revset filter  ^d Diff view
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 3 files · 663 raw · 666 rows · 353 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 353
+  │                                                                                              STICKY ▸ top · Modified crates/juzu-jj/src/cli_fallback.rs
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Modified crates/juzu-jj/src/cli_fallback.rs             ╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/crates/juzu-jj/src/cli_fallback.rs b/cra...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · --- a/crates/juzu-jj/src/cli_fallback.rs
+  │                                                                                               · +++ b/crates/juzu-jj/src/cli_fallback.rs
+  o..... nwkkntop e5363bfc                                                                      ╭─ @@ -7,9 +7,8 @@                                         ╮
+  │      wire rust ops leader into oplog and obslog views                                          7   const OBSLOG_TEMPLATE: &amp;str =
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    8       &quot;commit.change_id().short() ++ \&quot;\x01\&quot; ++ com...
+  │                                                                                                9
+  o..... wvpztmmo 06cca147                                                                        10 - fn run_jj(cwd: &amp;Path, args: &amp;[&amp;str]) -&gt; Result&lt;Str...
+  │      make rust revset prompt refresh native log state                                         11 -     let output = Command::new(&quot;jj&quot;)
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   12 -         .args(args)
+  │                                                                                               10 + fn run_jj_command(cwd: &amp;Path, command: &amp;mut Comman...
+                                                                                                  11 +     let output = command
+  │                                                                                               12           .current_dir(cwd)
+  │                                                                                             ───────────────── ⋯ 339 more rows below ──────────────────
+  │
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>11 b toggles optional boxed chrome, then returns to Log</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+┌──────────────────────────────────────────────────────────────────────────────────────────────┐┌──────────────────────────────────────────────────────────────┐
+│                                                                                              ││Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)                  │
+│  @...@&gt; nnpywurl add1f9e8                                                                    ││Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae              │
+│  │      (no description)                                                                     ││Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;                  │
+│  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-... ││Time: 2026-06-22T13:29:39+01:00                               │
+│  │                                                                                           ││                                                              │
+│  o..... lulszxum 872cd534                                                                    ││Description (x expand):                                       │
+│  │      wire rust ops leader into real undo and redo actions                                 ││                                                              │
+│  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  … ││                                                              │
+│  │                                                                                           ││Files (f collapse):                                           │
+│  o..... nyuqpnql 53aeb0da                                                                    ││M crates/juzu-jj/src/cli_fallback.rs                          │
+│  │      wire rust bookmarks leader into real set and delete actions                          ││M crates/juzu-jj/src/lib.rs                                   │
+│  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark... ││M crates/juzu-tui/src/main.rs                                 │
+│  │                                                                                           ││                                                              │
+│  o..... ovxoxqrl 05dfff36                                                                    ││Diff                                                          │
+│  │      restore rust oplog actions through fallback mutation plumbing                        ││  · 3 files · 663 raw · 666 rows · 353 shown                  │
+│  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-t... ││  · diff rows 1-14 of 353                                     │
+│  │                                                                                           ││ STICKY ▸ top · Modified crates/juzu-jj/src/cli_fallback.rs   │
+│  o..... pslutzup 13b1d287                                                                    ││╭ ◆ Modified crates/juzu-jj/src/cli_fallback.rs             ╮ │
+│  │      enrich rust ops views with old juzu detail parity                                    ││  · diff --git a/crates/juzu-jj/src/cli_fallback.rs b/cra...  │
+│  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  … ││  · --- a/crates/juzu-jj/src/cli_fallback.rs                  │
+│  │                                                                                           ││  · +++ b/crates/juzu-jj/src/cli_fallback.rs                  │
+│  o..... nwkkntop e5363bfc                                                                    ││╭─ @@ -7,9 +7,8 @@                                         ╮  │
+│  │      wire rust ops leader into oplog and obslog views                                     ││   7   const OBSLOG_TEMPLATE: &amp;str =                          │
+│  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  … ││   8       &quot;commit.change_id().short() ++ \&quot;\x01\&quot; ++ com...  │
+│  │                                                                                           ││   9                                                          │
+│  o..... wvpztmmo 06cca147                                                                    ││  10 - fn run_jj(cwd: &amp;Path, args: &amp;[&amp;str]) -&gt; Result&lt;Str...  │
+│  │      make rust revset prompt refresh native log state                                     ││  11 -     let output = Command::new(&quot;jj&quot;)                    │
+│  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-t... ││  12 -         .args(args)                                    │
+│  │                                                                                           ││  10 + fn run_jj_command(cwd: &amp;Path, command: &amp;mut Comman...  │
+│                                                                                              ││  11 +     let output = command                               │
+│  │                                                                                           ││  12           .current_dir(cwd)                              │
+│  │                                                                                           ││───────────────── ⋯ 339 more rows below ──────────────────    │
+└──────────────────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>12 Ctrl+V enters View leader from boxed chrome</h2><pre> VIEW   1 Layout chronological  2 Layout mainline  3 Layout bookmark  4 Layout wc  5 Layout topological
+c Toggle sidebar  t Theme picker  f Toggle files  x Toggle description  h Toggle help  / Revset filter  ^d Diff view
+┌──────────────────────────────────────────────────────────────────────────────────────────────┐┌──────────────────────────────────────────────────────────────┐
+│                                                                                              ││Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)                  │
+│  @...@&gt; nnpywurl add1f9e8                                                                    ││Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae              │
+│  │      (no description)                                                                     ││Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;                  │
+│  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-... ││Time: 2026-06-22T13:29:39+01:00                               │
+│  │                                                                                           ││                                                              │
+│  o..... lulszxum 872cd534                                                                    ││Description (x expand):                                       │
+│  │      wire rust ops leader into real undo and redo actions                                 ││                                                              │
+│  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  … ││                                                              │
+│  │                                                                                           ││Files (f collapse):                                           │
+│  o..... nyuqpnql 53aeb0da                                                                    ││M crates/juzu-jj/src/cli_fallback.rs                          │
+│  │      wire rust bookmarks leader into real set and delete actions                          ││M crates/juzu-jj/src/lib.rs                                   │
+│  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark... ││M crates/juzu-tui/src/main.rs                                 │
+│  │                                                                                           ││                                                              │
+│  o..... ovxoxqrl 05dfff36                                                                    ││Diff                                                          │
+│  │      restore rust oplog actions through fallback mutation plumbing                        ││  · 3 files · 663 raw · 666 rows · 353 shown                  │
+│  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-t... ││  · diff rows 1-14 of 353                                     │
+│  │                                                                                           ││ STICKY ▸ top · Modified crates/juzu-jj/src/cli_fallback.rs   │
+│  o..... pslutzup 13b1d287                                                                    ││╭ ◆ Modified crates/juzu-jj/src/cli_fallback.rs             ╮ │
+│  │      enrich rust ops views with old juzu detail parity                                    ││  · diff --git a/crates/juzu-jj/src/cli_fallback.rs b/cra...  │
+│  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  … ││  · --- a/crates/juzu-jj/src/cli_fallback.rs                  │
+│  │                                                                                           ││  · +++ b/crates/juzu-jj/src/cli_fallback.rs                  │
+│  o..... nwkkntop e5363bfc                                                                    ││╭─ @@ -7,9 +7,8 @@                                         ╮  │
+│  │      wire rust ops leader into oplog and obslog views                                     ││   7   const OBSLOG_TEMPLATE: &amp;str =                          │
+│  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  … ││   8       &quot;commit.change_id().short() ++ \&quot;\x01\&quot; ++ com...  │
+│  │                                                                                           ││   9                                                          │
+│  o..... wvpztmmo 06cca147                                                                    ││  10 - fn run_jj(cwd: &amp;Path, args: &amp;[&amp;str]) -&gt; Result&lt;Str...  │
+│  │      make rust revset prompt refresh native log state                                     ││  11 -     let output = Command::new(&quot;jj&quot;)                    │
+│  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-t... ││  12 -         .args(args)                                    │
+│  │                                                                                           ││  10 + fn run_jj_command(cwd: &amp;Path, command: &amp;mut Comman...  │
+│                                                                                              ││  11 +     let output = command                               │
+│  │                                                                                           ││  12           .current_dir(cwd)                              │
+└──────────────────────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>13 b toggles back to Bun-smooth chrome</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 3 files · 663 raw · 666 rows · 353 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 353
+  │                                                                                              STICKY ▸ top · Modified crates/juzu-jj/src/cli_fallback.rs
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Modified crates/juzu-jj/src/cli_fallback.rs             ╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/crates/juzu-jj/src/cli_fallback.rs b/cra...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · --- a/crates/juzu-jj/src/cli_fallback.rs
+  │                                                                                               · +++ b/crates/juzu-jj/src/cli_fallback.rs
+  o..... nwkkntop e5363bfc                                                                      ╭─ @@ -7,9 +7,8 @@                                         ╮
+  │      wire rust ops leader into oplog and obslog views                                          7   const OBSLOG_TEMPLATE: &amp;str =
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………    8       &quot;commit.change_id().short() ++ \&quot;\x01\&quot; ++ com...
+  │                                                                                                9
+  o..... wvpztmmo 06cca147                                                                        10 - fn run_jj(cwd: &amp;Path, args: &amp;[&amp;str]) -&gt; Result&lt;Str...
+  │      make rust revset prompt refresh native log state                                         11 -     let output = Command::new(&quot;jj&quot;)
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   12 -         .args(args)
+  │                                                                                               10 + fn run_jj_command(cwd: &amp;Path, command: &amp;mut Comman...
+  o..... lykpumpq db88dfef                                                                        11 +     let output = command
+  │      clamp rust diff scroll overshoot at viewport bottom                                      12           .current_dir(cwd)
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 339 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>14 Ctrl+D enters clean Bun-style diff pane</h2><pre> DIFF   ^d Log   [] File   j/k Move   escape Exit
+ File 1/20: Added bench/results/rust-port/action-leader/202...   [ / ] next/prev   Ctrl+d back  Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  1 + {                                                                                         Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  2 +   &quot;new&quot;: {                                                                                Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  3 +     &quot;beforeCount&quot;: 3,                                                                     Time: 2026-06-22T13:29:39+01:00
+  4 +     &quot;afterCount&quot;: 4,
+  5 +     &quot;parentBefore&quot;: &quot;wpmmrumsxzkq&quot;,                                                       Description (x expand):
+  6 +     &quot;parentAfter&quot;: &quot;wpmmrumsxzkq&quot;,
+  7 +     &quot;captures&quot;: [
+  8 +       [                                                                                   Files (f collapse):
+  9 +         &quot;01 log before Ctrl+A new&quot;,                                                       ▶ M crates/juzu-jj/src/cli_fallback.rs
+ 10 +         &quot; LOG   ^A Act  ^O Ops  ^V View  ^B Book\n                                        M crates/juzu-jj/src/lib.rs
+                                                                Change: wpmmrumsxzkqpyqplqyywt  M crates/juzu-tui/src/main.rs
+      kyqksnkrpx (@)\n  @...@&gt; wpmmrums 3727f661
+                              Commit: 3727f66121dfa37a4fdd49153820b3d5f65fa9af\n  \u2502
+      second desc                                                                            A
+      uthor: shamanic &lt;shamanicbeatbox@gmail.com&gt;\n  \u2502      M note.txt
+                                                                Time: 2026-06-22T13:32:19+01:0
+      0\n  \u2502\n  o..... wqstvzsy df32336b
+                           Description (x expand):\n  \u2502      first desc
+                                                                 second desc\n  \u2502      A
+      note.txt\n  \u2502
+                             Files (f collapse):\n  o..... zzzzzzzz 00000000
+                                                          M note.txt\n         (no description
+      )\n         no file changes
+                 Diff\n
+                                 \u00b7 1 files \u00b7 6 raw \u00b7 7 rows \u00b7 7 shown\n
+
+             \u00b7 diff rows 1-7 of 7\n
+                                                 STICKY \u25b8 top \u00b7 Modified note.txt\n
+
+             \u256d \u25c6 Modified note.txt                                       \u256e\n
+
+             \u00b7 diff --git a/note.txt b/note.txt\n
+                                                                \u00b7 --- a/note.txt\n
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>15 q exits clean diff pane</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 20 files · 3711 raw · 3731 rows · 424 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 424
+  │                                                                                              STICKY ▸ top · Added bench/results/rust-port/action-lea...
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Added bench/results/rust-port/action-leader/2026-06-2...╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/bench/results/rust-port/action-leader/20...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · new file mode 100644
+  │                                                                                               · --- /dev/null
+  o..... nwkkntop e5363bfc                                                                        · +++ b/bench/results/rust-port/action-leader/2026-06-2...
+  │      wire rust ops leader into oplog and obslog views                                       ╭─ @@ -0,0 +1,65 @@                                        ╮
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………   1 + {
+  │                                                                                               2 +   &quot;new&quot;: {
+  o..... wvpztmmo 06cca147                                                                        3 +     &quot;beforeCount&quot;: 3,
+  │      make rust revset prompt refresh native log state                                         4 +     &quot;afterCount&quot;: 4,
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   5 +     &quot;parentBefore&quot;: &quot;wpmmrumsxzkq&quot;,
+  │                                                                                               6 +     &quot;parentAfter&quot;: &quot;wpmmrumsxzkq&quot;,
+  o..... lykpumpq db88dfef                                                                        7 +     &quot;captures&quot;: [
+  │      clamp rust diff scroll overshoot at viewport bottom                                      8 +       [
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 410 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>16 Ctrl+V s enables opt-in diff scaffold</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 20 files · 3711 raw · 3731 rows · 424 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 424
+  │                                                                                              STICKY ▸ top · Added bench/results/rust-port/action-lea...
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Added bench/results/rust-port/action-leader/2026-06-2...╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/bench/results/rust-port/action-leader/20...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · new file mode 100644
+  │                                                                                               · --- /dev/null
+  o..... nwkkntop e5363bfc                                                                        · +++ b/bench/results/rust-port/action-leader/2026-06-2...
+  │      wire rust ops leader into oplog and obslog views                                       ╭─ @@ -0,0 +1,65 @@                                        ╮
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………   1 + {
+  │                                                                                               2 +   &quot;new&quot;: {
+  o..... wvpztmmo 06cca147                                                                        3 +     &quot;beforeCount&quot;: 3,
+  │      make rust revset prompt refresh native log state                                         4 +     &quot;afterCount&quot;: 4,
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   5 +     &quot;parentBefore&quot;: &quot;wpmmrumsxzkq&quot;,
+  │                                                                                               6 +     &quot;parentAfter&quot;: &quot;wpmmrumsxzkq&quot;,
+  o..... lykpumpq db88dfef                                                                        7 +     &quot;captures&quot;: [
+  │      clamp rust diff scroll overshoot at viewport bottom                                      8 +       [
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 410 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>17 Ctrl+D shows scaffold/debug diff pane</h2><pre> DIFF   ^d Log   [] File   j/k Move   escape Exit
+ File 1/20: Added bench/results/rust-port/action-leader/202...   [ / ] next/prev   Ctrl+d back  Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+╭ ◆ Added bench/results/rust-port/action-leader/2026-06-22T12-32-19.319+00-00/action-leader...  Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  · diff --git a/bench/results/rust-port/action-leader/2026-06-22T12-32-19.319+00-00/action...  Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  · new file mode 100644                                                                        Time: 2026-06-22T13:29:39+01:00
+  · --- /dev/null
+  · +++ b/bench/results/rust-port/action-leader/2026-06-22T12-32-19.319+00-00/action-leader...  Description (x expand):
+╭─ @@ -0,0 +1,65 @@                                                                          ╮
+  1 + {
+  2 +   &quot;new&quot;: {                                                                                Files (f collapse):
+  3 +     &quot;beforeCount&quot;: 3,                                                                     ▶ M crates/juzu-jj/src/cli_fallback.rs
+  4 +     &quot;afterCount&quot;: 4,                                                                      M crates/juzu-jj/src/lib.rs
+  5 +     &quot;parentBefore&quot;: &quot;wpmmrumsxzkq&quot;,                                                       M crates/juzu-tui/src/main.rs
+  6 +     &quot;parentAfter&quot;: &quot;wpmmrumsxzkq&quot;,
+  7 +     &quot;captures&quot;: [
+  8 +       [
+  9 +         &quot;01 log before Ctrl+A new&quot;,
+ 10 +         &quot; LOG   ^A Act  ^O Ops  ^V View  ^B Book\n
+                                                                Change: wpmmrumsxzkqpyqplqyywt
+      kyqksnkrpx (@)\n  @...@&gt; wpmmrums 3727f661
+                              Commit: 3727f66121dfa37a4fdd49153820b3d5f65fa9af\n  \u2502
+      second desc                                                                            A
+      uthor: shamanic &lt;shamanicbeatbox@gmail.com&gt;\n  \u2502      M note.txt
+                                                                Time: 2026-06-22T13:32:19+01:0
+      0\n  \u2502\n  o..... wqstvzsy df32336b
+                           Description (x expand):\n  \u2502      first desc
+                                                                 second desc\n  \u2502      A
+      note.txt\n  \u2502
+                             Files (f collapse):\n  o..... zzzzzzzz 00000000
+                                                          M note.txt\n         (no description
+      )\n         no file changes
+                 Diff\n
+                                 \u00b7 1 files \u00b7 6 raw \u00b7 7 rows \u00b7 7 shown\n
+
+             \u00b7 diff rows 1-7 of 7\n
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>18 q exits scaffold diff pane</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 20 files · 3711 raw · 3731 rows · 424 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 424
+  │                                                                                              STICKY ▸ top · Added bench/results/rust-port/action-lea...
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Added bench/results/rust-port/action-leader/2026-06-2...╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/bench/results/rust-port/action-leader/20...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · new file mode 100644
+  │                                                                                               · --- /dev/null
+  o..... nwkkntop e5363bfc                                                                        · +++ b/bench/results/rust-port/action-leader/2026-06-2...
+  │      wire rust ops leader into oplog and obslog views                                       ╭─ @@ -0,0 +1,65 @@                                        ╮
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………   1 + {
+  │                                                                                               2 +   &quot;new&quot;: {
+  o..... wvpztmmo 06cca147                                                                        3 +     &quot;beforeCount&quot;: 3,
+  │      make rust revset prompt refresh native log state                                         4 +     &quot;afterCount&quot;: 4,
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   5 +     &quot;parentBefore&quot;: &quot;wpmmrumsxzkq&quot;,
+  │                                                                                               6 +     &quot;parentAfter&quot;: &quot;wpmmrumsxzkq&quot;,
+  o..... lykpumpq db88dfef                                                                        7 +     &quot;captures&quot;: [
+  │      clamp rust diff scroll overshoot at viewport bottom                                      8 +       [
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 410 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>19 Ctrl+V s disables diff scaffold</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 20 files · 3711 raw · 3731 rows · 424 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 424
+  │                                                                                              STICKY ▸ top · Added bench/results/rust-port/action-lea...
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Added bench/results/rust-port/action-leader/2026-06-2...╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/bench/results/rust-port/action-leader/20...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · new file mode 100644
+  │                                                                                               · --- /dev/null
+  o..... nwkkntop e5363bfc                                                                        · +++ b/bench/results/rust-port/action-leader/2026-06-2...
+  │      wire rust ops leader into oplog and obslog views                                       ╭─ @@ -0,0 +1,65 @@                                        ╮
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………   1 + {
+  │                                                                                               2 +   &quot;new&quot;: {
+  o..... wvpztmmo 06cca147                                                                        3 +     &quot;beforeCount&quot;: 3,
+  │      make rust revset prompt refresh native log state                                         4 +     &quot;afterCount&quot;: 4,
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   5 +     &quot;parentBefore&quot;: &quot;wpmmrumsxzkq&quot;,
+  │                                                                                               6 +     &quot;parentAfter&quot;: &quot;wpmmrumsxzkq&quot;,
+  o..... lykpumpq db88dfef                                                                        7 +     &quot;captures&quot;: [
+  │      clamp rust diff scroll overshoot at viewport bottom                                      8 +       [
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 410 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>20 Ctrl+B enters Bookmarks leader</h2><pre> BOOK   s Bookmark set  d Bookmark delete  Esc/q Exit
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 20 files · 3711 raw · 3731 rows · 424 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 424
+  │                                                                                              STICKY ▸ top · Added bench/results/rust-port/action-lea...
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Added bench/results/rust-port/action-leader/2026-06-2...╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/bench/results/rust-port/action-leader/20...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · new file mode 100644
+  │                                                                                               · --- /dev/null
+  o..... nwkkntop e5363bfc                                                                        · +++ b/bench/results/rust-port/action-leader/2026-06-2...
+  │      wire rust ops leader into oplog and obslog views                                       ╭─ @@ -0,0 +1,65 @@                                        ╮
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………   1 + {
+  │                                                                                               2 +   &quot;new&quot;: {
+  o..... wvpztmmo 06cca147                                                                        3 +     &quot;beforeCount&quot;: 3,
+  │      make rust revset prompt refresh native log state                                         4 +     &quot;afterCount&quot;: 4,
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   5 +     &quot;parentBefore&quot;: &quot;wpmmrumsxzkq&quot;,
+  │                                                                                               6 +     &quot;parentAfter&quot;: &quot;wpmmrumsxzkq&quot;,
+  o..... lykpumpq db88dfef                                                                        7 +     &quot;captures&quot;: [
+  │      clamp rust diff scroll overshoot at viewport bottom                                      8 +       [
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 410 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section><section><h2>21 q exits Bookmarks leader back to Log</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl add1f9e8                                                                      Commit: add1f9e8948d4488723b2f8b9bc4e9675f2ac6ae
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-jj/src/cli_fallback.rs  M crates/juzu-jj/src/lib.rs  M crates/juzu-tu... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                      Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  ………
+  │                                                                                             Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                      M crates/juzu-jj/src/cli_fallback.rs
+  │      wire rust bookmarks leader into real set and delete actions                            M crates/juzu-jj/src/lib.rs
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-a... M crates/juzu-tui/src/main.rs
+  │
+  o..... ovxoxqrl 05dfff36                                                                      Diff
+  │      restore rust oplog actions through fallback mutation plumbing                            · 20 files · 3711 raw · 3731 rows · 424 shown
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmu...   · diff rows 1-14 of 424
+  │                                                                                              STICKY ▸ top · Added bench/results/rust-port/action-lea...
+  o..... pslutzup 13b1d287                                                                      ╭ ◆ Added bench/results/rust-port/action-leader/2026-06-2...╮
+  │      enrich rust ops views with old juzu detail parity                                        · diff --git a/bench/results/rust-port/action-leader/20...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  ………   · new file mode 100644
+  │                                                                                               · --- /dev/null
+  o..... nwkkntop e5363bfc                                                                        · +++ b/bench/results/rust-port/action-leader/2026-06-2...
+  │      wire rust ops leader into oplog and obslog views                                       ╭─ @@ -0,0 +1,65 @@                                        ╮
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  ………   1 + {
+  │                                                                                               2 +   &quot;new&quot;: {
+  o..... wvpztmmo 06cca147                                                                        3 +     &quot;beforeCount&quot;: 3,
+  │      make rust revset prompt refresh native log state                                         4 +     &quot;afterCount&quot;: 4,
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmu...   5 +     &quot;parentBefore&quot;: &quot;wpmmrumsxzkq&quot;,
+  │                                                                                               6 +     &quot;parentAfter&quot;: &quot;wpmmrumsxzkq&quot;,
+  o..... lykpumpq db88dfef                                                                        7 +     &quot;captures&quot;: [
+  │      clamp rust diff scroll overshoot at viewport bottom                                      8 +       [
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-s... ───────────────── ⋯ 410 more rows below ──────────────────
+  │
+
+ ~/dev/juzu  @nnpywurl                                                                                                                        mainline 40 nodes
+</pre></section></body></html>

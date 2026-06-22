@@ -1,0 +1,88 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust live tmux proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --ok:#74b88c; --bad:#ce6f7c; --info:#7f9fbf; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .status.pass { color:var(--ok); } .status.fail { color:var(--bad); }
+.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; } code { color:var(--info); }
+</style></head><body>
+<h1>JUZU Rust live tmux proof · <span class='status pass'>PASS</span></h1>
+<div class='meta'>Target: <code>juzu:rust-tui</code> · pane command: <code>./target/release/juzu-tui</code> · required command: <code>juzu-tui</code> · expected: <code>LOG, Change:</code> · missing: <code>none</code></div>
+<section class='card'><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                 Change: nnpywurllwvwzrmlqtnwnqsxmxokqsuo (@)
+  @...@&gt; nnpywurl f144cf5c                                                                       Commit: f144cf5ccd2e916bea26fed602f5bbf91d2a55f2
+  │      (no description)                                                                        Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      A bench/results/rust-port/action-leader/2026-06-22T12-32-19.319+00-00/action-leader-... Time: 2026-06-22T13:29:39+01:00
+  │
+  o..... lulszxum 872cd534                                                                       Description (x expand):
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  A...
+  │                                                                                              Files (f collapse):
+  o..... nyuqpnql 53aeb0da                                                                       A bench/results/rust-port/action-leader/2026-06-22T12-32-19.319+…
+  │      wire rust bookmarks leader into real set and delete actions                             A bench/results/rust-port/action-leader/2026-06-22T12-32-19.319+…
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-ac... A bench/results/rust-port/action-leader/2026-06-22T12-32-19.319+…
+  │                                                                                              A bench/results/rust-port/action-leader/2026-06-22T12-32-19.319+…
+  o..... ovxoxqrl 05dfff36                                                                       … 16 more
+  │      restore rust oplog actions through fallback mutation plumbing
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmux... Diff
+  │                                                                                                · 20 files · 3711 raw · 3731 rows · 424 shown
+  o..... pslutzup 13b1d287                                                                         · diff rows 1-14 of 424
+  │      enrich rust ops views with old juzu detail parity                                        STICKY ▸ top · Added bench/results/rust-port/action-lead...
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  A... ╭ ◆ Added bench/results/rust-port/action-leader/2026-06-22...╮
+  │                                                                                                · diff --git a/bench/results/rust-port/action-leader/202...
+  o..... nwkkntop e5363bfc                                                                         · new file mode 100644
+  │      wire rust ops leader into oplog and obslog views                                          · --- /dev/null
+  │      A bench/results/rust-port/live-tmux/2026-06-16T21-34-38.682Z/live-tmux-proof.html  A...   · +++ b/bench/results/rust-port/action-leader/2026-06-22...
+  │                                                                                              ╭─ @@ -0,0 +1,65 @@                                         ╮
+  o..... wvpztmmo 06cca147                                                                         1 + {
+  │      make rust revset prompt refresh native log state                                          2 +   &quot;new&quot;: {
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-16T20-38-27.094Z/live-tmux...   3 +     &quot;beforeCount&quot;: 3,
+  │                                                                                                4 +     &quot;afterCount&quot;: 4,
+  o..... lykpumpq db88dfef                                                                         5 +     &quot;parentBefore&quot;: &quot;wpmmrumsxzkq&quot;,
+  │      clamp rust diff scroll overshoot at viewport bottom                                       6 +     &quot;parentAfter&quot;: &quot;wpmmrumsxzkq&quot;,
+  │      A bench/results/rust-port/diff-scroll-sequence/2026-06-16T19-18-22.018+00-00/diff-sc...   7 +     &quot;captures&quot;: [
+  │                                                                                                8 +       [
+  o..... wlxtkslu dbba0fca                                                                       ────────────────── ⋯ 410 more rows below ──────────────────
+  │      match bun diff status chrome labels
+  │      A bench/results/rust-port/live-tmux/2026-06-16T19-10-07.422Z/live-tmux-proof.html  A...
+  │
+  o..... vqvtmvty 86ce65ed
+  │      hide rust diff sidebar preview in bun full diff mode
+  │      A bench/results/rust-port/live-tmux/2026-06-16T19-03-21.078Z/live-tmux-proof.html  A...
+  │
+  o..... rkuxkvuu d00ad8e1
+  │      make diff render review mirror clean pane
+  │      A bench/results/rust-port/diff-render/2026-06-16T17-18-52.829Z/diff-render-review.html…
+  │
+  o..... kqppukyp da710ed6
+  │      share sidebar diff gutter width across preview rows
+  │      A bench/results/rust-port/diff-render/2026-06-16T17-15-16.056Z/diff-render-review.html…
+  │
+  o..... omtyzonx 5d664f61
+  │      share bun diff gutter width across rows
+  │      A bench/results/rust-port/diff-render/2026-06-15T20-56-48.944Z/diff-render-review.html…
+  │
+  o..... ovlymutn 112f4ed4
+  │      preserve no newline markers in clean diff pane
+  │      A bench/results/rust-port/diff-render/2026-06-15T20-52-02.874Z/diff-render-review.html…
+  │
+  o..... ntpwtnzp 360a3f0e
+  │      align full diff wrapping with large gutters
+  │      A bench/results/rust-port/diff-render/2026-06-15T20-47-11.095Z/diff-render-review.html…
+  │
+  o..... uqvwwrvy 7fd5722f
+  │      gate full diff scaffold behind opt-in toggle
+  │      A bench/results/rust-port/live-tmux/2026-06-15T20-32-42.370Z/live-tmux-proof.html  A...
+  │
+  o..... ylvrnzyz 5d4e5c14
+  │      wrap full diff rows like bun diffview
+  │      A bench/results/rust-port/diff-render/2026-06-15T19-56-17.534Z/diff-render-review.html…
+  │
+
+  │
+  │
+  │
+ ~/dev/juzu  @nnpywurl                                                                                                                          mainline 80 nodes
+</pre></section>
+</body></html>
