@@ -501,6 +501,17 @@ impl JjBackend for NativeJjBackend {
                     message: format!("editing change {change_id}"),
                 })
             }
+            Mutation::Describe {
+                cwd,
+                change_id,
+                description,
+            } => {
+                cli_fallback::describe(&cwd, &change_id, &description)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: format!("described change {change_id}"),
+                })
+            }
             Mutation::Duplicate { cwd, change_id } => {
                 cli_fallback::duplicate(&cwd, &change_id)?;
                 Ok(MutationResult {
@@ -919,6 +930,41 @@ mod tests {
         let mut parts = after.trim().split('\x01');
         assert_eq!(parts.next(), Some(target_change_id.as_str()));
         assert_eq!(parts.next(), Some("first desc"));
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_describe_mutation_updates_selected_change_description() {
+        let repo = create_action_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let target_change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::Describe {
+            cwd: repo.clone(),
+            change_id: target_change_id.clone(),
+            description: "renamed from rust test".to_string(),
+        }))
+        .expect("describe mutation should succeed");
+        assert!(result.changed, "describe mutation should report a change");
+
+        let after = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                &target_change_id,
+                "-T",
+                "description.first_line()",
+            ],
+        );
+        assert_eq!(after.trim(), "renamed from rust test");
 
         let _ = fs::remove_dir_all(&repo);
     }

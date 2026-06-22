@@ -202,6 +202,36 @@ def run_sequence_edit(repo: Path, width: int, height: int, session_suffix: str) 
     }
 
 
+def run_sequence_describe(repo: Path, width: int, height: int, session_suffix: str) -> dict[str, object]:
+    session = f"juzu-action-describe-{session_suffix}"
+    cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {repo} --limit 20 --mode mainline"
+    captures: list[tuple[str, str]] = []
+    before_title = current_description(repo)
+    tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", str(height))
+    try:
+        send(session, cmd, "Enter")
+        captures.append(("08 log before describe mutation", wait_for(session, "LOG")))
+        send(session, "C-a")
+        captures.append(("09 Ctrl+A enters Actions leader for describe", wait_for(session, "ACT")))
+        send(session, "d")
+        captures.append(("10 describe prompt opens", wait_for(session, "DESCRIBE")))
+        for _ in range(len(before_title)):
+            send(session, "BSpace")
+        send(session, "r", "e", "t", "i", "t", "l", "e", "d", "Space", "f", "r", "o", "m", "Space", "p", "r", "o", "o", "f")
+        captures.append(("11 describe prompt after typing new title", wait_for_screen(session, lambda text: "retitled from proof" in text, timeout=2.0)))
+        send(session, "Enter")
+        wait_for_screen(session, lambda text: "LOG" in text and "DESCRIBE" not in text)
+        time.sleep(0.3)
+        captures.append(("12 log after describe mutation", capture(session)))
+    finally:
+        tmux("kill-session", "-t", session, check=False)
+    return {
+        "beforeTitle": before_title,
+        "afterTitle": current_description(repo),
+        "captures": captures,
+    }
+
+
 def run_sequence_duplicate(repo: Path, width: int, height: int, session_suffix: str) -> dict[str, object]:
     session = f"juzu-action-duplicate-{session_suffix}"
     cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {repo} --limit 20 --mode mainline"
@@ -211,13 +241,13 @@ def run_sequence_duplicate(repo: Path, width: int, height: int, session_suffix: 
     tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", str(height))
     try:
         send(session, cmd, "Enter")
-        captures.append(("08 log before duplicate mutation", wait_for(session, "LOG")))
+        captures.append(("13 log before duplicate mutation", wait_for(session, "LOG")))
         send(session, "C-a")
-        captures.append(("09 Ctrl+A enters Actions leader for duplicate", wait_for(session, "ACT")))
+        captures.append(("14 Ctrl+A enters Actions leader for duplicate", wait_for(session, "ACT")))
         send(session, "y")
         wait_for_screen(session, lambda text: "LOG" in text and "ACT" not in text)
         time.sleep(0.3)
-        captures.append(("10 log after duplicate mutation", capture(session)))
+        captures.append(("15 log after duplicate mutation", capture(session)))
     finally:
         tmux("kill-session", "-t", session, check=False)
     return {
@@ -238,13 +268,13 @@ def run_sequence_abandon(repo: Path, width: int, height: int, session_suffix: st
     tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", str(height))
     try:
         send(session, cmd, "Enter")
-        captures.append(("11 log before abandon mutation", wait_for(session, "LOG")))
+        captures.append(("16 log before abandon mutation", wait_for(session, "LOG")))
         send(session, "C-a")
-        captures.append(("12 Ctrl+A enters Actions leader for abandon", wait_for(session, "ACT")))
+        captures.append(("17 Ctrl+A enters Actions leader for abandon", wait_for(session, "ACT")))
         send(session, "a")
         wait_for_screen(session, lambda text: "LOG" in text and "ACT" not in text)
         time.sleep(0.3)
-        captures.append(("13 log after abandon mutation", capture(session)))
+        captures.append(("18 log after abandon mutation", capture(session)))
     finally:
         tmux("kill-session", "-t", session, check=False)
     return {
@@ -266,15 +296,15 @@ def run_sequence_squash(repo: Path, width: int, height: int, session_suffix: str
     tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", str(height))
     try:
         send(session, cmd, "Enter")
-        captures.append(("14 log before squash target selection", wait_for(session, "LOG")))
+        captures.append(("19 log before squash target selection", wait_for(session, "LOG")))
         selected = select_change(session, target_change[:8])
-        captures.append(("15 selected earlier change for squash", selected))
+        captures.append(("20 selected earlier change for squash", selected))
         send(session, "C-a")
-        captures.append(("16 Ctrl+A enters Actions leader for squash", wait_for(session, "ACT")))
+        captures.append(("21 Ctrl+A enters Actions leader for squash", wait_for(session, "ACT")))
         send(session, "s")
         wait_for_screen(session, lambda text: "LOG" in text and "ACT" not in text)
         time.sleep(0.3)
-        captures.append(("17 log after squash mutation", capture(session)))
+        captures.append(("22 log after squash mutation", capture(session)))
     finally:
         tmux("kill-session", "-t", session, check=False)
     return {
@@ -289,7 +319,7 @@ def run_sequence_squash(repo: Path, width: int, height: int, session_suffix: str
 
 def render_html(report: dict[str, object], mp4: Path) -> str:
     cards: list[str] = []
-    for section_name in ["new", "edit", "duplicate", "abandon", "squash"]:
+    for section_name in ["new", "edit", "describe", "duplicate", "abandon", "squash"]:
         section = report[section_name]
         cards.extend(
             f"<section><h2>{html.escape(title)}</h2><pre>{html.escape(screen)}</pre></section>"
@@ -317,6 +347,10 @@ strong {{ color:var(--ok); }}
   <p>Target change: <code>{html.escape(report['edit']['targetChange'])}</code></p>
   <p>Current change after edit: <code>{html.escape(report['edit']['afterCurrentChange'])}</code></p>
   <p>Description after edit: <strong>{html.escape(report['edit']['afterDescription'])}</strong></p>
+</section>
+<section>
+  <h2>Describe</h2>
+  <p>Title <code>{html.escape(report['describe']['beforeTitle'])}</code> → <strong>{html.escape(report['describe']['afterTitle'])}</strong></p>
 </section>
 <section>
   <h2>Duplicate</h2>
@@ -362,6 +396,10 @@ def main() -> None:
 
     duplicate_repo = out_dir / "duplicate-fixture-repo"
     create_fixture_repo(duplicate_repo)
+    describe_repo = out_dir / "describe-fixture-repo"
+    create_fixture_repo(describe_repo)
+    report["describe"] = run_sequence_describe(describe_repo, args.width, args.height, f"{os.getpid()}-describe")
+
     report["duplicate"] = run_sequence_duplicate(duplicate_repo, args.width, args.height, f"{os.getpid()}-dup")
 
     abandon_repo = out_dir / "abandon-fixture-repo"
@@ -375,6 +413,7 @@ def main() -> None:
     all_captures = [
         *report["new"]["captures"],
         *report["edit"]["captures"],
+        *report["describe"]["captures"],
         *report["duplicate"]["captures"],
         *report["abandon"]["captures"],
         *report["squash"]["captures"],
@@ -403,6 +442,8 @@ def main() -> None:
         raise SystemExit("edit mutation did not move the working copy to the selected change")
     if report["edit"]["afterDescription"] != "first desc":
         raise SystemExit("edit mutation did not expose the selected change description")
+    if report["describe"]["afterTitle"] != "retitled from proof":
+        raise SystemExit("describe mutation did not update the selected change title")
     if report["duplicate"]["afterCount"] != report["duplicate"]["beforeCount"] + 1:
         raise SystemExit("duplicate mutation did not increase the visible commit count")
     if report["duplicate"]["matchingTitleCount"] < 2:

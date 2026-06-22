@@ -395,6 +395,8 @@ struct App {
     revset_mode: bool,
     revset_value: String,
     revset_query: String,
+    describe_mode: bool,
+    describe_value: String,
     nodes: Vec<juzu_core::CommitNode>,
     files_by_change: HashMap<String, Vec<FileEntry>>,
     diffs_by_change: HashMap<String, DiffPreview>,
@@ -466,6 +468,8 @@ fn main() -> Result<()> {
         revset_mode: false,
         revset_value: String::new(),
         revset_query: String::new(),
+        describe_mode: false,
+        describe_value: String::new(),
         nodes,
         files_by_change,
         diffs_by_change,
@@ -576,6 +580,27 @@ fn handle_key_with_backend<B: JjBackend>(
         }
         return false;
     }
+    if app.describe_mode {
+        match code {
+            KeyCode::Char('q') | KeyCode::Esc => {
+                app.describe_mode = false;
+                app.describe_value.clear();
+            }
+            KeyCode::Enter => {
+                let description = app.describe_value.trim_end().to_string();
+                app.describe_mode = false;
+                let _ = describe_selected_change_with_backend(app, backend, description);
+            }
+            KeyCode::Backspace => {
+                app.describe_value.pop();
+            }
+            KeyCode::Char(ch) if !modifiers.contains(KeyModifiers::CONTROL) => {
+                app.describe_value.push(ch)
+            }
+            _ => {}
+        }
+        return false;
+    }
     if modifiers.contains(KeyModifiers::CONTROL) {
         match code {
             KeyCode::Char('a') | KeyCode::Char('x') => {
@@ -611,6 +636,14 @@ fn handle_key_with_backend<B: JjBackend>(
             }
             KeyCode::Char('y') => {
                 let _ = duplicate_selected_change_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('d') => {
+                if let Some(node) = app.nodes.get(app.selected) {
+                    app.describe_mode = true;
+                    app.describe_value = node.description_title.clone();
+                }
                 app.active_leader_mode = None;
                 return false;
             }
@@ -913,6 +946,8 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "revsetMode": app.revset_mode,
         "revsetValue": app.revset_value,
         "revsetQuery": app.revset_query,
+        "describeMode": app.describe_mode,
+        "describeValue": app.describe_value,
         "visibleNodeCount": app.nodes.len(),
         "selectedIndex": app.selected,
         "selectedChange": selected.map(|node| node.change_id.as_str()).unwrap_or(""),
@@ -1153,6 +1188,22 @@ fn edit_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B) -
     futures_executor::block_on(backend.mutate(Mutation::Edit {
         cwd: app.path.clone(),
         change_id: node.change_id.clone(),
+    }))?;
+    reload_app_nodes_with_backend(app, backend)
+}
+
+fn describe_selected_change_with_backend<B: JjBackend>(
+    app: &mut App,
+    backend: &B,
+    description: String,
+) -> Result<()> {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return Ok(());
+    };
+    futures_executor::block_on(backend.mutate(Mutation::Describe {
+        cwd: app.path.clone(),
+        change_id: node.change_id.clone(),
+        description,
     }))?;
     reload_app_nodes_with_backend(app, backend)
 }
@@ -1412,6 +1463,16 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             Span::styled("Esc", key_style),
             Span::styled(" Cancel ", item_style),
         ])]
+    } else if app.describe_mode {
+        vec![Line::from(vec![
+            Span::styled(" DESCRIBE ", mode_style),
+            Span::raw("  "),
+            Span::styled("Enter", key_style),
+            Span::styled(" Apply ", status_item_style(t, LeaderMode::Action)),
+            Span::raw(" "),
+            Span::styled("Esc", key_style),
+            Span::styled(" Cancel ", item_style),
+        ])]
     } else if app.show_help {
         vec![Line::from(vec![
             Span::styled(" HELP ", mode_style),
@@ -1465,6 +1526,9 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
                 Span::raw(" "),
                 Span::styled("e", key_style),
                 Span::styled(" Edit ", item_style),
+                Span::raw(" "),
+                Span::styled("d", key_style),
+                Span::styled(" Describe ", item_style),
                 Span::raw(" "),
                 Span::styled("a", key_style),
                 Span::styled(" Abandon ", item_style),
@@ -3068,6 +3132,21 @@ fn render_sidebar(
         );
         return;
     }
+    if app.describe_mode {
+        render_sidebar_mode_panel(
+            frame,
+            area,
+            " Details ",
+            vec![
+                Line::from(Span::styled("Description:", sidebar_heading_style(t))),
+                Line::from(format!("{} _", app.describe_value)),
+                Line::from(""),
+                Line::from("Enter: apply  Esc: cancel"),
+            ],
+            t,
+        );
+        return;
+    }
     if app.view_mode == ViewMode::OpLog {
         let lines = app
             .op_log_entries
@@ -4073,6 +4152,8 @@ mod tests {
             revset_mode: false,
             revset_value: String::new(),
             revset_query: String::new(),
+            describe_mode: false,
+            describe_value: String::new(),
             nodes: vec![juzu_core::CommitNode {
                 change_id: change_id.clone(),
                 commit_id: "commit-1".to_string(),
@@ -4350,6 +4431,8 @@ mod tests {
             revset_mode: false,
             revset_value: String::new(),
             revset_query: String::new(),
+            describe_mode: false,
+            describe_value: String::new(),
             nodes: vec![],
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
@@ -4776,6 +4859,8 @@ mod tests {
             revset_mode: false,
             revset_value: String::new(),
             revset_query: String::new(),
+            describe_mode: false,
+            describe_value: String::new(),
             nodes: vec![test_commit("change-before", "before restore")],
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
@@ -4943,6 +5028,8 @@ mod tests {
             revset_mode: false,
             revset_value: String::new(),
             revset_query: String::new(),
+            describe_mode: false,
+            describe_value: String::new(),
             nodes: vec![node],
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
@@ -4993,6 +5080,7 @@ mod tests {
         before_nodes: Vec<juzu_core::CommitNode>,
         after_new_nodes: Vec<juzu_core::CommitNode>,
         after_edit_nodes: Vec<juzu_core::CommitNode>,
+        after_describe_nodes: Vec<juzu_core::CommitNode>,
         after_duplicate_nodes: Vec<juzu_core::CommitNode>,
         after_abandon_nodes: Vec<juzu_core::CommitNode>,
         after_squash_nodes: Vec<juzu_core::CommitNode>,
@@ -5010,6 +5098,7 @@ mod tests {
             Ok(match last {
                 Some(juzu_core::Mutation::New { .. }) => self.after_new_nodes.clone(),
                 Some(juzu_core::Mutation::Edit { .. }) => self.after_edit_nodes.clone(),
+                Some(juzu_core::Mutation::Describe { .. }) => self.after_describe_nodes.clone(),
                 Some(juzu_core::Mutation::Duplicate { .. }) => self.after_duplicate_nodes.clone(),
                 Some(juzu_core::Mutation::Abandon { .. }) => self.after_abandon_nodes.clone(),
                 Some(juzu_core::Mutation::Squash { .. }) => self.after_squash_nodes.clone(),
@@ -5055,6 +5144,10 @@ mod tests {
                     changed: true,
                     message: "edit".to_string(),
                 }),
+                juzu_core::Mutation::Describe { .. } => Ok(juzu_core::MutationResult {
+                    changed: true,
+                    message: "describe".to_string(),
+                }),
                 juzu_core::Mutation::Duplicate { .. } => Ok(juzu_core::MutationResult {
                     changed: true,
                     message: "duplicate".to_string(),
@@ -5088,6 +5181,7 @@ mod tests {
                 test_commit("new-child", ""),
             ],
             after_edit_nodes: vec![test_commit("new1234rest", "selected node")],
+            after_describe_nodes: vec![test_commit("new1234rest", "selected node")],
             after_duplicate_nodes: vec![test_commit("new1234rest", "selected node")],
             after_abandon_nodes: vec![test_commit("new1234rest", "selected node")],
             after_squash_nodes: vec![test_commit("new1234rest", "selected node")],
@@ -5150,6 +5244,7 @@ mod tests {
             .into_iter()
             .flatten()
             .collect(),
+            after_describe_nodes: vec![test_commit("edit1234rest", "selected node")],
             after_duplicate_nodes: vec![test_commit("edit1234rest", "selected node")],
             after_abandon_nodes: vec![test_commit("edit1234rest", "selected node")],
             after_squash_nodes: vec![test_commit("edit1234rest", "selected node")],
@@ -5185,12 +5280,111 @@ mod tests {
     }
 
     #[test]
+    fn action_describe_shortcut_enters_describe_mode_with_selected_title() {
+        let backend = ActionMutationTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![test_commit("desc1234rest", "selected node")],
+            after_new_nodes: vec![test_commit("desc1234rest", "selected node")],
+            after_edit_nodes: vec![test_commit("desc1234rest", "selected node")],
+            after_describe_nodes: vec![test_commit("desc1234rest", "selected node")],
+            after_duplicate_nodes: vec![test_commit("desc1234rest", "selected node")],
+            after_abandon_nodes: vec![test_commit("desc1234rest", "selected node")],
+            after_squash_nodes: vec![test_commit("desc1234rest", "selected node")],
+        };
+        let mut app = test_log_app("desc1234rest", vec![]);
+        app.nodes[0].description_title = "selected node".to_string();
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('d'),
+            KeyModifiers::NONE,
+        ));
+
+        assert_eq!(app.active_leader_mode, None);
+        assert!(app.describe_mode);
+        assert_eq!(app.describe_value, "selected node");
+        assert!(backend.mutate_calls.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn describe_submit_enter_mutates_and_reloads_log_state() {
+        let backend = ActionMutationTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![test_commit("desc1234rest", "selected node")],
+            after_new_nodes: vec![test_commit("desc1234rest", "selected node")],
+            after_edit_nodes: vec![test_commit("desc1234rest", "selected node")],
+            after_describe_nodes: vec![test_commit("desc1234rest", "retitled from rust")],
+            after_duplicate_nodes: vec![test_commit("desc1234rest", "selected node")],
+            after_abandon_nodes: vec![test_commit("desc1234rest", "selected node")],
+            after_squash_nodes: vec![test_commit("desc1234rest", "selected node")],
+        };
+        let mut app = test_log_app("desc1234rest", vec![]);
+        app.nodes[0].description_title = "selected node".to_string();
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('d'),
+            KeyModifiers::NONE,
+        ));
+        for _ in 0.."selected node".len() {
+            assert!(!handle_key_with_backend(
+                &mut app,
+                &backend,
+                KeyCode::Backspace,
+                KeyModifiers::NONE,
+            ));
+        }
+        for ch in "retitled from rust".chars() {
+            assert!(!handle_key_with_backend(
+                &mut app,
+                &backend,
+                KeyCode::Char(ch),
+                KeyModifiers::NONE,
+            ));
+        }
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Enter,
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::Describe {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                change_id: "desc1234rest".to_string(),
+                description: "retitled from rust".to_string(),
+            }]
+        );
+        assert!(!app.describe_mode);
+        assert_eq!(app.nodes[0].description_title, "retitled from rust");
+    }
+
+    #[test]
     fn action_duplicate_shortcut_mutates_and_reloads_log_state() {
         let backend = ActionMutationTestBackend {
             mutate_calls: Mutex::new(Vec::new()),
             before_nodes: vec![test_commit("dup1234rest", "selected node")],
             after_new_nodes: vec![test_commit("dup1234rest", "selected node")],
             after_edit_nodes: vec![test_commit("dup1234rest", "selected node")],
+            after_describe_nodes: vec![test_commit("dup1234rest", "selected node")],
             after_duplicate_nodes: vec![test_commit("dup1234rest", "selected node"), {
                 let mut duplicate = test_commit("dup-copy", "selected node");
                 duplicate.is_working_copy = false;
@@ -5238,6 +5432,7 @@ mod tests {
             ],
             after_new_nodes: vec![test_commit("gone1234rest", "drop me")],
             after_edit_nodes: vec![test_commit("gone1234rest", "drop me")],
+            after_describe_nodes: vec![test_commit("gone1234rest", "drop me")],
             after_duplicate_nodes: vec![test_commit("gone1234rest", "drop me")],
             after_abandon_nodes: vec![test_commit("keep1234rest", "keep node")],
             after_squash_nodes: vec![test_commit("gone1234rest", "drop me")],
@@ -5284,6 +5479,7 @@ mod tests {
             ],
             after_new_nodes: vec![test_commit("squash123rest", "fold me")],
             after_edit_nodes: vec![test_commit("squash123rest", "fold me")],
+            after_describe_nodes: vec![test_commit("squash123rest", "fold me")],
             after_duplicate_nodes: vec![test_commit("squash123rest", "fold me")],
             after_abandon_nodes: vec![test_commit("squash123rest", "fold me")],
             after_squash_nodes: vec![test_commit("parent123rest", "parent node")],

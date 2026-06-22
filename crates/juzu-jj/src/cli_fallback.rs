@@ -157,6 +157,10 @@ pub fn edit(cwd: &Path, change_id: &str) -> Result<()> {
     run_jj(cwd, &["edit", change_id]).map(|_| ())
 }
 
+pub fn describe(cwd: &Path, change_id: &str, description: &str) -> Result<()> {
+    run_jj(cwd, &["describe", "-r", change_id, "-m", description]).map(|_| ())
+}
+
 pub fn duplicate(cwd: &Path, change_id: &str) -> Result<()> {
     run_jj(cwd, &["duplicate", change_id]).map(|_| ())
 }
