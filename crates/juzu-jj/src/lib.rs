@@ -508,6 +508,24 @@ impl JjBackend for NativeJjBackend {
                     message: format!("duplicated change {change_id}"),
                 })
             }
+            Mutation::Abandon { cwd, change_id } => {
+                cli_fallback::abandon(&cwd, &change_id)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: format!("abandoned change {change_id}"),
+                })
+            }
+            Mutation::Squash {
+                cwd,
+                change_id,
+                into_id,
+            } => {
+                cli_fallback::squash(&cwd, &change_id, into_id.as_deref())?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: format!("squashed change {change_id}"),
+                })
+            }
             Mutation::RestoreOperation { cwd, operation_id } => {
                 cli_fallback::restore_operation(&cwd, &operation_id)?;
                 Ok(MutationResult {
@@ -608,6 +626,21 @@ mod tests {
         run_jj(&repo, &["new", "@"]).trim().to_string();
         fs::write(repo.join("note.txt"), "two\n").expect("fixture file rewrite should work");
         run_jj(&repo, &["describe", "-m", "second desc"]);
+        repo
+    }
+
+    fn create_squash_fixture_repo() -> PathBuf {
+        let repo = unique_test_dir("squash-mutations");
+        fs::create_dir_all(&repo).expect("fixture repo dir should be created");
+        run_jj(&repo, &["git", "init", "."]);
+        fs::write(repo.join("note.txt"), "one\n").expect("fixture file write should work");
+        run_jj(&repo, &["describe", "-m", "first desc"]);
+        run_jj(&repo, &["new", "@"]).trim().to_string();
+        fs::write(repo.join("note.txt"), "two\n").expect("fixture file rewrite should work");
+        run_jj(&repo, &["describe", "-m", "second desc"]);
+        run_jj(&repo, &["new", "@"]).trim().to_string();
+        fs::write(repo.join("note.txt"), "three\n").expect("fixture file rewrite should work");
+        run_jj(&repo, &["describe", "-m", "third desc"]);
         repo
     }
 
@@ -872,6 +905,132 @@ mod tests {
                 >= 2,
             "expected duplicated description to appear at least twice, got: {duplicated_titles}"
         );
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_abandon_mutation_replaces_selected_change_with_empty_working_copy() {
+        let repo = create_action_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let target_change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+        let before_count = run_jj(&repo, &["log", "-r", "::", "--count"])
+            .trim()
+            .parse::<usize>()
+            .expect("before count should parse");
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::Abandon {
+            cwd: repo.clone(),
+            change_id: target_change_id.clone(),
+        }))
+        .expect("abandon mutation should succeed");
+        assert!(result.changed, "abandon mutation should report a change");
+
+        let after_count = run_jj(&repo, &["log", "-r", "::", "--count"])
+            .trim()
+            .parse::<usize>()
+            .expect("after count should parse");
+        assert_eq!(after_count, before_count);
+        let current = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "@",
+                "-T",
+                "change_id.short() ++ \"|\" ++ description.first_line() ++ \"\\n\"",
+            ],
+        );
+        let mut current_parts = current.trim().split('|');
+        let current_change_id = current_parts.next().unwrap_or_default();
+        let current_desc = current_parts.next().unwrap_or_default();
+        assert_ne!(current_change_id, target_change_id);
+        assert_eq!(current_desc, "");
+
+        let remaining = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "::",
+                "-T",
+                "change_id.short() ++ \"\\n\"",
+            ],
+        );
+        assert!(
+            !remaining
+                .lines()
+                .any(|line| line.trim() == target_change_id),
+            "expected abandoned change to disappear from visible log, got: {remaining}"
+        );
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_squash_mutation_folds_selected_non_working_copy_change_into_parent() {
+        let repo = create_squash_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let target_change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@-", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+        let before_count = run_jj(&repo, &["log", "-r", "::", "--count"])
+            .trim()
+            .parse::<usize>()
+            .expect("before count should parse");
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::Squash {
+            cwd: repo.clone(),
+            change_id: target_change_id.clone(),
+            into_id: None,
+        }))
+        .expect("squash mutation should succeed");
+        assert!(result.changed, "squash mutation should report a change");
+
+        let after_count = run_jj(&repo, &["log", "-r", "::", "--count"])
+            .trim()
+            .parse::<usize>()
+            .expect("after count should parse");
+        assert_eq!(after_count, before_count - 1);
+        let remaining = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "::",
+                "-T",
+                "change_id.short() ++ \"\\n\"",
+            ],
+        );
+        assert!(
+            !remaining
+                .lines()
+                .any(|line| line.trim() == target_change_id),
+            "expected squashed change to disappear from visible log, got: {remaining}"
+        );
+        let current_title = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "@",
+                "-T",
+                "description.first_line()",
+            ],
+        );
+        assert_eq!(current_title.trim(), "third desc");
 
         let _ = fs::remove_dir_all(&repo);
     }

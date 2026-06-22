@@ -22,6 +22,8 @@ Date: 2026-06-13
 - deletes the selected change's first local bookmark from the Bookmarks leader (`Ctrl+B`, then `d`)
 - creates a real new child change from the Actions leader (`Ctrl+A`, then `n`)
 - edits the selected change as the working copy from the Actions leader (`Ctrl+A`, then `e`)
+- abandons the selected change from the Actions leader (`Ctrl+A`, then `a`)
+- squashes the selected non-working-copy change into its parent from the Actions leader (`Ctrl+A`, then `s`)
 - duplicates the selected change from the Actions leader (`Ctrl+A`, then `y`)
 - returns from OpLog/Obslog to the main log with `g`, `q`, or `Esc`
 - quits with `q` or `Esc`
@@ -76,7 +78,7 @@ Latest bookmark set/delete proof:
 
 Latest Action leader mutation proof:
 
-`bench/results/rust-port/action-leader/2026-06-22T12-36-10.584+00-00/action-leader-review.html`
+`bench/results/rust-port/action-leader/2026-06-22T14-58-43.275+00-00/action-leader-review.html`
 
 Latest Ops undo/redo proof:
 
@@ -108,7 +110,7 @@ Latest tmux restart stability proof:
 
 Latest live tmux proof:
 
-`bench/results/rust-port/live-tmux/2026-06-22T14-46-13.120Z/live-tmux-proof.html`
+`bench/results/rust-port/live-tmux/2026-06-22T14-59-57.706Z/live-tmux-proof.html`
 
 Static state proofs are HTML/tmux captures; MP4 is reserved for real app motion. The live review surface is the tmux window.
 

@@ -107,6 +107,13 @@ def create_fixture_repo(repo: Path) -> None:
     jj(repo, "describe", "-m", "second desc")
 
 
+def create_squash_fixture_repo(repo: Path) -> None:
+    create_fixture_repo(repo)
+    jj(repo, "new", "@")
+    (repo / "note.txt").write_text("three\n")
+    jj(repo, "describe", "-m", "third desc")
+
+
 def current_change_id(repo: Path) -> str:
     return jj(repo, "log", "--no-graph", "-r", "@", "-T", "change_id.short()").strip()
 
@@ -222,9 +229,67 @@ def run_sequence_duplicate(repo: Path, width: int, height: int, session_suffix: 
     }
 
 
+def run_sequence_abandon(repo: Path, width: int, height: int, session_suffix: str) -> dict[str, object]:
+    session = f"juzu-action-abandon-{session_suffix}"
+    cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {repo} --limit 20 --mode mainline"
+    captures: list[tuple[str, str]] = []
+    before_count = total_count(repo)
+    target_change = current_change_id(repo)
+    tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", str(height))
+    try:
+        send(session, cmd, "Enter")
+        captures.append(("11 log before abandon mutation", wait_for(session, "LOG")))
+        send(session, "C-a")
+        captures.append(("12 Ctrl+A enters Actions leader for abandon", wait_for(session, "ACT")))
+        send(session, "a")
+        wait_for_screen(session, lambda text: "LOG" in text and "ACT" not in text)
+        time.sleep(0.3)
+        captures.append(("13 log after abandon mutation", capture(session)))
+    finally:
+        tmux("kill-session", "-t", session, check=False)
+    return {
+        "targetChange": target_change,
+        "beforeCount": before_count,
+        "afterCount": total_count(repo),
+        "afterCurrentChange": current_change_id(repo),
+        "afterDescription": current_description(repo),
+        "captures": captures,
+    }
+
+
+def run_sequence_squash(repo: Path, width: int, height: int, session_suffix: str) -> dict[str, object]:
+    session = f"juzu-action-squash-{session_suffix}"
+    cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {repo} --limit 20 --mode mainline"
+    captures: list[tuple[str, str]] = []
+    before_count = total_count(repo)
+    target_change = current_parent_id(repo)
+    tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", str(height))
+    try:
+        send(session, cmd, "Enter")
+        captures.append(("14 log before squash target selection", wait_for(session, "LOG")))
+        selected = select_change(session, target_change[:8])
+        captures.append(("15 selected earlier change for squash", selected))
+        send(session, "C-a")
+        captures.append(("16 Ctrl+A enters Actions leader for squash", wait_for(session, "ACT")))
+        send(session, "s")
+        wait_for_screen(session, lambda text: "LOG" in text and "ACT" not in text)
+        time.sleep(0.3)
+        captures.append(("17 log after squash mutation", capture(session)))
+    finally:
+        tmux("kill-session", "-t", session, check=False)
+    return {
+        "targetChange": target_change,
+        "beforeCount": before_count,
+        "afterCount": total_count(repo),
+        "afterCurrentChange": current_change_id(repo),
+        "afterDescription": current_description(repo),
+        "captures": captures,
+    }
+
+
 def render_html(report: dict[str, object], mp4: Path) -> str:
     cards: list[str] = []
-    for section_name in ["new", "edit", "duplicate"]:
+    for section_name in ["new", "edit", "duplicate", "abandon", "squash"]:
         section = report[section_name]
         cards.extend(
             f"<section><h2>{html.escape(title)}</h2><pre>{html.escape(screen)}</pre></section>"
@@ -258,6 +323,18 @@ strong {{ color:var(--ok); }}
   <p>Count <strong>{report['duplicate']['beforeCount']}</strong> → <strong>{report['duplicate']['afterCount']}</strong></p>
   <p>Title <code>{html.escape(report['duplicate']['title'])}</code> now appears <strong>{report['duplicate']['matchingTitleCount']}</strong> times</p>
 </section>
+<section>
+  <h2>Abandon</h2>
+  <p>Count <strong>{report['abandon']['beforeCount']}</strong> → <strong>{report['abandon']['afterCount']}</strong></p>
+  <p>Selected change <code>{html.escape(report['abandon']['targetChange'])}</code> became current <code>{html.escape(report['abandon']['afterCurrentChange'])}</code></p>
+  <p>Current description after abandon: <strong>{html.escape(report['abandon']['afterDescription']) or '(empty)'}</strong></p>
+</section>
+<section>
+  <h2>Squash</h2>
+  <p>Count <strong>{report['squash']['beforeCount']}</strong> → <strong>{report['squash']['afterCount']}</strong></p>
+  <p>Squashed change <code>{html.escape(report['squash']['targetChange'])}</code>; current change is now <code>{html.escape(report['squash']['afterCurrentChange'])}</code></p>
+  <p>Current description after squash: <strong>{html.escape(report['squash']['afterDescription'])}</strong></p>
+</section>
 {''.join(cards)}
 </body></html>"""
 
@@ -287,7 +364,21 @@ def main() -> None:
     create_fixture_repo(duplicate_repo)
     report["duplicate"] = run_sequence_duplicate(duplicate_repo, args.width, args.height, f"{os.getpid()}-dup")
 
-    all_captures = [*report["new"]["captures"], *report["edit"]["captures"], *report["duplicate"]["captures"]]
+    abandon_repo = out_dir / "abandon-fixture-repo"
+    create_fixture_repo(abandon_repo)
+    report["abandon"] = run_sequence_abandon(abandon_repo, args.width, args.height, f"{os.getpid()}-abandon")
+
+    squash_repo = out_dir / "squash-fixture-repo"
+    create_squash_fixture_repo(squash_repo)
+    report["squash"] = run_sequence_squash(squash_repo, args.width, args.height, f"{os.getpid()}-squash")
+
+    all_captures = [
+        *report["new"]["captures"],
+        *report["edit"]["captures"],
+        *report["duplicate"]["captures"],
+        *report["abandon"]["captures"],
+        *report["squash"]["captures"],
+    ]
     for idx, (title, screen) in enumerate(all_captures):
         render_frame(screen, title, frames_dir / f"frame-{idx:03d}.png")
 
@@ -316,6 +407,16 @@ def main() -> None:
         raise SystemExit("duplicate mutation did not increase the visible commit count")
     if report["duplicate"]["matchingTitleCount"] < 2:
         raise SystemExit("duplicate mutation did not create a second visible copy of the selected change")
+    if report["abandon"]["afterCount"] != report["abandon"]["beforeCount"]:
+        raise SystemExit("abandon mutation unexpectedly changed visible commit count")
+    if report["abandon"]["afterCurrentChange"] == report["abandon"]["targetChange"]:
+        raise SystemExit("abandon mutation did not replace the selected working copy change")
+    if report["abandon"]["afterDescription"] != "":
+        raise SystemExit("abandon mutation did not leave an empty working copy description")
+    if report["squash"]["afterCount"] != report["squash"]["beforeCount"] - 1:
+        raise SystemExit("squash mutation did not collapse the selected non-working-copy change")
+    if report["squash"]["afterDescription"] != "third desc":
+        raise SystemExit("squash mutation unexpectedly changed the current working copy description")
 
 
 if __name__ == "__main__":

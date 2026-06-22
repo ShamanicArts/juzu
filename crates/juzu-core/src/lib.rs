@@ -175,6 +175,11 @@ pub enum Mutation {
         cwd: PathBuf,
         change_id: String,
     },
+    Squash {
+        cwd: PathBuf,
+        change_id: String,
+        into_id: Option<String>,
+    },
     Duplicate {
         cwd: PathBuf,
         change_id: String,

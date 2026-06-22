@@ -614,6 +614,16 @@ fn handle_key_with_backend<B: JjBackend>(
                 app.active_leader_mode = None;
                 return false;
             }
+            KeyCode::Char('a') => {
+                let _ = abandon_selected_change_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('s') => {
+                let _ = squash_selected_change_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
             _ => {}
         }
     }
@@ -1148,6 +1158,29 @@ fn duplicate_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: 
     reload_app_nodes_with_backend(app, backend)
 }
 
+fn abandon_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return Ok(());
+    };
+    futures_executor::block_on(backend.mutate(Mutation::Abandon {
+        cwd: app.path.clone(),
+        change_id: node.change_id.clone(),
+    }))?;
+    reload_app_nodes_with_backend(app, backend)
+}
+
+fn squash_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return Ok(());
+    };
+    futures_executor::block_on(backend.mutate(Mutation::Squash {
+        cwd: app.path.clone(),
+        change_id: node.change_id.clone(),
+        into_id: None,
+    }))?;
+    reload_app_nodes_with_backend(app, backend)
+}
+
 fn bookmark_name_for_change(change_id: &str) -> String {
     let prefix: String = change_id.chars().take(8).collect();
     format!("wip/{prefix}")
@@ -1407,6 +1440,12 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
                 Span::raw(" "),
                 Span::styled("e", key_style),
                 Span::styled(" Edit ", item_style),
+                Span::raw(" "),
+                Span::styled("a", key_style),
+                Span::styled(" Abandon ", item_style),
+                Span::raw(" "),
+                Span::styled("s", key_style),
+                Span::styled(" Squash ", item_style),
                 Span::raw(" "),
                 Span::styled("y", key_style),
                 Span::styled(" Duplicate ", item_style),
@@ -4930,6 +4969,8 @@ mod tests {
         after_new_nodes: Vec<juzu_core::CommitNode>,
         after_edit_nodes: Vec<juzu_core::CommitNode>,
         after_duplicate_nodes: Vec<juzu_core::CommitNode>,
+        after_abandon_nodes: Vec<juzu_core::CommitNode>,
+        after_squash_nodes: Vec<juzu_core::CommitNode>,
     }
 
     #[async_trait::async_trait(?Send)]
@@ -4945,6 +4986,8 @@ mod tests {
                 Some(juzu_core::Mutation::New { .. }) => self.after_new_nodes.clone(),
                 Some(juzu_core::Mutation::Edit { .. }) => self.after_edit_nodes.clone(),
                 Some(juzu_core::Mutation::Duplicate { .. }) => self.after_duplicate_nodes.clone(),
+                Some(juzu_core::Mutation::Abandon { .. }) => self.after_abandon_nodes.clone(),
+                Some(juzu_core::Mutation::Squash { .. }) => self.after_squash_nodes.clone(),
                 _ => self.before_nodes.clone(),
             })
         }
@@ -4991,6 +5034,14 @@ mod tests {
                     changed: true,
                     message: "duplicate".to_string(),
                 }),
+                juzu_core::Mutation::Abandon { .. } => Ok(juzu_core::MutationResult {
+                    changed: true,
+                    message: "abandon".to_string(),
+                }),
+                juzu_core::Mutation::Squash { .. } => Ok(juzu_core::MutationResult {
+                    changed: true,
+                    message: "squash".to_string(),
+                }),
                 _ => Err(juzu_core::JuzuError::Unsupported(
                     "unexpected test mutation",
                 )),
@@ -5013,6 +5064,8 @@ mod tests {
             ],
             after_edit_nodes: vec![test_commit("new1234rest", "selected node")],
             after_duplicate_nodes: vec![test_commit("new1234rest", "selected node")],
+            after_abandon_nodes: vec![test_commit("new1234rest", "selected node")],
+            after_squash_nodes: vec![test_commit("new1234rest", "selected node")],
         };
         let mut app = test_log_app("new1234rest", vec![]);
 
@@ -5073,6 +5126,8 @@ mod tests {
             .flatten()
             .collect(),
             after_duplicate_nodes: vec![test_commit("edit1234rest", "selected node")],
+            after_abandon_nodes: vec![test_commit("edit1234rest", "selected node")],
+            after_squash_nodes: vec![test_commit("edit1234rest", "selected node")],
         };
         let mut app = test_log_app("edit1234rest", vec![]);
         app.nodes = backend.before_nodes.clone();
@@ -5116,6 +5171,8 @@ mod tests {
                 duplicate.is_working_copy = false;
                 duplicate
             }],
+            after_abandon_nodes: vec![test_commit("dup1234rest", "selected node")],
+            after_squash_nodes: vec![test_commit("dup1234rest", "selected node")],
         };
         let mut app = test_log_app("dup1234rest", vec![]);
 
@@ -5144,6 +5201,99 @@ mod tests {
         assert_eq!(app.active_leader_mode, None);
         assert_eq!(app.nodes.len(), 2);
         assert_eq!(app.nodes[1].description_title, "selected node");
+    }
+
+    #[test]
+    fn action_abandon_shortcut_mutates_and_reloads_log_state() {
+        let backend = ActionMutationTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![
+                test_commit("keep1234rest", "keep node"),
+                test_commit("gone1234rest", "drop me"),
+            ],
+            after_new_nodes: vec![test_commit("gone1234rest", "drop me")],
+            after_edit_nodes: vec![test_commit("gone1234rest", "drop me")],
+            after_duplicate_nodes: vec![test_commit("gone1234rest", "drop me")],
+            after_abandon_nodes: vec![test_commit("keep1234rest", "keep node")],
+            after_squash_nodes: vec![test_commit("gone1234rest", "drop me")],
+        };
+        let mut app = test_log_app("gone1234rest", vec![]);
+        app.nodes = backend.before_nodes.clone();
+        app.selected = 1;
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::Abandon {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                change_id: "gone1234rest".to_string(),
+            }]
+        );
+        assert_eq!(app.active_leader_mode, None);
+        assert_eq!(app.view_mode, ViewMode::Log);
+        assert_eq!(app.nodes.len(), 1);
+        assert_eq!(app.nodes[0].change_id, "keep1234rest");
+    }
+
+    #[test]
+    fn action_squash_shortcut_mutates_and_reloads_log_state() {
+        let backend = ActionMutationTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![
+                test_commit("parent123rest", "parent node"),
+                test_commit("squash123rest", "fold me"),
+            ],
+            after_new_nodes: vec![test_commit("squash123rest", "fold me")],
+            after_edit_nodes: vec![test_commit("squash123rest", "fold me")],
+            after_duplicate_nodes: vec![test_commit("squash123rest", "fold me")],
+            after_abandon_nodes: vec![test_commit("squash123rest", "fold me")],
+            after_squash_nodes: vec![test_commit("parent123rest", "parent node")],
+        };
+        let mut app = test_log_app("squash123rest", vec![]);
+        app.nodes = backend.before_nodes.clone();
+        app.selected = 1;
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('s'),
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::Squash {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                change_id: "squash123rest".to_string(),
+                into_id: None,
+            }]
+        );
+        assert_eq!(app.active_leader_mode, None);
+        assert_eq!(app.view_mode, ViewMode::Log);
+        assert_eq!(app.nodes.len(), 1);
+        assert_eq!(app.nodes[0].change_id, "parent123rest");
     }
 
     #[test]

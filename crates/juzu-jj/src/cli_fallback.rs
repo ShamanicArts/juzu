@@ -161,6 +161,24 @@ pub fn duplicate(cwd: &Path, change_id: &str) -> Result<()> {
     run_jj(cwd, &["duplicate", change_id]).map(|_| ())
 }
 
+pub fn abandon(cwd: &Path, change_id: &str) -> Result<()> {
+    run_jj(cwd, &["abandon", change_id]).map(|_| ())
+}
+
+pub fn squash(cwd: &Path, change_id: &str, into_id: Option<&str>) -> Result<()> {
+    let mut args = vec![
+        "squash".to_string(),
+        "--from".to_string(),
+        change_id.to_string(),
+        "--use-destination-message".to_string(),
+    ];
+    if let Some(into_id) = into_id {
+        args.push("--into".to_string());
+        args.push(into_id.to_string());
+    }
+    run_jj_owned(cwd, &args).map(|_| ())
+}
+
 pub fn restore_operation(cwd: &Path, operation_id: &str) -> Result<()> {
     run_jj(cwd, &["op", "restore", operation_id]).map(|_| ())
 }
