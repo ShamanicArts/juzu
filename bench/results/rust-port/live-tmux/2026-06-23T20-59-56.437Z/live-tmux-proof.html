@@ -1,0 +1,89 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust live tmux proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --ok:#74b88c; --bad:#ce6f7c; --info:#7f9fbf; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .status.pass { color:var(--ok); } .status.fail { color:var(--bad); }
+.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; } code { color:var(--info); }
+</style></head><body>
+<h1>JUZU Rust live tmux proof · <span class='status pass'>PASS</span></h1>
+<div class='meta'>Target: <code>juzu:rust-tui</code> · pane command: <code>./target/release/juzu-tui</code> · required command: <code>juzu-tui</code> · expected: <code>LOG, Change:</code> · missing: <code>none</code></div>
+<section class='card'><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                           Change: ymurnorxomzuxsylkwzkqupzonyprmrq (@)
+              @...@&gt; ymurnorx 792ae1dc                                                                     Commit: 792ae1dc5903fcced322eacfff33f5bf0638fd51
+              │      (no description)                                                                      Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+              │      M .juzu.local.toml  A bench/results/rust-port/footer-parity/2026-06-23T20-57-59.01... Time: 2026-06-23T21:52:07+01:00
+              │
+              o..... sqwvzmst 8110032e                                                                     Description (x expand):
+              │      stabilize rust tmux relaunch workflow and live window
+              │      A bench/results/rust-port/live-tmux/2026-06-23T17-37-36.501Z/live-tmux-proof.html  ……
+              │                                                                                            Files (f collapse):
+              o..... kpvlutzk 3e8bd4ce                                                                     M .juzu.local.toml
+              │      let direct f toggle files and persist theme proof                                     A bench/results/rust-port/footer-parity/2026-06-23T20-57-59.017+00-00/…
+              │      D bench/results/rust-port/live-tmux/2026-06-23T17-00-55.351Z/live-tmux-proof.html  …… A bench/results/rust-port/footer-parity/2026-06-23T20-57-59.017+00-00/…
+              │                                                                                            A bench/results/rust-port/footer-parity/2026-06-23T20-57-59.017+00-00/…
+              o..... xwszmunz 729117be                                                                     A bench/results/rust-port/footer-parity/2026-06-23T20-59-17.405+00-00/…
+              │      persist rust themes and fix sidebar file diff expansion                               A bench/results/rust-port/footer-parity/2026-06-23T20-59-17.405+00-00/…
+              │      A bench/results/rust-port/live-tmux/2026-06-23T17-00-55.351Z/live-tmux-proof.html  …… A bench/results/rust-port/footer-parity/2026-06-23T20-59-17.405+00-00/…
+              │                                                                                            A bench/results/rust-port/footer-parity/2026-06-23T20-59-40.179+00-00/…
+              o..... runpppvs 991da8f6                                                                     A bench/results/rust-port/footer-parity/2026-06-23T20-59-40.179+00-00/…
+              │      match old jj rename with modify via similarity detection                              A bench/results/rust-port/footer-parity/2026-06-23T20-59-40.179+00-00/…
+              │      M .gitignore  A bench/results/rust-port/diff-parity/2026-06-23T16-13-33.420Z/diff-... A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/idle…
+              │                                                                                            A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/idle…
+              o..... oowzmwyk fbf6290d                                                                     A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/idle…
+              │      prefer product files in rust sidebar diff preview                                     A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/layo…
+              │      A bench/results/rust-port/live-tmux/2026-06-23T15-53-41.102Z/live-tmux-proof.html  …… A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/layo…
+              │                                                                                            A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/layo…
+              o..... zynrrkwu 27e4f8f9                                                                     A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/navi…
+              │      match old jj pure rename summaries and diff metadata                                  A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/navi…
+              │      A bench/results/rust-port/live-tmux/2026-06-23T15-40-26.878Z/live-tmux-proof.html  …… A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/navi…
+              │                                                                                            A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/rust…
+              o..... vplrruyy 292650ca                                                                     A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/rust…
+              │      render binary diff files as metadata instead of garbage                               M crates/juzu-tui/src/main.rs
+              │      A bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/binary-diff-... M package.json
+              │                                                                                            A scripts/rust-port-footer-parity-proof.py
+              o..... wspzkvzu 948fff52
+              │      keep action leader proof artifacts free of fixture repo trash                         Diff
+              │      A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leade...   · 24 files · 5049 raw · 5073 rows · 336 shown
+              │                                                                                              · diff rows 1-25 of 336
+              o..... zmwnunyv 8f885ea7                                                                      STICKY ▸ top · Modified .juzu.local.toml
+              │      add safe native dirty working-copy snapshot parity                                    ╭ ◆ Modified .juzu.local.toml                                      ╮
+              │      A bench/results/rust-port/diff-parity/2026-06-23T14-16-04.345Z/diff-parity-report....   · diff --git a/.juzu.local.toml b/.juzu.local.toml
+              │                                                                                              · --- a/.juzu.local.toml
+              o..... vmxlrlrm 4d6a9cb4                                                                       · +++ b/.juzu.local.toml
+              │      prefer product files in rust diff mode and green modal parity                         ╭─ @@ -1,12 +1,12 @@                                              ╮
+              │      A bench/results/rust-port/live-tmux/2026-06-23T13-54-17.302Z/live-tmux-proof.html  ……   1   [layout]
+              │                                                                                              2   startupMode = &quot;mainline&quot;
+              o..... tptyqxrk a62c84af                                                                       3
+              │      wire rust actions leader into real restore action                                       4 - [theme]
+              │      A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leade...   5 - name = &quot;ayu-mirage&quot;
+              │                                                                                              6 -
+              o..... yppyonzq 7f74378c                                                                       4   [tui]
+              │      wire rust actions leader into real merge mode                                           5   sidebarDiffPreview = true
+              │      A bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/action-leade...   6   prefetchFilesInLog = true
+              │                                                                                              7   prefetchDiffInLog = false
+              o..... mvtqnotn 09cfa1af                                                                       8   filesCacheMaxEntries = 16
+              │      wire rust actions leader into real insert action                                        9   filesCacheMaxBytes = 1000000
+              │      A bench/results/rust-port/action-leader/2026-06-23T08-48-43.866+00-00/action-leade... ── ⋯ preview capped · 3 additional rows omitted for this file ──
+              │                                                                                            ╭ ◆ Added bench/results/rust-port/footer-parity/2026-06-23T20-57...╮
+              o..... zmtnswnk 26042bed                                                                       · diff --git a/bench/results/rust-port/footer-parity/2026-06-2...
+              │      wire rust actions leader into real rebase flow                                          · new file mode 100644
+              │      A bench/results/rust-port/action-leader/2026-06-23T08-41-28.361+00-00/action-leade...   · --- /dev/null
+              │                                                                                              · +++ b/bench/results/rust-port/footer-parity/2026-06-23T20-57...
+              o..... wtortqzy a9957edb                                                                     ╭─ @@ -0,0 +1,52 @@                                               ╮
+              │      wire rust actions leader into real describe prompt                                      1 + {
+              │      A bench/results/rust-port/action-leader/2026-06-22T15-36-28.487+00-00/action-leade... ───────────────────── ⋯ 311 more rows below ─────────────────────
+              │
+              o..... urmkkyvq ccd6cf77
+              │      wire rust ops leader into real git fetch and push actions
+              │      A bench/results/rust-port/live-tmux/2026-06-22T15-07-33.187Z/live-tmux-proof.html  ……
+              │
+              o..... osrqktqt c718f911
+              │      wire rust actions leader into real abandon and squash actions
+              │      A bench/results/rust-port/action-leader/2026-06-22T14-58-43.275+00-00/action-leade...
+              │
+
+ ~/dev/juzu  @ymurnorx                                                                                                                                         mainline 228 nodes
+</pre></section>
+</body></html>

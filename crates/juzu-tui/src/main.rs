@@ -5,8 +5,8 @@ use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use juzu_core::{
     diff::{collapsed_diff_rows, iter_diff_rows, parse_git_patch, DiffRow, DiffRowKind},
     layout::calculate_default_layout,
-    ChangeQuery, FileEntry, JjBackend, LayoutMode, LogQuery, Mutation, ObslogEntry, ObslogQuery,
-    OpLogEntry, OpLogQuery,
+    ChangeQuery, FileEntry, JjBackend, LayoutMode, LogQuery, Mutation, NodeCountQuery, ObslogEntry,
+    ObslogQuery, OpLogEntry, OpLogQuery,
 };
 use juzu_jj::NativeJjBackend;
 use ratatui::{
@@ -407,6 +407,7 @@ struct App {
     merge_mode: bool,
     merge_selected_ids: HashSet<String>,
     nodes: Vec<juzu_core::CommitNode>,
+    total_node_count: usize,
     files_by_change: HashMap<String, Vec<FileEntry>>,
     diffs_by_change: HashMap<String, DiffPreview>,
     op_log_entries: Vec<OpLogEntry>,
@@ -435,6 +436,10 @@ fn main() -> Result<()> {
     let nodes = futures_executor::block_on(backend.log(LogQuery {
         cwd: path.clone(),
         limit,
+        revset: None,
+    }))?;
+    let total_node_count = futures_executor::block_on(backend.node_count(NodeCountQuery {
+        cwd: path.clone(),
         revset: None,
     }))?;
     let mut files_by_change = HashMap::new();
@@ -492,6 +497,7 @@ fn main() -> Result<()> {
         merge_mode: false,
         merge_selected_ids: HashSet::new(),
         nodes,
+        total_node_count,
         files_by_change,
         diffs_by_change,
         op_log_entries: Vec::new(),
@@ -1049,6 +1055,7 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "mergeMode": app.merge_mode,
         "mergeSelectedIds": app.nodes.iter().filter(|node| app.merge_selected_ids.contains(&node.change_id)).map(|node| node.change_id.as_str()).collect::<Vec<_>>(),
         "visibleNodeCount": app.nodes.len(),
+        "totalNodeCount": app.total_node_count,
         "selectedIndex": app.selected,
         "selectedChange": selected.map(|node| node.change_id.as_str()).unwrap_or(""),
         "selectedCommit": selected.map(|node| node.commit_id.as_str()).unwrap_or(""),
@@ -1294,6 +1301,10 @@ fn reload_app_nodes_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Re
     let nodes = futures_executor::block_on(backend.log(LogQuery {
         cwd: app.path.clone(),
         limit: app.log_limit,
+        revset: revset.clone(),
+    }))?;
+    let total_node_count = futures_executor::block_on(backend.node_count(NodeCountQuery {
+        cwd: app.path.clone(),
         revset,
     }))?;
     let mut files_by_change = HashMap::new();
@@ -1306,6 +1317,7 @@ fn reload_app_nodes_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Re
         files_by_change.insert(node.change_id.clone(), files);
     }
     app.nodes = nodes;
+    app.total_node_count = total_node_count;
     app.files_by_change = files_by_change;
     app.diffs_by_change.clear();
     app.selected = previous_selected_change
@@ -4502,7 +4514,11 @@ mod tests {
             parents: vec![],
             author: "tester".to_string(),
             time: "now".to_string(),
-            bookmarks: vec!["main".to_string()],
+            bookmarks: vec![
+                "main".to_string(),
+                "feature".to_string(),
+                "origin/main".to_string(),
+            ],
             git_branches: vec![],
             description_title: "wc".to_string(),
             description_full: "wc".to_string(),
@@ -4518,12 +4534,12 @@ mod tests {
             is_pinned: false,
         }];
 
-        let line = footer_line(&UI_TOKENS, &path, LayoutMode::Mainline, &nodes, 80);
+        let line = footer_line(&UI_TOKENS, &path, LayoutMode::Mainline, &nodes, 42, 80);
         let spans = line.spans;
         assert_eq!(spans[0].content.as_ref(), " ~/dev/juzu ");
         assert_eq!(spans[0].style.bg, Some(UI_TOKENS.slate_bg2));
         assert_eq!(spans[0].style.fg, Some(UI_TOKENS.semantic_info));
-        assert_eq!(spans[1].content.as_ref(), "main");
+        assert_eq!(spans[1].content.as_ref(), "main+2");
         assert_eq!(spans[1].style.bg, Some(UI_TOKENS.slate_panel));
         assert_eq!(spans[1].style.fg, Some(UI_TOKENS.semantic_info));
         assert_eq!(spans[2].content.as_ref(), " @abc12345");
@@ -4532,7 +4548,7 @@ mod tests {
         assert_eq!(spans[4].content.as_ref(), "mainline");
         assert_eq!(spans[4].style.bg, Some(UI_TOKENS.slate_panel));
         assert_eq!(spans[4].style.fg, Some(UI_TOKENS.slate_text));
-        assert_eq!(spans[5].content.as_ref(), " 1 nodes ");
+        assert_eq!(spans[5].content.as_ref(), " 42 nodes ");
         assert_eq!(spans[5].style.bg, Some(UI_TOKENS.slate_bg2));
         assert_eq!(spans[5].style.fg, Some(UI_TOKENS.semantic_success));
     }
@@ -4639,6 +4655,7 @@ mod tests {
                 extra_height: None,
                 is_pinned: false,
             }],
+            total_node_count: 1,
             files_by_change: HashMap::new(),
             diffs_by_change,
             op_log_entries: Vec::new(),
@@ -4888,6 +4905,7 @@ mod tests {
                 extra_height: None,
                 is_pinned: false,
             }],
+            total_node_count: 1,
             files_by_change: HashMap::new(),
             diffs_by_change,
             op_log_entries: Vec::new(),
@@ -5173,6 +5191,7 @@ mod tests {
             merge_mode: false,
             merge_selected_ids: HashSet::new(),
             nodes: vec![],
+            total_node_count: 0,
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
             op_log_entries: Vec::new(),
@@ -5337,7 +5356,9 @@ mod tests {
         .unwrap();
         let full_rows = iter_diff_rows(&doc);
         let preview_rows = collapsed_diff_rows(&doc, 1);
-        assert!(preview_rows.iter().any(|row| row.kind == DiffRowKind::Collapse));
+        assert!(preview_rows
+            .iter()
+            .any(|row| row.kind == DiffRowKind::Collapse));
         let diff = DiffPreview {
             raw_line_count: 13,
             file_count: 1,
@@ -5740,6 +5761,7 @@ mod tests {
             merge_mode: false,
             merge_selected_ids: HashSet::new(),
             nodes: vec![test_commit("change-before", "before restore")],
+            total_node_count: 1,
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
             op_log_entries: entries,
@@ -5912,6 +5934,7 @@ mod tests {
             merge_mode: false,
             merge_selected_ids: HashSet::new(),
             nodes: vec![node],
+            total_node_count: 1,
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
             op_log_entries: Vec::new(),
@@ -7456,20 +7479,29 @@ fn footer_line<'a>(
     path: &std::path::Path,
     mode: LayoutMode,
     nodes: &[juzu_core::CommitNode],
+    total_node_count: usize,
     width: usize,
 ) -> Line<'a> {
     let repo = compact_home_path(path);
     let working_copy = nodes.iter().find(|node| node.is_working_copy);
     let bookmark = working_copy
-        .and_then(|node| node.bookmarks.first())
-        .cloned()
+        .and_then(|node| {
+            node.bookmarks.first().map(|first| {
+                let more = node.bookmarks.len().saturating_sub(1);
+                if more > 0 {
+                    format!("{first}+{more}")
+                } else {
+                    first.clone()
+                }
+            })
+        })
         .unwrap_or_default();
     let wc = working_copy
         .map(|node| format!(" @{}", node.change_id.chars().take(8).collect::<String>()))
         .unwrap_or_default();
     let mode = format!("{:?}", mode).to_lowercase();
     let repo_segment = format!(" {repo} ");
-    let node_segment = format!(" {} nodes ", nodes.len());
+    let node_segment = format!(" {} nodes ", total_node_count.max(nodes.len()));
     let fixed_width = repo_segment.chars().count()
         + bookmark.chars().count()
         + wc.chars().count()
@@ -7504,6 +7536,7 @@ fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
         &app.path,
         app.mode,
         &app.nodes,
+        app.total_node_count,
         area.width as usize,
     );
     frame.render_widget(

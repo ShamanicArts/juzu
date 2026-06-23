@@ -1,0 +1,112 @@
+<!doctype html><html><head><meta charset='utf-8'><title>JUZU Rust footer parity proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --info:#7f9fbf; --ok:#74b88c; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+a { color:var(--info); } .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; margin:18px 0; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; }
+strong { color:var(--ok); } p { color:var(--muted); }
+</style></head><body>
+<h1>JUZU Rust footer parity proof</h1>
+<p>Repo: /home/shamanic/dev/juzu · limit 20 · generated 2026-06-23T20:59:50.155225+00:00</p>
+<div class='grid'>
+  <article class='card'>
+    <h2>Oracle vs Rust counts</h2>
+    <pre>{
+  &quot;oracleNodeCount&quot;: 228,
+  &quot;rustVisibleNodeCount&quot;: 20,
+  &quot;rustTotalNodeCount&quot;: 228,
+  &quot;footerLine&quot;: &quot; ~/dev/juzu  @ymurnorx                                                                                                                                 mainline 228 nodes&quot;
+}</pre>
+  </article>
+  <article class='card'>
+    <h2>Rust debug state</h2>
+    <pre>{
+  &quot;activeLeaderMode&quot;: null,
+  &quot;boxedChrome&quot;: false,
+  &quot;currentDiffRowKind&quot;: &quot;FileHeader&quot;,
+  &quot;currentDiffRowText&quot;: &quot;Modified crates/juzu-tui/src/main.rs&quot;,
+  &quot;currentTheme&quot;: &quot;palenight&quot;,
+  &quot;descExpanded&quot;: false,
+  &quot;describeMode&quot;: false,
+  &quot;describeValue&quot;: &quot;&quot;,
+  &quot;diffFileCount&quot;: 21,
+  &quot;diffFileIndex&quot;: 0,
+  &quot;diffRows&quot;: 4848,
+  &quot;diffScaffold&quot;: false,
+  &quot;diffScroll&quot;: 0,
+  &quot;filesExpanded&quot;: true,
+  &quot;hasParseError&quot;: false,
+  &quot;layoutMode&quot;: &quot;Chronological&quot;,
+  &quot;mergeMode&quot;: false,
+  &quot;mergeSelectedIds&quot;: [],
+  &quot;obslogChangeId&quot;: &quot;&quot;,
+  &quot;obslogEntryCount&quot;: 0,
+  &quot;obslogSelectedCommit&quot;: &quot;&quot;,
+  &quot;opLogEntryCount&quot;: 0,
+  &quot;opLogSelected&quot;: &quot;&quot;,
+  &quot;rebaseSourceId&quot;: &quot;&quot;,
+  &quot;revsetMode&quot;: false,
+  &quot;revsetQuery&quot;: &quot;&quot;,
+  &quot;revsetValue&quot;: &quot;&quot;,
+  &quot;selectedChange&quot;: &quot;ymurnorxomzuxsylkwzkqupzonyprmrq&quot;,
+  &quot;selectedCommit&quot;: &quot;792ae1dc5903fcced322eacfff33f5bf0638fd51&quot;,
+  &quot;selectedIndex&quot;: 0,
+  &quot;showHelp&quot;: false,
+  &quot;sidebarCollapsed&quot;: false,
+  &quot;stickyContext&quot;: &quot;top \u00b7 Modified crates/juzu-tui/src/main.rs&quot;,
+  &quot;themePickerIndex&quot;: 16,
+  &quot;themePickerMode&quot;: false,
+  &quot;totalNodeCount&quot;: 228,
+  &quot;viewMode&quot;: &quot;Log&quot;,
+  &quot;visibleNodeCount&quot;: 20
+}</pre>
+  </article>
+</div>
+<article class='card'>
+  <h2>tmux capture</h2>
+  <pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                      Change: ymurnorxomzuxsylkwzkqupzonyprmrq (@)
+  @...@&gt; ymurnorx 792ae1dc                                                                            Commit: 792ae1dc5903fcced322eacfff33f5bf0638fd51
+  │      (no description)                                                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M .juzu.local.toml  A bench/results/rust-port/footer-parity/2026-06-23T20-57-59.017+00-00... Time: 2026-06-23T21:52:07+01:00
+  │
+  o..... sqwvzmst 8110032e                                                                            Description (x expand):
+  │      stabilize rust tmux relaunch workflow and live window
+  │      A bench/results/rust-port/live-tmux/2026-06-23T17-37-36.501Z/live-tmux-proof.html  A benc...
+  │                                                                                                   Files (f collapse):
+  o..... kpvlutzk 3e8bd4ce                                                                            M .juzu.local.toml
+  │      let direct f toggle files and persist theme proof                                            A bench/results/rust-port/footer-parity/2026-06-23T20-57-59.017+00-…
+  │      D bench/results/rust-port/live-tmux/2026-06-23T17-00-55.351Z/live-tmux-proof.html  A benc... A bench/results/rust-port/footer-parity/2026-06-23T20-57-59.017+00-…
+  │                                                                                                   A bench/results/rust-port/footer-parity/2026-06-23T20-57-59.017+00-…
+  o..... xwszmunz 729117be                                                                            A bench/results/rust-port/footer-parity/2026-06-23T20-59-17.405+00-…
+  │      persist rust themes and fix sidebar file diff expansion                                      A bench/results/rust-port/footer-parity/2026-06-23T20-59-17.405+00-…
+  │      A bench/results/rust-port/live-tmux/2026-06-23T17-00-55.351Z/live-tmux-proof.html  A benc... A bench/results/rust-port/footer-parity/2026-06-23T20-59-17.405+00-…
+  │                                                                                                   A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/i…
+  o..... runpppvs 991da8f6                                                                            A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/i…
+  │      match old jj rename with modify via similarity detection                                     A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/i…
+  │      M .gitignore  A bench/results/rust-port/diff-parity/2026-06-23T16-13-33.420Z/diff-parity-... A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/l…
+  │                                                                                                   A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/l…
+  o..... oowzmwyk fbf6290d                                                                            A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/l…
+  │      prefer product files in rust sidebar diff preview                                            A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/n…
+  │      A bench/results/rust-port/live-tmux/2026-06-23T15-53-41.102Z/live-tmux-proof.html  A benc... A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/n…
+  │                                                                                                   A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/n…
+  o..... zynrrkwu 27e4f8f9                                                                            A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/r…
+  │      match old jj pure rename summaries and diff metadata                                         A bench/results/rust-port/rust-tui-bench/2026-06-23T20-57-59-285Z/r…
+  │      A bench/results/rust-port/live-tmux/2026-06-23T15-40-26.878Z/live-tmux-proof.html  A benc... M crates/juzu-tui/src/main.rs
+  │                                                                                                   M package.json
+  o..... vplrruyy 292650ca                                                                            A scripts/rust-port-footer-parity-proof.py
+  │      render binary diff files as metadata instead of garbage
+  │      A bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/binary-diff-review.... Diff
+  │                                                                                                     · 21 files · 4827 raw · 4848 rows · 314 shown
+  o..... wspzkvzu 948fff52                                                                              · diff rows 1-14 of 314
+  │      keep action leader proof artifacts free of fixture repo trash                                 STICKY ▸ top · Modified .juzu.local.toml
+  │      A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-repor... ╭ ◆ Modified .juzu.local.toml                                   ╮
+  │                                                                                                     · diff --git a/.juzu.local.toml b/.juzu.local.toml
+                                                                                                        · --- a/.juzu.local.toml
+  │                                                                                                     · +++ b/.juzu.local.toml
+  │                                                                                                   ╭─ @@ -1,12 +1,12 @@                                           ╮
+ ~/dev/juzu  @ymurnorx                                                                                                                                 mainline 228 nodes
+</pre>
+</article>
+</body></html>

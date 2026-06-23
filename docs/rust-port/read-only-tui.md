@@ -29,6 +29,7 @@ Date: 2026-06-13
 - opens a real merge-selection mode from the Actions leader (`Ctrl+A`, then `m`), toggles parents with `Space`, confirms a new merge change on `Enter`, and cancels on `Esc`
 - restores the selected change contents from the Actions leader (`Ctrl+A`, then `z`), leaving the change empty while preserving its description
 - prefers product/source files over generated `bench/results/...` artifacts when entering the full diff pane or cycling diff files on proof-heavy changes, so diff review opens on real JUZU code before falling back to proof blobs
+- shows the real backend total node count in the footer even on limited log windows and compacts extra working-copy bookmarks as `main+N` like the old Bun footer
 - abandons the selected change from the Actions leader (`Ctrl+A`, then `a`)
 - squashes the selected non-working-copy change into its parent from the Actions leader (`Ctrl+A`, then `s`)
 - duplicates the selected change from the Actions leader (`Ctrl+A`, then `y`)
@@ -119,9 +120,13 @@ Latest tmux restart stability proof:
 
 `bench/results/rust-port/tmux-restart/2026-06-22T14-45-51.266+00-00/tmux-restart-proof.html`
 
+Latest footer parity proof:
+
+`bench/results/rust-port/footer-parity/2026-06-23T20-59-40.179+00-00/footer-parity-review.html`
+
 Latest live tmux proof:
 
-`bench/results/rust-port/live-tmux/2026-06-23T13-54-17.302Z/live-tmux-proof.html`
+`bench/results/rust-port/live-tmux/2026-06-23T20-59-56.437Z/live-tmux-proof.html`
 
 Static state proofs are HTML/tmux captures; MP4 is reserved for real app motion. The live review surface is the tmux window.
 
