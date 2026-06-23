@@ -114,12 +114,29 @@ def create_squash_fixture_repo(repo: Path) -> None:
     jj(repo, "describe", "-m", "third desc")
 
 
+def create_rebase_fixture_repo(repo: Path) -> None:
+    repo.mkdir(parents=True, exist_ok=True)
+    jj(repo, "git", "init", ".")
+    (repo / "a.txt").write_text("one\n")
+    jj(repo, "describe", "-m", "first desc")
+    jj(repo, "new", "@")
+    (repo / "b.txt").write_text("two\n")
+    jj(repo, "describe", "-m", "second desc")
+    jj(repo, "new", "@")
+    (repo / "c.txt").write_text("three\n")
+    jj(repo, "describe", "-m", "third desc")
+
+
 def current_change_id(repo: Path) -> str:
     return jj(repo, "log", "--no-graph", "-r", "@", "-T", "change_id.short()").strip()
 
 
 def current_parent_id(repo: Path) -> str:
     return jj(repo, "log", "--no-graph", "-r", "@-", "-T", "change_id.short()").strip()
+
+
+def current_grandparent_id(repo: Path) -> str:
+    return jj(repo, "log", "--no-graph", "-r", "@--", "-T", "change_id.short()").strip()
 
 
 def current_description(repo: Path) -> str:
@@ -317,9 +334,49 @@ def run_sequence_squash(repo: Path, width: int, height: int, session_suffix: str
     }
 
 
+def run_sequence_rebase(repo: Path, width: int, height: int, session_suffix: str) -> dict[str, object]:
+    session = f"juzu-action-rebase-{session_suffix}"
+    cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {repo} --limit 20 --mode mainline"
+    captures: list[tuple[str, str]] = []
+    source_change = current_change_id(repo)
+    before_parent = current_parent_id(repo)
+    destination_change = current_grandparent_id(repo)
+    tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", str(height))
+    try:
+        send(session, cmd, "Enter")
+        captures.append(("23 log before rebase mutation", wait_for(session, "LOG")))
+        send(session, "C-a")
+        captures.append(("24 Ctrl+A enters Actions leader for rebase", wait_for(session, "ACT")))
+        send(session, "b")
+        captures.append(("25 rebase mode opens with selected source", wait_for(session, "REBASE")))
+        send(session, "j")
+        send(session, "j")
+        selected = wait_for_screen(
+            session,
+            lambda text: "REBASE" in text and "Destination:" in text and "first desc" in text,
+            timeout=2.0,
+        )
+        captures.append(("26 selected destination for rebase", selected))
+        send(session, "Enter")
+        wait_for_screen(session, lambda text: "LOG" in text and "REBASE" not in text)
+        time.sleep(0.3)
+        captures.append(("27 log after rebase mutation", capture(session)))
+    finally:
+        tmux("kill-session", "-t", session, check=False)
+    return {
+        "sourceChange": source_change,
+        "beforeParent": before_parent,
+        "destinationChange": destination_change,
+        "afterCurrentChange": current_change_id(repo),
+        "afterParent": current_parent_id(repo),
+        "afterDescription": current_description(repo),
+        "captures": captures,
+    }
+
+
 def render_html(report: dict[str, object], mp4: Path) -> str:
     cards: list[str] = []
-    for section_name in ["new", "edit", "describe", "duplicate", "abandon", "squash"]:
+    for section_name in ["new", "edit", "describe", "duplicate", "abandon", "squash", "rebase"]:
         section = report[section_name]
         cards.extend(
             f"<section><h2>{html.escape(title)}</h2><pre>{html.escape(screen)}</pre></section>"
@@ -369,6 +426,13 @@ strong {{ color:var(--ok); }}
   <p>Squashed change <code>{html.escape(report['squash']['targetChange'])}</code>; current change is now <code>{html.escape(report['squash']['afterCurrentChange'])}</code></p>
   <p>Current description after squash: <strong>{html.escape(report['squash']['afterDescription'])}</strong></p>
 </section>
+<section>
+  <h2>Rebase</h2>
+  <p>Rebased source <code>{html.escape(report['rebase']['sourceChange'])}</code> from parent <code>{html.escape(report['rebase']['beforeParent'])}</code> onto <code>{html.escape(report['rebase']['destinationChange'])}</code></p>
+  <p>Current change after rebase: <code>{html.escape(report['rebase']['afterCurrentChange'])}</code></p>
+  <p>Parent after rebase: <strong>{html.escape(report['rebase']['afterParent'])}</strong></p>
+  <p>Current description after rebase: <strong>{html.escape(report['rebase']['afterDescription'])}</strong></p>
+</section>
 {''.join(cards)}
 </body></html>"""
 
@@ -410,6 +474,10 @@ def main() -> None:
     create_squash_fixture_repo(squash_repo)
     report["squash"] = run_sequence_squash(squash_repo, args.width, args.height, f"{os.getpid()}-squash")
 
+    rebase_repo = out_dir / "rebase-fixture-repo"
+    create_rebase_fixture_repo(rebase_repo)
+    report["rebase"] = run_sequence_rebase(rebase_repo, args.width, args.height, f"{os.getpid()}-rebase")
+
     all_captures = [
         *report["new"]["captures"],
         *report["edit"]["captures"],
@@ -417,6 +485,7 @@ def main() -> None:
         *report["duplicate"]["captures"],
         *report["abandon"]["captures"],
         *report["squash"]["captures"],
+        *report["rebase"]["captures"],
     ]
     for idx, (title, screen) in enumerate(all_captures):
         render_frame(screen, title, frames_dir / f"frame-{idx:03d}.png")
@@ -458,6 +527,12 @@ def main() -> None:
         raise SystemExit("squash mutation did not collapse the selected non-working-copy change")
     if report["squash"]["afterDescription"] != "third desc":
         raise SystemExit("squash mutation unexpectedly changed the current working copy description")
+    if report["rebase"]["afterCurrentChange"] != report["rebase"]["sourceChange"]:
+        raise SystemExit("rebase mutation moved the working copy off the selected source change")
+    if report["rebase"]["afterParent"] != report["rebase"]["destinationChange"]:
+        raise SystemExit("rebase mutation did not move the selected source onto the chosen destination")
+    if report["rebase"]["afterDescription"] != "third desc":
+        raise SystemExit("rebase mutation unexpectedly changed the rebased working copy description")
 
 
 if __name__ == "__main__":

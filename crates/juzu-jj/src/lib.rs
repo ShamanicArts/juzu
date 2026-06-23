@@ -512,6 +512,17 @@ impl JjBackend for NativeJjBackend {
                     message: format!("described change {change_id}"),
                 })
             }
+            Mutation::Rebase {
+                cwd,
+                source_id,
+                destination_id,
+            } => {
+                cli_fallback::rebase(&cwd, &source_id, &destination_id)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: format!("rebased change {source_id} onto {destination_id}"),
+                })
+            }
             Mutation::Duplicate { cwd, change_id } => {
                 cli_fallback::duplicate(&cwd, &change_id)?;
                 Ok(MutationResult {
@@ -590,9 +601,6 @@ impl JjBackend for NativeJjBackend {
                     message: "pushed to git remote".to_string(),
                 })
             }
-            _ => Err(JuzuError::Unsupported(
-                "native jj mutations are not wired yet",
-            )),
         }
     }
 }
@@ -665,6 +673,21 @@ mod tests {
         run_jj(&repo, &["describe", "-m", "second desc"]);
         run_jj(&repo, &["new", "@"]).trim().to_string();
         fs::write(repo.join("note.txt"), "three\n").expect("fixture file rewrite should work");
+        run_jj(&repo, &["describe", "-m", "third desc"]);
+        repo
+    }
+
+    fn create_rebase_fixture_repo() -> PathBuf {
+        let repo = unique_test_dir("rebase-mutations");
+        fs::create_dir_all(&repo).expect("fixture repo dir should be created");
+        run_jj(&repo, &["git", "init", "."]);
+        fs::write(repo.join("a.txt"), "one\n").expect("fixture file write should work");
+        run_jj(&repo, &["describe", "-m", "first desc"]);
+        run_jj(&repo, &["new", "@"]).trim().to_string();
+        fs::write(repo.join("b.txt"), "two\n").expect("fixture file write should work");
+        run_jj(&repo, &["describe", "-m", "second desc"]);
+        run_jj(&repo, &["new", "@"]).trim().to_string();
+        fs::write(repo.join("c.txt"), "three\n").expect("fixture file write should work");
         run_jj(&repo, &["describe", "-m", "third desc"]);
         repo
     }
@@ -1141,6 +1164,64 @@ mod tests {
             ],
         );
         assert_eq!(current_title.trim(), "third desc");
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_rebase_mutation_moves_selected_change_onto_new_destination() {
+        let repo = create_rebase_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let source_change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+        let destination_change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@--", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+        let before_parent = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@-", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+        assert_ne!(before_parent, destination_change_id);
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::Rebase {
+            cwd: repo.clone(),
+            source_id: source_change_id.clone(),
+            destination_id: destination_change_id.clone(),
+        }))
+        .expect("rebase mutation should succeed");
+        assert!(result.changed, "rebase mutation should report a change");
+
+        let after_current = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "@",
+                "-T",
+                "change_id.short() ++ \"|\" ++ description.first_line()",
+            ],
+        );
+        let mut current_parts = after_current.trim().split('|');
+        assert_eq!(current_parts.next(), Some(source_change_id.as_str()));
+        assert_eq!(current_parts.next(), Some("third desc"));
+
+        let after_parent = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@-", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+        assert_eq!(after_parent, destination_change_id);
 
         let _ = fs::remove_dir_all(&repo);
     }

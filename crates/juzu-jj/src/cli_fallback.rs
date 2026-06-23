@@ -161,6 +161,10 @@ pub fn describe(cwd: &Path, change_id: &str, description: &str) -> Result<()> {
     run_jj(cwd, &["describe", "-r", change_id, "-m", description]).map(|_| ())
 }
 
+pub fn rebase(cwd: &Path, source_id: &str, destination_id: &str) -> Result<()> {
+    run_jj(cwd, &["rebase", "-r", source_id, "-d", destination_id]).map(|_| ())
+}
+
 pub fn duplicate(cwd: &Path, change_id: &str) -> Result<()> {
     run_jj(cwd, &["duplicate", change_id]).map(|_| ())
 }

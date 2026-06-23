@@ -397,6 +397,7 @@ struct App {
     revset_query: String,
     describe_mode: bool,
     describe_value: String,
+    rebase_source_id: Option<String>,
     nodes: Vec<juzu_core::CommitNode>,
     files_by_change: HashMap<String, Vec<FileEntry>>,
     diffs_by_change: HashMap<String, DiffPreview>,
@@ -470,6 +471,7 @@ fn main() -> Result<()> {
         revset_query: String::new(),
         describe_mode: false,
         describe_value: String::new(),
+        rebase_source_id: None,
         nodes,
         files_by_change,
         diffs_by_change,
@@ -601,6 +603,19 @@ fn handle_key_with_backend<B: JjBackend>(
         }
         return false;
     }
+    if app.rebase_source_id.is_some() {
+        match code {
+            KeyCode::Esc => {
+                app.rebase_source_id = None;
+                return false;
+            }
+            KeyCode::Enter => {
+                let _ = rebase_selected_change_with_backend(app, backend);
+                return false;
+            }
+            _ => {}
+        }
+    }
     if modifiers.contains(KeyModifiers::CONTROL) {
         match code {
             KeyCode::Char('a') | KeyCode::Char('x') => {
@@ -654,6 +669,11 @@ fn handle_key_with_backend<B: JjBackend>(
             }
             KeyCode::Char('s') => {
                 let _ = squash_selected_change_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('b') => {
+                let _ = rebase_selected_change_with_backend(app, backend);
                 app.active_leader_mode = None;
                 return false;
             }
@@ -784,7 +804,13 @@ fn handle_key_with_backend<B: JjBackend>(
             app.view_mode = ViewMode::Log;
             app.diff_scroll = 0;
         }
+        KeyCode::Esc if app.rebase_source_id.is_some() => {
+            app.rebase_source_id = None;
+        }
         KeyCode::Char('q') | KeyCode::Esc => return true,
+        KeyCode::Enter if app.rebase_source_id.is_some() => {
+            let _ = rebase_selected_change_with_backend(app, backend);
+        }
         KeyCode::Char('r') | KeyCode::Enter if app.view_mode == ViewMode::OpLog => {
             let _ = restore_selected_oplog_with_backend(app, backend);
         }
@@ -948,6 +974,7 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "revsetQuery": app.revset_query,
         "describeMode": app.describe_mode,
         "describeValue": app.describe_value,
+        "rebaseSourceId": app.rebase_source_id.as_deref().unwrap_or(""),
         "visibleNodeCount": app.nodes.len(),
         "selectedIndex": app.selected,
         "selectedChange": selected.map(|node| node.change_id.as_str()).unwrap_or(""),
@@ -1242,6 +1269,27 @@ fn squash_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B)
     reload_app_nodes_with_backend(app, backend)
 }
 
+fn rebase_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return Ok(());
+    };
+    if let Some(source_id) = app.rebase_source_id.clone() {
+        app.rebase_source_id = None;
+        if source_id == node.change_id {
+            return Ok(());
+        }
+        futures_executor::block_on(backend.mutate(Mutation::Rebase {
+            cwd: app.path.clone(),
+            source_id,
+            destination_id: node.change_id.clone(),
+        }))?;
+        reload_app_nodes_with_backend(app, backend)
+    } else {
+        app.rebase_source_id = Some(node.change_id.clone());
+        Ok(())
+    }
+}
+
 fn bookmark_name_for_change(change_id: &str) -> String {
     let prefix: String = change_id.chars().take(8).collect();
     format!("wip/{prefix}")
@@ -1473,6 +1521,19 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             Span::styled("Esc", key_style),
             Span::styled(" Cancel ", item_style),
         ])]
+    } else if app.rebase_source_id.is_some() {
+        vec![Line::from(vec![
+            Span::styled(" REBASE ", mode_style),
+            Span::raw("  "),
+            Span::styled("j/k", key_style),
+            Span::styled(" Move ", item_style),
+            Span::raw(" "),
+            Span::styled("Enter", key_style),
+            Span::styled(" Confirm ", status_item_style(t, LeaderMode::Action)),
+            Span::raw(" "),
+            Span::styled("Esc", key_style),
+            Span::styled(" Cancel ", item_style),
+        ])]
     } else if app.show_help {
         vec![Line::from(vec![
             Span::styled(" HELP ", mode_style),
@@ -1529,6 +1590,9 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
                 Span::raw(" "),
                 Span::styled("d", key_style),
                 Span::styled(" Describe ", item_style),
+                Span::raw(" "),
+                Span::styled("b", key_style),
+                Span::styled(" Rebase ", item_style),
                 Span::raw(" "),
                 Span::styled("a", key_style),
                 Span::styled(" Abandon ", item_style),
@@ -2997,7 +3061,7 @@ fn render_sidebar(
                 Line::from(Span::styled("View", sidebar_heading_style(t))),
                 Line::from("c sidebar  f files  x description"),
                 Line::from("t theme  / revset  ^d diff"),
-                Line::from("n/e/y are live in Actions"),
+                Line::from("n/e/d/b/a/s/y are live in Actions"),
                 Line::from(""),
                 Line::from("Press h, q, or Esc to close help"),
             ],
@@ -3142,6 +3206,36 @@ fn render_sidebar(
                 Line::from(format!("{} _", app.describe_value)),
                 Line::from(""),
                 Line::from("Enter: apply  Esc: cancel"),
+            ],
+            t,
+        );
+        return;
+    }
+    if let Some(source_id) = app.rebase_source_id.as_deref() {
+        let source_node = app.nodes.iter().find(|node| node.change_id == source_id);
+        let destination_index = app.selected.min(layout.nodes.len().saturating_sub(1));
+        let destination_node = layout.nodes.get(destination_index);
+        let destination_text = match destination_node {
+            Some(node) if node.change_id == source_id => "Select another change".to_string(),
+            Some(node) => format!("{}  {}", node.change_id, node.description_title),
+            None => "Move selection to a destination".to_string(),
+        };
+        render_sidebar_mode_panel(
+            frame,
+            area,
+            " Details ",
+            vec![
+                Line::from(Span::styled("Rebase source:", sidebar_heading_style(t))),
+                Line::from(
+                    source_node
+                        .map(|node| format!("{}  {}", node.change_id, node.description_title))
+                        .unwrap_or_else(|| source_id.to_string()),
+                ),
+                Line::from(""),
+                Line::from(Span::styled("Destination:", sidebar_heading_style(t))),
+                Line::from(destination_text),
+                Line::from(""),
+                Line::from("Enter: confirm  Esc: cancel"),
             ],
             t,
         );
@@ -4154,6 +4248,7 @@ mod tests {
             revset_query: String::new(),
             describe_mode: false,
             describe_value: String::new(),
+            rebase_source_id: None,
             nodes: vec![juzu_core::CommitNode {
                 change_id: change_id.clone(),
                 commit_id: "commit-1".to_string(),
@@ -4433,6 +4528,7 @@ mod tests {
             revset_query: String::new(),
             describe_mode: false,
             describe_value: String::new(),
+            rebase_source_id: None,
             nodes: vec![],
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
@@ -4861,6 +4957,7 @@ mod tests {
             revset_query: String::new(),
             describe_mode: false,
             describe_value: String::new(),
+            rebase_source_id: None,
             nodes: vec![test_commit("change-before", "before restore")],
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
@@ -5030,6 +5127,7 @@ mod tests {
             revset_query: String::new(),
             describe_mode: false,
             describe_value: String::new(),
+            rebase_source_id: None,
             nodes: vec![node],
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
@@ -5515,6 +5613,203 @@ mod tests {
         assert_eq!(app.view_mode, ViewMode::Log);
         assert_eq!(app.nodes.len(), 1);
         assert_eq!(app.nodes[0].change_id, "parent123rest");
+    }
+
+    struct RebaseTestBackend {
+        mutate_calls: Mutex<Vec<juzu_core::Mutation>>,
+        before_nodes: Vec<juzu_core::CommitNode>,
+        after_rebase_nodes: Vec<juzu_core::CommitNode>,
+    }
+
+    #[async_trait::async_trait(?Send)]
+    impl JjBackend for RebaseTestBackend {
+        async fn find_root(&self, _start: &std::path::Path) -> juzu_core::Result<Option<PathBuf>> {
+            Ok(None)
+        }
+
+        async fn log(&self, _query: LogQuery) -> juzu_core::Result<Vec<juzu_core::CommitNode>> {
+            let calls = self.mutate_calls.lock().unwrap();
+            let last = calls.last();
+            Ok(match last {
+                Some(juzu_core::Mutation::Rebase { .. }) => self.after_rebase_nodes.clone(),
+                _ => self.before_nodes.clone(),
+            })
+        }
+
+        async fn node_count(&self, _query: juzu_core::NodeCountQuery) -> juzu_core::Result<usize> {
+            Ok(self.before_nodes.len())
+        }
+
+        async fn description(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn files(&self, _query: ChangeQuery) -> juzu_core::Result<Vec<FileEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn diff(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn op_log(&self, _query: OpLogQuery) -> juzu_core::Result<Vec<OpLogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn obslog(&self, _query: ObslogQuery) -> juzu_core::Result<Vec<ObslogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn mutate(
+            &self,
+            mutation: juzu_core::Mutation,
+        ) -> juzu_core::Result<juzu_core::MutationResult> {
+            self.mutate_calls.lock().unwrap().push(mutation.clone());
+            match mutation {
+                juzu_core::Mutation::Rebase { .. } => Ok(juzu_core::MutationResult {
+                    changed: true,
+                    message: "rebase".to_string(),
+                }),
+                _ => Err(juzu_core::JuzuError::Unsupported(
+                    "unexpected test mutation",
+                )),
+            }
+        }
+    }
+
+    #[test]
+    fn action_rebase_shortcut_arms_selected_source_without_mutating() {
+        let backend = RebaseTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![
+                test_commit("source123rest", "source node"),
+                test_commit("dest1234rest", "destination node"),
+            ],
+            after_rebase_nodes: vec![
+                test_commit("source123rest", "source node"),
+                test_commit("dest1234rest", "destination node"),
+            ],
+        };
+        let mut app = test_log_app("source123rest", vec![]);
+        app.nodes = backend.before_nodes.clone();
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('b'),
+            KeyModifiers::NONE,
+        ));
+
+        assert_eq!(app.active_leader_mode, None);
+        assert_eq!(app.rebase_source_id.as_deref(), Some("source123rest"));
+        assert!(backend.mutate_calls.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn rebase_enter_mutates_and_reloads_log_state() {
+        let backend = RebaseTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![
+                test_commit("source123rest", "source node"),
+                test_commit("dest1234rest", "destination node"),
+            ],
+            after_rebase_nodes: vec![
+                {
+                    let mut node = test_commit("source123rest", "source node");
+                    node.parents = vec!["dest1234rest".to_string()];
+                    node
+                },
+                test_commit("dest1234rest", "destination node"),
+            ],
+        };
+        let mut app = test_log_app("source123rest", vec![]);
+        app.nodes = backend.before_nodes.clone();
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('b'),
+            KeyModifiers::NONE,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('j'),
+            KeyModifiers::NONE,
+        ));
+        assert_eq!(app.selected, 1);
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Enter,
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::Rebase {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                source_id: "source123rest".to_string(),
+                destination_id: "dest1234rest".to_string(),
+            }]
+        );
+        assert_eq!(app.rebase_source_id, None);
+        assert_eq!(app.nodes[0].parents, vec!["dest1234rest".to_string()]);
+    }
+
+    #[test]
+    fn rebase_escape_cancels_pending_source_selection() {
+        let backend = RebaseTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![
+                test_commit("source123rest", "source node"),
+                test_commit("dest1234rest", "destination node"),
+            ],
+            after_rebase_nodes: vec![
+                test_commit("source123rest", "source node"),
+                test_commit("dest1234rest", "destination node"),
+            ],
+        };
+        let mut app = test_log_app("source123rest", vec![]);
+        app.nodes = backend.before_nodes.clone();
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('b'),
+            KeyModifiers::NONE,
+        ));
+        assert_eq!(app.rebase_source_id.as_deref(), Some("source123rest"));
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Esc,
+            KeyModifiers::NONE,
+        ));
+
+        assert_eq!(app.rebase_source_id, None);
+        assert!(backend.mutate_calls.lock().unwrap().is_empty());
     }
 
     #[test]
