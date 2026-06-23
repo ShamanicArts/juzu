@@ -26,6 +26,7 @@ Date: 2026-06-13
 - inserts a real empty change between the selected parent and its first visible child from the Actions leader (`Ctrl+A`, then `i`)
 - opens an inline describe prompt from the Actions leader (`Ctrl+A`, then `d`) and applies `jj describe -r <change> -m ...` on `Enter`
 - arms a real two-step rebase flow from the Actions leader (`Ctrl+A`, then `b`), lets selection move to a destination, confirms on `Enter`, and cancels on `Esc`
+- opens a real merge-selection mode from the Actions leader (`Ctrl+A`, then `m`), toggles parents with `Space`, confirms a new merge change on `Enter`, and cancels on `Esc`
 - abandons the selected change from the Actions leader (`Ctrl+A`, then `a`)
 - squashes the selected non-working-copy change into its parent from the Actions leader (`Ctrl+A`, then `s`)
 - duplicates the selected change from the Actions leader (`Ctrl+A`, then `y`)
@@ -82,7 +83,7 @@ Latest bookmark set/delete proof:
 
 Latest Action leader mutation proof:
 
-`bench/results/rust-port/action-leader/2026-06-23T08-48-43.866+00-00/action-leader-review.html`
+`bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/action-leader-review.html`
 
 Latest Ops undo/redo proof:
 
@@ -118,7 +119,7 @@ Latest tmux restart stability proof:
 
 Latest live tmux proof:
 
-`bench/results/rust-port/live-tmux/2026-06-23T08-50-11.629Z/live-tmux-proof.html`
+`bench/results/rust-port/live-tmux/2026-06-23T09-53-27.506Z/live-tmux-proof.html`
 
 Static state proofs are HTML/tmux captures; MP4 is reserved for real app motion. The live review surface is the tmux window.
 

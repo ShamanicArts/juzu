@@ -14,7 +14,11 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     DefaultTerminal, Frame,
 };
-use std::{collections::HashMap, path::PathBuf, time::Duration};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+    time::Duration,
+};
 
 const DIFF_PREVIEW_ROW_CAP: usize = 420;
 const DEFAULT_LOG_LIMIT: usize = 500;
@@ -398,6 +402,8 @@ struct App {
     describe_mode: bool,
     describe_value: String,
     rebase_source_id: Option<String>,
+    merge_mode: bool,
+    merge_selected_ids: HashSet<String>,
     nodes: Vec<juzu_core::CommitNode>,
     files_by_change: HashMap<String, Vec<FileEntry>>,
     diffs_by_change: HashMap<String, DiffPreview>,
@@ -472,6 +478,8 @@ fn main() -> Result<()> {
         describe_mode: false,
         describe_value: String::new(),
         rebase_source_id: None,
+        merge_mode: false,
+        merge_selected_ids: HashSet::new(),
         nodes,
         files_by_change,
         diffs_by_change,
@@ -616,6 +624,28 @@ fn handle_key_with_backend<B: JjBackend>(
             _ => {}
         }
     }
+    if app.merge_mode {
+        match code {
+            KeyCode::Esc => {
+                app.merge_mode = false;
+                app.merge_selected_ids.clear();
+                return false;
+            }
+            KeyCode::Enter => {
+                let _ = merge_selected_changes_with_backend(app, backend);
+                return false;
+            }
+            KeyCode::Char(' ') => {
+                if let Some(node) = app.nodes.get(app.selected) {
+                    if !app.merge_selected_ids.insert(node.change_id.clone()) {
+                        app.merge_selected_ids.remove(&node.change_id);
+                    }
+                }
+                return false;
+            }
+            _ => {}
+        }
+    }
     if modifiers.contains(KeyModifiers::CONTROL) {
         match code {
             KeyCode::Char('a') | KeyCode::Char('x') => {
@@ -679,6 +709,12 @@ fn handle_key_with_backend<B: JjBackend>(
             }
             KeyCode::Char('b') => {
                 let _ = rebase_selected_change_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
+            KeyCode::Char('m') => {
+                app.merge_mode = true;
+                app.merge_selected_ids.clear();
                 app.active_leader_mode = None;
                 return false;
             }
@@ -980,6 +1016,8 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "describeMode": app.describe_mode,
         "describeValue": app.describe_value,
         "rebaseSourceId": app.rebase_source_id.as_deref().unwrap_or(""),
+        "mergeMode": app.merge_mode,
+        "mergeSelectedIds": app.nodes.iter().filter(|node| app.merge_selected_ids.contains(&node.change_id)).map(|node| node.change_id.as_str()).collect::<Vec<_>>(),
         "visibleNodeCount": app.nodes.len(),
         "selectedIndex": app.selected,
         "selectedChange": selected.map(|node| node.change_id.as_str()).unwrap_or(""),
@@ -1314,6 +1352,26 @@ fn insert_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B)
     reload_app_nodes_with_backend(app, backend)
 }
 
+fn merge_selected_changes_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let parent_ids: Vec<String> = app
+        .nodes
+        .iter()
+        .filter(|node| app.merge_selected_ids.contains(&node.change_id))
+        .map(|node| node.change_id.clone())
+        .collect();
+    if parent_ids.len() < 2 {
+        return Ok(());
+    }
+    futures_executor::block_on(backend.mutate(Mutation::New {
+        cwd: app.path.clone(),
+        parent_id: None,
+        parent_ids,
+    }))?;
+    app.merge_mode = false;
+    app.merge_selected_ids.clear();
+    reload_app_nodes_with_backend(app, backend)
+}
+
 fn bookmark_name_for_change(change_id: &str) -> String {
     let prefix: String = change_id.chars().take(8).collect();
     format!("wip/{prefix}")
@@ -1558,6 +1616,19 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             Span::styled("Esc", key_style),
             Span::styled(" Cancel ", item_style),
         ])]
+    } else if app.merge_mode {
+        vec![Line::from(vec![
+            Span::styled(" MERGE ", mode_style),
+            Span::raw("  "),
+            Span::styled("Space", key_style),
+            Span::styled(" Select ", status_item_style(t, LeaderMode::Action)),
+            Span::raw(" "),
+            Span::styled("Enter", key_style),
+            Span::styled(" Confirm ", status_item_style(t, LeaderMode::Action)),
+            Span::raw(" "),
+            Span::styled("Esc", key_style),
+            Span::styled(" Cancel ", item_style),
+        ])]
     } else if app.show_help {
         vec![Line::from(vec![
             Span::styled(" HELP ", mode_style),
@@ -1620,6 +1691,9 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
                 Span::raw(" "),
                 Span::styled("b", key_style),
                 Span::styled(" Rebase ", item_style),
+                Span::raw(" "),
+                Span::styled("m", key_style),
+                Span::styled(" Merge ", item_style),
                 Span::raw(" "),
                 Span::styled("a", key_style),
                 Span::styled(" Abandon ", item_style),
@@ -2453,7 +2527,10 @@ fn render_graph_table(
         let y = row_y_abs(global);
         let is_selected = global == selected;
         let color = lane_color(t, lane);
-        let node_ch = if node.is_working_copy {
+        let is_merge_selected = app.merge_mode && app.merge_selected_ids.contains(&node.change_id);
+        let node_ch = if is_merge_selected {
+            '✓'
+        } else if node.is_working_copy {
             '@'
         } else if node.is_conflict {
             '!'
@@ -2464,7 +2541,9 @@ fn render_graph_table(
         } else {
             'o'
         };
-        let node_color = if is_selected && !node.is_working_copy && !node.is_conflict {
+        let node_color = if is_merge_selected {
+            t.semantic_success
+        } else if is_selected && !node.is_working_copy && !node.is_conflict {
             t.slate_text
         } else if node.is_working_copy {
             t.semantic_success
@@ -3266,6 +3345,43 @@ fn render_sidebar(
             ],
             t,
         );
+        return;
+    }
+    if app.merge_mode {
+        let selected_nodes: Vec<_> = app
+            .nodes
+            .iter()
+            .filter(|node| app.merge_selected_ids.contains(&node.change_id))
+            .collect();
+        let count = selected_nodes.len();
+        let mut lines = vec![
+            Line::from(Span::styled("Merge mode", sidebar_heading_style(t))),
+            Line::from(format!(
+                "{count} commit{} selected",
+                if count == 1 { "" } else { "s" }
+            )),
+            Line::from(""),
+        ];
+        if !selected_nodes.is_empty() {
+            lines.push(Line::from(Span::styled(
+                "Selected:",
+                sidebar_heading_style(t),
+            )));
+            for node in selected_nodes.into_iter().take(6) {
+                lines.push(Line::from(format!(
+                    "  {}  {}",
+                    node.change_id, node.description_title
+                )));
+            }
+            if count > 6 {
+                lines.push(Line::from(format!("  ... +{} more", count - 6)));
+            }
+            lines.push(Line::from(""));
+        }
+        lines.push(Line::from("Space: toggle selection"));
+        lines.push(Line::from("Enter: create merge"));
+        lines.push(Line::from("Esc: cancel"));
+        render_sidebar_mode_panel(frame, area, " Details ", lines, t);
         return;
     }
     if app.view_mode == ViewMode::OpLog {
@@ -4276,6 +4392,8 @@ mod tests {
             describe_mode: false,
             describe_value: String::new(),
             rebase_source_id: None,
+            merge_mode: false,
+            merge_selected_ids: HashSet::new(),
             nodes: vec![juzu_core::CommitNode {
                 change_id: change_id.clone(),
                 commit_id: "commit-1".to_string(),
@@ -4556,6 +4674,8 @@ mod tests {
             describe_mode: false,
             describe_value: String::new(),
             rebase_source_id: None,
+            merge_mode: false,
+            merge_selected_ids: HashSet::new(),
             nodes: vec![],
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
@@ -4985,6 +5105,8 @@ mod tests {
             describe_mode: false,
             describe_value: String::new(),
             rebase_source_id: None,
+            merge_mode: false,
+            merge_selected_ids: HashSet::new(),
             nodes: vec![test_commit("change-before", "before restore")],
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
@@ -5155,6 +5277,8 @@ mod tests {
             describe_mode: false,
             describe_value: String::new(),
             rebase_source_id: None,
+            merge_mode: false,
+            merge_selected_ids: HashSet::new(),
             nodes: vec![node],
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
@@ -5960,6 +6084,235 @@ mod tests {
         ));
 
         assert_eq!(app.rebase_source_id, None);
+        assert!(backend.mutate_calls.lock().unwrap().is_empty());
+    }
+
+    struct MergeTestBackend {
+        mutate_calls: Mutex<Vec<juzu_core::Mutation>>,
+        before_nodes: Vec<juzu_core::CommitNode>,
+        after_merge_nodes: Vec<juzu_core::CommitNode>,
+    }
+
+    #[async_trait::async_trait(?Send)]
+    impl JjBackend for MergeTestBackend {
+        async fn find_root(&self, _start: &std::path::Path) -> juzu_core::Result<Option<PathBuf>> {
+            Ok(None)
+        }
+
+        async fn log(&self, _query: LogQuery) -> juzu_core::Result<Vec<juzu_core::CommitNode>> {
+            let calls = self.mutate_calls.lock().unwrap();
+            let last = calls.last();
+            Ok(match last {
+                Some(juzu_core::Mutation::New { parent_ids, .. }) if parent_ids.len() > 1 => {
+                    self.after_merge_nodes.clone()
+                }
+                _ => self.before_nodes.clone(),
+            })
+        }
+
+        async fn node_count(&self, _query: juzu_core::NodeCountQuery) -> juzu_core::Result<usize> {
+            Ok(self.before_nodes.len())
+        }
+
+        async fn description(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn files(&self, _query: ChangeQuery) -> juzu_core::Result<Vec<FileEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn diff(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn op_log(&self, _query: OpLogQuery) -> juzu_core::Result<Vec<OpLogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn obslog(&self, _query: ObslogQuery) -> juzu_core::Result<Vec<ObslogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn mutate(
+            &self,
+            mutation: juzu_core::Mutation,
+        ) -> juzu_core::Result<juzu_core::MutationResult> {
+            self.mutate_calls.lock().unwrap().push(mutation.clone());
+            match mutation {
+                juzu_core::Mutation::New { parent_ids, .. } if parent_ids.len() > 1 => {
+                    Ok(juzu_core::MutationResult {
+                        changed: true,
+                        message: "merge".to_string(),
+                    })
+                }
+                _ => Err(juzu_core::JuzuError::Unsupported(
+                    "unexpected test mutation",
+                )),
+            }
+        }
+    }
+
+    #[test]
+    fn action_merge_shortcut_mutates_and_reloads_log_state() {
+        let backend = MergeTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![
+                test_commit("left1234rest", "left parent"),
+                test_commit("right123rest", "right parent"),
+            ],
+            after_merge_nodes: vec![{
+                let mut merged = test_commit("merge123rest", "");
+                merged.parents = vec!["left1234rest".to_string(), "right123rest".to_string()];
+                merged.is_working_copy = true;
+                merged.description_title = String::new();
+                merged
+            }],
+        };
+        let mut app = test_log_app("left1234rest", vec![]);
+        app.nodes = backend.before_nodes.clone();
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('m'),
+            KeyModifiers::NONE,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char(' '),
+            KeyModifiers::NONE,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('j'),
+            KeyModifiers::NONE,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char(' '),
+            KeyModifiers::NONE,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Enter,
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::New {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                parent_id: None,
+                parent_ids: vec!["left1234rest".to_string(), "right123rest".to_string()],
+            }]
+        );
+        assert_eq!(app.view_mode, ViewMode::Log);
+        assert!(!app.merge_mode);
+        assert!(app.merge_selected_ids.is_empty());
+        assert_eq!(app.nodes.len(), 1);
+        assert_eq!(
+            app.nodes[0].parents,
+            vec!["left1234rest".to_string(), "right123rest".to_string()]
+        );
+    }
+
+    #[test]
+    fn merge_escape_cancels_pending_selection_without_mutating() {
+        let backend = MergeTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![
+                test_commit("left1234rest", "left parent"),
+                test_commit("right123rest", "right parent"),
+            ],
+            after_merge_nodes: vec![],
+        };
+        let mut app = test_log_app("left1234rest", vec![]);
+        app.nodes = backend.before_nodes.clone();
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('m'),
+            KeyModifiers::NONE,
+        ));
+        assert!(app.merge_mode);
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char(' '),
+            KeyModifiers::NONE,
+        ));
+        assert_eq!(app.merge_selected_ids.len(), 1);
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Esc,
+            KeyModifiers::NONE,
+        ));
+
+        assert!(!app.merge_mode);
+        assert!(app.merge_selected_ids.is_empty());
+        assert!(backend.mutate_calls.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn merge_enter_needs_two_selected_changes() {
+        let backend = MergeTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![
+                test_commit("left1234rest", "left parent"),
+                test_commit("right123rest", "right parent"),
+            ],
+            after_merge_nodes: vec![],
+        };
+        let mut app = test_log_app("left1234rest", vec![]);
+        app.nodes = backend.before_nodes.clone();
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('m'),
+            KeyModifiers::NONE,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char(' '),
+            KeyModifiers::NONE,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Enter,
+            KeyModifiers::NONE,
+        ));
+
+        assert!(app.merge_mode);
+        assert_eq!(app.merge_selected_ids.len(), 1);
         assert!(backend.mutate_calls.lock().unwrap().is_empty());
     }
 

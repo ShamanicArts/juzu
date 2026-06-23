@@ -1,0 +1,1435 @@
+<!doctype html><html><head><meta charset='utf-8'><title>JUZU Rust Action leader proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --info:#7f9fbf; --ok:#74b88c; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+a { color:var(--info); } code { color:#bfdbfe; }
+section { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; margin:18px 0; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; }
+strong { color:var(--ok); }
+</style></head><body>
+<h1>JUZU Rust Action leader proof</h1>
+<p>MP4: <a href='file:///home/shamanic/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/action-leader-sequence-proof.mp4'>/home/shamanic/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/action-leader-sequence-proof.mp4</a></p>
+<section>
+  <h2>New</h2>
+  <p>Count <strong>3</strong> → <strong>4</strong></p>
+  <p>New current parent: <code>ptkqkopmmuot</code> → <code>ptkqkopmmuot</code></p>
+</section>
+<section>
+  <h2>Edit</h2>
+  <p>Target change: <code>vtwtwqmmvkyt</code></p>
+  <p>Current change after edit: <code>vtwtwqmmvkyt</code></p>
+  <p>Description after edit: <strong>first desc</strong></p>
+</section>
+<section>
+  <h2>Insert</h2>
+  <p>Count <strong>3</strong> → <strong>4</strong></p>
+  <p>Inserted current change <code>xnqwqyynnppx</code> under parent <code>mwmxtkvluzxl</code></p>
+  <p>Child <code>qyyrqyqtkroy</code> now points to <code>xnqwqyynnppx</code></p>
+  <p>Current description after insert: <strong>(empty)</strong></p>
+</section>
+<section>
+  <h2>Describe</h2>
+  <p>Title <code>second desc</code> → <strong>retitled from proof</strong></p>
+</section>
+<section>
+  <h2>Duplicate</h2>
+  <p>Count <strong>3</strong> → <strong>4</strong></p>
+  <p>Title <code>second desc</code> now appears <strong>2</strong> times</p>
+</section>
+<section>
+  <h2>Abandon</h2>
+  <p>Count <strong>3</strong> → <strong>3</strong></p>
+  <p>Selected change <code>ozryxqqrlnll</code> became current <code>lyrwnuzztmow</code></p>
+  <p>Current description after abandon: <strong>(empty)</strong></p>
+</section>
+<section>
+  <h2>Squash</h2>
+  <p>Count <strong>4</strong> → <strong>3</strong></p>
+  <p>Squashed change <code>myvwrslrnksn</code>; current change is now <code>ozrwrskmnrul</code></p>
+  <p>Current description after squash: <strong>third desc</strong></p>
+</section>
+<section>
+  <h2>Merge</h2>
+  <p>Count <strong>4</strong> → <strong>5</strong></p>
+  <p>Merged parents <code>uvmlzrzlslsz</code> + <code>wsmnwryqoytz</code></p>
+  <p>Current change after merge: <code>vwovuxoynxvq</code></p>
+  <p>Parent ids after merge: <strong>wsmnwryqoytz, uvmlzrzlslsz</strong></p>
+  <p>Current description after merge: <strong>(empty)</strong></p>
+</section>
+<section>
+  <h2>Rebase</h2>
+  <p>Rebased source <code>rlokzukuvztm</code> from parent <code>zzlupvsvmoru</code> onto <code>zrpyvqyxrrzn</code></p>
+  <p>Current change after rebase: <code>rlokzukuvztm</code></p>
+  <p>Parent after rebase: <strong>zrpyvqyxrrzn</strong></p>
+  <p>Current description after rebase: <strong>third desc</strong></p>
+</section>
+<section><h2>01 log before Ctrl+A new</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: ptkqkopmmuotwrlymtoszzqqlurllxzy (@)
+  @...@&gt; ptkqkopm f23e3ac7                                                                      Commit: f23e3ac754f87e9fb4b27ce4424dec98b4103337
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:45+01:00
+  │
+  o..... zlptsykr ea6a9516                                                                      Description (x expand):
+  │      first desc                                                                             second desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      M note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Modified note.txt
+                                                                                                ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/new-fixture-repo  @ptkqkopm                                    mainline 3 nodes
+</pre></section><section><h2>02 Ctrl+A enters Actions leader</h2><pre> ACT   n New  e Edit  i Insert  d Describe  b Rebase  m Merge  a Abandon  s Squash  y Duplicate  Esc/q Exit
+                                                                                                Change: ptkqkopmmuotwrlymtoszzqqlurllxzy (@)
+  @...@&gt; ptkqkopm f23e3ac7                                                                      Commit: f23e3ac754f87e9fb4b27ce4424dec98b4103337
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:45+01:00
+  │
+  o..... zlptsykr ea6a9516                                                                      Description (x expand):
+  │      first desc                                                                             second desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      M note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Modified note.txt
+                                                                                                ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/new-fixture-repo  @ptkqkopm                                    mainline 3 nodes
+</pre></section><section><h2>03 log after new mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: ptkqkopmmuotwrlymtoszzqqlurllxzy
+  @....@ qtnzmwox 715f696b                                                                      Commit: f23e3ac754f87e9fb4b27ce4424dec98b4103337
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      no file changes                                                                        Time: 2026-06-23T10:51:45+01:00
+  │
+  O....&gt; ptkqkopm f23e3ac7                                                                      Description (x expand):
+  │      second desc                                                                            second desc
+  │      M note.txt
+  │                                                                                             Files (f collapse):
+  o..... zlptsykr ea6a9516                                                                      M note.txt
+  │      first desc
+  │      A note.txt                                                                             Diff
+  │                                                                                               · 1 files · 6 raw · 7 rows · 7 shown
+  o..... zzzzzzzz 00000000                                                                        · diff rows 1-7 of 7
+         (no description)                                                                        STICKY ▸ top · Modified note.txt
+         no file changes                                                                        ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/new-fixture-repo  @qtnzmwox                                    mainline 4 nodes
+</pre></section><section><h2>04 log before edit target selection</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: tpoyvwqxltvtlyswktyvopurnxykwmzr (@)
+  @...@&gt; tpoyvwqx e159b548                                                                      Commit: e159b548da8dc6c0c22260c9429e2ea8a260a07f
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:46+01:00
+  │
+  o..... vtwtwqmm 377fd0bd                                                                      Description (x expand):
+  │      first desc                                                                             second desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      M note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Modified note.txt
+                                                                                                ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/edit-fixture-repo  @tpoyvwqx                                   mainline 3 nodes
+</pre></section><section><h2>05 selected earlier change for edit</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: vtwtwqmmvkytroxxzmprprxumouorvwm
+  @....@ tpoyvwqx e159b548                                                                      Commit: 377fd0bd8d71293b98453d22755b0c93407a92ce
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:46+01:00
+  │
+  O....&gt; vtwtwqmm 377fd0bd                                                                      Description (x expand):
+  │      first desc                                                                             first desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      A note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note.txt
+                                                                                                ╭ ◆ Added note.txt                                          ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + one
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/edit-fixture-repo  @tpoyvwqx                                   mainline 3 nodes
+</pre></section><section><h2>06 Ctrl+A enters Actions leader for edit</h2><pre> ACT   n New  e Edit  i Insert  d Describe  b Rebase  m Merge  a Abandon  s Squash  y Duplicate  Esc/q Exit
+                                                                                                Change: vtwtwqmmvkytroxxzmprprxumouorvwm
+  @....@ tpoyvwqx e159b548                                                                      Commit: 377fd0bd8d71293b98453d22755b0c93407a92ce
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:46+01:00
+  │
+  O....&gt; vtwtwqmm 377fd0bd                                                                      Description (x expand):
+  │      first desc                                                                             first desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      A note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note.txt
+                                                                                                ╭ ◆ Added note.txt                                          ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + one
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/edit-fixture-repo  @tpoyvwqx                                   mainline 3 nodes
+</pre></section><section><h2>07 log after edit mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: vtwtwqmmvkytroxxzmprprxumouorvwm (@)
+  o..... tpoyvwqx e159b548                                                                      Commit: 377fd0bd8d71293b98453d22755b0c93407a92ce
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:46+01:00
+  │
+  @...@&gt; vtwtwqmm 377fd0bd                                                                      Description (x expand):
+  │      first desc                                                                             first desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      A note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note.txt
+                                                                                                ╭ ◆ Added note.txt                                          ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + one
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/edit-fixture-repo  @vtwtwqmm                                   mainline 3 nodes
+</pre></section><section><h2>08 log before insert target selection</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: qyyrqyqtkroyzonlvostmquxroktmurv (@)
+  @...@&gt; qyyrqyqt e2bda87e                                                                      Commit: e2bda87efbd9734ff76d6aa7509b0c3d2a867c25
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:47+01:00
+  │
+  o..... mwmxtkvl fbf83229                                                                      Description (x expand):
+  │      first desc                                                                             second desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      M note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Modified note.txt
+                                                                                                ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/insert-fixture-repo  @qyyrqyqt                                 mainline 3 nodes
+</pre></section><section><h2>09 selected parent change for insert</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: mwmxtkvluzxlwxnsxpkypmkwsypupstp
+  @....@ qyyrqyqt e2bda87e                                                                      Commit: fbf832290ffa443c27a93b378f4ed45cb8b7c506
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:47+01:00
+  │
+  O....&gt; mwmxtkvl fbf83229                                                                      Description (x expand):
+  │      first desc                                                                             first desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      A note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note.txt
+                                                                                                ╭ ◆ Added note.txt                                          ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + one
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/insert-fixture-repo  @qyyrqyqt                                 mainline 3 nodes
+</pre></section><section><h2>10 Ctrl+A enters Actions leader for insert</h2><pre> ACT   n New  e Edit  i Insert  d Describe  b Rebase  m Merge  a Abandon  s Squash  y Duplicate  Esc/q Exit
+                                                                                                Change: mwmxtkvluzxlwxnsxpkypmkwsypupstp
+  @....@ qyyrqyqt e2bda87e                                                                      Commit: fbf832290ffa443c27a93b378f4ed45cb8b7c506
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:47+01:00
+  │
+  O....&gt; mwmxtkvl fbf83229                                                                      Description (x expand):
+  │      first desc                                                                             first desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      A note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Added note.txt
+                                                                                                ╭ ◆ Added note.txt                                          ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + one
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/insert-fixture-repo  @qyyrqyqt                                 mainline 3 nodes
+</pre></section><section><h2>11 log after insert mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: mwmxtkvluzxlwxnsxpkypmkwsypupstp
+  o..... qyyrqyqt 8a266101                                                                      Commit: fbf832290ffa443c27a93b378f4ed45cb8b7c506
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:47+01:00
+  │
+  @....@ xnqwqyyn 4fa37fa6                                                                      Description (x expand):
+  │      (no description)                                                                       first desc
+  │      no file changes
+  │                                                                                             Files (f collapse):
+  O....&gt; mwmxtkvl fbf83229                                                                      A note.txt
+  │      first desc
+  │      A note.txt                                                                             Diff
+  │                                                                                               · 1 files · 6 raw · 7 rows · 7 shown
+  o..... zzzzzzzz 00000000                                                                        · diff rows 1-7 of 7
+         (no description)                                                                        STICKY ▸ top · Added note.txt
+         no file changes                                                                        ╭ ◆ Added note.txt                                          ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + one
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/insert-fixture-repo  @xnqwqyyn                                 mainline 4 nodes
+</pre></section><section><h2>08 log before describe mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: ttzmquopmmuurtvmoyxullunpowztklq (@)
+  @...@&gt; ttzmquop 7d4ef4f4                                                                      Commit: 7d4ef4f49ff120dd92a128c9449c94907b997c99
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:48+01:00
+  │
+  o..... zyxmkuly ce077273                                                                      Description (x expand):
+  │      first desc                                                                             second desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      M note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Modified note.txt
+                                                                                                ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/describe-fixture-repo  @ttzmquop                               mainline 3 nodes
+</pre></section><section><h2>09 Ctrl+A enters Actions leader for describe</h2><pre> ACT   n New  e Edit  i Insert  d Describe  b Rebase  m Merge  a Abandon  s Squash  y Duplicate  Esc/q Exit
+                                                                                                Change: ttzmquopmmuurtvmoyxullunpowztklq (@)
+  @...@&gt; ttzmquop 7d4ef4f4                                                                      Commit: 7d4ef4f49ff120dd92a128c9449c94907b997c99
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:48+01:00
+  │
+  o..... zyxmkuly ce077273                                                                      Description (x expand):
+  │      first desc                                                                             second desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      M note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Modified note.txt
+                                                                                                ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/describe-fixture-repo  @ttzmquop                               mainline 3 nodes
+</pre></section><section><h2>10 describe prompt opens</h2><pre> DESCRIBE   Enter Apply  Esc Cancel
+                                                                                                ┌ Details ─────────────────────────────────────────────────────┐
+  @...@&gt; ttzmquop 7d4ef4f4                                                                      │Description:                                                  │
+  │      second desc                                                                            │second desc _                                                 │
+  │      M note.txt                                                                             │                                                              │
+  │                                                                                             │Enter: apply  Esc: cancel                                     │
+  o..... zyxmkuly ce077273                                                                      │                                                              │
+  │      first desc                                                                             │                                                              │
+  │      A note.txt                                                                             │                                                              │
+  │                                                                                             │                                                              │
+  o..... zzzzzzzz 00000000                                                                      │                                                              │
+         (no description)                                                                       │                                                              │
+         no file changes                                                                        │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/describe-fixture-repo  @ttzmquop                               mainline 3 nodes
+</pre></section><section><h2>11 describe prompt after typing new title</h2><pre> DESCRIBE   Enter Apply  Esc Cancel
+                                                                                                ┌ Details ─────────────────────────────────────────────────────┐
+  @...@&gt; ttzmquop 7d4ef4f4                                                                      │Description:                                                  │
+  │      second desc                                                                            │retitled from proof _                                         │
+  │      M note.txt                                                                             │                                                              │
+  │                                                                                             │Enter: apply  Esc: cancel                                     │
+  o..... zyxmkuly ce077273                                                                      │                                                              │
+  │      first desc                                                                             │                                                              │
+  │      A note.txt                                                                             │                                                              │
+  │                                                                                             │                                                              │
+  o..... zzzzzzzz 00000000                                                                      │                                                              │
+         (no description)                                                                       │                                                              │
+         no file changes                                                                        │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/describe-fixture-repo  @ttzmquop                               mainline 3 nodes
+</pre></section><section><h2>12 log after describe mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: ttzmquopmmuurtvmoyxullunpowztklq (@)
+  @...@&gt; ttzmquop 0b494a46                                                                      Commit: 0b494a46733506631f5bc48ff1b6f47186323009
+  │      retitled from proof                                                                    Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:48+01:00
+  │
+  o..... zyxmkuly ce077273                                                                      Description (x expand):
+  │      first desc                                                                             retitled from proof
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      M note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Modified note.txt
+                                                                                                ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/describe-fixture-repo  @ttzmquop                               mainline 3 nodes
+</pre></section><section><h2>13 log before duplicate mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: mkqmnkssupuskvnlrltkmzruokntvzwq (@)
+  @...@&gt; mkqmnkss 7f7d8600                                                                      Commit: 7f7d8600624262236e63036590c00bd8dd5e372a
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:47+01:00
+  │
+  o..... ztomvwpn ecf523e1                                                                      Description (x expand):
+  │      first desc                                                                             second desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      M note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Modified note.txt
+                                                                                                ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/duplicate-fixture-repo  @mkqmnkss                              mainline 3 nodes
+</pre></section><section><h2>14 Ctrl+A enters Actions leader for duplicate</h2><pre> ACT   n New  e Edit  i Insert  d Describe  b Rebase  m Merge  a Abandon  s Squash  y Duplicate  Esc/q Exit
+                                                                                                Change: mkqmnkssupuskvnlrltkmzruokntvzwq (@)
+  @...@&gt; mkqmnkss 7f7d8600                                                                      Commit: 7f7d8600624262236e63036590c00bd8dd5e372a
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:47+01:00
+  │
+  o..... ztomvwpn ecf523e1                                                                      Description (x expand):
+  │      first desc                                                                             second desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      M note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Modified note.txt
+                                                                                                ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/duplicate-fixture-repo  @mkqmnkss                              mainline 3 nodes
+</pre></section><section><h2>15 log after duplicate mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: mkqmnkssupuskvnlrltkmzruokntvzwq (@)
+  o......... yxuqoklv f8b2243e                                                                  Commit: 7f7d8600624262236e63036590c00bd8dd5e372a
+  │          second desc                                                                        Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │          M note.txt                                                                         Time: 2026-06-23T10:51:47+01:00
+  │
+  │   @...@&gt; mkqmnkss 7f7d8600                                                                  Description (x expand):
+  │   │      second desc                                                                        second desc
+  │   │      M note.txt
+  │   │                                                                                         Files (f collapse):
+  └───o..... ztomvwpn ecf523e1                                                                  M note.txt
+      │      first desc
+      │      A note.txt                                                                         Diff
+      │                                                                                           · 1 files · 6 raw · 7 rows · 7 shown
+      o..... zzzzzzzz 00000000                                                                    · diff rows 1-7 of 7
+             (no description)                                                                    STICKY ▸ top · Modified note.txt
+             no file changes                                                                    ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/duplicate-fixture-repo  @mkqmnkss                              mainline 4 nodes
+</pre></section><section><h2>16 log before abandon mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: ozryxqqrlnllvkmuroxoylturmlokuqu (@)
+  @...@&gt; ozryxqqr 5be04a12                                                                      Commit: 5be04a120f6ec2f55f64c73340cb3ffbe52b37af
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:50+01:00
+  │
+  o..... oukmwrnw 75ca651b                                                                      Description (x expand):
+  │      first desc                                                                             second desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      M note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Modified note.txt
+                                                                                                ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/abandon-fixture-repo  @ozryxqqr                                mainline 3 nodes
+</pre></section><section><h2>17 Ctrl+A enters Actions leader for abandon</h2><pre> ACT   n New  e Edit  i Insert  d Describe  b Rebase  m Merge  a Abandon  s Squash  y Duplicate  Esc/q Exit
+                                                                                                Change: ozryxqqrlnllvkmuroxoylturmlokuqu (@)
+  @...@&gt; ozryxqqr 5be04a12                                                                      Commit: 5be04a120f6ec2f55f64c73340cb3ffbe52b37af
+  │      second desc                                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:50+01:00
+  │
+  o..... oukmwrnw 75ca651b                                                                      Description (x expand):
+  │      first desc                                                                             second desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      M note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Modified note.txt
+                                                                                                ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/abandon-fixture-repo  @ozryxqqr                                mainline 3 nodes
+</pre></section><section><h2>18 log after abandon mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: lyrwnuzztmowymuuxonnwonvvwlrkopx (@)
+  @...@&gt; lyrwnuzz 85f81ab1                                                                      Commit: 85f81ab1dd5579662412bcc2e51bf6974a861351
+  │      (no description)                                                                       Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      no file changes                                                                        Time: 2026-06-23T10:51:50+01:00
+  │
+  o..... oukmwrnw 75ca651b                                                                      Description (x expand):
+  │      first desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      —
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 0 files · 0 raw · 0 rows · 0 shown
+                                                                                                  · clean patch
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/abandon-fixture-repo  @lyrwnuzz                                mainline 3 nodes
+</pre></section><section><h2>19 log before squash target selection</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: ozrwrskmnrulknsposxxuwkyotzqstpt (@)
+  @...@&gt; ozrwrskm c3253781                                                                      Commit: c32537812c570abac9d71f0e9fdda72ea2a2b14f
+  │      third desc                                                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:51+01:00
+  │
+  o..... myvwrslr df8fea70                                                                      Description (x expand):
+  │      second desc                                                                            third desc
+  │      M note.txt
+  │                                                                                             Files (f collapse):
+  o..... ruxwslty 75d830e3                                                                      M note.txt
+  │      first desc
+  │      A note.txt                                                                             Diff
+  │                                                                                               · 1 files · 6 raw · 7 rows · 7 shown
+  o..... zzzzzzzz 00000000                                                                        · diff rows 1-7 of 7
+         (no description)                                                                        STICKY ▸ top · Modified note.txt
+         no file changes                                                                        ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - two
+                                                                                                  1 + three
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/squash-fixture-repo  @ozrwrskm                                 mainline 4 nodes
+</pre></section><section><h2>20 selected earlier change for squash</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: myvwrslrnksntwpormqqsznrrupzzlrq
+  @....@ ozrwrskm c3253781                                                                      Commit: df8fea70e9113d717272a761d6b515758d6c6a85
+  │      third desc                                                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:51+01:00
+  │
+  O....&gt; myvwrslr df8fea70                                                                      Description (x expand):
+  │      second desc                                                                            second desc
+  │      M note.txt
+  │                                                                                             Files (f collapse):
+  o..... ruxwslty 75d830e3                                                                      M note.txt
+  │      first desc
+  │      A note.txt                                                                             Diff
+  │                                                                                               · 1 files · 6 raw · 7 rows · 7 shown
+  o..... zzzzzzzz 00000000                                                                        · diff rows 1-7 of 7
+         (no description)                                                                        STICKY ▸ top · Modified note.txt
+         no file changes                                                                        ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/squash-fixture-repo  @ozrwrskm                                 mainline 4 nodes
+</pre></section><section><h2>21 Ctrl+A enters Actions leader for squash</h2><pre> ACT   n New  e Edit  i Insert  d Describe  b Rebase  m Merge  a Abandon  s Squash  y Duplicate  Esc/q Exit
+                                                                                                Change: myvwrslrnksntwpormqqsznrrupzzlrq
+  @....@ ozrwrskm c3253781                                                                      Commit: df8fea70e9113d717272a761d6b515758d6c6a85
+  │      third desc                                                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:51+01:00
+  │
+  O....&gt; myvwrslr df8fea70                                                                      Description (x expand):
+  │      second desc                                                                            second desc
+  │      M note.txt
+  │                                                                                             Files (f collapse):
+  o..... ruxwslty 75d830e3                                                                      M note.txt
+  │      first desc
+  │      A note.txt                                                                             Diff
+  │                                                                                               · 1 files · 6 raw · 7 rows · 7 shown
+  o..... zzzzzzzz 00000000                                                                        · diff rows 1-7 of 7
+         (no description)                                                                        STICKY ▸ top · Modified note.txt
+         no file changes                                                                        ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + two
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/squash-fixture-repo  @ozrwrskm                                 mainline 4 nodes
+</pre></section><section><h2>22 log after squash mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: ozrwrskmnrulknsposxxuwkyotzqstpt (@)
+  @...@&gt; ozrwrskm 20e6215f                                                                      Commit: 20e6215f92af1cd2df27365d455ef4a1990ecfef
+  │      third desc                                                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M note.txt                                                                             Time: 2026-06-23T10:51:51+01:00
+  │
+  o..... ruxwslty 75d830e3                                                                      Description (x expand):
+  │      first desc                                                                             third desc
+  │      A note.txt
+  │                                                                                             Files (f collapse):
+  o..... zzzzzzzz 00000000                                                                      M note.txt
+         (no description)
+         no file changes                                                                        Diff
+                                                                                                  · 1 files · 6 raw · 7 rows · 7 shown
+                                                                                                  · diff rows 1-7 of 7
+                                                                                                 STICKY ▸ top · Modified note.txt
+                                                                                                ╭ ◆ Modified note.txt                                       ╮
+                                                                                                  · diff --git a/note.txt b/note.txt
+                                                                                                  · --- a/note.txt
+                                                                                                  · +++ b/note.txt
+                                                                                                ╭─ @@ -1 +1 @@                                             ╮
+                                                                                                  1 - one
+                                                                                                  1 + three
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/squash-fixture-repo  @ozrwrskm                                 mainline 3 nodes
+</pre></section><section><h2>23 log before merge mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: wsmnwryqoytzpnpnysunsrslmksquzxk (@)
+      @...@&gt; wsmnwryq aed5da75                                                                  Commit: aed5da7520a9f4f228fef6ea5b6e3df948f7b214
+      │      right desc                                                                         Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+      │      A right.txt                                                                        Time: 2026-06-23T10:51:52+01:00
+      │
+  o......... uvmlzrzl 75d8cf1d                                                                  Description (x expand):
+  │   │      left desc                                                                          right desc
+  │   │      A left.txt
+  │   │                                                                                         Files (f collapse):
+  └───o..... rvztruov 83de97af                                                                  A right.txt
+      │      base desc
+      │      A base.txt                                                                         Diff
+      │                                                                                           · 1 files · 6 raw · 7 rows · 7 shown
+      o..... zzzzzzzz 00000000                                                                    · diff rows 1-7 of 7
+             (no description)                                                                    STICKY ▸ top · Added right.txt
+             no file changes                                                                    ╭ ◆ Added right.txt                                         ╮
+                                                                                                  · diff --git a/right.txt b/right.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/right.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + right
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/merge-fixture-repo  @wsmnwryq                                  mainline 4 nodes
+</pre></section><section><h2>24 Ctrl+A enters Actions leader for merge</h2><pre> ACT   n New  e Edit  i Insert  d Describe  b Rebase  m Merge  a Abandon  s Squash  y Duplicate  Esc/q Exit
+                                                                                                Change: wsmnwryqoytzpnpnysunsrslmksquzxk (@)
+      @...@&gt; wsmnwryq aed5da75                                                                  Commit: aed5da7520a9f4f228fef6ea5b6e3df948f7b214
+      │      right desc                                                                         Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+      │      A right.txt                                                                        Time: 2026-06-23T10:51:52+01:00
+      │
+  o......... uvmlzrzl 75d8cf1d                                                                  Description (x expand):
+  │   │      left desc                                                                          right desc
+  │   │      A left.txt
+  │   │                                                                                         Files (f collapse):
+  └───o..... rvztruov 83de97af                                                                  A right.txt
+      │      base desc
+      │      A base.txt                                                                         Diff
+      │                                                                                           · 1 files · 6 raw · 7 rows · 7 shown
+      o..... zzzzzzzz 00000000                                                                    · diff rows 1-7 of 7
+             (no description)                                                                    STICKY ▸ top · Added right.txt
+             no file changes                                                                    ╭ ◆ Added right.txt                                         ╮
+                                                                                                  · diff --git a/right.txt b/right.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/right.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + right
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/merge-fixture-repo  @wsmnwryq                                  mainline 4 nodes
+</pre></section><section><h2>25 merge mode opens</h2><pre> MERGE   Space Select  Enter Confirm  Esc Cancel
+                                                                                                ┌ Details ─────────────────────────────────────────────────────┐
+      @...@&gt; wsmnwryq aed5da75                                                                  │Merge mode                                                    │
+      │      right desc                                                                         │0 commits selected                                            │
+      │      A right.txt                                                                        │                                                              │
+      │                                                                                         │Space: toggle selection                                       │
+  o......... uvmlzrzl 75d8cf1d                                                                  │Enter: create merge                                           │
+  │   │      left desc                                                                          │Esc: cancel                                                   │
+  │   │      A left.txt                                                                         │                                                              │
+  │   │                                                                                         │                                                              │
+  └───o..... rvztruov 83de97af                                                                  │                                                              │
+      │      base desc                                                                          │                                                              │
+      │      A base.txt                                                                         │                                                              │
+      │                                                                                         │                                                              │
+      o..... zzzzzzzz 00000000                                                                  │                                                              │
+             (no description)                                                                   │                                                              │
+             no file changes                                                                    │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/merge-fixture-repo  @wsmnwryq                                  mainline 4 nodes
+</pre></section><section><h2>26 first parent selected for merge</h2><pre> MERGE   Space Select  Enter Confirm  Esc Cancel
+                                                                                                ┌ Details ─────────────────────────────────────────────────────┐
+      ✓...@&gt; wsmnwryq aed5da75                                                                  │Merge mode                                                    │
+      │      right desc                                                                         │1 commit selected                                             │
+      │      A right.txt                                                                        │                                                              │
+      │                                                                                         │Selected:                                                     │
+  o......... uvmlzrzl 75d8cf1d                                                                  │  wsmnwryqoytzpnpnysunsrslmksquzxk  right desc                │
+  │   │      left desc                                                                          │                                                              │
+  │   │      A left.txt                                                                         │Space: toggle selection                                       │
+  │   │                                                                                         │Enter: create merge                                           │
+  └───o..... rvztruov 83de97af                                                                  │Esc: cancel                                                   │
+      │      base desc                                                                          │                                                              │
+      │      A base.txt                                                                         │                                                              │
+      │                                                                                         │                                                              │
+      o..... zzzzzzzz 00000000                                                                  │                                                              │
+             (no description)                                                                   │                                                              │
+             no file changes                                                                    │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/merge-fixture-repo  @wsmnwryq                                  mainline 4 nodes
+</pre></section><section><h2>27 selected sibling change for merge</h2><pre> MERGE   Space Select  Enter Confirm  Esc Cancel
+                                                                                                ┌ Details ─────────────────────────────────────────────────────┐
+      ✓....@ wsmnwryq aed5da75                                                                  │Merge mode                                                    │
+      │      right desc                                                                         │1 commit selected                                             │
+      │      A right.txt                                                                        │                                                              │
+      │                                                                                         │Selected:                                                     │
+  O........&gt; uvmlzrzl 75d8cf1d                                                                  │  wsmnwryqoytzpnpnysunsrslmksquzxk  right desc                │
+  │   │      left desc                                                                          │                                                              │
+  │   │      A left.txt                                                                         │Space: toggle selection                                       │
+  │   │                                                                                         │Enter: create merge                                           │
+  └───o..... rvztruov 83de97af                                                                  │Esc: cancel                                                   │
+      │      base desc                                                                          │                                                              │
+      │      A base.txt                                                                         │                                                              │
+      │                                                                                         │                                                              │
+      o..... zzzzzzzz 00000000                                                                  │                                                              │
+             (no description)                                                                   │                                                              │
+             no file changes                                                                    │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/merge-fixture-repo  @wsmnwryq                                  mainline 4 nodes
+</pre></section><section><h2>28 second parent selected for merge</h2><pre> MERGE   Space Select  Enter Confirm  Esc Cancel
+                                                                                                ┌ Details ─────────────────────────────────────────────────────┐
+      ✓....@ wsmnwryq aed5da75                                                                  │Merge mode                                                    │
+      │      right desc                                                                         │2 commits selected                                            │
+      │      A right.txt                                                                        │                                                              │
+      │                                                                                         │Selected:                                                     │
+  ✓........&gt; uvmlzrzl 75d8cf1d                                                                  │  wsmnwryqoytzpnpnysunsrslmksquzxk  right desc                │
+  │   │      left desc                                                                          │  uvmlzrzlslsztpyxzxkrytnlomnuxnyx  left desc                 │
+  │   │      A left.txt                                                                         │                                                              │
+  │   │                                                                                         │Space: toggle selection                                       │
+  └───o..... rvztruov 83de97af                                                                  │Enter: create merge                                           │
+      │      base desc                                                                          │Esc: cancel                                                   │
+      │      A base.txt                                                                         │                                                              │
+      │                                                                                         │                                                              │
+      o..... zzzzzzzz 00000000                                                                  │                                                              │
+             (no description)                                                                   │                                                              │
+             no file changes                                                                    │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/merge-fixture-repo  @wsmnwryq                                  mainline 4 nodes
+</pre></section><section><h2>29 log after merge mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: uvmlzrzlslsztpyxzxkrytnlomnuxnyx
+  ┌───@....@ vwovuxoy 31c532d4                                                                  Commit: 75d8cf1d74e90d973cec6bb2a70ba8efa42bfa55
+  │   │      (no description)                                                                   Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │   │      A left.txt                                                                         Time: 2026-06-23T10:51:52+01:00
+  │   │
+  │   o..... wsmnwryq aed5da75                                                                  Description (x expand):
+  │   │      right desc                                                                         left desc
+  │   │      A right.txt
+  │   │                                                                                         Files (f collapse):
+  O........&gt; uvmlzrzl 75d8cf1d                                                                  A left.txt
+  │   │      left desc
+  │   │      A left.txt                                                                         Diff
+  │   │                                                                                           · 1 files · 6 raw · 7 rows · 7 shown
+  └───o..... rvztruov 83de97af                                                                    · diff rows 1-7 of 7
+      │      base desc                                                                           STICKY ▸ top · Added left.txt
+      │      A base.txt                                                                         ╭ ◆ Added left.txt                                          ╮
+      │                                                                                           · diff --git a/left.txt b/left.txt
+      o..... zzzzzzzz 00000000                                                                    · new file mode 100644
+             (no description)                                                                     · --- /dev/null
+             no file changes                                                                      · +++ b/left.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + left
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/merge-fixture-repo  @vwovuxoy                                  mainline 5 nodes
+</pre></section><section><h2>23 log before rebase mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: rlokzukuvztmttpqmmkxlktsvnowwlyv (@)
+  @...@&gt; rlokzuku 1e755740                                                                      Commit: 1e75574013fd575adecaa562fd0767109e64b4ff
+  │      third desc                                                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      A c.txt                                                                                Time: 2026-06-23T10:51:53+01:00
+  │
+  o..... zzlupvsv e2cc0819                                                                      Description (x expand):
+  │      second desc                                                                            third desc
+  │      A b.txt
+  │                                                                                             Files (f collapse):
+  o..... zrpyvqyx f772eefc                                                                      A c.txt
+  │      first desc
+  │      A a.txt                                                                                Diff
+  │                                                                                               · 1 files · 6 raw · 7 rows · 7 shown
+  o..... zzzzzzzz 00000000                                                                        · diff rows 1-7 of 7
+         (no description)                                                                        STICKY ▸ top · Added c.txt
+         no file changes                                                                        ╭ ◆ Added c.txt                                             ╮
+                                                                                                  · diff --git a/c.txt b/c.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/c.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + three
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/rebase-fixture-repo  @rlokzuku                                 mainline 4 nodes
+</pre></section><section><h2>24 Ctrl+A enters Actions leader for rebase</h2><pre> ACT   n New  e Edit  i Insert  d Describe  b Rebase  m Merge  a Abandon  s Squash  y Duplicate  Esc/q Exit
+                                                                                                Change: rlokzukuvztmttpqmmkxlktsvnowwlyv (@)
+  @...@&gt; rlokzuku 1e755740                                                                      Commit: 1e75574013fd575adecaa562fd0767109e64b4ff
+  │      third desc                                                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      A c.txt                                                                                Time: 2026-06-23T10:51:53+01:00
+  │
+  o..... zzlupvsv e2cc0819                                                                      Description (x expand):
+  │      second desc                                                                            third desc
+  │      A b.txt
+  │                                                                                             Files (f collapse):
+  o..... zrpyvqyx f772eefc                                                                      A c.txt
+  │      first desc
+  │      A a.txt                                                                                Diff
+  │                                                                                               · 1 files · 6 raw · 7 rows · 7 shown
+  o..... zzzzzzzz 00000000                                                                        · diff rows 1-7 of 7
+         (no description)                                                                        STICKY ▸ top · Added c.txt
+         no file changes                                                                        ╭ ◆ Added c.txt                                             ╮
+                                                                                                  · diff --git a/c.txt b/c.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/c.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + three
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/rebase-fixture-repo  @rlokzuku                                 mainline 4 nodes
+</pre></section><section><h2>25 rebase mode opens with selected source</h2><pre> REBASE   j/k Move  Enter Confirm  Esc Cancel
+                                                                                                ┌ Details ─────────────────────────────────────────────────────┐
+  @...@&gt; rlokzuku 1e755740                                                                      │Rebase source:                                                │
+  │      third desc                                                                             │rlokzukuvztmttpqmmkxlktsvnowwlyv  third desc                  │
+  │      A c.txt                                                                                │                                                              │
+  │                                                                                             │Destination:                                                  │
+  o..... zzlupvsv e2cc0819                                                                      │Select another change                                         │
+  │      second desc                                                                            │                                                              │
+  │      A b.txt                                                                                │Enter: confirm  Esc: cancel                                   │
+  │                                                                                             │                                                              │
+  o..... zrpyvqyx f772eefc                                                                      │                                                              │
+  │      first desc                                                                             │                                                              │
+  │      A a.txt                                                                                │                                                              │
+  │                                                                                             │                                                              │
+  o..... zzzzzzzz 00000000                                                                      │                                                              │
+         (no description)                                                                       │                                                              │
+         no file changes                                                                        │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/rebase-fixture-repo  @rlokzuku                                 mainline 4 nodes
+</pre></section><section><h2>26 selected destination for rebase</h2><pre> REBASE   j/k Move  Enter Confirm  Esc Cancel
+                                                                                                ┌ Details ─────────────────────────────────────────────────────┐
+  @....@ rlokzuku 1e755740                                                                      │Rebase source:                                                │
+  │      third desc                                                                             │rlokzukuvztmttpqmmkxlktsvnowwlyv  third desc                  │
+  │      A c.txt                                                                                │                                                              │
+  │                                                                                             │Destination:                                                  │
+  o..... zzlupvsv e2cc0819                                                                      │zrpyvqyxrrznxppwosutzxotnmznxvpx  first desc                  │
+  │      second desc                                                                            │                                                              │
+  │      A b.txt                                                                                │Enter: confirm  Esc: cancel                                   │
+  │                                                                                             │                                                              │
+  O....&gt; zrpyvqyx f772eefc                                                                      │                                                              │
+  │      first desc                                                                             │                                                              │
+  │      A a.txt                                                                                │                                                              │
+  │                                                                                             │                                                              │
+  o..... zzzzzzzz 00000000                                                                      │                                                              │
+         (no description)                                                                       │                                                              │
+         no file changes                                                                        │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                │                                                              │
+                                                                                                └──────────────────────────────────────────────────────────────┘
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/rebase-fixture-repo  @rlokzuku                                 mainline 4 nodes
+</pre></section><section><h2>27 log after rebase mutation</h2><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                Change: zrpyvqyxrrznxppwosutzxotnmznxvpx
+      @....@ rlokzuku bdf51e1a                                                                  Commit: f772eefc07554f85d437837194efbaeffa4fd67f
+      │      third desc                                                                         Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+      │      A c.txt                                                                            Time: 2026-06-23T10:51:53+01:00
+      │
+  o......... zzlupvsv e2cc0819                                                                  Description (x expand):
+  │   │      second desc                                                                        first desc
+  │   │      A b.txt
+  │   │                                                                                         Files (f collapse):
+  └───O....&gt; zrpyvqyx f772eefc                                                                  A a.txt
+      │      first desc
+      │      A a.txt                                                                            Diff
+      │                                                                                           · 1 files · 6 raw · 7 rows · 7 shown
+      o..... zzzzzzzz 00000000                                                                    · diff rows 1-7 of 7
+             (no description)                                                                    STICKY ▸ top · Added a.txt
+             no file changes                                                                    ╭ ◆ Added a.txt                                             ╮
+                                                                                                  · diff --git a/a.txt b/a.txt
+                                                                                                  · new file mode 100644
+                                                                                                  · --- /dev/null
+                                                                                                  · +++ b/a.txt
+                                                                                                ╭─ @@ -0,0 +1 @@                                           ╮
+                                                                                                  1 + one
+
+
+
+
+
+
+
+
+
+
+
+
+ ~/dev/juzu/bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/rebase-fixture-repo  @rlokzuku                                 mainline 4 nodes
+</pre></section>
+</body></html>

@@ -127,6 +127,19 @@ def create_rebase_fixture_repo(repo: Path) -> None:
     jj(repo, "describe", "-m", "third desc")
 
 
+def create_merge_fixture_repo(repo: Path) -> None:
+    repo.mkdir(parents=True, exist_ok=True)
+    jj(repo, "git", "init", ".")
+    (repo / "base.txt").write_text("base\n")
+    jj(repo, "describe", "-m", "base desc")
+    jj(repo, "new", "@")
+    (repo / "left.txt").write_text("left\n")
+    jj(repo, "describe", "-m", "left desc")
+    jj(repo, "new", "@-")
+    (repo / "right.txt").write_text("right\n")
+    jj(repo, "describe", "-m", "right desc")
+
+
 def current_change_id(repo: Path) -> str:
     return jj(repo, "log", "--no-graph", "-r", "@", "-T", "change_id.short()").strip()
 
@@ -143,6 +156,22 @@ def current_description(repo: Path) -> str:
     return jj(repo, "log", "--no-graph", "-r", "@", "-T", "description.first_line()").strip()
 
 
+def current_parent_ids(repo: Path) -> list[str]:
+    raw = jj(repo, "log", "--no-graph", "-r", "@", "-T", 'parents.map(|p| p.change_id().short()).join(",")').strip()
+    return [value for value in raw.split(",") if value]
+
+
+def change_id_for_title(repo: Path, title: str) -> str:
+    raw = jj(repo, "log", "--no-graph", "-r", "::", "-T", 'change_id.short() ++ "|" ++ description.first_line() ++ "\\n"')
+    for line in raw.splitlines():
+        if not line.strip() or "|" not in line:
+            continue
+        change_id, line_title = line.split("|", 1)
+        if line_title == title:
+            return change_id
+    raise RuntimeError(f"failed to find change with title {title!r}")
+
+
 def parent_of_change(repo: Path, change_id: str) -> str:
     return jj(repo, "log", "--no-graph", "-r", change_id, "-T", 'parents.map(|p| p.change_id().short()).join(",")').strip()
 
@@ -156,15 +185,24 @@ def description_count(repo: Path, title: str) -> int:
     return sum(1 for line in raw.splitlines() if line.strip() == title)
 
 
+def selected_change_visible(screen: str, change_prefix: str) -> bool:
+    detail_needle = f"Change: {change_prefix}"
+    if detail_needle in screen:
+        return True
+    for line in screen.splitlines():
+        if change_prefix in line and ">" in line:
+            return True
+    return False
+
+
 def select_change(session: str, change_prefix: str, max_steps: int = 20) -> str:
-    needle = f"Change: {change_prefix}"
     screen = capture(session)
-    if needle in screen:
+    if selected_change_visible(screen, change_prefix):
         return screen
     for _ in range(max_steps):
         send(session, "j")
-        screen = wait_for_screen(session, lambda text: needle in text, timeout=0.5)
-        if needle in screen:
+        screen = wait_for_screen(session, lambda text: selected_change_visible(text, change_prefix), timeout=0.5)
+        if selected_change_visible(screen, change_prefix):
             return screen
     return screen
 
@@ -373,6 +411,45 @@ def run_sequence_squash(repo: Path, width: int, height: int, session_suffix: str
     }
 
 
+def run_sequence_merge(repo: Path, width: int, height: int, session_suffix: str) -> dict[str, object]:
+    session = f"juzu-action-merge-{session_suffix}"
+    cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {repo} --limit 20 --mode mainline"
+    captures: list[tuple[str, str]] = []
+    before_count = total_count(repo)
+    right_change = current_change_id(repo)
+    left_change = change_id_for_title(repo, "left desc")
+    tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", str(height))
+    try:
+        send(session, cmd, "Enter")
+        captures.append(("23 log before merge mutation", wait_for(session, "LOG")))
+        send(session, "C-a")
+        captures.append(("24 Ctrl+A enters Actions leader for merge", wait_for(session, "ACT")))
+        send(session, "m")
+        captures.append(("25 merge mode opens", wait_for(session, "MERGE")))
+        send(session, "Space")
+        captures.append(("26 first parent selected for merge", wait_for_screen(session, lambda text: "1 commit selected" in text, timeout=2.0)))
+        selected = select_change(session, left_change[:8])
+        captures.append(("27 selected sibling change for merge", selected))
+        send(session, "Space")
+        captures.append(("28 second parent selected for merge", wait_for_screen(session, lambda text: "2 commits selected" in text, timeout=2.0)))
+        send(session, "Enter")
+        wait_for_screen(session, lambda text: "LOG" in text and "MERGE" not in text)
+        time.sleep(0.3)
+        captures.append(("29 log after merge mutation", capture(session)))
+    finally:
+        tmux("kill-session", "-t", session, check=False)
+    return {
+        "beforeCount": before_count,
+        "afterCount": total_count(repo),
+        "leftChange": left_change,
+        "rightChange": right_change,
+        "afterCurrentChange": current_change_id(repo),
+        "afterParentIds": current_parent_ids(repo),
+        "afterDescription": current_description(repo),
+        "captures": captures,
+    }
+
+
 def run_sequence_rebase(repo: Path, width: int, height: int, session_suffix: str) -> dict[str, object]:
     session = f"juzu-action-rebase-{session_suffix}"
     cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {repo} --limit 20 --mode mainline"
@@ -415,7 +492,7 @@ def run_sequence_rebase(repo: Path, width: int, height: int, session_suffix: str
 
 def render_html(report: dict[str, object], mp4: Path) -> str:
     cards: list[str] = []
-    for section_name in ["new", "edit", "insert", "describe", "duplicate", "abandon", "squash", "rebase"]:
+    for section_name in ["new", "edit", "insert", "describe", "duplicate", "abandon", "squash", "merge", "rebase"]:
         section = report[section_name]
         cards.extend(
             f"<section><h2>{html.escape(title)}</h2><pre>{html.escape(screen)}</pre></section>"
@@ -473,6 +550,14 @@ strong {{ color:var(--ok); }}
   <p>Current description after squash: <strong>{html.escape(report['squash']['afterDescription'])}</strong></p>
 </section>
 <section>
+  <h2>Merge</h2>
+  <p>Count <strong>{report['merge']['beforeCount']}</strong> → <strong>{report['merge']['afterCount']}</strong></p>
+  <p>Merged parents <code>{html.escape(report['merge']['leftChange'])}</code> + <code>{html.escape(report['merge']['rightChange'])}</code></p>
+  <p>Current change after merge: <code>{html.escape(report['merge']['afterCurrentChange'])}</code></p>
+  <p>Parent ids after merge: <strong>{html.escape(', '.join(report['merge']['afterParentIds']))}</strong></p>
+  <p>Current description after merge: <strong>{html.escape(report['merge']['afterDescription']) or '(empty)'}</strong></p>
+</section>
+<section>
   <h2>Rebase</h2>
   <p>Rebased source <code>{html.escape(report['rebase']['sourceChange'])}</code> from parent <code>{html.escape(report['rebase']['beforeParent'])}</code> onto <code>{html.escape(report['rebase']['destinationChange'])}</code></p>
   <p>Current change after rebase: <code>{html.escape(report['rebase']['afterCurrentChange'])}</code></p>
@@ -523,6 +608,10 @@ def main() -> None:
     create_squash_fixture_repo(squash_repo)
     report["squash"] = run_sequence_squash(squash_repo, args.width, args.height, f"{os.getpid()}-squash")
 
+    merge_repo = out_dir / "merge-fixture-repo"
+    create_merge_fixture_repo(merge_repo)
+    report["merge"] = run_sequence_merge(merge_repo, args.width, args.height, f"{os.getpid()}-merge")
+
     rebase_repo = out_dir / "rebase-fixture-repo"
     create_rebase_fixture_repo(rebase_repo)
     report["rebase"] = run_sequence_rebase(rebase_repo, args.width, args.height, f"{os.getpid()}-rebase")
@@ -535,6 +624,7 @@ def main() -> None:
         *report["duplicate"]["captures"],
         *report["abandon"]["captures"],
         *report["squash"]["captures"],
+        *report["merge"]["captures"],
         *report["rebase"]["captures"],
     ]
     for idx, (title, screen) in enumerate(all_captures):
@@ -585,6 +675,14 @@ def main() -> None:
         raise SystemExit("squash mutation did not collapse the selected non-working-copy change")
     if report["squash"]["afterDescription"] != "third desc":
         raise SystemExit("squash mutation unexpectedly changed the current working copy description")
+    if report["merge"]["afterCount"] != report["merge"]["beforeCount"] + 1:
+        raise SystemExit("merge mutation did not increase the visible commit count")
+    if report["merge"]["afterCurrentChange"] in {report["merge"]["leftChange"], report["merge"]["rightChange"]}:
+        raise SystemExit("merge mutation did not create a fresh current merge change")
+    if set(report["merge"]["afterParentIds"]) != {report["merge"]["leftChange"], report["merge"]["rightChange"]}:
+        raise SystemExit("merge mutation did not keep both selected parents on the new change")
+    if report["merge"]["afterDescription"] != "":
+        raise SystemExit("merge mutation did not leave the new merge working copy empty")
     if report["rebase"]["afterCurrentChange"] != report["rebase"]["sourceChange"]:
         raise SystemExit("rebase mutation moved the working copy off the selected source change")
     if report["rebase"]["afterParent"] != report["rebase"]["destinationChange"]:

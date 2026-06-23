@@ -703,6 +703,21 @@ mod tests {
         repo
     }
 
+    fn create_merge_fixture_repo() -> PathBuf {
+        let repo = unique_test_dir("merge-mutations");
+        fs::create_dir_all(&repo).expect("fixture repo dir should be created");
+        run_jj(&repo, &["git", "init", "."]);
+        fs::write(repo.join("base.txt"), "base\n").expect("fixture file write should work");
+        run_jj(&repo, &["describe", "-m", "base desc"]);
+        run_jj(&repo, &["new", "@"]).trim().to_string();
+        fs::write(repo.join("left.txt"), "left\n").expect("fixture file write should work");
+        run_jj(&repo, &["describe", "-m", "left desc"]);
+        run_jj(&repo, &["new", "@-"]).trim().to_string();
+        fs::write(repo.join("right.txt"), "right\n").expect("fixture file write should work");
+        run_jj(&repo, &["describe", "-m", "right desc"]);
+        repo
+    }
+
     fn run_git(cwd: &Path, args: &[&str]) -> String {
         let output = Command::new("git")
             .args(args)
@@ -928,6 +943,76 @@ mod tests {
             &["log", "--no-graph", "-r", "@-", "-T", "change_id.short()"],
         );
         assert_eq!(parent_after.trim(), parent_change_id);
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_new_mutation_with_multiple_parents_creates_merge_working_copy() {
+        let repo = create_merge_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let titles = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "::",
+                "-T",
+                "change_id.short() ++ \"|\" ++ description.first_line() ++ \"\\n\"",
+            ],
+        );
+        let left_change_id = titles
+            .lines()
+            .find_map(|line| {
+                line.split_once('|')
+                    .filter(|(_, title)| *title == "left desc")
+            })
+            .map(|(change_id, _)| change_id.to_string())
+            .expect("left fixture change should exist");
+        let right_change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+        let before_count = run_jj(&repo, &["log", "-r", "::", "--count"])
+            .trim()
+            .parse::<usize>()
+            .expect("before count should parse");
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::New {
+            cwd: repo.clone(),
+            parent_id: None,
+            parent_ids: vec![left_change_id.clone(), right_change_id.clone()],
+        }))
+        .expect("merge new mutation should succeed");
+        assert!(result.changed, "merge new mutation should report a change");
+
+        let after_count = run_jj(&repo, &["log", "-r", "::", "--count"])
+            .trim()
+            .parse::<usize>()
+            .expect("after count should parse");
+        assert_eq!(after_count, before_count + 1);
+        let parents_after = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "@",
+                "-T",
+                "parents.map(|p| p.change_id().short()).join(\",\")",
+            ],
+        );
+        let parent_ids: Vec<_> = parents_after
+            .trim()
+            .split(',')
+            .filter(|value| !value.is_empty())
+            .collect();
+        assert_eq!(parent_ids.len(), 2);
+        assert!(parent_ids.contains(&left_change_id.as_str()));
+        assert!(parent_ids.contains(&right_change_id.as_str()));
 
         let _ = fs::remove_dir_all(&repo);
     }
