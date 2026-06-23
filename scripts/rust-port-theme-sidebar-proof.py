@@ -183,7 +183,7 @@ def main() -> None:
         create_theme_repo(theme_repo, env)
 
         initial = run_debug_state(theme_repo, env=env)
-        changed = run_debug_state(theme_repo, "C-v,t,j,Enter,Esc", env=env)
+        changed = run_debug_state(theme_repo, "C-l,t,j,Enter,Esc", env=env)
         persisted_path = theme_repo / ".juzu.local.toml"
         persisted_raw = persisted_path.read_text() if persisted_path.exists() else ""
         relaunched = run_debug_state(theme_repo, env=env)

@@ -666,7 +666,7 @@ fn handle_key_with_backend<B: JjBackend>(
     }
     if modifiers.contains(KeyModifiers::CONTROL) {
         match code {
-            KeyCode::Char('a') | KeyCode::Char('x') => {
+            KeyCode::Char('x') => {
                 app.active_leader_mode = Some(LeaderMode::Action);
                 return false;
             }
@@ -674,7 +674,7 @@ fn handle_key_with_backend<B: JjBackend>(
                 app.active_leader_mode = Some(LeaderMode::Ops);
                 return false;
             }
-            KeyCode::Char('v') | KeyCode::Char('l') => {
+            KeyCode::Char('l') => {
                 app.active_leader_mode = Some(LeaderMode::View);
                 return false;
             }
@@ -989,10 +989,8 @@ fn handle_key_with_backend<B: JjBackend>(
 fn parse_debug_key(raw: &str) -> Option<(KeyCode, KeyModifiers)> {
     match raw {
         "C-d" | "Ctrl+D" | "ctrl+d" => Some((KeyCode::Char('d'), KeyModifiers::CONTROL)),
-        "C-a" | "Ctrl+A" | "ctrl+a" => Some((KeyCode::Char('a'), KeyModifiers::CONTROL)),
         "C-x" | "Ctrl+X" | "ctrl+x" => Some((KeyCode::Char('x'), KeyModifiers::CONTROL)),
         "C-o" | "Ctrl+O" | "ctrl+o" => Some((KeyCode::Char('o'), KeyModifiers::CONTROL)),
-        "C-v" | "Ctrl+V" | "ctrl+v" => Some((KeyCode::Char('v'), KeyModifiers::CONTROL)),
         "C-l" | "Ctrl+L" | "ctrl+l" => Some((KeyCode::Char('l'), KeyModifiers::CONTROL)),
         "C-b" | "Ctrl+B" | "ctrl+b" => Some((KeyCode::Char('b'), KeyModifiers::CONTROL)),
         "Esc" | "Escape" => Some((KeyCode::Esc, KeyModifiers::NONE)),
@@ -1890,13 +1888,13 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
         vec![Line::from(vec![
             Span::styled(" LOG ", mode_style),
             Span::raw("  "),
-            Span::styled("^A", key_style),
+            Span::styled("^X", key_style),
             Span::styled(" Act ", status_item_style(t, LeaderMode::Action)),
             Span::raw(" "),
             Span::styled("^O", key_style),
             Span::styled(" Ops ", status_item_style(t, LeaderMode::Ops)),
             Span::raw(" "),
-            Span::styled("^V", key_style),
+            Span::styled("^L", key_style),
             Span::styled(" View ", status_item_style(t, LeaderMode::View)),
             Span::raw(" "),
             Span::styled("^B", key_style),
@@ -3091,7 +3089,7 @@ fn render_collapsed_sidebar(frame: &mut Frame, area: Rect, app: &App) {
     let t = &app.theme;
     let lines = vec![
         Line::from(Span::styled("[ ]", sidebar_heading_style(t))),
-        Line::from(Span::styled("^V c", sidebar_muted_style(t))),
+        Line::from(Span::styled("^L c", sidebar_muted_style(t))),
     ];
     frame.render_widget(
         Paragraph::new(lines)
@@ -3325,7 +3323,7 @@ fn render_sidebar(
                 Line::from("PgUp/PgDn   Scroll"),
                 Line::from(""),
                 Line::from(Span::styled("Leader Modes", sidebar_heading_style(t))),
-                Line::from("^A Actions  ^O Ops  ^V View  ^B Book"),
+                Line::from("^X Actions  ^O Ops  ^L View  ^B Book"),
                 Line::from(""),
                 Line::from(Span::styled("View", sidebar_heading_style(t))),
                 Line::from("c sidebar  f files  x description"),
@@ -5964,7 +5962,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
@@ -5973,10 +5971,38 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('v'),
+            KeyCode::Char('l'),
             KeyModifiers::CONTROL,
         ));
         assert_eq!(app.active_leader_mode, Some(LeaderMode::View));
+
+        app.active_leader_mode = None;
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, None);
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('v'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, None);
+    }
+
+    #[test]
+    fn visible_status_and_help_triggers_match_old_ctrl_x_ctrl_l_strip() {
+        let source = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/main.rs"))
+            .expect("read source");
+        assert!(source.contains("Span::styled(\"^X\", key_style)"));
+        assert!(source.contains("Span::styled(\"^L\", key_style)"));
+        assert!(!source.contains("Span::styled(\"^A\", key_style)"));
+        assert!(!source.contains("Span::styled(\"^V\", key_style)"));
+        assert!(source.contains("Line::from(\"^X Actions  ^O Ops  ^L View  ^B Book\")"));
     }
 
     struct ActionMutationTestBackend {
@@ -6095,7 +6121,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
@@ -6159,7 +6185,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
@@ -6201,7 +6227,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
@@ -6236,7 +6262,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert!(!handle_key_with_backend(
@@ -6302,7 +6328,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
@@ -6348,7 +6374,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
@@ -6395,7 +6421,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
@@ -6517,7 +6543,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
@@ -6626,7 +6652,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
@@ -6665,7 +6691,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert!(!handle_key_with_backend(
@@ -6720,7 +6746,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert!(!handle_key_with_backend(
@@ -6830,7 +6856,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert!(!handle_key_with_backend(
@@ -6899,7 +6925,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert!(!handle_key_with_backend(
@@ -6944,7 +6970,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert!(!handle_key_with_backend(
@@ -7044,7 +7070,7 @@ mod tests {
         assert!(!handle_key_with_backend(
             &mut app,
             &backend,
-            KeyCode::Char('a'),
+            KeyCode::Char('x'),
             KeyModifiers::CONTROL,
         ));
         assert!(!handle_key_with_backend(

@@ -49,7 +49,7 @@ def launch_tui(target: str, cmd: str) -> str:
     # Let the interactive shell settle before sending the launch command.
     time.sleep(0.5)
     send(target, cmd, "Enter")
-    return wait_for(target, "^A Act")
+    return wait_for(target, "^X Act")
 
 
 def main() -> None:
@@ -79,17 +79,17 @@ def main() -> None:
                 time.sleep(0.6)
                 send(target, "clear", "Enter")
             idle = launch_tui(target, cmd)
-            send(target, "C-a")
+            send(target, "C-x")
             act = wait_for(target, "ACT")
             send(target, "q")
             back_from_act = wait_for(target, "LOG")
-            send(target, "C-v")
+            send(target, "C-l")
             view = wait_for(target, "VIEW")
             send(target, "q")
             back_from_view = wait_for(target, "LOG")
             cycles.append({
                 "cycle": cycle,
-                "idleHasAct": "^A Act" in idle and "^V View" in idle,
+                "idleHasAct": "^X Act" in idle and "^L View" in idle,
                 "actOpened": "ACT" in act,
                 "returnedFromAct": "LOG" in back_from_act,
                 "viewOpened": "VIEW" in view,

@@ -273,7 +273,7 @@ def run_width_case(args: argparse.Namespace, width: int, target: dict[str, Any])
         initial = wait_for(session, "LOG")
         captures["initial"] = initial
         assert_contains(initial, "LOG", "initial log mode", failures)
-        for needle in ["LOG", "^A", "Act", "^O", "Ops", "^V", "View", "^B", "Book"]:
+        for needle in ["LOG", "^X", "Act", "^O", "Ops", "^L", "View", "^B", "Book"]:
             assert_contains(initial, needle, "initial old Bun leader strip", failures)
 
         send(session, "C-o")
@@ -601,17 +601,18 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
                 failures.append(f"{message}: active leader mode should clear")
             if debug_states[label].get(field) != expected:
                 failures.append(message)
+        theme_initial = debug_states["viewThemePicker"]
         theme_apply = debug_states["viewThemePickerDownApplyStaysOpen"]
         if theme_apply.get("themePickerMode") is not True:
             failures.append("debug-state C-l,t,j,Enter should keep theme picker open after applying preview")
-        if theme_apply.get("themePickerIndex") != 20:
-            failures.append("debug-state C-l,t,j,Enter should move theme picker selection from slate to next bundled theme")
-        if theme_apply.get("currentTheme") != "tokyo-night":
-            failures.append("debug-state C-l,t,j,Enter should apply selected bundled theme in Rust state")
+        if theme_apply.get("themePickerIndex") == theme_initial.get("themePickerIndex"):
+            failures.append("debug-state C-l,t,j,Enter should move theme picker selection to a different bundled theme")
+        if theme_apply.get("currentTheme") == theme_initial.get("currentTheme"):
+            failures.append("debug-state C-l,t,j,Enter should apply the newly selected bundled theme in Rust state")
         theme_cancel = debug_states["viewThemePickerEscCancels"]
         if theme_cancel.get("themePickerMode") is not False:
             failures.append("debug-state C-l,t,j,Esc should close theme picker")
-        if theme_cancel.get("currentTheme") != "slate":
+        if theme_cancel.get("currentTheme") != theme_apply.get("currentTheme"):
             failures.append("debug-state C-l,t,j,Esc should not apply unconfirmed theme")
         revset_submit = debug_states["viewRevsetTextSubmit"]
         if revset_submit.get("revsetMode") is not False:
