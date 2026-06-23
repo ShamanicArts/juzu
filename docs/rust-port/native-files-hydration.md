@@ -16,9 +16,9 @@ The Rust port now has the first native sidebar/file hydration slice:
 
 ## Current behavior
 
-For non-working-copy commits, Rust file lists are compared against old JUZU's `jj diff --summary -r <change>` oracle.
+Rust file lists are compared against old JUZU's `jj diff --summary -r <change>` oracle for both committed changes and the dirty working-copy `@` change.
 
-The working-copy commit is intentionally skipped in the parity report for now. Old JUZU shells out to `jj`, which snapshots working-copy filesystem changes before diffing. The current native read-only backend loads repo head without committing a working-copy snapshot, so dirty `@` file parity needs a dedicated safe snapshot slice.
+The backend now takes a safe native working-copy snapshot through `jj-lib` when the selected node is `@`, diffs that ephemeral tree against the parent tree, and then drops the working-copy lock without finishing the mutation. That means dirty tracked and newly added files show up in Rust parity/reporting without silently rewriting the repo state.
 
 ## Verification
 
@@ -31,6 +31,6 @@ bun run parity:files -- --repo /home/shamanic/dev/juzu --limit 20 --cases 8
 
 ## Next work
 
-- Native working-copy snapshot support for accurate dirty `@` files.
+- Tighten native snapshot config/ignore handling so dirty `@` parity matches more repo-level edge cases.
 - Diff text hydration with a parity report for sidebar `diffSummary`.
 - File row color/rhythm parity against old `GraphView`.

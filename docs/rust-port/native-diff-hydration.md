@@ -17,7 +17,7 @@ The Rust output intentionally omits jj's object `index ...` lines for now. The p
 
 The TUI uses `NativeJjBackend::diff_preview(..., 90)` instead of caching full patches for every selected change. This keeps navigation memory bounded while preserving the full `juzu-cli diff` / backend `diff()` path for parity checks and future full-diff views.
 
-Working-copy dirty diff parity still depends on safe native snapshot support; this slice is for read-only committed changes plus the current working-copy commit as loaded by repo head.
+Working-copy dirty diff parity now goes through a safe native snapshot path too. When the selected node is `@`, Rust snapshots the filesystem through `jj-lib`, diffs that ephemeral tree against the parent tree, and leaves the repo state untouched. Single-line unified hunk headers are normalized to old/JJ form (`@@ -0,0 +1,1 @@`, `@@ -1,1 +1,1 @@`) so dirty working-copy parity matches the old sidebar proof surface instead of drifting on compact `similar` header formatting.
 
 ## Review artifact
 

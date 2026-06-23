@@ -75,7 +75,7 @@ code {{ color: #fde68a; }}
 <div class=\"small\">Repo: <code>{html.escape(report['repo'])}</code> · generated {html.escape(report['generatedAt'])}</div>
 <div class=\"summary\">
   <div class=\"card\"><div class=\"num\">{report['passed']}/{report['compared']}</div><div>matched cases</div></div>
-  <div class=\"card\"><div class=\"num\">{report['skipped']}</div><div>skipped working-copy/root cases</div></div>
+  <div class=\"card\"><div class=\"num\">{report['skippedRoots']}</div><div>skipped root cases</div></div>
   <div class=\"card\"><div class=\"num\">{report['limit']}</div><div>snapshot limit</div></div>
 </div>
 <table>
@@ -101,12 +101,12 @@ def main() -> None:
 
     snapshot = run_json(["bun", "run", "oracle:snapshot", "--", "--repo", repo, "--limit", str(args.limit)], ROOT)
     cases = []
-    skipped = 0
+    skipped_roots = 0
     for node in snapshot["nodes"]:
         if len(cases) >= args.cases:
             break
-        if node.get("isWorkingCopy") or node.get("isRoot"):
-            skipped += 1
+        if node.get("isRoot"):
+            skipped_roots += 1
             continue
         change = node["changeId"]
         old = run_json(["bun", "run", "oracle:sidebar", "--", "--repo", repo, "--limit", str(args.limit), "--selected", change], ROOT)
@@ -131,7 +131,7 @@ def main() -> None:
         "compared": len(cases),
         "passed": sum(1 for c in cases if c["match"]),
         "failed": sum(1 for c in cases if not c["match"]),
-        "skipped": skipped,
+        "skippedRoots": skipped_roots,
         "cases": cases,
     }
     (out_dir / "files-parity-report.json").write_text(json.dumps(report, indent=2) + "\n")

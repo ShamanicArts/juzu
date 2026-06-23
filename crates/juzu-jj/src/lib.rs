@@ -12,7 +12,9 @@ use futures::{io::AsyncReadExt, StreamExt};
 use jj_lib::backend::TreeValue;
 use jj_lib::config::StackedConfig;
 use jj_lib::fileset::FilesetAliasesMap;
-use jj_lib::matchers::EverythingMatcher;
+use jj_lib::gitignore::GitIgnoreFile;
+use jj_lib::matchers::{EverythingMatcher, NothingMatcher};
+use jj_lib::merged_tree::MergedTree;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::{ReadonlyRepo, Repo, StoreFactories};
 use jj_lib::repo_path::RepoPathUiConverter;
@@ -22,6 +24,7 @@ use jj_lib::revset::{
 };
 use jj_lib::settings::UserSettings;
 use jj_lib::time_util::DatePatternContext;
+use jj_lib::working_copy::SnapshotOptions;
 use jj_lib::workspace::{default_working_copy_factories, Workspace};
 use juzu_core::{
     ChangeQuery, CommitNode, FileEntry, JjBackend, JuzuError, LogQuery, Mutation, MutationResult,
@@ -91,7 +94,10 @@ impl NativeJjBackend {
         }
     }
 
-    async fn open_repo_at_head(&self, cwd: &Path) -> Result<(PathBuf, Arc<ReadonlyRepo>)> {
+    async fn open_workspace_and_repo_at_head(
+        &self,
+        cwd: &Path,
+    ) -> Result<(PathBuf, Workspace, Arc<ReadonlyRepo>)> {
         let workspace_root = self
             .find_root_blocking(cwd)
             .ok_or_else(|| JuzuError::RepoNotFound(cwd.to_path_buf()))?;
@@ -101,7 +107,51 @@ impl NativeJjBackend {
             .load_at_head()
             .await
             .map_err(|err| JuzuError::Backend(format!("failed to load jj repo head: {err}")))?;
-        Ok((workspace_root, repo))
+        Ok((workspace_root, workspace, repo))
+    }
+
+    async fn snapshot_working_copy_tree(&self, workspace: &mut Workspace) -> Result<MergedTree> {
+        let mut locked_ws = workspace
+            .start_working_copy_mutation()
+            .await
+            .map_err(|err| {
+                JuzuError::Backend(format!(
+                    "failed to lock native jj working copy for snapshot: {err}"
+                ))
+            })?;
+        let options = SnapshotOptions {
+            base_ignores: GitIgnoreFile::empty(),
+            progress: None,
+            start_tracking_matcher: &EverythingMatcher,
+            force_tracking_matcher: &NothingMatcher,
+            max_new_file_size: u64::MAX,
+        };
+        let (tree, _stats) = locked_ws
+            .locked_wc()
+            .snapshot(&options)
+            .await
+            .map_err(|err| {
+                JuzuError::Backend(format!("failed to snapshot native jj working copy: {err}"))
+            })?;
+        Ok(tree)
+    }
+
+    async fn resolve_change_tree(
+        &self,
+        cwd: &Path,
+        change_id: &str,
+    ) -> Result<(Arc<ReadonlyRepo>, jj_lib::commit::Commit, MergedTree)> {
+        let (_workspace_root, mut workspace, repo) =
+            self.open_workspace_and_repo_at_head(cwd).await?;
+        let commit = self
+            .find_commit_by_change_or_commit_id(&repo, change_id)
+            .await?;
+        let tree = if repo.view().is_wc_commit_id(commit.id()) {
+            self.snapshot_working_copy_tree(&mut workspace).await?
+        } else {
+            commit.tree()
+        };
+        Ok((repo, commit, tree))
     }
 
     async fn read_tree_value_text(
@@ -139,14 +189,41 @@ impl NativeJjBackend {
         self.diff_with_line_limit(query, Some(max_lines)).await
     }
 
+    fn normalize_unified_hunk_header(line: &str) -> String {
+        fn expand(range: &str) -> String {
+            if range.contains(',') {
+                range.to_string()
+            } else {
+                format!("{range},1")
+            }
+        }
+
+        let Some(inner) = line
+            .strip_prefix("@@ ")
+            .and_then(|value| value.strip_suffix(" @@"))
+        else {
+            return line.to_string();
+        };
+        let mut parts = inner.split_whitespace();
+        let Some(old_range) = parts.next() else {
+            return line.to_string();
+        };
+        let Some(new_range) = parts.next() else {
+            return line.to_string();
+        };
+        if !old_range.starts_with('-') || !new_range.starts_with('+') {
+            return line.to_string();
+        }
+        format!("@@ {} {} @@", expand(old_range), expand(new_range))
+    }
+
     async fn diff_with_line_limit(
         &self,
         query: ChangeQuery,
         max_lines: Option<usize>,
     ) -> Result<String> {
-        let (_workspace_root, repo) = self.open_repo_at_head(&query.cwd).await?;
-        let commit = self
-            .find_commit_by_change_or_commit_id(&repo, &query.change_id)
+        let (repo, commit, commit_tree) = self
+            .resolve_change_tree(&query.cwd, &query.change_id)
             .await?;
         let parents = commit.parents().await.map_err(|err| {
             JuzuError::Backend(format!(
@@ -157,7 +234,6 @@ impl NativeJjBackend {
             return Ok(String::new());
         };
         let parent_tree = parent.tree();
-        let commit_tree = commit.tree();
         let mut stream = parent_tree.diff_stream(&commit_tree, &EverythingMatcher);
         let mut output = String::new();
         let mut line_count = 0usize;
@@ -214,7 +290,7 @@ impl NativeJjBackend {
                     truncated = true;
                     break;
                 }
-                output.push_str(line);
+                output.push_str(&Self::normalize_unified_hunk_header(line));
                 output.push('\n');
                 line_count += 1;
             }
@@ -433,9 +509,8 @@ impl JjBackend for NativeJjBackend {
     }
 
     async fn files(&self, query: ChangeQuery) -> Result<Vec<FileEntry>> {
-        let (_workspace_root, repo) = self.open_repo_at_head(&query.cwd).await?;
-        let commit = self
-            .find_commit_by_change_or_commit_id(&repo, &query.change_id)
+        let (_repo, commit, commit_tree) = self
+            .resolve_change_tree(&query.cwd, &query.change_id)
             .await?;
         let parents = commit.parents().await.map_err(|err| {
             JuzuError::Backend(format!(
@@ -446,7 +521,6 @@ impl JjBackend for NativeJjBackend {
             return Ok(Vec::new());
         };
         let parent_tree = parent.tree();
-        let commit_tree = commit.tree();
         let mut stream = parent_tree.diff_stream(&commit_tree, &EverythingMatcher);
         let mut files = Vec::new();
         while let Some(entry) = stream.next().await {
@@ -684,6 +758,15 @@ mod tests {
         repo
     }
 
+    fn create_dirty_working_copy_fixture_repo() -> PathBuf {
+        let repo = create_action_fixture_repo();
+        fs::write(repo.join("note.txt"), "three\n")
+            .expect("dirty working-copy file rewrite should work");
+        fs::write(repo.join("extra.txt"), "bonus\n")
+            .expect("dirty working-copy new file write should work");
+        repo
+    }
+
     fn create_squash_fixture_repo() -> PathBuf {
         let repo = unique_test_dir("squash-mutations");
         fs::create_dir_all(&repo).expect("fixture repo dir should be created");
@@ -853,8 +936,14 @@ mod tests {
         .expect("native log should load");
         let selected = nodes
             .iter()
-            .find(|node| !node.is_root && !node.is_working_copy && !node.description_title.is_empty())
-            .or_else(|| nodes.iter().find(|node| !node.is_root && !node.is_working_copy))
+            .find(|node| {
+                !node.is_root && !node.is_working_copy && !node.description_title.is_empty()
+            })
+            .or_else(|| {
+                nodes
+                    .iter()
+                    .find(|node| !node.is_root && !node.is_working_copy)
+            })
             .unwrap_or(&nodes[0]);
         let entries = futures::executor::block_on(backend.obslog(ObslogQuery {
             cwd: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
@@ -921,6 +1010,112 @@ mod tests {
             ],
         );
         assert_eq!(after.trim(), "first desc");
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_files_reads_dirty_working_copy_without_snapshotting_repo_state() {
+        let repo = create_dirty_working_copy_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let before_node = futures::executor::block_on(backend.log(LogQuery {
+            cwd: repo.clone(),
+            limit: 8,
+            revset: None,
+        }))
+        .expect("dirty working-copy log should load")
+        .into_iter()
+        .find(|node| node.is_working_copy)
+        .expect("dirty working-copy node should exist");
+        let before_identity = format!(
+            "{}\x01{}\x01{}",
+            before_node.change_id, before_node.commit_id, before_node.description_title
+        );
+
+        let files = futures::executor::block_on(backend.files(ChangeQuery {
+            cwd: repo.clone(),
+            change_id: before_node.change_id.clone(),
+        }))
+        .expect("dirty working-copy files should load");
+
+        assert_eq!(
+            files,
+            vec![
+                FileEntry {
+                    r#type: "A".to_string(),
+                    path: "extra.txt".to_string(),
+                },
+                FileEntry {
+                    r#type: "M".to_string(),
+                    path: "note.txt".to_string(),
+                },
+            ]
+        );
+
+        let after_node = futures::executor::block_on(backend.log(LogQuery {
+            cwd: repo.clone(),
+            limit: 8,
+            revset: None,
+        }))
+        .expect("dirty working-copy log should still load")
+        .into_iter()
+        .find(|node| node.is_working_copy)
+        .expect("dirty working-copy node should still exist");
+        let after_identity = format!(
+            "{}\x01{}\x01{}",
+            after_node.change_id, after_node.commit_id, after_node.description_title
+        );
+        assert_eq!(after_identity, before_identity);
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_diff_reads_dirty_working_copy_without_snapshotting_repo_state() {
+        let repo = create_dirty_working_copy_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let before_node = futures::executor::block_on(backend.log(LogQuery {
+            cwd: repo.clone(),
+            limit: 8,
+            revset: None,
+        }))
+        .expect("dirty working-copy log should load")
+        .into_iter()
+        .find(|node| node.is_working_copy)
+        .expect("dirty working-copy node should exist");
+        let before_identity = format!(
+            "{}\x01{}\x01{}",
+            before_node.change_id, before_node.commit_id, before_node.description_title
+        );
+
+        let diff = futures::executor::block_on(backend.diff(ChangeQuery {
+            cwd: repo.clone(),
+            change_id: before_node.change_id.clone(),
+        }))
+        .expect("dirty working-copy diff should load");
+
+        assert!(diff.contains("diff --git a/extra.txt b/extra.txt"));
+        assert!(diff.contains("diff --git a/note.txt b/note.txt"));
+        assert!(diff.contains("@@ -0,0 +1,1 @@"));
+        assert!(diff.contains("@@ -1,1 +1,1 @@"));
+        assert!(diff.contains("+bonus"));
+        assert!(diff.contains("+three"));
+        assert!(!diff.contains("+two"));
+
+        let after_node = futures::executor::block_on(backend.log(LogQuery {
+            cwd: repo.clone(),
+            limit: 8,
+            revset: None,
+        }))
+        .expect("dirty working-copy log should still load")
+        .into_iter()
+        .find(|node| node.is_working_copy)
+        .expect("dirty working-copy node should still exist");
+        let after_identity = format!(
+            "{}\x01{}\x01{}",
+            after_node.change_id, after_node.commit_id, after_node.description_title
+        );
+        assert_eq!(after_identity, before_identity);
 
         let _ = fs::remove_dir_all(&repo);
     }
