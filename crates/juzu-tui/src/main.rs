@@ -1,7 +1,9 @@
+mod config;
+
 use anyhow::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use juzu_core::{
-    diff::{collapsed_diff_rows, parse_git_patch, DiffRow, DiffRowKind},
+    diff::{collapsed_diff_rows, iter_diff_rows, parse_git_patch, DiffRow, DiffRowKind},
     layout::calculate_default_layout,
     ChangeQuery, FileEntry, JjBackend, LayoutMode, LogQuery, Mutation, ObslogEntry, ObslogQuery,
     OpLogEntry, OpLogQuery,
@@ -453,6 +455,18 @@ fn main() -> Result<()> {
         })
         .or_else(|| nodes.iter().position(|node| node.is_working_copy))
         .unwrap_or(0);
+    let persisted_theme = config::load_theme_name(&path).unwrap_or_else(|| "slate".to_string());
+    let theme_picker_index = theme_options()
+        .iter()
+        .position(|name| *name == persisted_theme.as_str())
+        .unwrap_or_else(|| {
+            theme_options()
+                .iter()
+                .position(|name| *name == "slate")
+                .unwrap_or(0)
+        });
+    let current_theme = persisted_theme.clone();
+    let theme = UiTokens::named(&persisted_theme);
     let mut app = App {
         path,
         mode,
@@ -465,12 +479,9 @@ fn main() -> Result<()> {
         boxed_chrome: false,
         diff_scaffold: args.iter().any(|arg| arg == "--diff-scaffold"),
         theme_picker_mode: false,
-        theme_picker_index: theme_options()
-            .iter()
-            .position(|name| *name == "slate")
-            .unwrap_or(0),
-        current_theme: "slate".to_string(),
-        theme: UiTokens::named("slate"),
+        theme_picker_index,
+        current_theme,
+        theme,
         log_limit: limit,
         revset_mode: false,
         revset_value: String::new(),
@@ -560,6 +571,7 @@ fn handle_key_with_backend<B: JjBackend>(
             KeyCode::Enter => {
                 app.current_theme = theme_options()[app.theme_picker_index].to_string();
                 app.theme = UiTokens::named(&app.current_theme);
+                let _ = config::save_theme_name(&app.path, &app.current_theme);
             }
             _ => {}
         }
@@ -1116,14 +1128,15 @@ fn ensure_selected_diff(app: &mut App, include_full_rows: bool) {
     .unwrap_or_default();
     let preview = parse_git_patch(&diff)
         .map(|document| {
-            let rows = collapsed_diff_rows(&document, 3);
-            let row_count = rows.len();
-            let preview_rows = cap_diff_preview_rows(rows.clone(), DIFF_PREVIEW_ROW_CAP);
+            let full_rows = iter_diff_rows(&document);
+            let preview_source_rows = collapsed_diff_rows(&document, 3);
+            let row_count = full_rows.len();
+            let preview_rows = cap_diff_preview_rows(preview_source_rows, DIFF_PREVIEW_ROW_CAP);
             DiffPreview {
                 raw_line_count: diff.lines().count(),
                 file_count: document.files.len(),
                 row_count,
-                full_rows: include_full_rows.then_some(rows),
+                full_rows: include_full_rows.then_some(full_rows),
                 preview_rows,
                 parse_error: None,
             }
@@ -1235,6 +1248,19 @@ fn preferred_diff_file_index(diff: &DiffPreview) -> usize {
         .into_iter()
         .next()
         .unwrap_or(0)
+}
+
+fn sidebar_file_preview_limit(files_expanded: bool, total_files: usize) -> usize {
+    if files_expanded {
+        total_files
+    } else {
+        total_files.min(8)
+    }
+}
+
+fn sidebar_diff_preview_visible_count(sidebar_height: usize) -> usize {
+    let scaled = ((sidebar_height as f32) * 0.35).floor() as usize;
+    scaled.max(6)
 }
 
 fn normalize_revset_query(query: &str) -> Option<String> {
@@ -3594,17 +3620,7 @@ fn render_sidebar(
     if files.is_empty() {
         lines.push(Line::from("—"));
     } else {
-        let diff_is_available = app
-            .diffs_by_change
-            .get(&node.change_id)
-            .is_some_and(|diff| !diff.preview_rows.is_empty());
-        let file_preview_limit = if !app.files_expanded {
-            3
-        } else if diff_is_available {
-            4
-        } else {
-            12
-        };
+        let file_preview_limit = sidebar_file_preview_limit(app.files_expanded, files.len());
         let selected_file_index = if app.view_mode == ViewMode::Diff {
             Some(app.diff_file_index.min(files.len().saturating_sub(1)))
         } else {
@@ -3643,7 +3659,8 @@ fn render_sidebar(
     if sidebar_shows_inline_diff_preview(app) {
         lines.push(Line::from(""));
         lines.push(Line::from(Span::styled("Diff", sidebar_heading_style(t))));
-        render_diff_preview_lines(&mut lines, app, node, area.width as usize, 14, t);
+        let visible_count = sidebar_diff_preview_visible_count(area.height as usize);
+        render_diff_preview_lines(&mut lines, app, node, area.width as usize, visible_count, t);
     }
     frame.render_widget(
         Paragraph::new(lines)
@@ -4134,12 +4151,22 @@ fn render_diff_anchor_label(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static TEST_SEQ: AtomicU64 = AtomicU64::new(0);
 
     fn line_to_plain_text(line: Line<'static>) -> String {
         line.spans
             .iter()
             .map(|span| span.content.as_ref())
             .collect::<String>()
+    }
+
+    fn unique_test_dir(label: &str) -> PathBuf {
+        let id = TEST_SEQ.fetch_add(1, Ordering::SeqCst);
+        let dir = std::env::temp_dir().join(format!("juzu-tui-{label}-{id}"));
+        std::fs::create_dir_all(&dir).expect("test dir should be created");
+        dir
     }
 
     #[test]
@@ -4289,6 +4316,57 @@ mod tests {
         assert!(rendered.starts_with("M crates/juzu-tui"));
         assert!(rendered.ends_with('…'));
         assert!(!rendered.starts_with("  M"));
+    }
+
+    #[test]
+    fn theme_picker_enter_persists_theme_to_repo_local_config() {
+        let repo = unique_test_dir("theme-persist");
+        let mut app = test_app_with_diff(DiffPreview {
+            raw_line_count: 0,
+            file_count: 0,
+            row_count: 0,
+            preview_rows: vec![],
+            full_rows: None,
+            parse_error: None,
+        });
+        app.path = repo.clone();
+        app.current_theme = "slate".to_string();
+        app.theme = UiTokens::named("slate");
+        app.theme_picker_mode = true;
+        app.theme_picker_index = theme_options()
+            .iter()
+            .position(|name| *name == "tokyo-night")
+            .expect("tokyo-night should exist in bundled themes");
+
+        let backend = NativeJjBackend::new();
+        handle_key_with_backend(&mut app, &backend, KeyCode::Enter, KeyModifiers::NONE);
+
+        assert_eq!(app.current_theme, "tokyo-night");
+        let persisted = std::fs::read_to_string(repo.join(".juzu.local.toml"))
+            .expect("theme enter should persist repo-local theme config");
+        assert!(persisted.contains("[theme]"));
+        assert!(persisted.contains("name = \"tokyo-night\""));
+        std::fs::remove_dir_all(&repo).ok();
+    }
+
+    #[test]
+    fn sidebar_file_preview_limit_matches_old_expand_collapse_behavior() {
+        assert_eq!(sidebar_file_preview_limit(true, 0), 0);
+        assert_eq!(sidebar_file_preview_limit(true, 3), 3);
+        assert_eq!(sidebar_file_preview_limit(true, 25), 25);
+        assert_eq!(sidebar_file_preview_limit(false, 3), 3);
+        assert_eq!(sidebar_file_preview_limit(false, 8), 8);
+        assert_eq!(sidebar_file_preview_limit(false, 25), 8);
+    }
+
+    #[test]
+    fn sidebar_diff_preview_visible_count_scales_with_height_like_old_juzu() {
+        assert_eq!(sidebar_diff_preview_visible_count(0), 6);
+        assert_eq!(sidebar_diff_preview_visible_count(10), 6);
+        assert_eq!(sidebar_diff_preview_visible_count(18), 6);
+        assert_eq!(sidebar_diff_preview_visible_count(20), 7);
+        assert_eq!(sidebar_diff_preview_visible_count(36), 12);
+        assert_eq!(sidebar_diff_preview_visible_count(50), 17);
     }
 
     #[test]
@@ -5215,6 +5293,38 @@ mod tests {
         let visible = diffview_rows_for_file(&diff, 0);
         let texts: Vec<_> = visible.iter().map(|row| row.text.as_str()).collect();
         assert_eq!(texts, vec!["rename from old.txt", "rename to new.txt"]);
+    }
+
+    #[test]
+    fn full_diff_pane_uses_expanded_rows_without_collapse_markers() {
+        let doc = parse_git_patch(
+            "diff --git a/a.txt b/a.txt\n--- a/a.txt\n+++ b/a.txt\n@@ -1,9 +1,9 @@\n one\n two\n three\n four\n-five\n+FIVE\n six\n seven\n eight\n nine\n",
+        )
+        .unwrap();
+        let full_rows = iter_diff_rows(&doc);
+        let preview_rows = collapsed_diff_rows(&doc, 1);
+        assert!(preview_rows.iter().any(|row| row.kind == DiffRowKind::Collapse));
+        let diff = DiffPreview {
+            raw_line_count: 13,
+            file_count: 1,
+            row_count: full_rows.len(),
+            preview_rows,
+            full_rows: Some(full_rows),
+            parse_error: None,
+        };
+        let visible = diffview_rows_for_file(&diff, 0);
+        assert!(visible.iter().all(|row| row.kind != DiffRowKind::Collapse));
+        let texts: Vec<_> = visible.iter().map(|row| row.text.as_str()).collect();
+        assert!(texts.contains(&" one"));
+        assert!(texts.contains(&" two"));
+        assert!(texts.contains(&" three"));
+        assert!(texts.contains(&" four"));
+        assert!(texts.contains(&"-five"));
+        assert!(texts.contains(&"+FIVE"));
+        assert!(texts.contains(&" six"));
+        assert!(texts.contains(&" seven"));
+        assert!(texts.contains(&" eight"));
+        assert!(texts.contains(&" nine"));
     }
 
     #[test]
