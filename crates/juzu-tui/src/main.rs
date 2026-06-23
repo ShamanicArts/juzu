@@ -679,6 +679,19 @@ fn handle_key_with_backend<B: JjBackend>(
             _ => {}
         }
     }
+    // Convenience shortcut: direct `f` in the main log view toggles the files
+    // section without forcing the user through the View leader. Old JUZU only
+    // exposed this through `Ctrl+V`, then `f`, but the sidebar copy literally
+    // says `Files (f collapse)` and the user reasonably expects plain `f` to
+    // work. Keep the leader binding too; this is additive, not a parity break.
+    if app.view_mode == ViewMode::Log
+        && app.active_leader_mode.is_none()
+        && modifiers == KeyModifiers::NONE
+        && matches!(code, KeyCode::Char('f'))
+    {
+        app.files_expanded = !app.files_expanded;
+        return false;
+    }
     if app.active_leader_mode == Some(LeaderMode::Action) {
         match code {
             KeyCode::Char('n') => {
@@ -4357,6 +4370,27 @@ mod tests {
         assert_eq!(sidebar_file_preview_limit(false, 3), 3);
         assert_eq!(sidebar_file_preview_limit(false, 8), 8);
         assert_eq!(sidebar_file_preview_limit(false, 25), 8);
+    }
+
+    #[test]
+    fn idle_f_toggles_files_expanded_without_view_leader() {
+        let mut app = test_app_with_diff(DiffPreview {
+            raw_line_count: 0,
+            file_count: 0,
+            row_count: 0,
+            preview_rows: vec![],
+            full_rows: None,
+            parse_error: None,
+        });
+        app.view_mode = ViewMode::Log;
+        app.active_leader_mode = None;
+        app.files_expanded = true;
+
+        let backend = NativeJjBackend::new();
+        handle_key_with_backend(&mut app, &backend, KeyCode::Char('f'), KeyModifiers::NONE);
+        assert!(!app.files_expanded);
+        handle_key_with_backend(&mut app, &backend, KeyCode::Char('f'), KeyModifiers::NONE);
+        assert!(app.files_expanded);
     }
 
     #[test]

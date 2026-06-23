@@ -1,0 +1,200 @@
+<!doctype html><html><head><meta charset='utf-8'><title>JUZU Rust theme + sidebar proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --info:#7f9fbf; --ok:#74b88c; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+a { color:var(--info); } code { color:#bfdbfe; }
+.grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; margin:18px 0; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; }
+h1,h2,h3 { margin-top:0; } p { color:var(--muted); } strong { color:var(--ok); }
+</style></head><body>
+<h1>JUZU Rust theme persistence + sidebar proof</h1>
+<p>MP4: <a href='file:///home/shamanic/dev/juzu/bench/results/rust-port/theme-sidebar/2026-06-23T17-04-16.423+00-00/theme-sidebar-proof.mp4'>/home/shamanic/dev/juzu/bench/results/rust-port/theme-sidebar/2026-06-23T17-04-16.423+00-00/theme-sidebar-proof.mp4</a></p>
+<div class='grid'>
+  <article class='card'>
+    <h2>Theme persistence</h2>
+    <pre>{
+  &quot;repo&quot;: &quot;/tmp/juzu-theme-proof-1ted2qle&quot;,
+  &quot;initialTheme&quot;: &quot;slate&quot;,
+  &quot;changedTheme&quot;: &quot;tokyo-night&quot;,
+  &quot;themePickerModeAfterApply&quot;: false,
+  &quot;persistedConfigPath&quot;: &quot;/tmp/juzu-theme-proof-1ted2qle/.juzu.local.toml&quot;,
+  &quot;persistedConfig&quot;: &quot;[theme]\nname = \&quot;tokyo-night\&quot;\n&quot;,
+  &quot;relaunchedTheme&quot;: &quot;tokyo-night&quot;
+}</pre>
+  </article>
+  <article class='card'>
+    <h2>Sidebar behavior</h2>
+    <pre>{
+  &quot;expandedFiles&quot;: true,
+  &quot;collapsedFiles&quot;: false,
+  &quot;expandedPreviewRowLine&quot;: &quot;\u2502      prefer product files in rust sidebar diff preview                                              \u00b7 diff rows 1-17 of 74&quot;,
+  &quot;collapsedPreviewRowLine&quot;: &quot;\u2502      prefer product files in rust sidebar diff preview                                              \u00b7 diff rows 1-17 of 74&quot;,
+  &quot;diffViewMode&quot;: &quot;Diff&quot;,
+  &quot;diffCurrentRowKind&quot;: &quot;FileHeader&quot;,
+  &quot;diffCurrentRowText&quot;: &quot;Modified crates/juzu-tui/src/main.rs&quot;,
+  &quot;diffStickyContext&quot;: &quot;top \u00b7 Modified crates/juzu-tui/src/main.rs&quot;
+}</pre>
+  </article>
+</div>
+<article class='card'>
+  <h2>Captures</h2>
+  <section><h3>sidebar expanded</h3><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                      Change: kpvlutzklvtomnuwzxwstputrytrprxw (@)
+  @...@&gt; kpvlutzk e4327c47                                                                            Commit: e4327c47d7754bc0776ab2bc34cc5fbd0991a4f7
+  │      (no description)                                                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-tui/src/main.rs  M scripts/rust-port-theme-sidebar-proof.py                    Time: 2026-06-23T18:04:12+01:00
+  │
+  o..... xwszmunz 729117be                                                                            Description (x expand):
+  │      persist rust themes and fix sidebar file diff expansion
+  │      A bench/results/rust-port/live-tmux/2026-06-23T17-00-55.351Z/live-tmux-proof.html  A benc...
+  │                                                                                                   Files (f collapse):
+  o..... runpppvs 991da8f6                                                                            M crates/juzu-tui/src/main.rs
+  │      match old jj rename with modify via similarity detection                                     M scripts/rust-port-theme-sidebar-proof.py
+  │      M .gitignore  A bench/results/rust-port/diff-parity/2026-06-23T16-13-33.420Z/diff-parity-...
+  │                                                                                                   Diff
+  o..... oowzmwyk fbf6290d                                                                              · 2 files · 72 raw · 74 rows · 74 shown
+  │      prefer product files in rust sidebar diff preview                                              · diff rows 1-17 of 74
+  │      A bench/results/rust-port/live-tmux/2026-06-23T15-53-41.102Z/live-tmux-proof.html  A benc...  STICKY ▸ top · Modified crates/juzu-tui/src/main.rs
+  │                                                                                                   ╭ ◆ Modified crates/juzu-tui/src/main.rs                        ╮
+  o..... zynrrkwu 27e4f8f9                                                                              · diff --git a/crates/juzu-tui/src/main.rs b/crates/juzu-tu...
+  │      match old jj pure rename summaries and diff metadata                                           · --- a/crates/juzu-tui/src/main.rs
+  │      A bench/results/rust-port/live-tmux/2026-06-23T15-40-26.878Z/live-tmux-proof.html  A benc...   · +++ b/crates/juzu-tui/src/main.rs
+  │                                                                                                   ╭─ @@ -679,6 +679,19 @@                                        ╮
+  o..... vplrruyy 292650ca                                                                             679               _ =&gt; {}
+  │      render binary diff files as metadata instead of garbage                                       680           }
+  │      A bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/binary-diff-review....  681       }
+  │                                                                                                    682 +     // Convenience shortcut: direct `f` in the main lo...
+  o..... wspzkvzu 948fff52                                                                             683 +     // section without forcing the user through the Vi...
+  │      keep action leader proof artifacts free of fixture repo trash                                 684 +     // exposed this through `Ctrl+V`, then `f`, but th...
+  │      A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-repor...  685 +     // says `Files (f collapse)` and the user reasonab...
+  │                                                                                                    686 +     // work. Keep the leader binding too; this is addi...
+  o..... zmwnunyv 8f885ea7                                                                             687 +     if app.view_mode == ViewMode::Log
+  │      add safe native dirty working-copy snapshot parity                                            688 +         &amp;&amp; app.active_leader_mode.is_none()
+  │      A bench/results/rust-port/diff-parity/2026-06-23T14-16-04.345Z/diff-parity-report.json  A...  689 +         &amp;&amp; modifiers == KeyModifiers::NONE
+  │                                                                                                    690 +         &amp;&amp; matches!(code, KeyCode::Char(&#x27;f&#x27;))
+  o..... vmxlrlrm 4d6a9cb4                                                                            ──────────────────── ⋯ 57 more rows below ────────────────────
+  │      prefer product files in rust diff mode and green modal parity
+  │      A bench/results/rust-port/live-tmux/2026-06-23T13-54-17.302Z/live-tmux-proof.html  A benc...
+  │
+  o..... tptyqxrk a62c84af
+  │      wire rust actions leader into real restore action
+  │      A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-repor...
+  │
+  o..... yppyonzq 7f74378c
+  │      wire rust actions leader into real merge mode
+  │      A bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/action-leader-repor...
+  │
+  o..... mvtqnotn 09cfa1af
+  │      wire rust actions leader into real insert action
+  │      A bench/results/rust-port/action-leader/2026-06-23T08-48-43.866+00-00/action-leader-repor...
+  │
+
+ ~/dev/juzu  @kpvlutzk                                                                                                                                  mainline 80 nodes
+</pre></section><section><h3>sidebar collapsed</h3><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                      Change: kpvlutzklvtomnuwzxwstputrytrprxw (@)
+  @...@&gt; kpvlutzk e4327c47                                                                            Commit: e4327c47d7754bc0776ab2bc34cc5fbd0991a4f7
+  │      (no description)                                                                             Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      M crates/juzu-tui/src/main.rs  M scripts/rust-port-theme-sidebar-proof.py                    Time: 2026-06-23T18:04:12+01:00
+  │
+  o..... xwszmunz 729117be                                                                            Description (x expand):
+  │      persist rust themes and fix sidebar file diff expansion
+  │      A bench/results/rust-port/live-tmux/2026-06-23T17-00-55.351Z/live-tmux-proof.html  A benc...
+  │                                                                                                   Files (f expand):
+  o..... runpppvs 991da8f6                                                                            M crates/juzu-tui/src/main.rs
+  │      match old jj rename with modify via similarity detection                                     M scripts/rust-port-theme-sidebar-proof.py
+  │      M .gitignore  A bench/results/rust-port/diff-parity/2026-06-23T16-13-33.420Z/diff-parity-...
+  │                                                                                                   Diff
+  o..... oowzmwyk fbf6290d                                                                              · 2 files · 72 raw · 74 rows · 74 shown
+  │      prefer product files in rust sidebar diff preview                                              · diff rows 1-17 of 74
+  │      A bench/results/rust-port/live-tmux/2026-06-23T15-53-41.102Z/live-tmux-proof.html  A benc...  STICKY ▸ top · Modified crates/juzu-tui/src/main.rs
+  │                                                                                                   ╭ ◆ Modified crates/juzu-tui/src/main.rs                        ╮
+  o..... zynrrkwu 27e4f8f9                                                                              · diff --git a/crates/juzu-tui/src/main.rs b/crates/juzu-tu...
+  │      match old jj pure rename summaries and diff metadata                                           · --- a/crates/juzu-tui/src/main.rs
+  │      A bench/results/rust-port/live-tmux/2026-06-23T15-40-26.878Z/live-tmux-proof.html  A benc...   · +++ b/crates/juzu-tui/src/main.rs
+  │                                                                                                   ╭─ @@ -679,6 +679,19 @@                                        ╮
+  o..... vplrruyy 292650ca                                                                             679               _ =&gt; {}
+  │      render binary diff files as metadata instead of garbage                                       680           }
+  │      A bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/binary-diff-review....  681       }
+  │                                                                                                    682 +     // Convenience shortcut: direct `f` in the main lo...
+  o..... wspzkvzu 948fff52                                                                             683 +     // section without forcing the user through the Vi...
+  │      keep action leader proof artifacts free of fixture repo trash                                 684 +     // exposed this through `Ctrl+V`, then `f`, but th...
+  │      A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-repor...  685 +     // says `Files (f collapse)` and the user reasonab...
+  │                                                                                                    686 +     // work. Keep the leader binding too; this is addi...
+  o..... zmwnunyv 8f885ea7                                                                             687 +     if app.view_mode == ViewMode::Log
+  │      add safe native dirty working-copy snapshot parity                                            688 +         &amp;&amp; app.active_leader_mode.is_none()
+  │      A bench/results/rust-port/diff-parity/2026-06-23T14-16-04.345Z/diff-parity-report.json  A...  689 +         &amp;&amp; modifiers == KeyModifiers::NONE
+  │                                                                                                    690 +         &amp;&amp; matches!(code, KeyCode::Char(&#x27;f&#x27;))
+  o..... vmxlrlrm 4d6a9cb4                                                                            ──────────────────── ⋯ 57 more rows below ────────────────────
+  │      prefer product files in rust diff mode and green modal parity
+  │      A bench/results/rust-port/live-tmux/2026-06-23T13-54-17.302Z/live-tmux-proof.html  A benc...
+  │
+  o..... tptyqxrk a62c84af
+  │      wire rust actions leader into real restore action
+  │      A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-repor...
+  │
+  o..... yppyonzq 7f74378c
+  │      wire rust actions leader into real merge mode
+  │      A bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/action-leader-repor...
+  │
+  o..... mvtqnotn 09cfa1af
+  │      wire rust actions leader into real insert action
+  │      A bench/results/rust-port/action-leader/2026-06-23T08-48-43.866+00-00/action-leader-repor...
+  │
+
+ ~/dev/juzu  @kpvlutzk                                                                                                                                  mainline 80 nodes
+</pre></section><section><h3>full diff</h3><pre> DIFF   ^d Log   [] File   j/k Move   escape Exit
+ File 1/2: Modified crates/juzu-tui/src/main.rs   [ / ] next/prev   Ctrl+d back                       Change: kpvlutzklvtomnuwzxwstputrytrprxw (@)
+ 679               _ =&gt; {}                                                                            Commit: e4327c47d7754bc0776ab2bc34cc5fbd0991a4f7
+ 680           }                                                                                      Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+ 681       }                                                                                          Time: 2026-06-23T18:04:12+01:00
+ 682 +     // Convenience shortcut: direct `f` in the main log view toggles the files
+ 683 +     // section without forcing the user through the View leader. Old JUZU only                 Description (x expand):
+ 684 +     // exposed this through `Ctrl+V`, then `f`, but the sidebar copy literally
+ 685 +     // says `Files (f collapse)` and the user reasonably expects plain `f` to
+ 686 +     // work. Keep the leader binding too; this is additive, not a parity break.                Files (f expand):
+ 687 +     if app.view_mode == ViewMode::Log                                                          ▶ M crates/juzu-tui/src/main.rs
+ 688 +         &amp;&amp; app.active_leader_mode.is_none()                                                    M scripts/rust-port-theme-sidebar-proof.py
+ 689 +         &amp;&amp; modifiers == KeyModifiers::NONE
+ 690 +         &amp;&amp; matches!(code, KeyCode::Char(&#x27;f&#x27;))
+ 691 +     {
+ 692 +         app.files_expanded = !app.files_expanded;
+ 693 +         return false;
+ 694 +     }
+ 695       if app.active_leader_mode == Some(LeaderMode::Action) {
+ 696           match code {
+ 697               KeyCode::Char(&#x27;n&#x27;) =&gt; {
+4373       }
+4374
+4375       #[test]
+4376 +     fn idle_f_toggles_files_expanded_without_view_leader() {
+4377 +         let mut app = test_app_with_diff(DiffPreview {
+4378 +             raw_line_count: 0,
+4379 +             file_count: 0,
+4380 +             row_count: 0,
+4381 +             preview_rows: vec![],
+4382 +             full_rows: None,
+4383 +             parse_error: None,
+4384 +         });
+4385 +         app.view_mode = ViewMode::Log;
+4386 +         app.active_leader_mode = None;
+4387 +         app.files_expanded = true;
+4388 +
+4389 +         let backend = NativeJjBackend::new();
+4390 +         handle_key_with_backend(&amp;mut app, &amp;backend, KeyCode::Char(&#x27;f&#x27;), KeyModifiers::NONE);
+4391 +         assert!(!app.files_expanded);
+4392 +         handle_key_with_backend(&amp;mut app, &amp;backend, KeyCode::Char(&#x27;f&#x27;), KeyModifiers::NONE);
+4393 +         assert!(app.files_expanded);
+4394 +     }
+4395 +
+4396 +     #[test]
+4397       fn sidebar_diff_preview_visible_count_scales_with_height_like_old_juzu() {
+4398           assert_eq!(sidebar_diff_preview_visible_count(0), 6);
+4399           assert_eq!(sidebar_diff_preview_visible_count(10), 6);
+
+
+
+ ~/dev/juzu  @kpvlutzk                                                                                                                                  mainline 80 nodes
+</pre></section>
+</article>
+</body></html>

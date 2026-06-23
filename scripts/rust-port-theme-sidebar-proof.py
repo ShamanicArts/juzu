@@ -199,8 +199,6 @@ def main() -> None:
         expanded = wait_for(session, "Files (f collapse):")
         captures.append(("sidebar expanded", expanded))
 
-        send(session, "C-v")
-        time.sleep(0.15)
         send(session, "f")
         collapsed = wait_for(session, "Files (f expand):")
         captures.append(("sidebar collapsed", collapsed))
@@ -212,7 +210,7 @@ def main() -> None:
         tmux("kill-session", "-t", session, check=False)
 
     expanded_debug = run_debug_state(repo)
-    collapsed_debug = run_debug_state(repo, "C-v,f")
+    collapsed_debug = run_debug_state(repo, "f")
     diff_debug = run_debug_state(repo, "C-d")
 
     sidebar_report = {
