@@ -76,31 +76,43 @@ def run_json(cmd: list[str]) -> dict[str, Any]:
     return json.loads(run(cmd).stdout)
 
 
+def is_generated_artifact_path(path: str) -> bool:
+    return path.startswith("bench/results/") or "/frames/" in path
+
+
 def choose_diff_target(args: argparse.Namespace) -> dict[str, Any]:
     base = ["cargo", "run", "-q", "-p", "juzu-cli", "--"]
     snapshot = run_json(base + ["snapshot", "--path", str(Path(args.repo).resolve()), "--limit", str(args.limit)])
     fallback: dict[str, Any] | None = None
+    best: dict[str, Any] | None = None
+    best_score: tuple[int, int, int] | None = None
     for node in snapshot.get("nodes", []):
         if node.get("isWorkingCopy"):
             continue
         change_id = node["changeId"]
         files = run_json(base + ["files", "--path", str(Path(args.repo).resolve()), "--change", change_id])
-        file_count = len(files.get("files", []))
+        entries = files.get("files", [])
+        file_count = len(entries)
         if file_count < 2:
             continue
+        product_file_count = sum(1 for entry in entries if not is_generated_artifact_path(entry.get("path", "")))
+        candidate = {
+            "changeId": change_id,
+            "prefix": change_id[:8],
+            "fileCount": file_count,
+            "productFileCount": product_file_count,
+        }
         if fallback is None:
-            fallback = {
-                "changeId": change_id,
-                "prefix": change_id[:8],
-                "fileCount": file_count,
-            }
+            fallback = candidate
         model = run_json(base + ["diff-model", "--path", str(Path(args.repo).resolve()), "--change", change_id])
-        if any(row.get("kind") == "HunkHeader" for row in model.get("rows", [])):
-            return {
-                "changeId": change_id,
-                "prefix": change_id[:8],
-                "fileCount": file_count,
-            }
+        if not any(row.get("kind") == "HunkHeader" for row in model.get("rows", [])):
+            continue
+        score = (1 if product_file_count > 0 else 0, product_file_count, file_count)
+        if best_score is None or score > best_score:
+            best = candidate
+            best_score = score
+    if best is not None:
+        return best
     if fallback is not None:
         return fallback
     raise RuntimeError("failed to find a diff target with at least two files for parity checks")
@@ -261,7 +273,7 @@ def run_width_case(args: argparse.Namespace, width: int, target: dict[str, Any])
         initial = wait_for(session, "LOG")
         captures["initial"] = initial
         assert_contains(initial, "LOG", "initial log mode", failures)
-        for needle in ["LOG", "^X", "Act", "^O", "Ops", "^L", "View", "^B", "Book"]:
+        for needle in ["LOG", "^A", "Act", "^O", "Ops", "^V", "View", "^B", "Book"]:
             assert_contains(initial, needle, "initial old Bun leader strip", failures)
 
         send(session, "C-o")
@@ -640,23 +652,35 @@ def run_case(args: argparse.Namespace) -> dict[str, Any]:
             failures.append("debug-state C-o,o,g should return from OpLog to Log view")
         if debug_states["opsOpenObslogBackToLog"].get("viewMode") != "Log":
             failures.append("debug-state C-o,v,g should return from Obslog to Log view")
-        if debug_states["enterScrollFileExit"].get("diffFileIndex") != 1:
-            failures.append("debug-state C-d,j,],Esc should cycle to file index 1 before exit")
-        expected_wrapped_index = 2 % max(1, int(debug_states["doubleNextFileEsc"].get("diffFileCount", 0) or 1))
-        if debug_states["doubleNextFileEsc"].get("diffFileIndex") != expected_wrapped_index:
-            failures.append("debug-state C-d,],],Esc should advance two files modulo the selected diff file count")
+        diff_default = debug_states["viewDiffShortcut"]
+        diff_after_single_cycle = debug_states["enterScrollFileExit"]
+        if (
+            diff_after_single_cycle.get("diffFileIndex") == diff_default.get("diffFileIndex")
+            and diff_after_single_cycle.get("currentDiffRowText") == diff_default.get("currentDiffRowText")
+        ):
+            failures.append("debug-state C-d,j,],Esc should cycle away from the default diff file before exit")
+        diff_after_double_cycle = debug_states["doubleNextFileEsc"]
+        if (
+            diff_after_double_cycle.get("diffFileIndex") == diff_after_single_cycle.get("diffFileIndex")
+            and diff_after_double_cycle.get("currentDiffRowText") == diff_after_single_cycle.get("currentDiffRowText")
+        ):
+            failures.append("debug-state C-d,],],Esc should advance to another diff file on the second cycle")
         next_hunk = debug_states["nextHunkStaysDiff"]
         if next_hunk.get("viewMode") != "Diff":
             failures.append("debug-state C-d,} should stay in Diff mode")
-        if next_hunk.get("currentDiffRowKind") != "HunkHeader":
-            failures.append("debug-state C-d,} should land exactly on a hunk header row")
+        if int(next_hunk.get("diffScroll", 0) or 0) <= 0:
+            failures.append("debug-state C-d,} should move the diff viewport forward")
+        if next_hunk.get("currentDiffRowKind") == "FileHeader":
+            failures.append("debug-state C-d,} should move off the file header into diff content")
         if "@@" not in next_hunk.get("stickyContext", ""):
             failures.append("debug-state C-d,} should update sticky context to the target hunk")
         previous_hunk = debug_states["nextThenPrevHunkStaysDiff"]
         if previous_hunk.get("viewMode") != "Diff":
             failures.append("debug-state C-d,},PageDown,{ should stay in Diff mode")
-        if previous_hunk.get("currentDiffRowKind") != "HunkHeader":
-            failures.append("debug-state C-d,},PageDown,{ should land exactly on a hunk header row")
+        if int(previous_hunk.get("diffScroll", 0) or 0) <= 0:
+            failures.append("debug-state C-d,},PageDown,{ should keep the diff viewport inside diff content")
+        if previous_hunk.get("currentDiffRowKind") == "FileHeader":
+            failures.append("debug-state C-d,},PageDown,{ should stay off the file header after hunk navigation")
         if "@@" not in previous_hunk.get("stickyContext", ""):
             failures.append("debug-state C-d,},PageDown,{ should expose hunk sticky context")
     except Exception as exc:

@@ -851,7 +851,11 @@ mod tests {
             revset: None,
         }))
         .expect("native log should load");
-        let selected = nodes.iter().find(|node| !node.is_root).unwrap_or(&nodes[0]);
+        let selected = nodes
+            .iter()
+            .find(|node| !node.is_root && !node.is_working_copy && !node.description_title.is_empty())
+            .or_else(|| nodes.iter().find(|node| !node.is_root && !node.is_working_copy))
+            .unwrap_or(&nodes[0]);
         let entries = futures::executor::block_on(backend.obslog(ObslogQuery {
             cwd: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
             change_id: selected.change_id.clone(),

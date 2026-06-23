@@ -1146,7 +1146,9 @@ fn toggle_diff_view(app: &mut App) {
     ensure_selected_diff(app, true);
     app.view_mode = ViewMode::Diff;
     app.diff_scroll = 0;
-    app.diff_file_index = 0;
+    app.diff_file_index = selected_diff(app)
+        .map(preferred_diff_file_index)
+        .unwrap_or(0);
 }
 
 fn cycle_diff_file(app: &mut App, dir: isize) {
@@ -1154,19 +1156,68 @@ fn cycle_diff_file(app: &mut App, dir: isize) {
     let Some(diff) = selected_diff(app) else {
         return;
     };
-    if diff.file_count == 0 {
+    let order = diff_display_file_order(diff);
+    if order.is_empty() {
         app.diff_file_index = 0;
         app.diff_scroll = 0;
         return;
     }
-    let total = diff.file_count as isize;
-    app.diff_file_index = (app.diff_file_index as isize + dir).rem_euclid(total) as usize;
+    let current = order
+        .iter()
+        .position(|file_index| *file_index == app.diff_file_index)
+        .unwrap_or(0);
+    let next = (current as isize + dir).rem_euclid(order.len() as isize) as usize;
+    app.diff_file_index = order[next];
     app.diff_scroll = 0;
 }
 
 fn selected_diff(app: &App) -> Option<&DiffPreview> {
     let node = app.nodes.get(app.selected)?;
     app.diffs_by_change.get(&node.change_id)
+}
+
+fn diff_file_path(diff: &DiffPreview, file_index: usize) -> Option<&str> {
+    full_diff_rows(diff)
+        .iter()
+        .find(|row| row.kind == DiffRowKind::FileHeader && row.file_index == file_index)
+        .map(|row| {
+            row.text
+                .split_once(' ')
+                .map(|(_, path)| path)
+                .unwrap_or(row.text.as_str())
+        })
+}
+
+fn is_generated_artifact_path(path: &str) -> bool {
+    path.starts_with("bench/results/") || path.contains("/frames/")
+}
+
+fn diff_file_display_priority(path: &str) -> (usize, usize) {
+    let artifact_rank = usize::from(is_generated_artifact_path(path));
+    let source_rank = if path.starts_with("crates/") || path.starts_with("src/") {
+        0
+    } else if path.starts_with("scripts/") || path.starts_with("docs/") {
+        1
+    } else {
+        2
+    };
+    (artifact_rank, source_rank)
+}
+
+fn diff_display_file_order(diff: &DiffPreview) -> Vec<usize> {
+    let mut order: Vec<_> = (0..diff.file_count).collect();
+    order.sort_by_key(|file_index| {
+        let path = diff_file_path(diff, *file_index).unwrap_or("");
+        (diff_file_display_priority(path), *file_index)
+    });
+    order
+}
+
+fn preferred_diff_file_index(diff: &DiffPreview) -> usize {
+    diff_display_file_order(diff)
+        .into_iter()
+        .next()
+        .unwrap_or(0)
 }
 
 fn normalize_revset_query(query: &str) -> Option<String> {
@@ -2310,14 +2361,21 @@ fn render_diff_pane(
 }
 
 fn diff_file_title(diff: &DiffPreview, file_index: usize, max_len: usize) -> Option<String> {
-    let total = diff.file_count.max(1);
-    let index = file_index.min(total.saturating_sub(1));
+    let order = diff_display_file_order(diff);
+    let total = order.len().max(1);
+    let position = order
+        .iter()
+        .position(|candidate| *candidate == file_index)
+        .unwrap_or_else(|| file_index.min(total.saturating_sub(1)));
+    let actual_index = *order
+        .get(position)
+        .unwrap_or(&file_index.min(total.saturating_sub(1)));
     let path = full_diff_rows(diff)
         .iter()
-        .find(|row| row.kind == DiffRowKind::FileHeader && row.file_index == index)
+        .find(|row| row.kind == DiffRowKind::FileHeader && row.file_index == actual_index)
         .map(|row| row.text.clone())
         .unwrap_or_else(|| "Diff".to_string());
-    let prefix = format!("File {}/{}: ", index + 1, total);
+    let prefix = format!("File {}/{}: ", position + 1, total);
     let suffix = "   [ / ] next/prev   Ctrl+d back";
     let path_budget = max_len.saturating_sub(prefix.len() + suffix.len()).max(8);
     Some(format!(
@@ -4633,6 +4691,205 @@ mod tests {
         assert!(!visible
             .iter()
             .any(|row| row.text.contains("diff --git") || row.text.contains("@@")));
+    }
+
+    fn test_app_with_diff(diff: DiffPreview) -> App {
+        let change_id = "change-1".to_string();
+        let mut diffs_by_change = HashMap::new();
+        diffs_by_change.insert(change_id.clone(), diff);
+        App {
+            path: PathBuf::from("/tmp"),
+            mode: LayoutMode::Mainline,
+            view_mode: ViewMode::Log,
+            active_leader_mode: None,
+            sidebar_collapsed: false,
+            files_expanded: true,
+            desc_expanded: false,
+            show_help: false,
+            boxed_chrome: false,
+            diff_scaffold: false,
+            theme_picker_mode: false,
+            theme_picker_index: 0,
+            current_theme: "slate".to_string(),
+            theme: UI_TOKENS,
+            log_limit: 40,
+            revset_mode: false,
+            revset_value: String::new(),
+            revset_query: String::new(),
+            describe_mode: false,
+            describe_value: String::new(),
+            rebase_source_id: None,
+            merge_mode: false,
+            merge_selected_ids: HashSet::new(),
+            nodes: vec![juzu_core::CommitNode {
+                change_id: change_id.clone(),
+                commit_id: "commit-1".to_string(),
+                parents: vec![],
+                author: "test".to_string(),
+                time: "now".to_string(),
+                bookmarks: vec![],
+                git_branches: vec![],
+                description_title: "title".to_string(),
+                description_full: "title".to_string(),
+                is_empty: false,
+                is_conflict: false,
+                is_hidden: false,
+                is_root: false,
+                is_working_copy: false,
+                x: None,
+                y: None,
+                lane: None,
+                extra_height: None,
+                is_pinned: false,
+            }],
+            files_by_change: HashMap::new(),
+            diffs_by_change,
+            op_log_entries: Vec::new(),
+            op_log_selected: 0,
+            op_log_scroll: 0,
+            obslog_entries: Vec::new(),
+            obslog_selected: 0,
+            obslog_scroll: 0,
+            obslog_change_id: None,
+            selected: 0,
+            diff_scroll: 0,
+            diff_file_index: 0,
+            diff_viewport_rows: 1,
+        }
+    }
+
+    #[test]
+    fn diff_display_order_prefers_product_files_over_generated_artifacts() {
+        let diff = DiffPreview {
+            raw_line_count: 9,
+            file_count: 3,
+            row_count: 6,
+            preview_rows: vec![],
+            full_rows: Some(vec![
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Added bench/results/rust-port/action-leader/report.json".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Add,
+                    file_index: 0,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: Some(1),
+                    text: "+artifact".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 1,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Modified crates/juzu-tui/src/main.rs".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Add,
+                    file_index: 1,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: Some(1),
+                    text: "+code".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 2,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Modified docs/rust-port/read-only-tui.md".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Add,
+                    file_index: 2,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: Some(1),
+                    text: "+docs".to_string(),
+                },
+            ]),
+            parse_error: None,
+        };
+
+        assert_eq!(diff_display_file_order(&diff), vec![1, 2, 0]);
+        assert_eq!(preferred_diff_file_index(&diff), 1);
+        assert!(diff_file_title(&diff, 1, 120)
+            .unwrap()
+            .starts_with("File 1/3: Modified crates/juzu-tui/src/main.rs"));
+    }
+
+    #[test]
+    fn toggle_diff_view_prefers_first_non_artifact_file() {
+        let diff = DiffPreview {
+            raw_line_count: 9,
+            file_count: 3,
+            row_count: 6,
+            preview_rows: vec![],
+            full_rows: Some(vec![
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Added bench/results/rust-port/action-leader/report.json".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Add,
+                    file_index: 0,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: Some(1),
+                    text: "+artifact".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 1,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Modified crates/juzu-jj/src/lib.rs".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Add,
+                    file_index: 1,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: Some(1),
+                    text: "+code".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 2,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Modified scripts/rust-port-tui-modal-parity.py".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Add,
+                    file_index: 2,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: Some(1),
+                    text: "+script".to_string(),
+                },
+            ]),
+            parse_error: None,
+        };
+        let mut app = test_app_with_diff(diff);
+
+        toggle_diff_view(&mut app);
+
+        assert_eq!(app.view_mode, ViewMode::Diff);
+        assert_eq!(app.diff_file_index, 1);
     }
 
     #[test]
