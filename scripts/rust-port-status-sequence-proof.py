@@ -46,6 +46,12 @@ def wait_for(session: str, needle: str, timeout: float = 5.0) -> str:
     return last
 
 
+def launch_tui(session: str, cmd: str) -> str:
+    time.sleep(0.5)
+    send(session, cmd, "Enter")
+    return wait_for(session, "^A Act", timeout=8.0)
+
+
 def font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     for candidate in [
         "/usr/share/fonts/TTF/JetBrainsMono-Regular.ttf",
@@ -99,8 +105,8 @@ def main() -> None:
     tmux("new-session", "-d", "-s", session, "-x", str(args.width), "-y", str(args.height))
     captures: list[tuple[str, str]] = []
     try:
-        send(session, cmd, "Enter")
-        captures.append(("01 LOG idle · ^A Act ^O Ops ^V View ^B Book", wait_for(session, "dag graph")))
+        launch_tui(session, cmd)
+        captures.append(("01 LOG idle · ^A Act ^O Ops ^V View ^B Book", wait_for(session, "^A Act")))
         send(session, "C-a")
         captures.append(("02 Ctrl+A enters Act leader", wait_for(session, "ACT")))
         send(session, "q")

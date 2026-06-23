@@ -45,6 +45,13 @@ def wait_for(target: str, needle: str, timeout: float = 6.0) -> str:
     return last
 
 
+def launch_tui(target: str, cmd: str) -> str:
+    # Let the interactive shell settle before sending the launch command.
+    time.sleep(0.5)
+    send(target, cmd, "Enter")
+    return wait_for(target, "^A Act")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", default=str(ROOT))
@@ -68,11 +75,10 @@ def main() -> None:
         target = f"{session}:proof"
         for cycle in range(1, args.cycles + 1):
             if cycle > 1:
-                send(target, "C-c")
-                time.sleep(0.5)
+                send(target, "q")
+                time.sleep(0.6)
                 send(target, "clear", "Enter")
-            send(target, cmd, "Enter")
-            idle = wait_for(target, "^A Act")
+            idle = launch_tui(target, cmd)
             send(target, "C-a")
             act = wait_for(target, "ACT")
             send(target, "q")

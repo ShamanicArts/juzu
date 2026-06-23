@@ -60,6 +60,12 @@ def wait_for(session: str, needle: str, timeout: float = 5.0) -> str:
     return last
 
 
+def launch_tui(session: str, cmd: str) -> str:
+    time.sleep(0.5)
+    send(session, cmd, "Enter")
+    return wait_for(session, "Files (f collapse):", timeout=8.0)
+
+
 def font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     for candidate in [
         "/usr/share/fonts/TTF/JetBrainsMono-Regular.ttf",
@@ -195,8 +201,7 @@ def main() -> None:
     session = f"juzu-theme-sidebar-proof-{os.getpid()}"
     try:
         tmux("new-session", "-d", "-s", session, "-x", str(args.width), "-y", str(args.height))
-        send(session, f"cd {ROOT} && ./target/release/juzu-tui --path {repo} --limit {args.limit} --mode mainline", "Enter")
-        expanded = wait_for(session, "Files (f collapse):")
+        expanded = launch_tui(session, f"cd {ROOT} && ./target/release/juzu-tui --path {repo} --limit {args.limit} --mode mainline")
         captures.append(("sidebar expanded", expanded))
 
         send(session, "f")
