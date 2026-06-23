@@ -165,6 +165,11 @@ pub fn rebase(cwd: &Path, source_id: &str, destination_id: &str) -> Result<()> {
     run_jj(cwd, &["rebase", "-r", source_id, "-d", destination_id]).map(|_| ())
 }
 
+pub fn insert(cwd: &Path, parent_id: &str, child_id: &str) -> Result<()> {
+    run_jj(cwd, &["new", parent_id]).map(|_| ())?;
+    run_jj(cwd, &["rebase", "-s", child_id, "-d", "@"]).map(|_| ())
+}
+
 pub fn duplicate(cwd: &Path, change_id: &str) -> Result<()> {
     run_jj(cwd, &["duplicate", change_id]).map(|_| ())
 }

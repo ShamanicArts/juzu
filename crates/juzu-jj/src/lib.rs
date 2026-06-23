@@ -523,6 +523,17 @@ impl JjBackend for NativeJjBackend {
                     message: format!("rebased change {source_id} onto {destination_id}"),
                 })
             }
+            Mutation::Insert {
+                cwd,
+                parent_id,
+                child_id,
+            } => {
+                cli_fallback::insert(&cwd, &parent_id, &child_id)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: format!("inserted new change between {parent_id} and {child_id}"),
+                })
+            }
             Mutation::Duplicate { cwd, change_id } => {
                 cli_fallback::duplicate(&cwd, &change_id)?;
                 Ok(MutationResult {
@@ -1222,6 +1233,78 @@ mod tests {
         .trim()
         .to_string();
         assert_eq!(after_parent, destination_change_id);
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_insert_mutation_creates_new_change_between_parent_and_child() {
+        let repo = create_action_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let parent_change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@-", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+        let child_change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+        let before_count = run_jj(&repo, &["log", "-r", "::", "--count"])
+            .trim()
+            .parse::<usize>()
+            .expect("before count should parse");
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::Insert {
+            cwd: repo.clone(),
+            parent_id: parent_change_id.clone(),
+            child_id: child_change_id.clone(),
+        }))
+        .expect("insert mutation should succeed");
+        assert!(result.changed, "insert mutation should report a change");
+
+        let after_count = run_jj(&repo, &["log", "-r", "::", "--count"])
+            .trim()
+            .parse::<usize>()
+            .expect("after count should parse");
+        assert_eq!(after_count, before_count + 1);
+
+        let current = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "@",
+                "-T",
+                "change_id.short() ++ \"|\" ++ description.first_line() ++ \"|\" ++ parents.map(|p| p.change_id().short()).join(\",\")",
+            ],
+        );
+        let mut current_parts = current.trim().split('|');
+        let inserted_change_id = current_parts.next().unwrap_or_default().to_string();
+        let inserted_description = current_parts.next().unwrap_or_default();
+        let inserted_parent = current_parts.next().unwrap_or_default();
+        assert_eq!(inserted_description, "");
+        assert_eq!(inserted_parent, parent_change_id);
+        assert_ne!(inserted_change_id, child_change_id);
+
+        let rebased_child_parent = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                &child_change_id,
+                "-T",
+                "parents.map(|p| p.change_id().short()).join(\",\")",
+            ],
+        )
+        .trim()
+        .to_string();
+        assert_eq!(rebased_child_parent, inserted_change_id);
 
         let _ = fs::remove_dir_all(&repo);
     }

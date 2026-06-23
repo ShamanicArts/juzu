@@ -649,6 +649,11 @@ fn handle_key_with_backend<B: JjBackend>(
                 app.active_leader_mode = None;
                 return false;
             }
+            KeyCode::Char('i') => {
+                let _ = insert_selected_change_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
             KeyCode::Char('y') => {
                 let _ = duplicate_selected_change_with_backend(app, backend);
                 app.active_leader_mode = None;
@@ -1290,6 +1295,25 @@ fn rebase_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B)
     }
 }
 
+fn insert_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return Ok(());
+    };
+    let Some(child) = app
+        .nodes
+        .iter()
+        .find(|candidate| candidate.parents.contains(&node.change_id))
+    else {
+        return Ok(());
+    };
+    futures_executor::block_on(backend.mutate(Mutation::Insert {
+        cwd: app.path.clone(),
+        parent_id: node.change_id.clone(),
+        child_id: child.change_id.clone(),
+    }))?;
+    reload_app_nodes_with_backend(app, backend)
+}
+
 fn bookmark_name_for_change(change_id: &str) -> String {
     let prefix: String = change_id.chars().take(8).collect();
     format!("wip/{prefix}")
@@ -1587,6 +1611,9 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
                 Span::raw(" "),
                 Span::styled("e", key_style),
                 Span::styled(" Edit ", item_style),
+                Span::raw(" "),
+                Span::styled("i", key_style),
+                Span::styled(" Insert ", item_style),
                 Span::raw(" "),
                 Span::styled("d", key_style),
                 Span::styled(" Describe ", item_style),
@@ -3061,7 +3088,7 @@ fn render_sidebar(
                 Line::from(Span::styled("View", sidebar_heading_style(t))),
                 Line::from("c sidebar  f files  x description"),
                 Line::from("t theme  / revset  ^d diff"),
-                Line::from("n/e/d/b/a/s/y are live in Actions"),
+                Line::from("n/e/i/d/b/a/s/y are live in Actions"),
                 Line::from(""),
                 Line::from("Press h, q, or Esc to close help"),
             ],
@@ -5613,6 +5640,130 @@ mod tests {
         assert_eq!(app.view_mode, ViewMode::Log);
         assert_eq!(app.nodes.len(), 1);
         assert_eq!(app.nodes[0].change_id, "parent123rest");
+    }
+
+    struct InsertTestBackend {
+        mutate_calls: Mutex<Vec<juzu_core::Mutation>>,
+        before_nodes: Vec<juzu_core::CommitNode>,
+        after_insert_nodes: Vec<juzu_core::CommitNode>,
+    }
+
+    #[async_trait::async_trait(?Send)]
+    impl JjBackend for InsertTestBackend {
+        async fn find_root(&self, _start: &std::path::Path) -> juzu_core::Result<Option<PathBuf>> {
+            Ok(None)
+        }
+
+        async fn log(&self, _query: LogQuery) -> juzu_core::Result<Vec<juzu_core::CommitNode>> {
+            let calls = self.mutate_calls.lock().unwrap();
+            let last = calls.last();
+            Ok(match last {
+                Some(juzu_core::Mutation::Insert { .. }) => self.after_insert_nodes.clone(),
+                _ => self.before_nodes.clone(),
+            })
+        }
+
+        async fn node_count(&self, _query: juzu_core::NodeCountQuery) -> juzu_core::Result<usize> {
+            Ok(self.before_nodes.len())
+        }
+
+        async fn description(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn files(&self, _query: ChangeQuery) -> juzu_core::Result<Vec<FileEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn diff(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn op_log(&self, _query: OpLogQuery) -> juzu_core::Result<Vec<OpLogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn obslog(&self, _query: ObslogQuery) -> juzu_core::Result<Vec<ObslogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn mutate(
+            &self,
+            mutation: juzu_core::Mutation,
+        ) -> juzu_core::Result<juzu_core::MutationResult> {
+            self.mutate_calls.lock().unwrap().push(mutation.clone());
+            match mutation {
+                juzu_core::Mutation::Insert { .. } => Ok(juzu_core::MutationResult {
+                    changed: true,
+                    message: "insert".to_string(),
+                }),
+                _ => Err(juzu_core::JuzuError::Unsupported(
+                    "unexpected test mutation",
+                )),
+            }
+        }
+    }
+
+    #[test]
+    fn action_insert_shortcut_mutates_and_reloads_log_state() {
+        let backend = InsertTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![test_commit("parent123rest", "parent node"), {
+                let mut child = test_commit("child1234rest", "child node");
+                child.parents = vec!["parent123rest".to_string()];
+                child.is_working_copy = true;
+                child
+            }],
+            after_insert_nodes: vec![
+                {
+                    let mut inserted = test_commit("insert123rest", "");
+                    inserted.parents = vec!["parent123rest".to_string()];
+                    inserted.is_working_copy = true;
+                    inserted.description_title = String::new();
+                    inserted
+                },
+                {
+                    let mut child = test_commit("child1234rest", "child node");
+                    child.parents = vec!["insert123rest".to_string()];
+                    child.is_working_copy = false;
+                    child
+                },
+                test_commit("parent123rest", "parent node"),
+            ],
+        };
+        let mut app = test_log_app("parent123rest", vec![]);
+        app.nodes = backend.before_nodes.clone();
+        app.selected = 0;
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert_eq!(app.active_leader_mode, Some(LeaderMode::Action));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('i'),
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::Insert {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                parent_id: "parent123rest".to_string(),
+                child_id: "child1234rest".to_string(),
+            }]
+        );
+        assert_eq!(app.active_leader_mode, None);
+        assert_eq!(app.nodes.len(), 3);
+        assert!(app
+            .nodes
+            .iter()
+            .any(|node| node.is_working_copy && node.change_id == "insert123rest"));
     }
 
     struct RebaseTestBackend {

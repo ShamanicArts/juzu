@@ -23,6 +23,7 @@ Date: 2026-06-13
 - deletes the selected change's first local bookmark from the Bookmarks leader (`Ctrl+B`, then `d`)
 - creates a real new child change from the Actions leader (`Ctrl+A`, then `n`)
 - edits the selected change as the working copy from the Actions leader (`Ctrl+A`, then `e`)
+- inserts a real empty change between the selected parent and its first visible child from the Actions leader (`Ctrl+A`, then `i`)
 - opens an inline describe prompt from the Actions leader (`Ctrl+A`, then `d`) and applies `jj describe -r <change> -m ...` on `Enter`
 - arms a real two-step rebase flow from the Actions leader (`Ctrl+A`, then `b`), lets selection move to a destination, confirms on `Enter`, and cancels on `Esc`
 - abandons the selected change from the Actions leader (`Ctrl+A`, then `a`)
@@ -81,7 +82,7 @@ Latest bookmark set/delete proof:
 
 Latest Action leader mutation proof:
 
-`bench/results/rust-port/action-leader/2026-06-23T08-41-28.361+00-00/action-leader-review.html`
+`bench/results/rust-port/action-leader/2026-06-23T08-48-43.866+00-00/action-leader-review.html`
 
 Latest Ops undo/redo proof:
 
@@ -117,7 +118,7 @@ Latest tmux restart stability proof:
 
 Latest live tmux proof:
 
-`bench/results/rust-port/live-tmux/2026-06-23T08-43-08.372Z/live-tmux-proof.html`
+`bench/results/rust-port/live-tmux/2026-06-23T08-50-11.629Z/live-tmux-proof.html`
 
 Static state proofs are HTML/tmux captures; MP4 is reserved for real app motion. The live review surface is the tmux window.
 

@@ -143,6 +143,10 @@ def current_description(repo: Path) -> str:
     return jj(repo, "log", "--no-graph", "-r", "@", "-T", "description.first_line()").strip()
 
 
+def parent_of_change(repo: Path, change_id: str) -> str:
+    return jj(repo, "log", "--no-graph", "-r", change_id, "-T", 'parents.map(|p| p.change_id().short()).join(",")').strip()
+
+
 def total_count(repo: Path) -> int:
     return int(jj(repo, "log", "-r", "::", "--count").strip())
 
@@ -215,6 +219,41 @@ def run_sequence_edit(repo: Path, width: int, height: int, session_suffix: str) 
         "targetChange": target_change,
         "afterCurrentChange": current_change_id(repo),
         "afterDescription": current_description(repo),
+        "captures": captures,
+    }
+
+
+def run_sequence_insert(repo: Path, width: int, height: int, session_suffix: str) -> dict[str, object]:
+    session = f"juzu-action-insert-{session_suffix}"
+    cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {repo} --limit 20 --mode mainline"
+    captures: list[tuple[str, str]] = []
+    before_count = total_count(repo)
+    parent_change = current_parent_id(repo)
+    child_change = current_change_id(repo)
+    tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", str(height))
+    try:
+        send(session, cmd, "Enter")
+        captures.append(("08 log before insert target selection", wait_for(session, "LOG")))
+        selected = select_change(session, parent_change[:8])
+        captures.append(("09 selected parent change for insert", selected))
+        send(session, "C-a")
+        captures.append(("10 Ctrl+A enters Actions leader for insert", wait_for(session, "ACT")))
+        send(session, "i")
+        wait_for_screen(session, lambda text: "LOG" in text and "ACT" not in text)
+        time.sleep(0.3)
+        captures.append(("11 log after insert mutation", capture(session)))
+    finally:
+        tmux("kill-session", "-t", session, check=False)
+    inserted_change = current_change_id(repo)
+    return {
+        "beforeCount": before_count,
+        "afterCount": total_count(repo),
+        "parentChange": parent_change,
+        "childChange": child_change,
+        "afterCurrentChange": inserted_change,
+        "afterDescription": current_description(repo),
+        "afterCurrentParent": current_parent_id(repo),
+        "childParentAfter": parent_of_change(repo, child_change),
         "captures": captures,
     }
 
@@ -376,7 +415,7 @@ def run_sequence_rebase(repo: Path, width: int, height: int, session_suffix: str
 
 def render_html(report: dict[str, object], mp4: Path) -> str:
     cards: list[str] = []
-    for section_name in ["new", "edit", "describe", "duplicate", "abandon", "squash", "rebase"]:
+    for section_name in ["new", "edit", "insert", "describe", "duplicate", "abandon", "squash", "rebase"]:
         section = report[section_name]
         cards.extend(
             f"<section><h2>{html.escape(title)}</h2><pre>{html.escape(screen)}</pre></section>"
@@ -404,6 +443,13 @@ strong {{ color:var(--ok); }}
   <p>Target change: <code>{html.escape(report['edit']['targetChange'])}</code></p>
   <p>Current change after edit: <code>{html.escape(report['edit']['afterCurrentChange'])}</code></p>
   <p>Description after edit: <strong>{html.escape(report['edit']['afterDescription'])}</strong></p>
+</section>
+<section>
+  <h2>Insert</h2>
+  <p>Count <strong>{report['insert']['beforeCount']}</strong> → <strong>{report['insert']['afterCount']}</strong></p>
+  <p>Inserted current change <code>{html.escape(report['insert']['afterCurrentChange'])}</code> under parent <code>{html.escape(report['insert']['parentChange'])}</code></p>
+  <p>Child <code>{html.escape(report['insert']['childChange'])}</code> now points to <code>{html.escape(report['insert']['childParentAfter'])}</code></p>
+  <p>Current description after insert: <strong>{html.escape(report['insert']['afterDescription']) or '(empty)'}</strong></p>
 </section>
 <section>
   <h2>Describe</h2>
@@ -460,6 +506,9 @@ def main() -> None:
 
     duplicate_repo = out_dir / "duplicate-fixture-repo"
     create_fixture_repo(duplicate_repo)
+    insert_repo = out_dir / "insert-fixture-repo"
+    create_fixture_repo(insert_repo)
+    report["insert"] = run_sequence_insert(insert_repo, args.width, args.height, f"{os.getpid()}-insert")
     describe_repo = out_dir / "describe-fixture-repo"
     create_fixture_repo(describe_repo)
     report["describe"] = run_sequence_describe(describe_repo, args.width, args.height, f"{os.getpid()}-describe")
@@ -481,6 +530,7 @@ def main() -> None:
     all_captures = [
         *report["new"]["captures"],
         *report["edit"]["captures"],
+        *report["insert"]["captures"],
         *report["describe"]["captures"],
         *report["duplicate"]["captures"],
         *report["abandon"]["captures"],
@@ -511,6 +561,14 @@ def main() -> None:
         raise SystemExit("edit mutation did not move the working copy to the selected change")
     if report["edit"]["afterDescription"] != "first desc":
         raise SystemExit("edit mutation did not expose the selected change description")
+    if report["insert"]["afterCount"] != report["insert"]["beforeCount"] + 1:
+        raise SystemExit("insert mutation did not increase the visible commit count")
+    if report["insert"]["afterDescription"] != "":
+        raise SystemExit("insert mutation did not leave the new inserted working copy empty")
+    if report["insert"]["afterCurrentParent"] != report["insert"]["parentChange"]:
+        raise SystemExit("insert mutation did not parent the new working copy under the selected parent")
+    if report["insert"]["childParentAfter"] != report["insert"]["afterCurrentChange"]:
+        raise SystemExit("insert mutation did not rebase the former child onto the inserted change")
     if report["describe"]["afterTitle"] != "retitled from proof":
         raise SystemExit("describe mutation did not update the selected change title")
     if report["duplicate"]["afterCount"] != report["duplicate"]["beforeCount"] + 1:

@@ -189,6 +189,11 @@ pub enum Mutation {
         source_id: String,
         destination_id: String,
     },
+    Insert {
+        cwd: PathBuf,
+        parent_id: String,
+        child_id: String,
+    },
     Undo {
         cwd: PathBuf,
     },
