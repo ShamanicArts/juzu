@@ -17,15 +17,20 @@ The Rust output intentionally omits jj's object `index ...` lines for now. The p
 
 The TUI uses `NativeJjBackend::diff_preview(..., 90)` instead of caching full patches for every selected change. This keeps navigation memory bounded while preserving the full `juzu-cli diff` / backend `diff()` path for parity checks and future full-diff views.
 
-Working-copy dirty diff parity now goes through a safe native snapshot path too. When the selected node is `@`, Rust snapshots the filesystem through `jj-lib`, diffs that ephemeral tree against the parent tree, and leaves the repo state untouched. Single-line unified hunk headers are normalized to old/JJ form (`@@ -0,0 +1,1 @@`, `@@ -1,1 +1,1 @@`) so dirty working-copy parity matches the old sidebar proof surface instead of drifting on compact `similar` header formatting. Binary files no longer get lossy UTF-8 garbage in Rust diff mode; native output now emits metadata-style lines like `Binary files /dev/null and b/image.png differ`, which the TUI renders directly in the full diff pane.
+Working-copy dirty diff parity now goes through a safe native snapshot path too. When the selected node is `@`, Rust snapshots the filesystem through `jj-lib`, diffs that ephemeral tree against the parent tree, and leaves the repo state untouched. Single-line unified hunk headers are normalized to old/JJ form (`@@ -0,0 +1,1 @@`, `@@ -1,1 +1,1 @@`) so dirty working-copy parity matches the old sidebar proof surface instead of drifting on compact `similar` header formatting. Binary files no longer get lossy UTF-8 garbage in Rust diff mode; native output now emits metadata-style lines like `Binary files /dev/null and b/image.png differ`, which the TUI renders directly in the full diff pane. Pure renames now also match old JUZU/JJ git-patch shape: instead of faking a delete-plus-add block, Rust emits `diff --git a/old b/new`, `rename from ...`, and `rename to ...` for unchanged renames.
 
 ## Review artifact
 
-Latest report path is printed by:
+Latest report paths are printed by:
 
 ```bash
 bun run parity:diff -- --repo /home/shamanic/dev/juzu --limit 20 --cases 6
+bun run review:rename-parity
 ```
+
+Latest rename proof artifact:
+
+- `bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-review.html`
 
 ## Verification
 

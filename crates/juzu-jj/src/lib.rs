@@ -46,6 +46,43 @@ pub struct NativeWorkspaceInfo {
 #[derive(Debug, Clone, Default)]
 pub struct NativeJjBackend;
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum TreeValueSignature {
+    File { id: String, executable: bool },
+    Symlink(String),
+    GitSubmodule(String),
+    Tree(String),
+}
+
+#[derive(Debug, Clone)]
+struct NativeTreeDiffEntry {
+    path: String,
+    before_present: bool,
+    after_present: bool,
+    before_signature: Option<TreeValueSignature>,
+    after_signature: Option<TreeValueSignature>,
+    before_bytes: Option<Vec<u8>>,
+    after_bytes: Option<Vec<u8>>,
+}
+
+#[derive(Debug, Clone)]
+enum NativeDisplayDiffKind {
+    Added,
+    Deleted,
+    Modified,
+    Renamed { old_path: String, new_path: String },
+}
+
+#[derive(Debug, Clone)]
+struct NativeDisplayDiff {
+    order_key: usize,
+    old_path: String,
+    new_path: String,
+    kind: NativeDisplayDiffKind,
+    before_bytes: Option<Vec<u8>>,
+    after_bytes: Option<Vec<u8>>,
+}
+
 impl NativeJjBackend {
     pub fn new() -> Self {
         Self
@@ -187,16 +224,16 @@ impl NativeJjBackend {
         }
     }
 
-    async fn read_tree_value_text(
-        &self,
-        repo: &Arc<ReadonlyRepo>,
-        path: &jj_lib::repo_path::RepoPath,
-        value: Option<&TreeValue>,
-    ) -> Result<Option<String>> {
-        Ok(self
-            .read_tree_value_bytes(repo, path, value)
-            .await?
-            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned()))
+    fn tree_value_signature(value: Option<&TreeValue>) -> Option<TreeValueSignature> {
+        match value? {
+            TreeValue::File { id, executable, .. } => Some(TreeValueSignature::File {
+                id: id.hex(),
+                executable: *executable,
+            }),
+            TreeValue::Symlink(id) => Some(TreeValueSignature::Symlink(id.hex())),
+            TreeValue::GitSubmodule(id) => Some(TreeValueSignature::GitSubmodule(id.hex())),
+            TreeValue::Tree(id) => Some(TreeValueSignature::Tree(id.hex())),
+        }
     }
 
     fn is_binary_content(bytes: Option<&[u8]>) -> bool {
@@ -204,6 +241,170 @@ impl NativeJjBackend {
             return false;
         };
         bytes.contains(&0) || std::str::from_utf8(bytes).is_err()
+    }
+
+    fn bytes_to_lossy_text(bytes: Option<&[u8]>) -> String {
+        bytes
+            .map(|bytes| String::from_utf8_lossy(bytes).into_owned())
+            .unwrap_or_default()
+    }
+
+    fn format_rename_summary(old_path: &str, new_path: &str) -> String {
+        match (old_path.rsplit_once('/'), new_path.rsplit_once('/')) {
+            (Some((old_dir, old_name)), Some((new_dir, new_name))) if old_dir == new_dir => {
+                format!("{old_dir}/{{{old_name} => {new_name}}}")
+            }
+            _ => format!("{{{old_path} => {new_path}}}"),
+        }
+    }
+
+    async fn collect_native_diff_entries(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        before_tree: &MergedTree,
+        after_tree: &MergedTree,
+    ) -> Result<Vec<NativeTreeDiffEntry>> {
+        let mut stream = before_tree.diff_stream(after_tree, &EverythingMatcher);
+        let mut entries = Vec::new();
+        while let Some(entry) = stream.next().await {
+            let values = entry.values.map_err(|err| {
+                JuzuError::Backend(format!("failed to read native jj tree diff entry: {err}"))
+            })?;
+            let before_value = values.before.as_resolved().and_then(Option::as_ref);
+            let after_value = values.after.as_resolved().and_then(Option::as_ref);
+            entries.push(NativeTreeDiffEntry {
+                path: entry.path.as_internal_file_string().to_string(),
+                before_present: values.before.is_present(),
+                after_present: values.after.is_present(),
+                before_signature: Self::tree_value_signature(before_value),
+                after_signature: Self::tree_value_signature(after_value),
+                before_bytes: self
+                    .read_tree_value_bytes(repo, entry.path.as_ref(), before_value)
+                    .await?,
+                after_bytes: self
+                    .read_tree_value_bytes(repo, entry.path.as_ref(), after_value)
+                    .await?,
+            });
+        }
+        Ok(entries)
+    }
+
+    fn build_display_diffs(entries: Vec<NativeTreeDiffEntry>) -> Vec<NativeDisplayDiff> {
+        let mut consumed = vec![false; entries.len()];
+        let mut display = Vec::new();
+
+        for (delete_idx, delete_entry) in entries.iter().enumerate() {
+            if consumed[delete_idx] || !delete_entry.before_present || delete_entry.after_present {
+                continue;
+            }
+            let Some(signature) = delete_entry.before_signature.as_ref() else {
+                continue;
+            };
+            let Some((add_idx, add_entry)) =
+                entries.iter().enumerate().find(|(add_idx, add_entry)| {
+                    !consumed[*add_idx]
+                        && !add_entry.before_present
+                        && add_entry.after_present
+                        && add_entry.after_signature.as_ref() == Some(signature)
+                        && add_entry.path != delete_entry.path
+                })
+            else {
+                continue;
+            };
+            consumed[delete_idx] = true;
+            consumed[add_idx] = true;
+            display.push(NativeDisplayDiff {
+                order_key: delete_idx.min(add_idx),
+                old_path: delete_entry.path.clone(),
+                new_path: add_entry.path.clone(),
+                kind: NativeDisplayDiffKind::Renamed {
+                    old_path: delete_entry.path.clone(),
+                    new_path: add_entry.path.clone(),
+                },
+                before_bytes: delete_entry.before_bytes.clone(),
+                after_bytes: add_entry.after_bytes.clone(),
+            });
+        }
+
+        for (idx, entry) in entries.into_iter().enumerate() {
+            if consumed[idx] {
+                continue;
+            }
+            let kind = match (entry.before_present, entry.after_present) {
+                (false, true) => NativeDisplayDiffKind::Added,
+                (true, false) => NativeDisplayDiffKind::Deleted,
+                _ => NativeDisplayDiffKind::Modified,
+            };
+            display.push(NativeDisplayDiff {
+                order_key: idx,
+                old_path: entry.path.clone(),
+                new_path: entry.path.clone(),
+                kind,
+                before_bytes: entry.before_bytes,
+                after_bytes: entry.after_bytes,
+            });
+        }
+
+        display.sort_by(|left, right| {
+            left.order_key
+                .cmp(&right.order_key)
+                .then(left.old_path.cmp(&right.old_path))
+                .then(left.new_path.cmp(&right.new_path))
+        });
+        display
+    }
+
+    fn render_display_diff_patch(display: &NativeDisplayDiff) -> String {
+        match &display.kind {
+            NativeDisplayDiffKind::Renamed { old_path, new_path } => {
+                format!(
+                    "diff --git a/{old_path} b/{new_path}\nrename from {old_path}\nrename to {new_path}\n"
+                )
+            }
+            NativeDisplayDiffKind::Added
+            | NativeDisplayDiffKind::Deleted
+            | NativeDisplayDiffKind::Modified => {
+                let mut file_output = String::new();
+                file_output.push_str(&format!(
+                    "diff --git a/{} b/{}\n",
+                    display.old_path, display.new_path
+                ));
+                match display.kind {
+                    NativeDisplayDiffKind::Added => file_output.push_str("new file mode 100644\n"),
+                    NativeDisplayDiffKind::Deleted => {
+                        file_output.push_str("deleted file mode 100644\n")
+                    }
+                    NativeDisplayDiffKind::Modified | NativeDisplayDiffKind::Renamed { .. } => {}
+                }
+                let old_header = match display.kind {
+                    NativeDisplayDiffKind::Added => "/dev/null".to_string(),
+                    _ => format!("a/{}", display.old_path),
+                };
+                let new_header = match display.kind {
+                    NativeDisplayDiffKind::Deleted => "/dev/null".to_string(),
+                    _ => format!("b/{}", display.new_path),
+                };
+                if Self::is_binary_content(display.before_bytes.as_deref())
+                    || Self::is_binary_content(display.after_bytes.as_deref())
+                {
+                    file_output.push_str(&format!(
+                        "Binary files {old_header} and {new_header} differ\n"
+                    ));
+                } else {
+                    let before_text = Self::bytes_to_lossy_text(display.before_bytes.as_deref());
+                    let after_text = Self::bytes_to_lossy_text(display.after_bytes.as_deref());
+                    let diff = TextDiff::from_lines(&before_text, &after_text);
+                    file_output.push_str(
+                        &diff
+                            .unified_diff()
+                            .context_radius(3)
+                            .header(&old_header, &new_header)
+                            .to_string(),
+                    );
+                }
+                file_output
+            }
+        }
     }
 
     pub async fn diff_preview(&self, query: ChangeQuery, max_lines: usize) -> Result<String> {
@@ -255,71 +456,18 @@ impl NativeJjBackend {
             return Ok(String::new());
         };
         let parent_tree = parent.tree();
-        let mut stream = parent_tree.diff_stream(&commit_tree, &EverythingMatcher);
+        let entries = self
+            .collect_native_diff_entries(&repo, &parent_tree, &commit_tree)
+            .await?;
         let mut output = String::new();
         let mut line_count = 0usize;
         let mut truncated = false;
-        while let Some(entry) = stream.next().await {
+        for display in Self::build_display_diffs(entries) {
             if max_lines.is_some_and(|limit| line_count >= limit) {
                 truncated = true;
                 break;
             }
-            let values = entry.values.map_err(|err| {
-                JuzuError::Backend(format!("failed to read native jj tree diff entry: {err}"))
-            })?;
-            let before_value = values.before.as_resolved().and_then(Option::as_ref);
-            let after_value = values.after.as_resolved().and_then(Option::as_ref);
-            let before_present = values.before.is_present();
-            let after_present = values.after.is_present();
-            let path = entry.path.as_internal_file_string().to_string();
-            let before_bytes = self
-                .read_tree_value_bytes(&repo, entry.path.as_ref(), before_value)
-                .await?;
-            let after_bytes = self
-                .read_tree_value_bytes(&repo, entry.path.as_ref(), after_value)
-                .await?;
-
-            let mut file_output = String::new();
-            file_output.push_str(&format!("diff --git a/{path} b/{path}\n"));
-            match (before_present, after_present) {
-                (false, true) => file_output.push_str("new file mode 100644\n"),
-                (true, false) => file_output.push_str("deleted file mode 100644\n"),
-                _ => {}
-            }
-            let old_header = if before_present {
-                format!("a/{path}")
-            } else {
-                "/dev/null".to_string()
-            };
-            let new_header = if after_present {
-                format!("b/{path}")
-            } else {
-                "/dev/null".to_string()
-            };
-            if Self::is_binary_content(before_bytes.as_deref())
-                || Self::is_binary_content(after_bytes.as_deref())
-            {
-                file_output.push_str(&format!(
-                    "Binary files {old_header} and {new_header} differ\n"
-                ));
-            } else {
-                let before_text = self
-                    .read_tree_value_text(&repo, entry.path.as_ref(), before_value)
-                    .await?
-                    .unwrap_or_default();
-                let after_text = self
-                    .read_tree_value_text(&repo, entry.path.as_ref(), after_value)
-                    .await?
-                    .unwrap_or_default();
-                let diff = TextDiff::from_lines(&before_text, &after_text);
-                file_output.push_str(
-                    &diff
-                        .unified_diff()
-                        .context_radius(3)
-                        .header(&old_header, &new_header)
-                        .to_string(),
-                );
-            }
+            let file_output = Self::render_display_diff_patch(&display);
             for line in file_output.lines() {
                 if max_lines.is_some_and(|limit| line_count >= limit) {
                     truncated = true;
@@ -544,7 +692,7 @@ impl JjBackend for NativeJjBackend {
     }
 
     async fn files(&self, query: ChangeQuery) -> Result<Vec<FileEntry>> {
-        let (_repo, commit, commit_tree) = self
+        let (repo, commit, commit_tree) = self
             .resolve_change_tree(&query.cwd, &query.change_id)
             .await?;
         let parents = commit.parents().await.map_err(|err| {
@@ -556,22 +704,22 @@ impl JjBackend for NativeJjBackend {
             return Ok(Vec::new());
         };
         let parent_tree = parent.tree();
-        let mut stream = parent_tree.diff_stream(&commit_tree, &EverythingMatcher);
+        let entries = self
+            .collect_native_diff_entries(&repo, &parent_tree, &commit_tree)
+            .await?;
         let mut files = Vec::new();
-        while let Some(entry) = stream.next().await {
-            let values = entry.values.map_err(|err| {
-                JuzuError::Backend(format!("failed to read native jj tree diff entry: {err}"))
-            })?;
-            let before_present = values.before.is_present();
-            let after_present = values.after.is_present();
-            let file_type = match (before_present, after_present) {
-                (false, true) => "A",
-                (true, false) => "D",
-                _ => "M",
+        for display in Self::build_display_diffs(entries) {
+            let (file_type, path) = match display.kind {
+                NativeDisplayDiffKind::Added => ("A", display.new_path),
+                NativeDisplayDiffKind::Deleted => ("D", display.old_path),
+                NativeDisplayDiffKind::Modified => ("M", display.new_path),
+                NativeDisplayDiffKind::Renamed { old_path, new_path } => {
+                    ("R", Self::format_rename_summary(&old_path, &new_path))
+                }
             };
             files.push(FileEntry {
                 r#type: file_type.to_string(),
-                path: entry.path.as_internal_file_string().to_string(),
+                path,
             });
         }
         files.sort_by(|a, b| a.path.cmp(&b.path).then(a.r#type.cmp(&b.r#type)));
@@ -814,6 +962,19 @@ mod tests {
         )
         .expect("binary fixture write should work");
         run_jj(&repo, &["describe", "-m", "binary add"]);
+        repo
+    }
+
+    fn create_pure_rename_fixture_repo() -> PathBuf {
+        let repo = unique_test_dir("rename-diff");
+        fs::create_dir_all(&repo).expect("fixture repo dir should be created");
+        run_jj(&repo, &["git", "init", "."]);
+        fs::write(repo.join("old.txt"), "hello\n").expect("rename fixture write should work");
+        run_jj(&repo, &["describe", "-m", "rename base"]);
+        run_jj(&repo, &["new"]);
+        fs::rename(repo.join("old.txt"), repo.join("new.txt"))
+            .expect("rename fixture move should work");
+        run_jj(&repo, &["describe", "-m", "rename change"]);
         repo
     }
 
@@ -1191,6 +1352,59 @@ mod tests {
         assert!(diff.contains("new file mode 100644"));
         assert!(diff.contains("Binary files /dev/null and b/image.png differ"));
         assert!(!diff.contains("PNG\r"));
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_files_render_pure_rename_like_old_jj_summary() {
+        let repo = create_pure_rename_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+
+        let files = futures::executor::block_on(backend.files(ChangeQuery {
+            cwd: repo.clone(),
+            change_id,
+        }))
+        .expect("rename files should load");
+
+        assert_eq!(
+            files,
+            vec![FileEntry {
+                r#type: "R".to_string(),
+                path: "{old.txt => new.txt}".to_string(),
+            }]
+        );
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_diff_renders_pure_rename_like_old_jj_git_patch() {
+        let repo = create_pure_rename_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+
+        let diff = futures::executor::block_on(backend.diff(ChangeQuery {
+            cwd: repo.clone(),
+            change_id,
+        }))
+        .expect("rename diff should load");
+
+        assert_eq!(
+            diff,
+            "diff --git a/old.txt b/new.txt\nrename from old.txt\nrename to new.txt\n"
+        );
 
         let _ = fs::remove_dir_all(&repo);
     }

@@ -16,7 +16,7 @@ The Rust port now has the first native sidebar/file hydration slice:
 
 ## Current behavior
 
-Rust file lists are compared against old JUZU's `jj diff --summary -r <change>` oracle for both committed changes and the dirty working-copy `@` change.
+Rust file lists are compared against old JUZU's `jj diff --summary -r <change>` oracle for both committed changes and the dirty working-copy `@` change. Pure renames now collapse to old-style `R` summary rows instead of drifting into separate `A`/`D` entries; for example, `{old.txt => new.txt}` now matches the old oracle.
 
 The backend now takes a safe native working-copy snapshot through `jj-lib` when the selected node is `@`, diffs that ephemeral tree against the parent tree, and then drops the working-copy lock without finishing the mutation. That means dirty tracked and newly added files show up in Rust parity/reporting without silently rewriting the repo state.
 

@@ -1,0 +1,139 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust TUI modal parity</title>
+<style>
+:root { color-scheme: dark; --bg:#07111f; --panel:#0f172a; --line:#334155; --text:#dbeafe; --muted:#94a3b8; --cyan:#67e8f9; --green:#86efac; --red:#fca5a5; }
+body { margin:32px; background:radial-gradient(circle at top left,#12233f 0,#07111f 45rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+h1 { margin:0 0 8px; } .meta { color:var(--muted); margin-bottom:20px; } .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:16px; }
+.card { border:1px solid var(--line); background:rgba(15,23,42,.94); border-radius:16px; padding:16px; box-shadow:0 18px 60px rgba(0,0,0,.25); }
+h2 { color:var(--cyan); font-size:16px; margin:0 0 12px; } pre { background:#020617; border:1px solid #1e293b; border-radius:12px; padding:12px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; }
+table { width:100%; border-collapse:collapse; margin-bottom:16px; } td, th { border-bottom:1px solid #1e293b; padding:8px; text-align:left; } th { color:var(--cyan); } .pass { color:var(--green); } .fail { color:var(--red); }
+</style></head><body>
+<h1>JUZU Rust TUI modal parity</h1>
+<div class='meta'>Width variants, footer/title/sidebar contract, and debug-state exit scenarios.</div>
+<section class='card'><h2>Overall: <span class='pass'>PASS</span></h2><ul><li>none</li></ul></section>
+<section class='card'><h2>Debug-state scenarios</h2><table><thead><tr><th>Scenario</th><th>Mode</th><th>File</th><th>Scroll</th><th>Selected</th></tr></thead><tbody><tr><td>actionLeaderStaysLog</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>opsLeaderStaysLog</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewLeaderStaysLog</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>bookLeaderStaysLog</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewLeaderQReturnsLog</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewToggleSidebar</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewToggleFiles</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewToggleDescription</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewToggleHelp</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewToggleBoxedChrome</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewToggleDiffScaffold</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewThemePicker</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewThemePickerDownApplyStaysOpen</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewThemePickerEscCancels</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewRevsetFilter</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewRevsetTextSubmit</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewRevsetNoneSubmit</td><td>Log</td><td>0</td><td>0</td><td><code></code></td></tr><tr><td>viewRevsetCancel</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>viewDiffShortcut</td><td>Diff</td><td>16</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>opsOpenOpLog</td><td>OpLog</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>opsOpenObslog</td><td>Obslog</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>opsOpenOpLogBackToLog</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>opsOpenObslogBackToLog</td><td>Log</td><td>0</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>enterScrollFileExit</td><td>Log</td><td>17</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>quitReturnsLog</td><td>Log</td><td>16</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>gReturnsLog</td><td>Log</td><td>16</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>ctrlDTogglesLog</td><td>Log</td><td>16</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>doubleNextFileEsc</td><td>Log</td><td>18</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>pageScrollResetEsc</td><td>Log</td><td>16</td><td>0</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>nextHunkStaysDiff</td><td>Diff</td><td>16</td><td>7</td><td><code>vplrruyyvvnp</code></td></tr><tr><td>nextThenPrevHunkStaysDiff</td><td>Diff</td><td>16</td><td>7</td><td><code>vplrruyyvvnp</code></td></tr></tbody></table></section>
+<div class='grid'>
+<section class='card'>
+  <h2>120 cols · PASS</h2>
+  <ul><li>none</li></ul>
+  <pre> DIFF   ^d Log   [] File   j/k Move   escape Exit
+ File 1/21: Modified crates/juzu-jj...   [ / ] next/prev   Ctrl+d back  Change: vplrruyyvvnppvvpwpztxwlxnppormwu
+ 154           Ok((repo, commit, tree))                                 Commit: 292650caeb9d8f96af4f2fab8e8649b7e3c034c6
+ 155       }                                                            Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+156                                                                     Time: 2026-06-23T15:35:01+01:00
+ 157 -     async fn read_tree_value_text(
+ 157 +     async fn read_tree_value_bytes(                              Description (x expand):
+ 158           &amp;self,                                                   render binary diff files as metadata instead of
+ 159           repo: &amp;Arc&lt;ReadonlyRepo&gt;,
+ 160           path: &amp;jj_lib::repo_path::RepoPath,                      Files (f collapse):
+ 161           value: Option&lt;&amp;TreeValue&gt;,                               … 13 before
+ 162 -     ) -&gt; Result&lt;Option&lt;String&gt;&gt; {                                A bench/results/rust-port/rust-tui-bench/2026-0…
+ 162 +     ) -&gt; Result&lt;Option&lt;Vec&lt;u8&gt;&gt;&gt; {                               A bench/results/rust-port/rust-tui-bench/2026-0…
+ 163           let Some(value) = value else {                           A bench/results/rust-port/rust-tui-bench/2026-0…
+ 164               return Ok(None);                                     ▶ M crates/juzu-jj/src/lib.rs
+ 165           };                                                       … 4 more
+ 172                   reader.read_to_end(&amp;mut bytes).await.map_err(|e
+       rr| {
+ 173                       JuzuError::Backend(format!(&quot;failed to strea
+       m native jj file content: {err}&quot;))
+ 174                   })?;
+ 175 -                 Ok(Some(String::from_utf8_lossy(&amp;bytes).into_ow
+       ned()))
+ 175 +                 Ok(Some(bytes))
+ 176               }
+ 177               TreeValue::Symlink(id) =&gt; {
+ 178                   let target = repo.store().read_symlink(path, id
+       ).await.map_err(|err| {
+ 179                       JuzuError::Backend(format!(&quot;failed to read
+       native jj symlink content: {err}&quot;))
+ 180                   })?;
+ 181 -                 Ok(Some(target))
+ 181 +                 Ok(Some(target.into_bytes()))
+ 182               }
+ 183 -             TreeValue::GitSubmodule(id) =&gt; Ok(Some(format!(&quot;Sub
+ ~/dev/juzu  @zynrrkwu                                                                                mainline 40 nodes
+</pre>
+</section>
+<section class='card'>
+  <h2>160 cols · PASS</h2>
+  <ul><li>none</li></ul>
+  <pre> DIFF   ^d Log   [] File   j/k Move   escape Exit
+ File 1/21: Modified crates/juzu-jj/src/lib.rs   [ / ] next/prev   Ctrl+d back                  Change: vplrruyyvvnppvvpwpztxwlxnppormwu
+ 154           Ok((repo, commit, tree))                                                         Commit: 292650caeb9d8f96af4f2fab8e8649b7e3c034c6
+ 155       }                                                                                    Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+156                                                                                             Time: 2026-06-23T15:35:01+01:00
+ 157 -     async fn read_tree_value_text(
+ 157 +     async fn read_tree_value_bytes(                                                      Description (x expand):
+ 158           &amp;self,                                                                           render binary diff files as metadata instead of garbage
+ 159           repo: &amp;Arc&lt;ReadonlyRepo&gt;,
+ 160           path: &amp;jj_lib::repo_path::RepoPath,                                              Files (f collapse):
+ 161           value: Option&lt;&amp;TreeValue&gt;,                                                       … 13 before
+ 162 -     ) -&gt; Result&lt;Option&lt;String&gt;&gt; {                                                        A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-54…
+ 162 +     ) -&gt; Result&lt;Option&lt;Vec&lt;u8&gt;&gt;&gt; {                                                       A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-54…
+ 163           let Some(value) = value else {                                                   A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-54…
+ 164               return Ok(None);                                                             ▶ M crates/juzu-jj/src/lib.rs
+ 165           };                                                                               … 4 more
+ 172                   reader.read_to_end(&amp;mut bytes).await.map_err(|err| {
+ 173                       JuzuError::Backend(format!(&quot;failed to stream native jj file content
+       : {err}&quot;))
+ 174                   })?;
+ 175 -                 Ok(Some(String::from_utf8_lossy(&amp;bytes).into_owned()))
+ 175 +                 Ok(Some(bytes))
+ 176               }
+ 177               TreeValue::Symlink(id) =&gt; {
+ 178                   let target = repo.store().read_symlink(path, id).await.map_err(|err| {
+ 179                       JuzuError::Backend(format!(&quot;failed to read native jj symlink conten
+       t: {err}&quot;))
+ 180                   })?;
+ 181 -                 Ok(Some(target))
+ 181 +                 Ok(Some(target.into_bytes()))
+ 182               }
+ 183 -             TreeValue::GitSubmodule(id) =&gt; Ok(Some(format!(&quot;Subproject commit {}\n&quot;, id
+       .hex()))),
+ 183 +             TreeValue::GitSubmodule(id) =&gt; Ok(Some(
+ 184 +                 format!(&quot;Subproject commit {}\n&quot;, id.hex()).into_bytes(),
+ ~/dev/juzu  @zynrrkwu                                                                                                                        mainline 40 nodes
+</pre>
+</section>
+<section class='card'>
+  <h2>206 cols · PASS</h2>
+  <ul><li>none</li></ul>
+  <pre> DIFF   ^d Log   [] File   j/k Move   escape Exit
+ File 1/21: Modified crates/juzu-jj/src/lib.rs   [ / ] next/prev   Ctrl+d back                                              Change: vplrruyyvvnppvvpwpztxwlxnppormwu
+ 154           Ok((repo, commit, tree))                                                                                     Commit: 292650caeb9d8f96af4f2fab8e8649b7e3c034c6
+ 155       }                                                                                                                Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+156                                                                                                                         Time: 2026-06-23T15:35:01+01:00
+ 157 -     async fn read_tree_value_text(
+ 157 +     async fn read_tree_value_bytes(                                                                                  Description (x expand):
+ 158           &amp;self,                                                                                                       render binary diff files as metadata instead of garbage
+ 159           repo: &amp;Arc&lt;ReadonlyRepo&gt;,
+ 160           path: &amp;jj_lib::repo_path::RepoPath,                                                                          Files (f collapse):
+ 161           value: Option&lt;&amp;TreeValue&gt;,                                                                                   … 13 before
+ 162 -     ) -&gt; Result&lt;Option&lt;String&gt;&gt; {                                                                                    A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainli…
+ 162 +     ) -&gt; Result&lt;Option&lt;Vec&lt;u8&gt;&gt;&gt; {                                                                                   A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/rust-tui-benchm…
+ 163           let Some(value) = value else {                                                                               A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/rust-tui-benchm…
+ 164               return Ok(None);                                                                                         ▶ M crates/juzu-jj/src/lib.rs
+ 165           };                                                                                                           … 4 more
+ 172                   reader.read_to_end(&amp;mut bytes).await.map_err(|err| {
+ 173                       JuzuError::Backend(format!(&quot;failed to stream native jj file content: {err}&quot;))
+ 174                   })?;
+ 175 -                 Ok(Some(String::from_utf8_lossy(&amp;bytes).into_owned()))
+ 175 +                 Ok(Some(bytes))
+ 176               }
+ 177               TreeValue::Symlink(id) =&gt; {
+ 178                   let target = repo.store().read_symlink(path, id).await.map_err(|err| {
+ 179                       JuzuError::Backend(format!(&quot;failed to read native jj symlink content: {err}&quot;))
+ 180                   })?;
+ 181 -                 Ok(Some(target))
+ 181 +                 Ok(Some(target.into_bytes()))
+ 182               }
+ 183 -             TreeValue::GitSubmodule(id) =&gt; Ok(Some(format!(&quot;Subproject commit {}\n&quot;, id.hex()))),
+ 183 +             TreeValue::GitSubmodule(id) =&gt; Ok(Some(
+ 184 +                 format!(&quot;Subproject commit {}\n&quot;, id.hex()).into_bytes(),
+ 185 +             )),
+ 186               TreeValue::Tree(_) =&gt; Ok(None),
+ 187           }
+ ~/dev/juzu  @zynrrkwu                                                                                                                                                                      mainline 40 nodes
+</pre>
+</section></div>
+</body></html>

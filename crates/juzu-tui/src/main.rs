@@ -5079,6 +5079,55 @@ mod tests {
     }
 
     #[test]
+    fn full_diff_pane_preserves_pure_rename_metadata_without_empty_state() {
+        let diff = DiffPreview {
+            raw_line_count: 4,
+            file_count: 1,
+            row_count: 4,
+            preview_rows: vec![],
+            full_rows: Some(vec![
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Renamed new.txt".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Metadata,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "diff --git a/old.txt b/new.txt".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Metadata,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "rename from old.txt".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Metadata,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "rename to new.txt".to_string(),
+                },
+            ]),
+            parse_error: None,
+        };
+
+        let visible = diffview_rows_for_file(&diff, 0);
+        let texts: Vec<_> = visible.iter().map(|row| row.text.as_str()).collect();
+        assert_eq!(texts, vec!["rename from old.txt", "rename to new.txt"]);
+    }
+
+    #[test]
     fn full_diff_pane_preserves_no_newline_marker_like_bun_diffview() {
         let diff = DiffPreview {
             raw_line_count: 7,
