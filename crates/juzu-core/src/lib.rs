@@ -180,6 +180,11 @@ pub enum Mutation {
         change_id: String,
         into_id: Option<String>,
     },
+    Restore {
+        cwd: PathBuf,
+        change_id: String,
+        paths: Vec<String>,
+    },
     Duplicate {
         cwd: PathBuf,
         change_id: String,

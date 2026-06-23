@@ -156,6 +156,10 @@ def current_description(repo: Path) -> str:
     return jj(repo, "log", "--no-graph", "-r", "@", "-T", "description.first_line()").strip()
 
 
+def current_is_empty(repo: Path) -> bool:
+    return jj(repo, "log", "--no-graph", "-r", "@", "-T", "empty").strip() == "true"
+
+
 def current_parent_ids(repo: Path) -> list[str]:
     raw = jj(repo, "log", "--no-graph", "-r", "@", "-T", 'parents.map(|p| p.change_id().short()).join(",")').strip()
     return [value for value in raw.split(",") if value]
@@ -411,6 +415,35 @@ def run_sequence_squash(repo: Path, width: int, height: int, session_suffix: str
     }
 
 
+def run_sequence_restore(repo: Path, width: int, height: int, session_suffix: str) -> dict[str, object]:
+    session = f"juzu-action-restore-{session_suffix}"
+    cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {repo} --limit 20 --mode mainline"
+    captures: list[tuple[str, str]] = []
+    before_count = total_count(repo)
+    target_change = current_change_id(repo)
+    tmux("new-session", "-d", "-s", session, "-x", str(width), "-y", str(height))
+    try:
+        send(session, cmd, "Enter")
+        captures.append(("23 log before restore mutation", wait_for(session, "LOG")))
+        send(session, "C-a")
+        captures.append(("24 Ctrl+A enters Actions leader for restore", wait_for(session, "ACT")))
+        send(session, "z")
+        wait_for_screen(session, lambda text: "LOG" in text and "ACT" not in text)
+        time.sleep(0.3)
+        captures.append(("25 log after restore mutation", capture(session)))
+    finally:
+        tmux("kill-session", "-t", session, check=False)
+    return {
+        "beforeCount": before_count,
+        "afterCount": total_count(repo),
+        "targetChange": target_change,
+        "afterCurrentChange": current_change_id(repo),
+        "afterDescription": current_description(repo),
+        "afterEmpty": current_is_empty(repo),
+        "captures": captures,
+    }
+
+
 def run_sequence_merge(repo: Path, width: int, height: int, session_suffix: str) -> dict[str, object]:
     session = f"juzu-action-merge-{session_suffix}"
     cmd = f"cd {ROOT} && ./target/release/juzu-tui --path {repo} --limit 20 --mode mainline"
@@ -492,7 +525,7 @@ def run_sequence_rebase(repo: Path, width: int, height: int, session_suffix: str
 
 def render_html(report: dict[str, object], mp4: Path) -> str:
     cards: list[str] = []
-    for section_name in ["new", "edit", "insert", "describe", "duplicate", "abandon", "squash", "merge", "rebase"]:
+    for section_name in ["new", "edit", "insert", "describe", "duplicate", "abandon", "squash", "restore", "merge", "rebase"]:
         section = report[section_name]
         cards.extend(
             f"<section><h2>{html.escape(title)}</h2><pre>{html.escape(screen)}</pre></section>"
@@ -548,6 +581,13 @@ strong {{ color:var(--ok); }}
   <p>Count <strong>{report['squash']['beforeCount']}</strong> → <strong>{report['squash']['afterCount']}</strong></p>
   <p>Squashed change <code>{html.escape(report['squash']['targetChange'])}</code>; current change is now <code>{html.escape(report['squash']['afterCurrentChange'])}</code></p>
   <p>Current description after squash: <strong>{html.escape(report['squash']['afterDescription'])}</strong></p>
+</section>
+<section>
+  <h2>Restore</h2>
+  <p>Count <strong>{report['restore']['beforeCount']}</strong> → <strong>{report['restore']['afterCount']}</strong></p>
+  <p>Restored change <code>{html.escape(report['restore']['targetChange'])}</code>; current change remains <code>{html.escape(report['restore']['afterCurrentChange'])}</code></p>
+  <p>Current description after restore: <strong>{html.escape(report['restore']['afterDescription'])}</strong></p>
+  <p>Current change empty after restore: <strong>{'yes' if report['restore']['afterEmpty'] else 'no'}</strong></p>
 </section>
 <section>
   <h2>Merge</h2>
@@ -608,6 +648,10 @@ def main() -> None:
     create_squash_fixture_repo(squash_repo)
     report["squash"] = run_sequence_squash(squash_repo, args.width, args.height, f"{os.getpid()}-squash")
 
+    restore_repo = out_dir / "restore-fixture-repo"
+    create_fixture_repo(restore_repo)
+    report["restore"] = run_sequence_restore(restore_repo, args.width, args.height, f"{os.getpid()}-restore")
+
     merge_repo = out_dir / "merge-fixture-repo"
     create_merge_fixture_repo(merge_repo)
     report["merge"] = run_sequence_merge(merge_repo, args.width, args.height, f"{os.getpid()}-merge")
@@ -624,6 +668,7 @@ def main() -> None:
         *report["duplicate"]["captures"],
         *report["abandon"]["captures"],
         *report["squash"]["captures"],
+        *report["restore"]["captures"],
         *report["merge"]["captures"],
         *report["rebase"]["captures"],
     ]
@@ -675,6 +720,14 @@ def main() -> None:
         raise SystemExit("squash mutation did not collapse the selected non-working-copy change")
     if report["squash"]["afterDescription"] != "third desc":
         raise SystemExit("squash mutation unexpectedly changed the current working copy description")
+    if report["restore"]["afterCount"] != report["restore"]["beforeCount"]:
+        raise SystemExit("restore mutation unexpectedly changed the visible commit count")
+    if report["restore"]["afterCurrentChange"] != report["restore"]["targetChange"]:
+        raise SystemExit("restore mutation moved the working copy off the selected change")
+    if report["restore"]["afterDescription"] != "second desc":
+        raise SystemExit("restore mutation unexpectedly changed the selected change description")
+    if not report["restore"]["afterEmpty"]:
+        raise SystemExit("restore mutation did not empty the selected change")
     if report["merge"]["afterCount"] != report["merge"]["beforeCount"] + 1:
         raise SystemExit("merge mutation did not increase the visible commit count")
     if report["merge"]["afterCurrentChange"] in {report["merge"]["leftChange"], report["merge"]["rightChange"]}:

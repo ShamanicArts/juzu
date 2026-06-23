@@ -707,6 +707,11 @@ fn handle_key_with_backend<B: JjBackend>(
                 app.active_leader_mode = None;
                 return false;
             }
+            KeyCode::Char('z') => {
+                let _ = restore_selected_change_with_backend(app, backend);
+                app.active_leader_mode = None;
+                return false;
+            }
             KeyCode::Char('b') => {
                 let _ = rebase_selected_change_with_backend(app, backend);
                 app.active_leader_mode = None;
@@ -1312,6 +1317,18 @@ fn squash_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B)
     reload_app_nodes_with_backend(app, backend)
 }
 
+fn restore_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return Ok(());
+    };
+    futures_executor::block_on(backend.mutate(Mutation::Restore {
+        cwd: app.path.clone(),
+        change_id: node.change_id.clone(),
+        paths: Vec::new(),
+    }))?;
+    reload_app_nodes_with_backend(app, backend)
+}
+
 fn rebase_selected_change_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
     let Some(node) = app.nodes.get(app.selected) else {
         return Ok(());
@@ -1703,6 +1720,9 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
                 Span::raw(" "),
                 Span::styled("y", key_style),
                 Span::styled(" Duplicate ", item_style),
+                Span::raw(" "),
+                Span::styled("z", key_style),
+                Span::styled(" Restore ", item_style),
                 Span::raw(" "),
                 Span::styled("Esc/q", key_style),
                 Span::styled(" Exit ", item_style),
@@ -6314,6 +6334,106 @@ mod tests {
         assert!(app.merge_mode);
         assert_eq!(app.merge_selected_ids.len(), 1);
         assert!(backend.mutate_calls.lock().unwrap().is_empty());
+    }
+
+    struct RestoreActionTestBackend {
+        mutate_calls: Mutex<Vec<juzu_core::Mutation>>,
+        before_nodes: Vec<juzu_core::CommitNode>,
+        after_restore_nodes: Vec<juzu_core::CommitNode>,
+    }
+
+    #[async_trait::async_trait(?Send)]
+    impl JjBackend for RestoreActionTestBackend {
+        async fn find_root(&self, _start: &std::path::Path) -> juzu_core::Result<Option<PathBuf>> {
+            Ok(None)
+        }
+
+        async fn log(&self, _query: LogQuery) -> juzu_core::Result<Vec<juzu_core::CommitNode>> {
+            if self.mutate_calls.lock().unwrap().is_empty() {
+                Ok(self.before_nodes.clone())
+            } else {
+                Ok(self.after_restore_nodes.clone())
+            }
+        }
+
+        async fn node_count(&self, _query: juzu_core::NodeCountQuery) -> juzu_core::Result<usize> {
+            Ok(self.before_nodes.len())
+        }
+
+        async fn description(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn files(&self, _query: ChangeQuery) -> juzu_core::Result<Vec<FileEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn diff(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn op_log(&self, _query: OpLogQuery) -> juzu_core::Result<Vec<OpLogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn obslog(&self, _query: ObslogQuery) -> juzu_core::Result<Vec<ObslogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn mutate(
+            &self,
+            mutation: juzu_core::Mutation,
+        ) -> juzu_core::Result<juzu_core::MutationResult> {
+            self.mutate_calls.lock().unwrap().push(mutation);
+            Ok(juzu_core::MutationResult {
+                changed: true,
+                message: "restore".to_string(),
+            })
+        }
+    }
+
+    #[test]
+    fn action_restore_shortcut_mutates_and_reloads_log_state() {
+        let backend = RestoreActionTestBackend {
+            mutate_calls: Mutex::new(Vec::new()),
+            before_nodes: vec![test_commit("restore12rest", "restore me")],
+            after_restore_nodes: vec![{
+                let mut node = test_commit("restore12rest", "restore me");
+                node.is_empty = true;
+                node
+            }],
+        };
+        let mut app = test_log_app("restore12rest", vec![]);
+        app.nodes = backend.before_nodes.clone();
+
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('a'),
+            KeyModifiers::CONTROL,
+        ));
+        assert!(!handle_key_with_backend(
+            &mut app,
+            &backend,
+            KeyCode::Char('z'),
+            KeyModifiers::NONE,
+        ));
+
+        let calls = backend.mutate_calls.lock().unwrap();
+        assert_eq!(
+            calls.as_slice(),
+            &[juzu_core::Mutation::Restore {
+                cwd: PathBuf::from("/tmp/juzu-bookmark-test"),
+                change_id: "restore12rest".to_string(),
+                paths: Vec::new(),
+            }],
+            "restore shortcut should issue one restore mutation"
+        );
+        assert_eq!(app.active_leader_mode, None);
+        assert!(
+            app.nodes[0].is_empty,
+            "restore should leave the selected change empty"
+        );
     }
 
     #[test]

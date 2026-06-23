@@ -192,6 +192,16 @@ pub fn squash(cwd: &Path, change_id: &str, into_id: Option<&str>) -> Result<()> 
     run_jj_owned(cwd, &args).map(|_| ())
 }
 
+pub fn restore(cwd: &Path, change_id: &str, paths: &[String]) -> Result<()> {
+    let mut args = vec![
+        "restore".to_string(),
+        "--changes-in".to_string(),
+        change_id.to_string(),
+    ];
+    args.extend(paths.iter().cloned());
+    run_jj_owned(cwd, &args).map(|_| ())
+}
+
 pub fn restore_operation(cwd: &Path, operation_id: &str) -> Result<()> {
     run_jj(cwd, &["op", "restore", operation_id]).map(|_| ())
 }

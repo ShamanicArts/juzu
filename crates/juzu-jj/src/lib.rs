@@ -559,6 +559,17 @@ impl JjBackend for NativeJjBackend {
                     message: format!("squashed change {change_id}"),
                 })
             }
+            Mutation::Restore {
+                cwd,
+                change_id,
+                paths,
+            } => {
+                cli_fallback::restore(&cwd, &change_id, &paths)?;
+                Ok(MutationResult {
+                    changed: true,
+                    message: format!("restored change {change_id}"),
+                })
+            }
             Mutation::RestoreOperation { cwd, operation_id } => {
                 cli_fallback::restore_operation(&cwd, &operation_id)?;
                 Ok(MutationResult {
@@ -1084,6 +1095,49 @@ mod tests {
             ],
         );
         assert_eq!(after.trim(), "renamed from rust test");
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_restore_mutation_reverts_selected_change_contents_but_keeps_description() {
+        let repo = create_action_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let target_change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+
+        let result = futures::executor::block_on(backend.mutate(Mutation::Restore {
+            cwd: repo.clone(),
+            change_id: target_change_id.clone(),
+            paths: Vec::new(),
+        }))
+        .expect("restore mutation should succeed");
+        assert!(result.changed, "restore mutation should report a change");
+
+        let after = run_jj(
+            &repo,
+            &[
+                "log",
+                "--no-graph",
+                "-r",
+                "@",
+                "-T",
+                "change_id.short() ++ \"|\" ++ description.first_line() ++ \"|\" ++ empty ++ \"\\n\"",
+            ],
+        );
+        let mut parts = after.trim().split('|');
+        assert_eq!(parts.next(), Some(target_change_id.as_str()));
+        assert_eq!(parts.next(), Some("second desc"));
+        assert_eq!(parts.next(), Some("true"));
+        let diff_after = run_jj(&repo, &["diff", "--summary", "-r", "@"]);
+        assert!(
+            diff_after.trim().is_empty(),
+            "restore should clear file diff"
+        );
 
         let _ = fs::remove_dir_all(&repo);
     }
