@@ -9,6 +9,7 @@ import html
 import json
 import os
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 
@@ -621,44 +622,47 @@ def main() -> None:
     frames_dir.mkdir(parents=True, exist_ok=True)
 
     report: dict[str, object] = {}
-    new_repo = out_dir / "new-fixture-repo"
-    create_fixture_repo(new_repo)
-    report["new"] = run_sequence_new(new_repo, args.width, args.height, f"{os.getpid()}-new")
+    with tempfile.TemporaryDirectory(prefix="juzu-action-leader-proof-") as fixture_root_raw:
+        fixture_root = Path(fixture_root_raw)
 
-    edit_repo = out_dir / "edit-fixture-repo"
-    create_fixture_repo(edit_repo)
-    report["edit"] = run_sequence_edit(edit_repo, args.width, args.height, f"{os.getpid()}-edit")
+        new_repo = fixture_root / "new-fixture-repo"
+        create_fixture_repo(new_repo)
+        report["new"] = run_sequence_new(new_repo, args.width, args.height, f"{os.getpid()}-new")
 
-    duplicate_repo = out_dir / "duplicate-fixture-repo"
-    create_fixture_repo(duplicate_repo)
-    insert_repo = out_dir / "insert-fixture-repo"
-    create_fixture_repo(insert_repo)
-    report["insert"] = run_sequence_insert(insert_repo, args.width, args.height, f"{os.getpid()}-insert")
-    describe_repo = out_dir / "describe-fixture-repo"
-    create_fixture_repo(describe_repo)
-    report["describe"] = run_sequence_describe(describe_repo, args.width, args.height, f"{os.getpid()}-describe")
+        edit_repo = fixture_root / "edit-fixture-repo"
+        create_fixture_repo(edit_repo)
+        report["edit"] = run_sequence_edit(edit_repo, args.width, args.height, f"{os.getpid()}-edit")
 
-    report["duplicate"] = run_sequence_duplicate(duplicate_repo, args.width, args.height, f"{os.getpid()}-dup")
+        duplicate_repo = fixture_root / "duplicate-fixture-repo"
+        create_fixture_repo(duplicate_repo)
+        insert_repo = fixture_root / "insert-fixture-repo"
+        create_fixture_repo(insert_repo)
+        report["insert"] = run_sequence_insert(insert_repo, args.width, args.height, f"{os.getpid()}-insert")
+        describe_repo = fixture_root / "describe-fixture-repo"
+        create_fixture_repo(describe_repo)
+        report["describe"] = run_sequence_describe(describe_repo, args.width, args.height, f"{os.getpid()}-describe")
 
-    abandon_repo = out_dir / "abandon-fixture-repo"
-    create_fixture_repo(abandon_repo)
-    report["abandon"] = run_sequence_abandon(abandon_repo, args.width, args.height, f"{os.getpid()}-abandon")
+        report["duplicate"] = run_sequence_duplicate(duplicate_repo, args.width, args.height, f"{os.getpid()}-dup")
 
-    squash_repo = out_dir / "squash-fixture-repo"
-    create_squash_fixture_repo(squash_repo)
-    report["squash"] = run_sequence_squash(squash_repo, args.width, args.height, f"{os.getpid()}-squash")
+        abandon_repo = fixture_root / "abandon-fixture-repo"
+        create_fixture_repo(abandon_repo)
+        report["abandon"] = run_sequence_abandon(abandon_repo, args.width, args.height, f"{os.getpid()}-abandon")
 
-    restore_repo = out_dir / "restore-fixture-repo"
-    create_fixture_repo(restore_repo)
-    report["restore"] = run_sequence_restore(restore_repo, args.width, args.height, f"{os.getpid()}-restore")
+        squash_repo = fixture_root / "squash-fixture-repo"
+        create_squash_fixture_repo(squash_repo)
+        report["squash"] = run_sequence_squash(squash_repo, args.width, args.height, f"{os.getpid()}-squash")
 
-    merge_repo = out_dir / "merge-fixture-repo"
-    create_merge_fixture_repo(merge_repo)
-    report["merge"] = run_sequence_merge(merge_repo, args.width, args.height, f"{os.getpid()}-merge")
+        restore_repo = fixture_root / "restore-fixture-repo"
+        create_fixture_repo(restore_repo)
+        report["restore"] = run_sequence_restore(restore_repo, args.width, args.height, f"{os.getpid()}-restore")
 
-    rebase_repo = out_dir / "rebase-fixture-repo"
-    create_rebase_fixture_repo(rebase_repo)
-    report["rebase"] = run_sequence_rebase(rebase_repo, args.width, args.height, f"{os.getpid()}-rebase")
+        merge_repo = fixture_root / "merge-fixture-repo"
+        create_merge_fixture_repo(merge_repo)
+        report["merge"] = run_sequence_merge(merge_repo, args.width, args.height, f"{os.getpid()}-merge")
+
+        rebase_repo = fixture_root / "rebase-fixture-repo"
+        create_rebase_fixture_repo(rebase_repo)
+        report["rebase"] = run_sequence_rebase(rebase_repo, args.width, args.height, f"{os.getpid()}-rebase")
 
     all_captures = [
         *report["new"]["captures"],
