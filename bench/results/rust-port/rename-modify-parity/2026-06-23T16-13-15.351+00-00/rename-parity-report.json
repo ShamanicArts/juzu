@@ -1,0 +1,95 @@
+{
+  "createdAt": "2026-06-23T16:13:16.600456+00:00",
+  "variant": "modify",
+  "outputDir": "/home/shamanic/dev/juzu/bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00",
+  "changeId": "puopvpxolttu",
+  "oldSidebar": {
+    "schemaVersion": 1,
+    "oracle": "old-juzu",
+    "command": "sidebar",
+    "repo": "/tmp/juzu-rename-proof-k2_k4nbz",
+    "selectedIndex": 0,
+    "selected": {
+      "changeId": "puopvpxolttu",
+      "commitId": "5d09bfbcae55",
+      "parents": [
+        "wsxktsmsuqvm"
+      ],
+      "author": "shamanicbeatbox@gmail.com",
+      "time": "2026-06-23 17:13:15.000 +01:00",
+      "bookmarks": [],
+      "gitBranches": [],
+      "descriptionTitle": "rename mod change",
+      "descriptionFullLength": 0,
+      "isEmpty": false,
+      "isConflict": false,
+      "isHidden": false,
+      "isRoot": false,
+      "isWorkingCopy": true,
+      "lane": 0,
+      "x": 50,
+      "y": 50,
+      "isPinned": false
+    },
+    "files": [
+      {
+        "type": "R",
+        "path": "{old.txt => new.txt}"
+      }
+    ],
+    "diffSummary": {
+      "bytes": 223,
+      "lines": 14,
+      "firstLines": [
+        "diff --git a/old.txt b/new.txt",
+        "rename from old.txt",
+        "rename to new.txt",
+        "index 5013e38b8c..c7653a4134 100644",
+        "--- a/old.txt",
+        "+++ b/new.txt",
+        "@@ -1,4 +1,5 @@",
+        " hello",
+        "-world",
+        "+world CHANGED",
+        " this is line three",
+        " and line four",
+        "+NEW LINE",
+        ""
+      ]
+    }
+  },
+  "rustFiles": {
+    "backend": "jj-lib",
+    "changeId": "puopvpxolttu",
+    "command": "files",
+    "files": [
+      {
+        "path": "{old.txt => new.txt}",
+        "type": "R"
+      }
+    ],
+    "path": "/tmp/juzu-rename-proof-k2_k4nbz",
+    "schemaVersion": 1
+  },
+  "rustDiff": {
+    "backend": "jj-lib",
+    "changeId": "puopvpxolttu",
+    "command": "diff",
+    "diff": "diff --git a/old.txt b/new.txt\nrename from old.txt\nrename to new.txt\n--- a/old.txt\n+++ b/new.txt\n@@ -1,4 +1,5 @@\n hello\n-world\n+world CHANGED\n this is line three\n and line four\n+NEW LINE\n",
+    "path": "/tmp/juzu-rename-proof-k2_k4nbz",
+    "schemaVersion": 1
+  },
+  "filesMatch": true,
+  "diffPrefixMatch": true,
+  "contentHunkPresent": true,
+  "captures": [
+    [
+      "log",
+      " LOG   ^A Act  ^O Ops  ^V View  ^B Book\n                                                                                                Change: puopvpxolttultyoylptsypqzwvmkopt (@)\n  @...@> puopvpxo 5d09bfbc                                                                      Commit: 5d09bfbcae55333d793216c332741bfbba173169\n  \u2502      rename mod change                                                                      Author: shamanic <shamanicbeatbox@gmail.com>\n  \u2502      R {old.txt => new.txt}                                                                 Time: 2026-06-23T17:13:15+01:00\n  \u2502\n  o..... wsxktsms 0dea153b                                                                      Description (x expand):\n  \u2502      rename mod base                                                                        rename mod change\n  \u2502      A old.txt\n  \u2502                                                                                             Files (f collapse):\n  o..... zzzzzzzz 00000000                                                                      R {old.txt => new.txt}\n         (no description)\n         no file changes                                                                        Diff\n                                                                                                  \u00b7 1 files \u00b7 12 raw \u00b7 13 rows \u00b7 13 shown\n                                                                                                  \u00b7 diff rows 1-13 of 13\n                                                                                                 STICKY \u25b8 top \u00b7 Renamed new.txt\n                                                                                                \u256d \u25c6 Renamed new.txt                                         \u256e\n                                                                                                  \u00b7 diff --git a/old.txt b/new.txt\n                                                                                                  \u00b7 rename from old.txt\n                                                                                                  \u00b7 rename to new.txt\n                                                                                                  \u00b7 --- a/old.txt\n                                                                                                  \u00b7 +++ b/new.txt\n                                                                                                \u256d\u2500 @@ -1,4 +1,5 @@                                         \u256e\n                                                                                                  1   hello\n                                                                                                  2 - world\n                                                                                                  2 + world CHANGED\n                                                                                                  3   this is line three\n                                                                                                  4   and line four\n                                                                                                  5 + NEW LINE\n\n\n\n\n\n\n /tmp/juzu-rename-proof-k2_k4nbz  @puopvpxo                                                                                                    mainline 3 nodes\n"
+    ],
+    [
+      "rename diff",
+      " LOG   ^A Act  ^O Ops  ^V View  ^B Book\n                                                                                                Change: puopvpxolttultyoylptsypqzwvmkopt (@)\n  @...@> puopvpxo 5d09bfbc                                                                      Commit: 5d09bfbcae55333d793216c332741bfbba173169\n  \u2502      rename mod change                                                                      Author: shamanic <shamanicbeatbox@gmail.com>\n  \u2502      R {old.txt => new.txt}                                                                 Time: 2026-06-23T17:13:15+01:00\n  \u2502\n  o..... wsxktsms 0dea153b                                                                      Description (x expand):\n  \u2502      rename mod base                                                                        rename mod change\n  \u2502      A old.txt\n  \u2502                                                                                             Files (f collapse):\n  o..... zzzzzzzz 00000000                                                                      R {old.txt => new.txt}\n         (no description)\n         no file changes                                                                        Diff\n                                                                                                  \u00b7 1 files \u00b7 12 raw \u00b7 13 rows \u00b7 13 shown\n                                                                                                  \u00b7 diff rows 1-13 of 13\n                                                                                                 STICKY \u25b8 top \u00b7 Renamed new.txt\n                                                                                                \u256d \u25c6 Renamed new.txt                                         \u256e\n                                                                                                  \u00b7 diff --git a/old.txt b/new.txt\n                                                                                                  \u00b7 rename from old.txt\n                                                                                                  \u00b7 rename to new.txt\n                                                                                                  \u00b7 --- a/old.txt\n                                                                                                  \u00b7 +++ b/new.txt\n                                                                                                \u256d\u2500 @@ -1,4 +1,5 @@                                         \u256e\n                                                                                                  1   hello\n                                                                                                  2 - world\n                                                                                                  2 + world CHANGED\n                                                                                                  3   this is line three\n                                                                                                  4   and line four\n                                                                                                  5 + NEW LINE\n\n\n\n\n\n\n /tmp/juzu-rename-proof-k2_k4nbz  @puopvpxo                                                                                                    mainline 3 nodes\n"
+    ]
+  ]
+}

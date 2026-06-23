@@ -249,6 +249,20 @@ impl NativeJjBackend {
             .unwrap_or_default()
     }
 
+    /// Line-level content similarity ratio in `[0.0, 1.0]`. Returns `0.0` when
+    /// either side is missing or binary so rename detection skips those pairs.
+    fn content_similarity_ratio(before: Option<&[u8]>, after: Option<&[u8]>) -> f32 {
+        let (Some(before), Some(after)) = (before, after) else {
+            return 0.0;
+        };
+        if Self::is_binary_content(Some(before)) || Self::is_binary_content(Some(after)) {
+            return 0.0;
+        }
+        let before_text = Self::bytes_to_lossy_text(Some(before));
+        let after_text = Self::bytes_to_lossy_text(Some(after));
+        TextDiff::from_lines(&before_text, &after_text).ratio()
+    }
+
     fn format_rename_summary(old_path: &str, new_path: &str) -> String {
         match (old_path.rsplit_once('/'), new_path.rsplit_once('/')) {
             (Some((old_dir, old_name)), Some((new_dir, new_name))) if old_dir == new_dir => {
@@ -326,6 +340,65 @@ impl NativeJjBackend {
             });
         }
 
+        // Similarity-based rename detection: pair remaining deletes with the
+        // most similar unmatched add when content overlap meets jj's default
+        // 50% threshold. This mirrors old `jj diff` detecting a rename even
+        // when the file content was also modified.
+        const RENAME_SIMILARITY_THRESHOLD: f32 = 0.5;
+        let delete_indices: Vec<usize> = entries
+            .iter()
+            .enumerate()
+            .filter(|(idx, entry)| !consumed[*idx] && entry.before_present && !entry.after_present)
+            .map(|(idx, _)| idx)
+            .collect();
+        for delete_idx in delete_indices {
+            if consumed[delete_idx] {
+                continue;
+            }
+            let delete_entry = &entries[delete_idx];
+            let Some((add_idx, _ratio)) = entries
+                .iter()
+                .enumerate()
+                .filter(|(add_idx, add_entry)| {
+                    !consumed[*add_idx]
+                        && !add_entry.before_present
+                        && add_entry.after_present
+                        && add_entry.path != delete_entry.path
+                })
+                .map(|(add_idx, add_entry)| {
+                    (
+                        add_idx,
+                        Self::content_similarity_ratio(
+                            delete_entry.before_bytes.as_deref(),
+                            add_entry.after_bytes.as_deref(),
+                        ),
+                    )
+                })
+                .filter(|(_, ratio)| *ratio >= RENAME_SIMILARITY_THRESHOLD)
+                .max_by(|left, right| {
+                    left.1
+                        .partial_cmp(&right.1)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                })
+            else {
+                continue;
+            };
+            consumed[delete_idx] = true;
+            consumed[add_idx] = true;
+            let add_entry = &entries[add_idx];
+            display.push(NativeDisplayDiff {
+                order_key: delete_idx.min(add_idx),
+                old_path: delete_entry.path.clone(),
+                new_path: add_entry.path.clone(),
+                kind: NativeDisplayDiffKind::Renamed {
+                    old_path: delete_entry.path.clone(),
+                    new_path: add_entry.path.clone(),
+                },
+                before_bytes: delete_entry.before_bytes.clone(),
+                after_bytes: add_entry.after_bytes.clone(),
+            });
+        }
+
         for (idx, entry) in entries.into_iter().enumerate() {
             if consumed[idx] {
                 continue;
@@ -355,56 +428,54 @@ impl NativeJjBackend {
     }
 
     fn render_display_diff_patch(display: &NativeDisplayDiff) -> String {
+        let mut file_output = String::new();
+        file_output.push_str(&format!(
+            "diff --git a/{} b/{}\n",
+            display.old_path, display.new_path
+        ));
         match &display.kind {
             NativeDisplayDiffKind::Renamed { old_path, new_path } => {
-                format!(
-                    "diff --git a/{old_path} b/{new_path}\nrename from {old_path}\nrename to {new_path}\n"
-                )
+                file_output.push_str(&format!("rename from {old_path}\nrename to {new_path}\n"));
             }
-            NativeDisplayDiffKind::Added
-            | NativeDisplayDiffKind::Deleted
-            | NativeDisplayDiffKind::Modified => {
-                let mut file_output = String::new();
-                file_output.push_str(&format!(
-                    "diff --git a/{} b/{}\n",
-                    display.old_path, display.new_path
-                ));
-                match display.kind {
-                    NativeDisplayDiffKind::Added => file_output.push_str("new file mode 100644\n"),
-                    NativeDisplayDiffKind::Deleted => {
-                        file_output.push_str("deleted file mode 100644\n")
-                    }
-                    NativeDisplayDiffKind::Modified | NativeDisplayDiffKind::Renamed { .. } => {}
-                }
-                let old_header = match display.kind {
-                    NativeDisplayDiffKind::Added => "/dev/null".to_string(),
-                    _ => format!("a/{}", display.old_path),
-                };
-                let new_header = match display.kind {
-                    NativeDisplayDiffKind::Deleted => "/dev/null".to_string(),
-                    _ => format!("b/{}", display.new_path),
-                };
-                if Self::is_binary_content(display.before_bytes.as_deref())
-                    || Self::is_binary_content(display.after_bytes.as_deref())
-                {
-                    file_output.push_str(&format!(
-                        "Binary files {old_header} and {new_header} differ\n"
-                    ));
-                } else {
-                    let before_text = Self::bytes_to_lossy_text(display.before_bytes.as_deref());
-                    let after_text = Self::bytes_to_lossy_text(display.after_bytes.as_deref());
-                    let diff = TextDiff::from_lines(&before_text, &after_text);
-                    file_output.push_str(
-                        &diff
-                            .unified_diff()
-                            .context_radius(3)
-                            .header(&old_header, &new_header)
-                            .to_string(),
-                    );
-                }
-                file_output
-            }
+            NativeDisplayDiffKind::Added => file_output.push_str("new file mode 100644\n"),
+            NativeDisplayDiffKind::Deleted => file_output.push_str("deleted file mode 100644\n"),
+            NativeDisplayDiffKind::Modified => {}
         }
+        // Pure renames with identical content carry no content hunk, matching
+        // old `jj diff --git` which stops after the rename metadata. Added /
+        // deleted / modified entries always proceed to a content section.
+        let pure_rename = matches!(display.kind, NativeDisplayDiffKind::Renamed { .. })
+            && display.before_bytes == display.after_bytes;
+        if pure_rename {
+            return file_output;
+        }
+        let old_header = match display.kind {
+            NativeDisplayDiffKind::Added => "/dev/null".to_string(),
+            _ => format!("a/{}", display.old_path),
+        };
+        let new_header = match display.kind {
+            NativeDisplayDiffKind::Deleted => "/dev/null".to_string(),
+            _ => format!("b/{}", display.new_path),
+        };
+        if Self::is_binary_content(display.before_bytes.as_deref())
+            || Self::is_binary_content(display.after_bytes.as_deref())
+        {
+            file_output.push_str(&format!(
+                "Binary files {old_header} and {new_header} differ\n"
+            ));
+        } else {
+            let before_text = Self::bytes_to_lossy_text(display.before_bytes.as_deref());
+            let after_text = Self::bytes_to_lossy_text(display.after_bytes.as_deref());
+            let diff = TextDiff::from_lines(&before_text, &after_text);
+            file_output.push_str(
+                &diff
+                    .unified_diff()
+                    .context_radius(3)
+                    .header(&old_header, &new_header)
+                    .to_string(),
+            );
+        }
+        file_output
     }
 
     pub async fn diff_preview(&self, query: ChangeQuery, max_lines: usize) -> Result<String> {
@@ -978,6 +1049,28 @@ mod tests {
         repo
     }
 
+    fn create_rename_modify_fixture_repo() -> PathBuf {
+        let repo = unique_test_dir("rename-modify-diff");
+        fs::create_dir_all(&repo).expect("fixture repo dir should be created");
+        run_jj(&repo, &["git", "init", "."]);
+        fs::write(
+            repo.join("old.txt"),
+            "hello\nworld\nthis is line three\nand line four\n",
+        )
+        .expect("rename-modify fixture write should work");
+        run_jj(&repo, &["describe", "-m", "rename mod base"]);
+        run_jj(&repo, &["new"]);
+        fs::rename(repo.join("old.txt"), repo.join("new.txt"))
+            .expect("rename-modify fixture move should work");
+        fs::write(
+            repo.join("new.txt"),
+            "hello\nworld CHANGED\nthis is line three\nand line four\nNEW LINE\n",
+        )
+        .expect("rename-modify fixture rewrite should work");
+        run_jj(&repo, &["describe", "-m", "rename mod change"]);
+        repo
+    }
+
     fn create_squash_fixture_repo() -> PathBuf {
         let repo = unique_test_dir("squash-mutations");
         fs::create_dir_all(&repo).expect("fixture repo dir should be created");
@@ -1404,6 +1497,78 @@ mod tests {
         assert_eq!(
             diff,
             "diff --git a/old.txt b/new.txt\nrename from old.txt\nrename to new.txt\n"
+        );
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_files_render_rename_with_modify_like_old_jj_summary() {
+        let repo = create_rename_modify_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+
+        let files = futures::executor::block_on(backend.files(ChangeQuery {
+            cwd: repo.clone(),
+            change_id,
+        }))
+        .expect("rename-modify files should load");
+
+        assert_eq!(
+            files,
+            vec![FileEntry {
+                r#type: "R".to_string(),
+                path: "{old.txt => new.txt}".to_string(),
+            }]
+        );
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_diff_renders_rename_with_modify_like_old_jj_git_patch() {
+        let repo = create_rename_modify_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+
+        let diff = futures::executor::block_on(backend.diff(ChangeQuery {
+            cwd: repo.clone(),
+            change_id,
+        }))
+        .expect("rename-modify diff should load");
+
+        // Old `jj diff --git` emits rename metadata followed by an `index` line
+        // (normalized away by the parity harness) and a unified content hunk.
+        // The Rust backend omits the index line for consistency with the other
+        // diff kinds, so assert the rename header is a prefix and the hunk body
+        // carries the modified content lines.
+        assert!(
+            diff.starts_with(
+                "diff --git a/old.txt b/new.txt\nrename from old.txt\nrename to new.txt\n"
+            ),
+            "rename-modify diff should start with rename metadata, got: {diff}"
+        );
+        assert!(
+            diff.contains("--- a/old.txt\n+++ b/new.txt\n"),
+            "rename-modify diff should carry a/old b/new content headers, got: {diff}"
+        );
+        assert!(
+            diff.contains("-world\n+world CHANGED\n"),
+            "rename-modify diff should show the modified content hunk, got: {diff}"
+        );
+        assert!(
+            diff.contains("+NEW LINE\n"),
+            "rename-modify diff should show the added line, got: {diff}"
         );
 
         let _ = fs::remove_dir_all(&repo);

@@ -1,0 +1,2004 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-06-23T16:13:43.005081+00:00",
+  "repo": "/home/shamanic/dev/juzu",
+  "limit": 20,
+  "compared": 8,
+  "passed": 8,
+  "failed": 0,
+  "skippedRoots": 0,
+  "cases": [
+    {
+      "changeId": "runpppvsrykv",
+      "title": "",
+      "match": true,
+      "oldCount": 23,
+      "rustCount": 23,
+      "oldFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/diff-parity/2026-06-23T16-13-33.420Z/diff-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/diff-parity/2026-06-23T16-13-33.420Z/diff-parity.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/frames/frame-000.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/frames/frame-001.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/rename-parity-proof.mp4"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/rename-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/rename-parity-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/tmux-screen-00.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/tmux-screen-01.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/rename-parity-proof.mp4"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/rename-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/rename-parity-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/tmux-screen-00.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/tmux-screen-01.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/rename-parity-proof.mp4"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/rename-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/rename-parity-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/tmux-screen-00.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/tmux-screen-01.txt"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "package.json"
+        },
+        {
+          "type": "A",
+          "path": "scripts/__pycache__/rust-port-rename-parity-proof.cpython-314.pyc"
+        },
+        {
+          "type": "M",
+          "path": "scripts/rust-port-rename-parity-proof.py"
+        }
+      ],
+      "rustFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/diff-parity/2026-06-23T16-13-33.420Z/diff-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/diff-parity/2026-06-23T16-13-33.420Z/diff-parity.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/frames/frame-000.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/frames/frame-001.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/rename-parity-proof.mp4"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/rename-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/rename-parity-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/tmux-screen-00.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/tmux-screen-01.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/rename-parity-proof.mp4"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/rename-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/rename-parity-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/tmux-screen-00.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/tmux-screen-01.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/rename-parity-proof.mp4"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/rename-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/rename-parity-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/tmux-screen-00.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/tmux-screen-01.txt"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "package.json"
+        },
+        {
+          "type": "A",
+          "path": "scripts/__pycache__/rust-port-rename-parity-proof.cpython-314.pyc"
+        },
+        {
+          "type": "M",
+          "path": "scripts/rust-port-rename-parity-proof.py"
+        }
+      ]
+    },
+    {
+      "changeId": "oowzmwyktrnn",
+      "title": "prefer product files in rust sidebar diff preview",
+      "match": true,
+      "oldCount": 17,
+      "rustCount": 17,
+      "oldFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/live-tmux/2026-06-23T15-53-41.102Z/live-tmux-proof.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/idle-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/idle-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/idle-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/layout-switching-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/layout-switching-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/layout-switching-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/navigate-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/navigate-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/navigate-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/rust-tui-benchmark.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/rust-tui-benchmark.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T15-48-30-062Z/sidebar-preview-order-report.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T15-48-30-062Z/sidebar-preview-order-report.json"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-tui/src/main.rs"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/read-only-tui.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/rust-tui-benchmarks.md"
+        }
+      ],
+      "rustFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/live-tmux/2026-06-23T15-53-41.102Z/live-tmux-proof.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/idle-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/idle-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/idle-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/layout-switching-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/layout-switching-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/layout-switching-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/navigate-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/navigate-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/navigate-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/rust-tui-benchmark.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/rust-tui-benchmark.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T15-48-30-062Z/sidebar-preview-order-report.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T15-48-30-062Z/sidebar-preview-order-report.json"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-tui/src/main.rs"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/read-only-tui.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/rust-tui-benchmarks.md"
+        }
+      ]
+    },
+    {
+      "changeId": "zynrrkwuytsr",
+      "title": "match old jj pure rename summaries and diff metadata",
+      "match": true,
+      "oldCount": 27,
+      "rustCount": 27,
+      "oldFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/live-tmux/2026-06-23T15-40-26.878Z/live-tmux-proof.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-proof.mp4"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/tmux-screen-00.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/tmux-screen-01.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/idle-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/idle-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/idle-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/layout-switching-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/layout-switching-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/layout-switching-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/navigate-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/navigate-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/navigate-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/rust-tui-benchmark.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/rust-tui-benchmark.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T15-40-47-806Z/rename-modal-report.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T15-40-47-806Z/rename-modal-report.json"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-tui/src/main.rs"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/native-diff-hydration.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/native-files-hydration.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/read-only-tui.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/rust-tui-benchmarks.md"
+        },
+        {
+          "type": "M",
+          "path": "package.json"
+        },
+        {
+          "type": "A",
+          "path": "scripts/rust-port-rename-parity-proof.py"
+        }
+      ],
+      "rustFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/live-tmux/2026-06-23T15-40-26.878Z/live-tmux-proof.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-proof.mp4"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/tmux-screen-00.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/tmux-screen-01.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/idle-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/idle-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/idle-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/layout-switching-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/layout-switching-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/layout-switching-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/navigate-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/navigate-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/navigate-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/rust-tui-benchmark.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/rust-tui-benchmark.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T15-40-47-806Z/rename-modal-report.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T15-40-47-806Z/rename-modal-report.json"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-tui/src/main.rs"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/native-diff-hydration.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/native-files-hydration.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/read-only-tui.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/rust-tui-benchmarks.md"
+        },
+        {
+          "type": "M",
+          "path": "package.json"
+        },
+        {
+          "type": "A",
+          "path": "scripts/rust-port-rename-parity-proof.py"
+        }
+      ]
+    },
+    {
+      "changeId": "vplrruyyvvnp",
+      "title": "render binary diff files as metadata instead of garbage",
+      "match": true,
+      "oldCount": 21,
+      "rustCount": 21,
+      "oldFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/binary-diff-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/old-oracle-sidebar.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/rust-diff.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/tmux-diff-screen.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/live-tmux/2026-06-23T14-39-15.833Z/live-tmux-proof.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/idle-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/idle-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/idle-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/layout-switching-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/layout-switching-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/layout-switching-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/rust-tui-benchmark.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/rust-tui-benchmark.json"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-tui/src/main.rs"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/native-diff-hydration.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/read-only-tui.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/rust-tui-benchmarks.md"
+        }
+      ],
+      "rustFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/binary-diff-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/old-oracle-sidebar.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/rust-diff.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/tmux-diff-screen.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/live-tmux/2026-06-23T14-39-15.833Z/live-tmux-proof.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/idle-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/idle-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/idle-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/layout-switching-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/layout-switching-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/layout-switching-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/rust-tui-benchmark.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/rust-tui-benchmark.json"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-tui/src/main.rs"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/native-diff-hydration.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/read-only-tui.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/rust-tui-benchmarks.md"
+        }
+      ]
+    },
+    {
+      "changeId": "wspzkvzuklqk",
+      "title": "keep action leader proof artifacts free of fixture repo trash",
+      "match": true,
+      "oldCount": 45,
+      "rustCount": 45,
+      "oldFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-sequence-proof.mp4"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-000.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-001.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-002.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-003.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-004.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-005.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-006.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-007.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-008.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-009.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-010.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-011.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-012.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-013.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-014.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-015.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-016.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-017.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-018.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-019.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-020.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-021.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-022.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-023.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-024.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-025.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-026.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-027.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-028.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-029.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-030.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-031.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-032.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-033.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-034.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-035.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-036.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-037.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-038.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-039.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-040.png"
+        },
+        {
+          "type": "M",
+          "path": "scripts/rust-port-action-leader-proof.py"
+        }
+      ],
+      "rustFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-sequence-proof.mp4"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-000.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-001.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-002.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-003.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-004.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-005.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-006.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-007.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-008.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-009.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-010.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-011.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-012.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-013.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-014.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-015.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-016.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-017.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-018.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-019.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-020.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-021.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-022.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-023.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-024.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-025.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-026.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-027.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-028.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-029.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-030.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-031.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-032.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-033.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-034.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-035.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-036.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-037.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-038.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-039.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-040.png"
+        },
+        {
+          "type": "M",
+          "path": "scripts/rust-port-action-leader-proof.py"
+        }
+      ]
+    },
+    {
+      "changeId": "zmwnunyvpqrl",
+      "title": "add safe native dirty working-copy snapshot parity",
+      "match": true,
+      "oldCount": 23,
+      "rustCount": 23,
+      "oldFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/diff-parity/2026-06-23T14-16-04.345Z/diff-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/diff-parity/2026-06-23T14-16-04.345Z/diff-parity.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/files-parity/2026-06-23T14-16-02.787Z/files-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/files-parity/2026-06-23T14-16-02.787Z/files-parity.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/live-tmux/2026-06-23T14-19-07.444Z/live-tmux-proof.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/idle-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/idle-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/idle-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/layout-switching-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/layout-switching-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/layout-switching-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/navigate-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/navigate-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/navigate-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/rust-tui-benchmark.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/rust-tui-benchmark.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T14-16-05.319Z/working-copy-snapshot-report.html"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/native-diff-hydration.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/native-files-hydration.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/read-only-tui.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/rust-tui-benchmarks.md"
+        },
+        {
+          "type": "M",
+          "path": "scripts/rust-port-files-parity.py"
+        }
+      ],
+      "rustFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/diff-parity/2026-06-23T14-16-04.345Z/diff-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/diff-parity/2026-06-23T14-16-04.345Z/diff-parity.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/files-parity/2026-06-23T14-16-02.787Z/files-parity-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/files-parity/2026-06-23T14-16-02.787Z/files-parity.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/live-tmux/2026-06-23T14-19-07.444Z/live-tmux-proof.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/idle-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/idle-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/idle-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/layout-switching-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/layout-switching-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/layout-switching-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/navigate-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/navigate-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/navigate-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/rust-tui-benchmark.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/rust-tui-benchmark.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T14-16-05.319Z/working-copy-snapshot-report.html"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/native-diff-hydration.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/native-files-hydration.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/read-only-tui.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/rust-tui-benchmarks.md"
+        },
+        {
+          "type": "M",
+          "path": "scripts/rust-port-files-parity.py"
+        }
+      ]
+    },
+    {
+      "changeId": "vmxlrlrmrlxv",
+      "title": "prefer product files in rust diff mode and green modal parity",
+      "match": true,
+      "oldCount": 19,
+      "rustCount": 19,
+      "oldFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/live-tmux/2026-06-23T13-54-17.302Z/live-tmux-proof.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/layout-switching-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/layout-switching-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/layout-switching-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/navigate-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/navigate-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/navigate-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/rust-tui-benchmark.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/rust-tui-benchmark.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T13-51-24-704Z/diff-default-order-report.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T13-51-24-704Z/diff-default-order-report.json"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-tui/src/main.rs"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/read-only-tui.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/rust-tui-benchmarks.md"
+        },
+        {
+          "type": "M",
+          "path": "scripts/rust-port-tui-modal-parity.py"
+        }
+      ],
+      "rustFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/live-tmux/2026-06-23T13-54-17.302Z/live-tmux-proof.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/layout-switching-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/layout-switching-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/layout-switching-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/navigate-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/navigate-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/navigate-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/rust-tui-benchmark.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/rust-tui-benchmark.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T13-51-24-704Z/diff-default-order-report.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/tui-modal-parity/2026-06-23T13-51-24-704Z/diff-default-order-report.json"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-tui/src/main.rs"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/read-only-tui.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/rust-tui-benchmarks.md"
+        },
+        {
+          "type": "M",
+          "path": "scripts/rust-port-tui-modal-parity.py"
+        }
+      ]
+    },
+    {
+      "changeId": "tptyqxrkvzqm",
+      "title": "wire rust actions leader into real restore action",
+      "match": true,
+      "oldCount": 63,
+      "rustCount": 63,
+      "oldFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-sequence-proof.mp4"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-000.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-001.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-002.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-003.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-004.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-005.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-006.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-007.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-008.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-009.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-010.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-011.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-012.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-013.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-014.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-015.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-016.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-017.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-018.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-019.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-020.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-021.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-022.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-023.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-024.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-025.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-026.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-027.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-028.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-029.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-030.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-031.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-032.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-033.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-034.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-035.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-036.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-037.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-038.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-039.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-040.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/live-tmux/2026-06-23T10-00-54.532Z/live-tmux-proof.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/idle-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/idle-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/idle-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/layout-switching-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/layout-switching-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/layout-switching-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/navigate-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/navigate-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/navigate-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/rust-tui-benchmark.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/rust-tui-benchmark.json"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-core/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/cli_fallback.rs"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-tui/src/main.rs"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/read-only-tui.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/rust-tui-benchmarks.md"
+        },
+        {
+          "type": "M",
+          "path": "scripts/rust-port-action-leader-proof.py"
+        }
+      ],
+      "rustFiles": [
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-report.json"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-review.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-sequence-proof.mp4"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-000.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-001.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-002.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-003.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-004.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-005.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-006.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-007.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-008.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-009.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-010.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-011.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-012.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-013.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-014.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-015.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-016.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-017.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-018.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-019.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-020.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-021.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-022.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-023.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-024.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-025.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-026.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-027.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-028.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-029.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-030.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-031.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-032.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-033.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-034.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-035.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-036.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-037.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-038.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-039.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-040.png"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/live-tmux/2026-06-23T10-00-54.532Z/live-tmux-proof.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/idle-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/idle-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/idle-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/layout-switching-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/layout-switching-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/layout-switching-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/navigate-mainline-run-1-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/navigate-mainline-run-2-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/navigate-mainline-run-3-capture.txt"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/rust-tui-benchmark.html"
+        },
+        {
+          "type": "A",
+          "path": "bench/results/rust-port/rust-tui-bench/2026-06-23T09-59-41-352Z/rust-tui-benchmark.json"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-core/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/cli_fallback.rs"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-jj/src/lib.rs"
+        },
+        {
+          "type": "M",
+          "path": "crates/juzu-tui/src/main.rs"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/read-only-tui.md"
+        },
+        {
+          "type": "M",
+          "path": "docs/rust-port/rust-tui-benchmarks.md"
+        },
+        {
+          "type": "M",
+          "path": "scripts/rust-port-action-leader-proof.py"
+        }
+      ]
+    }
+  ]
+}

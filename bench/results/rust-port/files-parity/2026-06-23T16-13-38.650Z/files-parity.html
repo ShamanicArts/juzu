@@ -1,0 +1,396 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>JUZU Rust files parity</title>
+<style>
+:root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #07111f; color: #d8e3f2; }
+body { margin: 0; padding: 28px; }
+h1 { margin: 0 0 6px; }
+.summary { display: flex; gap: 14px; margin: 20px 0; flex-wrap: wrap; }
+.card { background: #0d1b2d; border: 1px solid #233854; border-radius: 14px; padding: 14px 18px; box-shadow: 0 10px 30px #0005; }
+.card .num { font-size: 28px; font-weight: 800; color: #7dd3fc; }
+table { width: 100%; border-collapse: collapse; background: #0d1b2d; border-radius: 14px; overflow: hidden; }
+th, td { border-bottom: 1px solid #233854; padding: 10px; vertical-align: top; }
+th { text-align: left; color: #93c5fd; background: #10223a; }
+tr.pass td:first-child { color: #86efac; }
+tr.fail td:first-child { color: #fca5a5; }
+pre { margin: 0; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #cbd5e1; }
+code { color: #fde68a; }
+.small { color: #94a3b8; }
+</style>
+</head>
+<body>
+<h1>JUZU Rust native files() parity</h1>
+<div class="small">Repo: <code>/home/shamanic/dev/juzu</code> · generated 2026-06-23T16:13:43.005081+00:00</div>
+<div class="summary">
+  <div class="card"><div class="num">8/8</div><div>matched cases</div></div>
+  <div class="card"><div class="num">0</div><div>skipped root cases</div></div>
+  <div class="card"><div class="num">20</div><div>snapshot limit</div></div>
+</div>
+<table>
+<thead><tr><th>Status</th><th>Change</th><th>Old</th><th>Rust</th><th>Old oracle files</th><th>Rust native files</th></tr></thead>
+<tbody>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>runpppvsrykv</code><br></td>
+          <td>23</td>
+          <td>23</td>
+          <td><pre>A bench/results/rust-port/diff-parity/2026-06-23T16-13-33.420Z/diff-parity-report.json
+A bench/results/rust-port/diff-parity/2026-06-23T16-13-33.420Z/diff-parity.html
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/frames/frame-000.png
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/frames/frame-001.png
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/rename-parity-proof.mp4
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/rename-parity-report.json
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/rename-parity-review.html
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/tmux-screen-00.txt
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/tmux-screen-01.txt
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/rename-parity-proof.mp4
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/rename-parity-report.json
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/rename-parity-review.html
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/tmux-screen-00.txt
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/tmux-screen-01.txt
+A bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/rename-parity-proof.mp4
+A bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/rename-parity-report.json
+A bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/rename-parity-review.html
+A bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/tmux-screen-00.txt
+A bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/tmux-screen-01.txt
+M crates/juzu-jj/src/lib.rs</pre></td>
+          <td><pre>A bench/results/rust-port/diff-parity/2026-06-23T16-13-33.420Z/diff-parity-report.json
+A bench/results/rust-port/diff-parity/2026-06-23T16-13-33.420Z/diff-parity.html
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/frames/frame-000.png
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/frames/frame-001.png
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/rename-parity-proof.mp4
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/rename-parity-report.json
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/rename-parity-review.html
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/tmux-screen-00.txt
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-12-16.396+00-00/tmux-screen-01.txt
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/rename-parity-proof.mp4
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/rename-parity-report.json
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/rename-parity-review.html
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/tmux-screen-00.txt
+A bench/results/rust-port/rename-modify-parity/2026-06-23T16-13-15.351+00-00/tmux-screen-01.txt
+A bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/rename-parity-proof.mp4
+A bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/rename-parity-report.json
+A bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/rename-parity-review.html
+A bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/tmux-screen-00.txt
+A bench/results/rust-port/rename-parity/2026-06-23T16-13-21.762+00-00/tmux-screen-01.txt
+M crates/juzu-jj/src/lib.rs</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>oowzmwyktrnn</code><br>prefer product files in rust sidebar diff preview</td>
+          <td>17</td>
+          <td>17</td>
+          <td><pre>A bench/results/rust-port/live-tmux/2026-06-23T15-53-41.102Z/live-tmux-proof.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/idle-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/idle-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/idle-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/layout-switching-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/layout-switching-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/layout-switching-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/navigate-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/navigate-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/navigate-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/rust-tui-benchmark.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/rust-tui-benchmark.json
+A bench/results/rust-port/tui-modal-parity/2026-06-23T15-48-30-062Z/sidebar-preview-order-report.html
+A bench/results/rust-port/tui-modal-parity/2026-06-23T15-48-30-062Z/sidebar-preview-order-report.json
+M crates/juzu-tui/src/main.rs
+M docs/rust-port/read-only-tui.md
+M docs/rust-port/rust-tui-benchmarks.md</pre></td>
+          <td><pre>A bench/results/rust-port/live-tmux/2026-06-23T15-53-41.102Z/live-tmux-proof.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/idle-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/idle-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/idle-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/layout-switching-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/layout-switching-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/layout-switching-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/navigate-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/navigate-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/navigate-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/rust-tui-benchmark.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-52-26-033Z/rust-tui-benchmark.json
+A bench/results/rust-port/tui-modal-parity/2026-06-23T15-48-30-062Z/sidebar-preview-order-report.html
+A bench/results/rust-port/tui-modal-parity/2026-06-23T15-48-30-062Z/sidebar-preview-order-report.json
+M crates/juzu-tui/src/main.rs
+M docs/rust-port/read-only-tui.md
+M docs/rust-port/rust-tui-benchmarks.md</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>zynrrkwuytsr</code><br>match old jj pure rename summaries and diff metadata</td>
+          <td>27</td>
+          <td>27</td>
+          <td><pre>A bench/results/rust-port/live-tmux/2026-06-23T15-40-26.878Z/live-tmux-proof.html
+A bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-proof.mp4
+A bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-report.json
+A bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-review.html
+A bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/tmux-screen-00.txt
+A bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/tmux-screen-01.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/idle-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/idle-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/idle-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/layout-switching-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/layout-switching-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/layout-switching-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/navigate-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/navigate-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/navigate-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/rust-tui-benchmark.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/rust-tui-benchmark.json
+A bench/results/rust-port/tui-modal-parity/2026-06-23T15-40-47-806Z/rename-modal-report.html
+A bench/results/rust-port/tui-modal-parity/2026-06-23T15-40-47-806Z/rename-modal-report.json
+M crates/juzu-jj/src/lib.rs</pre></td>
+          <td><pre>A bench/results/rust-port/live-tmux/2026-06-23T15-40-26.878Z/live-tmux-proof.html
+A bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-proof.mp4
+A bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-report.json
+A bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/rename-parity-review.html
+A bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/tmux-screen-00.txt
+A bench/results/rust-port/rename-parity/2026-06-23T15-34-36.703+00-00/tmux-screen-01.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/idle-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/idle-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/idle-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/layout-switching-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/layout-switching-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/layout-switching-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/navigate-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/navigate-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/navigate-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/rust-tui-benchmark.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T15-38-59-084Z/rust-tui-benchmark.json
+A bench/results/rust-port/tui-modal-parity/2026-06-23T15-40-47-806Z/rename-modal-report.html
+A bench/results/rust-port/tui-modal-parity/2026-06-23T15-40-47-806Z/rename-modal-report.json
+M crates/juzu-jj/src/lib.rs</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>vplrruyyvvnp</code><br>render binary diff files as metadata instead of garbage</td>
+          <td>21</td>
+          <td>21</td>
+          <td><pre>A bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/binary-diff-review.html
+A bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/old-oracle-sidebar.json
+A bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/rust-diff.json
+A bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/tmux-diff-screen.txt
+A bench/results/rust-port/live-tmux/2026-06-23T14-39-15.833Z/live-tmux-proof.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/idle-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/idle-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/idle-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/layout-switching-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/layout-switching-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/layout-switching-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/rust-tui-benchmark.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/rust-tui-benchmark.json
+M crates/juzu-jj/src/lib.rs
+M crates/juzu-tui/src/main.rs
+M docs/rust-port/native-diff-hydration.md
+M docs/rust-port/read-only-tui.md</pre></td>
+          <td><pre>A bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/binary-diff-review.html
+A bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/old-oracle-sidebar.json
+A bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/rust-diff.json
+A bench/results/rust-port/binary-diff-review/2026-06-23T14-38-08.897Z/tmux-diff-screen.txt
+A bench/results/rust-port/live-tmux/2026-06-23T14-39-15.833Z/live-tmux-proof.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/idle-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/idle-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/idle-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/layout-switching-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/layout-switching-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/layout-switching-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/navigate-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/rust-tui-benchmark.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-38-12-541Z/rust-tui-benchmark.json
+M crates/juzu-jj/src/lib.rs
+M crates/juzu-tui/src/main.rs
+M docs/rust-port/native-diff-hydration.md
+M docs/rust-port/read-only-tui.md</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>wspzkvzuklqk</code><br>keep action leader proof artifacts free of fixture repo trash</td>
+          <td>45</td>
+          <td>45</td>
+          <td><pre>A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-report.json
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-review.html
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-sequence-proof.mp4
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-000.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-001.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-002.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-003.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-004.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-005.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-006.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-007.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-008.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-009.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-010.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-011.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-012.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-013.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-014.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-015.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-016.png</pre></td>
+          <td><pre>A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-report.json
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-review.html
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-sequence-proof.mp4
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-000.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-001.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-002.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-003.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-004.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-005.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-006.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-007.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-008.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-009.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-010.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-011.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-012.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-013.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-014.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-015.png
+A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/frames/frame-016.png</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>zmwnunyvpqrl</code><br>add safe native dirty working-copy snapshot parity</td>
+          <td>23</td>
+          <td>23</td>
+          <td><pre>A bench/results/rust-port/diff-parity/2026-06-23T14-16-04.345Z/diff-parity-report.json
+A bench/results/rust-port/diff-parity/2026-06-23T14-16-04.345Z/diff-parity.html
+A bench/results/rust-port/files-parity/2026-06-23T14-16-02.787Z/files-parity-report.json
+A bench/results/rust-port/files-parity/2026-06-23T14-16-02.787Z/files-parity.html
+A bench/results/rust-port/live-tmux/2026-06-23T14-19-07.444Z/live-tmux-proof.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/idle-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/idle-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/idle-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/layout-switching-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/layout-switching-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/layout-switching-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/navigate-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/navigate-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/navigate-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/rust-tui-benchmark.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/rust-tui-benchmark.json
+A bench/results/rust-port/tui-modal-parity/2026-06-23T14-16-05.319Z/working-copy-snapshot-report.html
+M crates/juzu-jj/src/lib.rs
+M docs/rust-port/native-diff-hydration.md
+M docs/rust-port/native-files-hydration.md</pre></td>
+          <td><pre>A bench/results/rust-port/diff-parity/2026-06-23T14-16-04.345Z/diff-parity-report.json
+A bench/results/rust-port/diff-parity/2026-06-23T14-16-04.345Z/diff-parity.html
+A bench/results/rust-port/files-parity/2026-06-23T14-16-02.787Z/files-parity-report.json
+A bench/results/rust-port/files-parity/2026-06-23T14-16-02.787Z/files-parity.html
+A bench/results/rust-port/live-tmux/2026-06-23T14-19-07.444Z/live-tmux-proof.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/idle-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/idle-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/idle-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/layout-switching-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/layout-switching-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/layout-switching-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/navigate-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/navigate-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/navigate-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/rust-tui-benchmark.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T14-18-04-145Z/rust-tui-benchmark.json
+A bench/results/rust-port/tui-modal-parity/2026-06-23T14-16-05.319Z/working-copy-snapshot-report.html
+M crates/juzu-jj/src/lib.rs
+M docs/rust-port/native-diff-hydration.md
+M docs/rust-port/native-files-hydration.md</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>vmxlrlrmrlxv</code><br>prefer product files in rust diff mode and green modal parity</td>
+          <td>19</td>
+          <td>19</td>
+          <td><pre>A bench/results/rust-port/live-tmux/2026-06-23T13-54-17.302Z/live-tmux-proof.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/layout-switching-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/layout-switching-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/layout-switching-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/navigate-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/navigate-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/navigate-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/rust-tui-benchmark.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/rust-tui-benchmark.json
+A bench/results/rust-port/tui-modal-parity/2026-06-23T13-51-24-704Z/diff-default-order-report.html
+A bench/results/rust-port/tui-modal-parity/2026-06-23T13-51-24-704Z/diff-default-order-report.json
+M crates/juzu-jj/src/lib.rs
+M crates/juzu-tui/src/main.rs
+M docs/rust-port/read-only-tui.md
+M docs/rust-port/rust-tui-benchmarks.md
+M scripts/rust-port-tui-modal-parity.py</pre></td>
+          <td><pre>A bench/results/rust-port/live-tmux/2026-06-23T13-54-17.302Z/live-tmux-proof.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/layout-switching-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/layout-switching-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/layout-switching-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/navigate-mainline-run-1-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/navigate-mainline-run-2-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/navigate-mainline-run-3-capture.txt
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/rust-tui-benchmark.html
+A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/rust-tui-benchmark.json
+A bench/results/rust-port/tui-modal-parity/2026-06-23T13-51-24-704Z/diff-default-order-report.html
+A bench/results/rust-port/tui-modal-parity/2026-06-23T13-51-24-704Z/diff-default-order-report.json
+M crates/juzu-jj/src/lib.rs
+M crates/juzu-tui/src/main.rs
+M docs/rust-port/read-only-tui.md
+M docs/rust-port/rust-tui-benchmarks.md
+M scripts/rust-port-tui-modal-parity.py</pre></td>
+        </tr>
+        <tr class="pass">
+          <td><strong>PASS</strong></td>
+          <td><code>tptyqxrkvzqm</code><br>wire rust actions leader into real restore action</td>
+          <td>63</td>
+          <td>63</td>
+          <td><pre>A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-report.json
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-review.html
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-sequence-proof.mp4
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-000.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-001.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-002.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-003.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-004.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-005.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-006.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-007.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-008.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-009.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-010.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-011.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-012.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-013.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-014.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-015.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-016.png</pre></td>
+          <td><pre>A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-report.json
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-review.html
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-sequence-proof.mp4
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-000.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-001.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-002.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-003.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-004.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-005.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-006.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-007.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-008.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-009.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-010.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-011.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-012.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-013.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-014.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-015.png
+A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/frames/frame-016.png</pre></td>
+        </tr></tbody>
+</table>
+</body>
+</html>

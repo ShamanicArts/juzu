@@ -94,13 +94,25 @@ def render_frame(text: str, title: str, out: Path) -> None:
     img.save(out)
 
 
-def create_fixture_repo(repo: Path) -> str:
+def create_fixture_repo(repo: Path, variant: str) -> str:
     jj(repo, "git", "init", ".")
-    (repo / "old.txt").write_text("hello\n")
-    jj(repo, "describe", "-m", "rename base")
-    jj(repo, "new")
-    (repo / "old.txt").rename(repo / "new.txt")
-    jj(repo, "describe", "-m", "rename change")
+    if variant == "modify":
+        (repo / "old.txt").write_text(
+            "hello\nworld\nthis is line three\nand line four\n"
+        )
+        jj(repo, "describe", "-m", "rename mod base")
+        jj(repo, "new")
+        (repo / "old.txt").rename(repo / "new.txt")
+        (repo / "new.txt").write_text(
+            "hello\nworld CHANGED\nthis is line three\nand line four\nNEW LINE\n"
+        )
+        jj(repo, "describe", "-m", "rename mod change")
+    else:
+        (repo / "old.txt").write_text("hello\n")
+        jj(repo, "describe", "-m", "rename base")
+        jj(repo, "new")
+        (repo / "old.txt").rename(repo / "new.txt")
+        jj(repo, "describe", "-m", "rename change")
     return jj(repo, "log", "--no-graph", "-r", "@", "-T", "change_id.short()").strip()
 
 
@@ -113,6 +125,7 @@ def render_html(report: dict, mp4: Path) -> str:
     rust_files = json.dumps(report["rustFiles"]["files"], indent=2)
     old_diff = "\n".join(report["oldSidebar"]["diffSummary"]["firstLines"])
     rust_diff = report["rustDiff"]["diff"]
+    variant_label = "rename + modify" if report["variant"] == "modify" else "pure rename"
     return f"""<!doctype html><html><head><meta charset='utf-8'><title>JUZU Rust rename parity proof</title>
 <style>
 :root {{ color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --info:#7f9fbf; --ok:#74b88c; }}
@@ -123,10 +136,10 @@ a {{ color:var(--info); }} code {{ color:#bfdbfe; }}
 pre {{ background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; }}
 h1,h2,h3 {{ margin-top:0; }} p {{ color:var(--muted); }} strong {{ color:var(--ok); }}
 </style></head><body>
-<h1>JUZU Rust rename parity proof</h1>
+<h1>JUZU Rust rename parity proof — {html.escape(variant_label)}</h1>
 <p>MP4: <a href='file://{mp4}'>{html.escape(str(mp4))}</a></p>
 <div class='card'>
-  <p>change <code>{html.escape(report['changeId'])}</code> · files match <strong>{'yes' if report['filesMatch'] else 'no'}</strong> · diff prefix match <strong>{'yes' if report['diffPrefixMatch'] else 'no'}</strong></p>
+  <p>change <code>{html.escape(report['changeId'])}</code> · files match <strong>{'yes' if report['filesMatch'] else 'no'}</strong> · diff prefix match <strong>{'yes' if report['diffPrefixMatch'] else 'no'}</strong> · content hunk present <strong>{'yes' if report['contentHunkPresent'] else 'no'}</strong></p>
 </div>
 <div class='grid'>
   <article class='card'><h2>Old oracle files</h2><pre>{html.escape(old_files)}</pre></article>
@@ -145,11 +158,27 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--width", type=int, default=160)
     parser.add_argument("--height", type=int, default=36)
-    parser.add_argument("--output-root", default="bench/results/rust-port/rename-parity")
+    parser.add_argument(
+        "--variant",
+        choices=["pure", "modify"],
+        default="pure",
+        help="pure = unchanged rename; modify = rename with content modification",
+    )
+    parser.add_argument(
+        "--output-root",
+        default=None,
+        help="artifact directory under bench/results/rust-port/",
+    )
     args = parser.parse_args()
 
-    stamp = dt.datetime.now(dt.UTC).isoformat(timespec="milliseconds").replace(":", "-").replace("+00:00", "Z")
-    out_dir = ROOT / args.output_root / stamp
+    output_root = args.output_root or (
+        "bench/results/rust-port/rename-modify-parity"
+        if args.variant == "modify"
+        else "bench/results/rust-port/rename-parity"
+    )
+    stamp = dt.datetime.now(dt.UTC).isoformat(timespec="milliseconds").replace(":", "-").replace("+00:00", "Z"
+    )
+    out_dir = ROOT / output_root / stamp
     frames_dir = out_dir / "frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
 
@@ -159,7 +188,7 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory(prefix="juzu-rename-proof-") as td:
         repo = Path(td)
-        change_id = create_fixture_repo(repo)
+        change_id = create_fixture_repo(repo, args.variant)
         old_sidebar = run_json(
             [
                 "bun",
@@ -225,8 +254,17 @@ def main() -> None:
         "-vf", "fps=30,format=yuv420p", "-movflags", "+faststart", str(mp4)
     ])
 
+    rust_diff_text = rust_diff.get("diff", "")
+    content_hunk_present = (
+        "-world\n" in rust_diff_text
+        and "+world CHANGED\n" in rust_diff_text
+        and "+NEW LINE\n" in rust_diff_text
+    ) if args.variant == "modify" else (
+        "-world\n" not in rust_diff_text and "rename to new.txt\n" in rust_diff_text
+    )
     report = {
         "createdAt": dt.datetime.now(dt.UTC).isoformat(),
+        "variant": args.variant,
         "outputDir": str(out_dir),
         "changeId": change_id,
         "oldSidebar": old_sidebar,
@@ -234,7 +272,8 @@ def main() -> None:
         "rustDiff": rust_diff,
         "filesMatch": old_sidebar.get("files") == rust_files.get("files"),
         "diffPrefixMatch": old_sidebar.get("diffSummary", {}).get("firstLines", [])[:3]
-        == rust_diff.get("diff", "").splitlines()[:3],
+        == rust_diff_text.splitlines()[:3],
+        "contentHunkPresent": content_hunk_present,
         "captures": captures,
     }
     (out_dir / "rename-parity-report.json").write_text(json.dumps(report, indent=2) + "\n")
@@ -247,8 +286,19 @@ def main() -> None:
     print(f"file://{html_path}")
     if not report["filesMatch"] or not report["diffPrefixMatch"]:
         raise SystemExit("rename parity did not match old oracle")
-    if "rename to new.txt" not in captures[-1][1]:
-        raise SystemExit("rust tui diff capture did not show rename metadata")
+    if not content_hunk_present:
+        raise SystemExit(
+            f"{args.variant} rename content hunk assertion failed"
+        )
+    # The Rust TUI diff pane renders a human-friendly "Renamed <path>" header
+    # plus the content hunk, not the raw `rename from`/`rename to` lines, so
+    # assert on the TUI surface text instead of the raw patch metadata.
+    diff_capture = captures[-1][1]
+    if "Renamed" not in diff_capture:
+        raise SystemExit("rust tui diff capture did not show renamed file header")
+    if args.variant == "modify":
+        if "world CHANGED" not in diff_capture or "NEW LINE" not in diff_capture:
+            raise SystemExit("rust tui diff capture did not show rename-modify content hunk")
     shutil.rmtree(frames_dir)
 
 
