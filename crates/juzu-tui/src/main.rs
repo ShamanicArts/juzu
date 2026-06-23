@@ -1052,8 +1052,25 @@ fn active_diff_rows_for_state(app: &App, diff: Option<&DiffPreview>) -> Vec<Diff
     if app.view_mode == ViewMode::Diff {
         rows_for_diff_file(diff, app.diff_file_index)
     } else {
-        diff.preview_rows.clone()
+        preview_rows_in_display_order(diff)
     }
+}
+
+fn preview_rows_in_display_order(diff: &DiffPreview) -> Vec<DiffRow> {
+    let order = diff_display_file_order(diff);
+    if order.is_empty() {
+        return diff.preview_rows.clone();
+    }
+    let mut rows = Vec::with_capacity(diff.preview_rows.len());
+    for file_index in order {
+        rows.extend(
+            diff.preview_rows
+                .iter()
+                .filter(|row| row.file_index == file_index)
+                .cloned(),
+        );
+    }
+    rows
 }
 
 fn diff_sticky_context_text(rows: &[DiffRow], scroll: usize) -> Option<String> {
@@ -4907,6 +4924,79 @@ mod tests {
 
         assert_eq!(app.view_mode, ViewMode::Diff);
         assert_eq!(app.diff_file_index, 1);
+    }
+
+    #[test]
+    fn sidebar_diff_preview_prefers_first_non_artifact_file() {
+        let diff = DiffPreview {
+            raw_line_count: 12,
+            file_count: 3,
+            row_count: 6,
+            preview_rows: vec![
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Added bench/results/rust-port/action-leader/report.json".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Add,
+                    file_index: 0,
+                    hunk_index: Some(0),
+                    old_line: None,
+                    new_line: Some(1),
+                    text: "+artifact".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 1,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Modified crates/juzu-jj/src/lib.rs".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Context,
+                    file_index: 1,
+                    hunk_index: Some(0),
+                    old_line: Some(1),
+                    new_line: Some(1),
+                    text: " context".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 2,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Modified scripts/rust-port-tui-modal-parity.py".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Context,
+                    file_index: 2,
+                    hunk_index: Some(0),
+                    old_line: Some(1),
+                    new_line: Some(1),
+                    text: " script".to_string(),
+                },
+            ],
+            full_rows: None,
+            parse_error: None,
+        };
+        let app = test_app_with_diff(diff);
+
+        let active = active_diff_rows_for_state(&app, selected_diff(&app));
+
+        assert_eq!(
+            active.first().map(|row| row.text.as_str()),
+            Some("Modified crates/juzu-jj/src/lib.rs")
+        );
+        assert_eq!(
+            diff_sticky_context_text(&active, 0).as_deref(),
+            Some("top · Modified crates/juzu-jj/src/lib.rs")
+        );
     }
 
     #[test]

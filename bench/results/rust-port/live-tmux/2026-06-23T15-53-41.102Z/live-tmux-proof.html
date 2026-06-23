@@ -1,0 +1,88 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>JUZU Rust live tmux proof</title>
+<style>
+:root { color-scheme: dark; --bg:#111318; --panel:#1a2029; --line:#2a3442; --text:#d8dee8; --muted:#8a95a7; --ok:#74b88c; --bad:#ce6f7c; --info:#7f9fbf; }
+body { margin:32px; background:radial-gradient(circle at top left,#1d2530 0,#111318 44rem); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+h1 { margin:0 0 6px; } .meta { color:var(--muted); margin-bottom:18px; } .status.pass { color:var(--ok); } .status.fail { color:var(--bad); }
+.card { background:rgba(26,32,41,.96); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 18px 60px rgba(0,0,0,.26); }
+pre { background:#050816; border:1px solid #2a3442; border-radius:12px; padding:14px; overflow:auto; font:12px/1.35 'JetBrains Mono',ui-monospace,monospace; color:#d8dee8; } code { color:var(--info); }
+</style></head><body>
+<h1>JUZU Rust live tmux proof · <span class='status pass'>PASS</span></h1>
+<div class='meta'>Target: <code>juzu:rust-tui</code> · pane command: <code>./target/release/juzu-tui</code> · required command: <code>juzu-tui</code> · expected: <code>mainline, 80 nodes</code> · missing: <code>none</code></div>
+<section class='card'><pre> LOG   ^A Act  ^O Ops  ^V View  ^B Book
+                                                                                                          Change: vmxlrlrmrlxvllzytzmktzlmvokpokwo
+  @....@ vplrruyy 955d1be6                                                                                Commit: 4d6a9cb4cba397f1ccaf53692066ba0ff7fe2857
+  │      (no description)                                                                                 Author: shamanic &lt;shamanicbeatbox@gmail.com&gt;
+  │      A bench/results/rust-port/binary-diff-review/2026-06-23T14-35-52.478Z/binary-diff-review.html  … Time: 2026-06-23T14:45:54+01:00
+  │
+  o..... wspzkvzu 948fff52                                                                                Description (x expand):
+  │      keep action leader proof artifacts free of fixture repo trash                                    prefer product files in rust diff mode and green modal parity
+  │      A bench/results/rust-port/action-leader/2026-06-23T14-22-47.592+00-00/action-leader-report.json…
+  │                                                                                                       Files (f collapse):
+  o..... zmwnunyv 8f885ea7                                                                                A bench/results/rust-port/live-tmux/2026-06-23T13-54-17.302Z/live-tmux…
+  │      add safe native dirty working-copy snapshot parity                                               A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle…
+  │      A bench/results/rust-port/diff-parity/2026-06-23T14-16-04.345Z/diff-parity-report.json  A ben... A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle…
+  │                                                                                                       A bench/results/rust-port/rust-tui-bench/2026-06-23T13-53-14-017Z/idle…
+  O....&gt; vmxlrlrm 4d6a9cb4                                                                                … 15 more
+  │      prefer product files in rust diff mode and green modal parity
+  │      A bench/results/rust-port/live-tmux/2026-06-23T13-54-17.302Z/live-tmux-proof.html  A bench/re... Diff
+  │                                                                                                         · 19 files · 5990 raw · 6009 rows · 272 shown
+  o..... tptyqxrk a62c84af                                                                                  · diff rows 1-14 of 272
+  │      wire rust actions leader into real restore action                                                 STICKY ▸ top · Added bench/results/rust-port/live-tmux/2026-06...
+  │      A bench/results/rust-port/action-leader/2026-06-23T09-59-27.653+00-00/action-leader-report.json… ╭ ◆ Added bench/results/rust-port/live-tmux/2026-06-23T13-54-17....╮
+  │                                                                                                         · diff --git a/bench/results/rust-port/live-tmux/2026-06-23T13...
+  o..... yppyonzq 7f74378c                                                                                  · new file mode 100644
+  │      wire rust actions leader into real merge mode                                                      · --- /dev/null
+  │      A bench/results/rust-port/action-leader/2026-06-23T09-51-45.147+00-00/action-leader-report.json…   · +++ b/bench/results/rust-port/live-tmux/2026-06-23T13-54-17....
+  │                                                                                                       ╭─ @@ -0,0 +1,65 @@                                               ╮
+  o..... mvtqnotn 09cfa1af                                                                                   1 + &lt;!doctype html&gt;
+  │      wire rust actions leader into real insert action                                                    2 + &lt;html&gt;&lt;head&gt;&lt;meta charset=&#x27;utf-8&#x27;&gt;&lt;title&gt;JUZU Rust live t...
+  │      A bench/results/rust-port/action-leader/2026-06-23T08-48-43.866+00-00/action-leader-report.json…    3 + &lt;style&gt;
+  │                                                                                                          4 + :root { color-scheme: dark; --bg:#111318; --panel:#1a2029...
+  o..... zmtnswnk 26042bed                                                                                   5 + body { margin:32px; background:radial-gradient(circle at ...
+  │      wire rust actions leader into real rebase flow                                                      6 + h1 { margin:0 0 6px; } .meta { color:var(--muted); margin...
+  │      A bench/results/rust-port/action-leader/2026-06-23T08-41-28.361+00-00/action-leader-report.json…    7 + .card { background:rgba(26,32,41,.96); border:1px solid v...
+  │                                                                                                          8 + pre { background:#050816; border:1px solid #2a3442; borde...
+  o..... wtortqzy a9957edb                                                                                ───────────────────── ⋯ 258 more rows below ─────────────────────
+  │      wire rust actions leader into real describe prompt
+  │      A bench/results/rust-port/action-leader/2026-06-22T15-36-28.487+00-00/action-leader-report.json…
+  │
+  o..... urmkkyvq ccd6cf77
+  │      wire rust ops leader into real git fetch and push actions
+  │      A bench/results/rust-port/live-tmux/2026-06-22T15-07-33.187Z/live-tmux-proof.html  A bench/re...
+  │
+  o..... osrqktqt c718f911
+  │      wire rust actions leader into real abandon and squash actions
+  │      A bench/results/rust-port/action-leader/2026-06-22T14-58-43.275+00-00/action-leader-report.json…
+  │
+  o..... ozzwnvvm 5c5614fa
+  │      stop double-driving rust tui terminal lifecycle in tmux
+  │      A bench/results/rust-port/live-tmux/2026-06-22T14-46-13.120Z/live-tmux-proof.html  A bench/re...
+  │
+  o..... nnpywurl 54f81450
+  │      wire rust actions leader into real new edit and duplicate actions
+  │      A bench/results/rust-port/action-leader/2026-06-22T12-36-10.584+00-00/action-leader-report.json…
+  │
+  o..... lulszxum 872cd534
+  │      wire rust ops leader into real undo and redo actions
+  │      A bench/results/rust-port/live-tmux/2026-06-17T23-01-27.365Z/live-tmux-proof.html  A bench/re...
+  │
+  o..... nyuqpnql 53aeb0da
+  │      wire rust bookmarks leader into real set and delete actions
+  │      A bench/results/rust-port/bookmark-actions/2026-06-17T22-48-18.358+00-00/bookmark-actions-rep...
+  │
+  o..... ovxoxqrl 05dfff36
+  │      restore rust oplog actions through fallback mutation plumbing
+  │      M Cargo.lock  A bench/results/rust-port/live-tmux/2026-06-17T21-38-15.128Z/live-tmux-proof.html…
+  │
+  o..... pslutzup 13b1d287
+  │      enrich rust ops views with old juzu detail parity
+  │      A bench/results/rust-port/live-tmux/2026-06-17T01-29-51.487Z/live-tmux-proof.html  A bench/re...
+  │
+
+  │
+  │
+  │
+ ~/dev/juzu  @vplrruyy                                                                                                                                         mainline 80 nodes
+</pre></section>
+</body></html>
