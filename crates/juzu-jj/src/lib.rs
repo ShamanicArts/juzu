@@ -154,12 +154,12 @@ impl NativeJjBackend {
         Ok((repo, commit, tree))
     }
 
-    async fn read_tree_value_text(
+    async fn read_tree_value_bytes(
         &self,
         repo: &Arc<ReadonlyRepo>,
         path: &jj_lib::repo_path::RepoPath,
         value: Option<&TreeValue>,
-    ) -> Result<Option<String>> {
+    ) -> Result<Option<Vec<u8>>> {
         let Some(value) = value else {
             return Ok(None);
         };
@@ -172,17 +172,38 @@ impl NativeJjBackend {
                 reader.read_to_end(&mut bytes).await.map_err(|err| {
                     JuzuError::Backend(format!("failed to stream native jj file content: {err}"))
                 })?;
-                Ok(Some(String::from_utf8_lossy(&bytes).into_owned()))
+                Ok(Some(bytes))
             }
             TreeValue::Symlink(id) => {
                 let target = repo.store().read_symlink(path, id).await.map_err(|err| {
                     JuzuError::Backend(format!("failed to read native jj symlink content: {err}"))
                 })?;
-                Ok(Some(target))
+                Ok(Some(target.into_bytes()))
             }
-            TreeValue::GitSubmodule(id) => Ok(Some(format!("Subproject commit {}\n", id.hex()))),
+            TreeValue::GitSubmodule(id) => Ok(Some(
+                format!("Subproject commit {}\n", id.hex()).into_bytes(),
+            )),
             TreeValue::Tree(_) => Ok(None),
         }
+    }
+
+    async fn read_tree_value_text(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        path: &jj_lib::repo_path::RepoPath,
+        value: Option<&TreeValue>,
+    ) -> Result<Option<String>> {
+        Ok(self
+            .read_tree_value_bytes(repo, path, value)
+            .await?
+            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned()))
+    }
+
+    fn is_binary_content(bytes: Option<&[u8]>) -> bool {
+        let Some(bytes) = bytes else {
+            return false;
+        };
+        bytes.contains(&0) || std::str::from_utf8(bytes).is_err()
     }
 
     pub async fn diff_preview(&self, query: ChangeQuery, max_lines: usize) -> Result<String> {
@@ -251,14 +272,12 @@ impl NativeJjBackend {
             let before_present = values.before.is_present();
             let after_present = values.after.is_present();
             let path = entry.path.as_internal_file_string().to_string();
-            let before_text = self
-                .read_tree_value_text(&repo, entry.path.as_ref(), before_value)
-                .await?
-                .unwrap_or_default();
-            let after_text = self
-                .read_tree_value_text(&repo, entry.path.as_ref(), after_value)
-                .await?
-                .unwrap_or_default();
+            let before_bytes = self
+                .read_tree_value_bytes(&repo, entry.path.as_ref(), before_value)
+                .await?;
+            let after_bytes = self
+                .read_tree_value_bytes(&repo, entry.path.as_ref(), after_value)
+                .await?;
 
             let mut file_output = String::new();
             file_output.push_str(&format!("diff --git a/{path} b/{path}\n"));
@@ -267,7 +286,6 @@ impl NativeJjBackend {
                 (true, false) => file_output.push_str("deleted file mode 100644\n"),
                 _ => {}
             }
-            let diff = TextDiff::from_lines(&before_text, &after_text);
             let old_header = if before_present {
                 format!("a/{path}")
             } else {
@@ -278,13 +296,30 @@ impl NativeJjBackend {
             } else {
                 "/dev/null".to_string()
             };
-            file_output.push_str(
-                &diff
-                    .unified_diff()
-                    .context_radius(3)
-                    .header(&old_header, &new_header)
-                    .to_string(),
-            );
+            if Self::is_binary_content(before_bytes.as_deref())
+                || Self::is_binary_content(after_bytes.as_deref())
+            {
+                file_output.push_str(&format!(
+                    "Binary files {old_header} and {new_header} differ\n"
+                ));
+            } else {
+                let before_text = self
+                    .read_tree_value_text(&repo, entry.path.as_ref(), before_value)
+                    .await?
+                    .unwrap_or_default();
+                let after_text = self
+                    .read_tree_value_text(&repo, entry.path.as_ref(), after_value)
+                    .await?
+                    .unwrap_or_default();
+                let diff = TextDiff::from_lines(&before_text, &after_text);
+                file_output.push_str(
+                    &diff
+                        .unified_diff()
+                        .context_radius(3)
+                        .header(&old_header, &new_header)
+                        .to_string(),
+                );
+            }
             for line in file_output.lines() {
                 if max_lines.is_some_and(|limit| line_count >= limit) {
                     truncated = true;
@@ -767,6 +802,21 @@ mod tests {
         repo
     }
 
+    fn create_binary_fixture_repo() -> PathBuf {
+        let repo = unique_test_dir("binary-diff");
+        fs::create_dir_all(&repo).expect("fixture repo dir should be created");
+        run_jj(&repo, &["git", "init", "."]);
+        fs::write(
+            repo.join("image.png"),
+            [
+                0x89, b'P', b'N', b'G', b'\r', b'\n', 0x1a, b'\n', 0x00, 0x01, 0x02, 0x03,
+            ],
+        )
+        .expect("binary fixture write should work");
+        run_jj(&repo, &["describe", "-m", "binary add"]);
+        repo
+    }
+
     fn create_squash_fixture_repo() -> PathBuf {
         let repo = unique_test_dir("squash-mutations");
         fs::create_dir_all(&repo).expect("fixture repo dir should be created");
@@ -1116,6 +1166,31 @@ mod tests {
             after_node.change_id, after_node.commit_id, after_node.description_title
         );
         assert_eq!(after_identity, before_identity);
+
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn native_diff_renders_binary_file_as_metadata_not_lossy_garbage() {
+        let repo = create_binary_fixture_repo();
+        let backend = NativeJjBackend::new();
+        let change_id = run_jj(
+            &repo,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id.short()"],
+        )
+        .trim()
+        .to_string();
+
+        let diff = futures::executor::block_on(backend.diff(ChangeQuery {
+            cwd: repo.clone(),
+            change_id,
+        }))
+        .expect("binary diff should load");
+
+        assert!(diff.contains("diff --git a/image.png b/image.png"));
+        assert!(diff.contains("new file mode 100644"));
+        assert!(diff.contains("Binary files /dev/null and b/image.png differ"));
+        assert!(!diff.contains("PNG\r"));
 
         let _ = fs::remove_dir_all(&repo);
     }

@@ -2411,8 +2411,9 @@ fn full_diff_pane_rows(diff: &DiffPreview, file_index: usize, show_scaffold: boo
 }
 
 fn diffview_rows_for_file(diff: &DiffPreview, file_index: usize) -> Vec<DiffRow> {
-    rows_for_diff_file(diff, file_index)
-        .into_iter()
+    let file_rows = rows_for_diff_file(diff, file_index);
+    let mut visible: Vec<DiffRow> = file_rows
+        .iter()
         .filter(|row| {
             matches!(
                 row.kind,
@@ -2422,11 +2423,27 @@ fn diffview_rows_for_file(diff: &DiffPreview, file_index: usize) -> Vec<DiffRow>
                     | DiffRowKind::Collapse
             ) || is_no_newline_marker(row)
         })
-        .collect()
+        .cloned()
+        .collect();
+    if visible.is_empty() {
+        visible = file_rows
+            .into_iter()
+            .filter(is_visible_diff_metadata)
+            .collect();
+    }
+    visible
 }
 
 fn is_no_newline_marker(row: &DiffRow) -> bool {
     row.kind == DiffRowKind::Metadata && row.text == r"\ No newline at end of file"
+}
+
+fn is_visible_diff_metadata(row: &DiffRow) -> bool {
+    row.kind == DiffRowKind::Metadata
+        && !row.text.starts_with("diff --git ")
+        && !row.text.starts_with("index ")
+        && !row.text.starts_with("--- ")
+        && !row.text.starts_with("+++ ")
 }
 
 fn render_graph_table(
@@ -5004,6 +5021,61 @@ mod tests {
             .collect();
         assert_eq!(rendered[0], "   9 + ab...");
         assert_eq!(rendered[1], "1200 + gh...");
+    }
+
+    #[test]
+    fn full_diff_pane_preserves_binary_metadata_without_garbage_code_rows() {
+        let diff = DiffPreview {
+            raw_line_count: 4,
+            file_count: 1,
+            row_count: 4,
+            preview_rows: vec![],
+            full_rows: Some(vec![
+                DiffRow {
+                    kind: DiffRowKind::FileHeader,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Added image.png".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Metadata,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "diff --git a/image.png b/image.png".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Metadata,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "new file mode 100644".to_string(),
+                },
+                DiffRow {
+                    kind: DiffRowKind::Metadata,
+                    file_index: 0,
+                    hunk_index: None,
+                    old_line: None,
+                    new_line: None,
+                    text: "Binary files /dev/null and b/image.png differ".to_string(),
+                },
+            ]),
+            parse_error: None,
+        };
+
+        let visible = diffview_rows_for_file(&diff, 0);
+        let texts: Vec<_> = visible.iter().map(|row| row.text.as_str()).collect();
+        assert_eq!(
+            texts,
+            vec![
+                "new file mode 100644",
+                "Binary files /dev/null and b/image.png differ",
+            ]
+        );
     }
 
     #[test]
