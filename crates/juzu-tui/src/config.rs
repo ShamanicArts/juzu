@@ -1,18 +1,15 @@
-//! Repo-local JUZU config persistence.
+//! Theme configuration and persistence.
 //!
-//! Mirrors the old Bun/OpenTUI config loader's theme persistence contract:
-//! the selected theme is written to `<repo>/.juzu.local.toml` as
-//! `[theme]\nname = "..."` and read back on startup. The TOML subset handled
-//! here is intentionally tiny (just the `[theme] name = "..."` key) because
-//! that is the only field the TUI round-trips; the full runtime config lives
-//! in the old Bun app and is out of scope for the Rust port's read path.
+//! The selected theme is written to `<repo>/.juzu.local.toml` as
+//! `[theme]\nname = "..."` and read back on startup. The parser intentionally
+//! handles only the configuration surface currently supported by the TUI.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use juzu_core::JuzuError;
 
-/// The repo-local config filename the old Bun app writes on theme pick.
+/// The repository-local config file written by the theme picker.
 pub const REPO_LOCAL_CONFIG: &str = ".juzu.local.toml";
 
 /// The repo-shared config filename (checked into the repo, not written by the TUI).
@@ -33,8 +30,7 @@ pub fn load_theme_name(repo_root: &Path) -> Option<String> {
 }
 
 /// Persist the selected theme name into `<repo>/.juzu.local.toml`, preserving
-/// any unrelated TOML sections already present. Mirrors the old Bun
-/// `upsertThemeNameInToml` + `writeFile` path in `App.tsx`.
+/// any unrelated TOML sections already present.
 pub fn save_theme_name(repo_root: &Path, theme_name: &str) -> Result<(), JuzuError> {
     let path = repo_root.join(REPO_LOCAL_CONFIG);
     let raw = fs::read_to_string(&path).unwrap_or_default();
@@ -106,7 +102,7 @@ pub fn read_theme_name_from_text(raw: &str) -> Option<String> {
 }
 
 /// Replace (or insert) the `[theme] name = "..."` section, keeping all other
-/// sections intact. Mirrors `upsertThemeNameInToml` from the old Bun App.
+/// sections intact.
 pub fn upsert_theme_name_in_toml(raw: &str, theme_name: &str) -> String {
     let mut kept: Vec<&str> = Vec::new();
     let mut in_theme = false;

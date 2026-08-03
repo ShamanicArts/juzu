@@ -1,8 +1,7 @@
-//! Native JJ backend crate for the Rust JUZU port.
+//! Native JJ backend for Juzu.
 //!
 //! Shell-out fallback belongs in an explicit `cli_fallback` module only. Repo
-//! discovery/opening is wired through `jj-lib` here so future log/diff/mutation
-//! slices have a real native backend anchor.
+//! discovery, reads, and supported mutations are wired through `jj-lib`.
 
 mod cli_fallback;
 
@@ -1450,7 +1449,7 @@ mod tests {
     }
 
     #[test]
-    fn native_files_render_pure_rename_like_old_jj_summary() {
+    fn native_files_render_pure_rename_summary() {
         let repo = create_pure_rename_fixture_repo();
         let backend = NativeJjBackend::new();
         let change_id = run_jj(
@@ -1478,7 +1477,7 @@ mod tests {
     }
 
     #[test]
-    fn native_diff_renders_pure_rename_like_old_jj_git_patch() {
+    fn native_diff_renders_pure_rename_git_patch() {
         let repo = create_pure_rename_fixture_repo();
         let backend = NativeJjBackend::new();
         let change_id = run_jj(
@@ -1503,7 +1502,7 @@ mod tests {
     }
 
     #[test]
-    fn native_files_render_rename_with_modify_like_old_jj_summary() {
+    fn native_files_render_rename_with_modify_summary() {
         let repo = create_rename_modify_fixture_repo();
         let backend = NativeJjBackend::new();
         let change_id = run_jj(
@@ -1531,7 +1530,7 @@ mod tests {
     }
 
     #[test]
-    fn native_diff_renders_rename_with_modify_like_old_jj_git_patch() {
+    fn native_diff_renders_rename_with_modify_git_patch() {
         let repo = create_rename_modify_fixture_repo();
         let backend = NativeJjBackend::new();
         let change_id = run_jj(
@@ -1548,7 +1547,7 @@ mod tests {
         .expect("rename-modify diff should load");
 
         // Old `jj diff --git` emits rename metadata followed by an `index` line
-        // (normalized away by the parity harness) and a unified content hunk.
+        // and a unified content hunk.
         // The Rust backend omits the index line for consistency with the other
         // diff kinds, so assert the rename header is a prefix and the hunk body
         // carries the modified content lines.

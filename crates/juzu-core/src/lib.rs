@@ -1,4 +1,4 @@
-//! Shared domain core for the Rust JUZU port.
+//! Shared domain core for Juzu.
 //!
 //! This crate intentionally has no terminal, HTTP, or native-JJ dependency. UI and
 //! server adapters talk to the outside world through the [`JjBackend`] trait.
@@ -30,24 +30,19 @@ pub enum JuzuError {
     RepoNotFound(PathBuf),
     #[error("backend operation failed: {0}")]
     Backend(String),
-    #[error("unsupported operation in current scaffold: {0}")]
+    #[error("unsupported operation: {0}")]
     Unsupported(&'static str),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum LayoutMode {
+    #[default]
     Chronological,
     Mainline,
     BookmarkCentric,
     WcFocused,
     Topological,
-}
-
-impl Default for LayoutMode {
-    fn default() -> Self {
-        Self::Chronological
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -252,7 +247,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn layout_mode_serializes_like_old_oracle() {
+    fn layout_mode_uses_kebab_case_serialization() {
         let value = serde_json::to_value(LayoutMode::BookmarkCentric).unwrap();
         assert_eq!(value, "bookmark-centric");
     }
