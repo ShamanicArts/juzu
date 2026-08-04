@@ -20,7 +20,9 @@ directly.
 ### `juzu-tui`
 
 The canonical application. It owns terminal lifecycle, input modes, cached view
-state, themes, and Ratatui rendering. Its installed binary is named `juzu`.
+state, themes, workspace focus/navigation, and Ratatui rendering. Named JJ
+workspace markers are resolved from `WorkspaceEntry` rather than inferred from
+generic working-copy flags. Its installed binary is named `juzu`.
 
 ### `juzu-cli`
 
@@ -36,10 +38,11 @@ layout result on a canvas and loads files and diffs on demand. There is no Bun,
 Node, or bundler dependency.
 
 JJ workspace identities are exposed separately from filtered history. The
-backend reads the repository view's workspace-to-working-copy mapping and the
-browser uses those stable names for its workspace dock. This identity layer is
-also the future attachment point for explicit agent-presence heartbeats; repo
-updates and browser connectivity are not treated as agent presence.
+backend reads the repository view's workspace-to-working-copy mapping; the TUI
+uses those stable names for workspace markers and focus cycling, while the
+browser uses them for its workspace dock. This identity layer is also the future
+attachment point for explicit agent-presence heartbeats; repo updates and
+browser connectivity are not treated as agent presence.
 
 Because `JjBackend` futures are intentionally non-`Send`, handlers submit typed
 commands to a dedicated repository executor thread. That thread owns backend
