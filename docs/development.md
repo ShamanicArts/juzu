@@ -28,6 +28,12 @@ cargo run -p juzu-tui -- --path .
 cargo run --release -p juzu-tui -- --path /path/to/workspace --mode mainline
 ```
 
+Run the local read-only web server:
+
+```bash
+cargo run -p juzu-server -- --path /path/to/workspace --port 3000
+```
+
 Install the canonical `juzu` binary from the checkout:
 
 ```bash
@@ -60,3 +66,11 @@ python3 scripts/restart-tui-window.py --repo /path/to/workspace
 3. Add backend tests using temporary JJ repositories.
 4. Wire the operation into TUI state and input handling.
 5. Add a focused rendering or state test when visible behaviour changes.
+
+## Server tests
+
+`crates/juzu-server/tests/api.rs` creates real temporary JJ repositories and
+drives the Axum router in memory. Keep API tests at that boundary so they cover
+request extraction, executor dispatch, backend serialization, response types,
+and errors together. Watcher tests must prove a JJ operation produces a
+`repo-updated` event instead of only testing the broadcast channel directly.

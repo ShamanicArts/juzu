@@ -14,6 +14,7 @@ are not yet exposed through the native backend.
   merge workflows
 - Bookmark management, operation log, evolution log, undo/redo, fetch, and push
 - Revset filtering, collapsible details, and 21 bundled terminal themes
+- Local read-only web API with live repository refresh events
 
 ## Requirements
 
@@ -87,6 +88,19 @@ Theme selection from the TUI is saved to `.juzu.local.toml`. Local config files
 are ignored by Git. See [`config.example.toml`](config.example.toml) and
 [`themes/`](themes/) for the bundled names.
 
+## Web server
+
+Start the read-only local server from a JJ workspace:
+
+```bash
+cargo run -p juzu-server -- --path /path/to/jj/workspace --port 3000
+```
+
+Open `http://127.0.0.1:3000`. The server binds only to the loopback interface,
+serves an embedded status page, and exposes a versioned JSON API under
+`/api/v1`. Repository update notifications are delivered with Server-Sent
+Events. See [`docs/web-server.md`](docs/web-server.md) for the endpoint contract.
+
 ## Development
 
 ```bash
@@ -94,6 +108,7 @@ cargo fmt --all --check
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo run -p juzu-tui -- --path .
+cargo run -p juzu-server -- --path .
 ```
 
 The workspace structure and backend boundaries are documented in
