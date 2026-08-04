@@ -14,8 +14,8 @@ are not yet exposed through the native backend.
   merge workflows
 - Bookmark management, operation log, evolution log, undo/redo, fetch, and push
 - Revset filtering, collapsible details, and 21 bundled terminal themes
-- Local read-only web graph with pan, zoom, revset filtering, files, diffs, and
-  live repository refresh
+- Local read-only web graph with pan, zoom, JJ workspace navigation, revset
+  filtering, files, diffs, and live repository refresh
 
 ## Requirements
 
@@ -100,7 +100,8 @@ cargo run -p juzu-server -- --path /path/to/jj/workspace --port 3000
 Open `http://127.0.0.1:3000`. The server binds only to the loopback interface
 and serves an embedded interactive commit graph. Select changes with the
 pointer or `j`/`k`, pan and zoom the canvas, filter with a revset, and inspect
-changed files or the textual diff. The browser preserves selection and viewport
+changed files or the textual diff. A workspace dock names every JJ workspace and
+focuses its working-copy change. The browser preserves selection and viewport
 while Server-Sent Events refresh repository data.
 
 The versioned read-only API lives under `/api/v1`. See

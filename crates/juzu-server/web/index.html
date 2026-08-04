@@ -57,6 +57,11 @@
         <section class="graph-surface" aria-label="Commit graph">
           <canvas id="graph-canvas" tabindex="0" aria-label="Interactive commit graph. Use J and K or arrow keys to change selection."></canvas>
 
+          <nav class="workspace-dock" id="workspace-dock" aria-label="JJ workspaces" hidden>
+            <span class="workspace-dock-label">Workspaces</span>
+            <div class="workspace-items" id="workspace-items"></div>
+          </nav>
+
           <div class="graph-loading" id="graph-loading" role="status">
             <span class="loading-line"></span>
             <span>Loading history</span>
@@ -103,6 +108,7 @@
               <div><dt>Commit</dt><dd id="commit-id"></dd></div>
               <div><dt>Author</dt><dd id="change-author"></dd></div>
               <div><dt>Time</dt><dd id="change-time"></dd></div>
+              <div id="workspaces-row" hidden><dt>Workspaces</dt><dd id="change-workspaces"></dd></div>
               <div id="bookmarks-row" hidden><dt>Bookmarks</dt><dd id="change-bookmarks"></dd></div>
             </dl>
 

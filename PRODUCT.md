@@ -40,6 +40,7 @@ and terminal-adjacent typography, not decoration.
 3. Progressive detail keeps dense history scannable without hiding useful depth.
 4. Keyboard and pointer workflows receive equal care and visible focus.
 5. Live updates preserve selection and viewport whenever the underlying change survives.
+6. Workspace identity is explicit; human or agent activity must attach to a named workspace, never be guessed from file churn.
 
 ## Accessibility & Inclusion
 

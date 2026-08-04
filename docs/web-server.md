@@ -22,6 +22,8 @@ the other Rust surfaces.
 ## Browser behaviour
 
 - Pointer drag pans the graph; the wheel and viewport buttons zoom it.
+- The workspace dock lists every JJ workspace, marks the workspace serving the
+  page as current, and focuses the selected workspace's working-copy change.
 - Clicking a row selects it. `j`/`k`, the arrow keys, `Home`, and `End` provide
   keyboard selection; `f` focuses the selected change and `d` opens its diff.
 - Revsets, layout modes, and history limits are fetched without a page reload.
@@ -40,6 +42,7 @@ All API responses set `Cache-Control: no-store`.
 | `GET` | `/api/v1/log?limit=500&revset=` | Array of commit nodes |
 | `GET` | `/api/v1/layout?mode=mainline&limit=500&revset=` | Commit nodes with graph coordinates and layout bounds |
 | `GET` | `/api/v1/node-count?revset=` | `{ "count": number }` |
+| `GET` | `/api/v1/workspaces` | JJ workspace names, working-copy change/commit IDs, and current-workspace status |
 | `GET` | `/api/v1/changes/{id}/files` | Array of typed file summaries |
 | `GET` | `/api/v1/changes/{id}/diff` | Git-style diff as UTF-8 text |
 | `GET` | `/api/v1/oplog?limit=100` | Operation log entries |
@@ -72,6 +75,18 @@ The stream sends comment heartbeats every 15 seconds. Clients should refetch the
 data they display after `repo-updated`; events are invalidations, not snapshots.
 On server shutdown, connected event streams close so graceful termination does
 not wait indefinitely for browser reconnection channels.
+
+## Workspace identity
+
+Workspace entries come from JJ's repository view, which maps stable workspace
+names to working-copy commits. They are returned independently of the active
+revset and history limit, so workspace navigation remains visible when a filter
+excludes a working-copy change. Selecting an excluded workspace clears the
+revset before focusing it.
+
+Workspace identity does not imply agent activity. A later agent-presence feature
+should attach an explicit, expiring heartbeat to the workspace name rather than
+interpreting file changes or the SSE connection as proof that an agent is active.
 
 ## Execution model
 

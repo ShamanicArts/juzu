@@ -13,7 +13,7 @@ use futures_util::{stream, Stream, StreamExt};
 use juzu_core::{
     layout::{calculate_default_layout, LayoutResult},
     ChangeQuery, CommitNode, FileEntry, JjBackend, JuzuError, LayoutMode, LogQuery, NodeCountQuery,
-    ObslogEntry, ObslogQuery, OpLogEntry, OpLogQuery,
+    ObslogEntry, ObslogQuery, OpLogEntry, OpLogQuery, WorkspaceEntry, WorkspaceQuery,
 };
 use juzu_jj::NativeJjBackend;
 use serde::{Deserialize, Serialize};
@@ -116,6 +116,7 @@ pub fn router(state: ServerState) -> Router {
         .route("/log", get(log))
         .route("/layout", get(layout))
         .route("/node-count", get(node_count))
+        .route("/workspaces", get(workspaces))
         .route("/changes/{change_id}/files", get(files))
         .route("/changes/{change_id}/diff", get(diff))
         .route("/oplog", get(op_log))
@@ -215,6 +216,12 @@ async fn node_count(
 ) -> Result<Json<NodeCountResponse>, ApiError> {
     let count = state.inner.executor.node_count(params.revset()).await?;
     Ok(Json(NodeCountResponse { count }))
+}
+
+async fn workspaces(
+    State(state): State<ServerState>,
+) -> Result<Json<Vec<WorkspaceEntry>>, ApiError> {
+    Ok(Json(state.inner.executor.workspaces().await?))
 }
 
 async fn files(
@@ -613,6 +620,11 @@ impl RepoExecutor {
             .await
     }
 
+    async fn workspaces(&self) -> Result<Vec<WorkspaceEntry>, ApiError> {
+        self.request(|respond_to| RepoRequest::Workspaces { respond_to })
+            .await
+    }
+
     async fn files(&self, change_id: String) -> Result<Vec<FileEntry>, ApiError> {
         self.request(|respond_to| RepoRequest::Files {
             change_id,
@@ -654,6 +666,9 @@ enum RepoRequest {
         revset: Option<String>,
         respond_to: oneshot::Sender<juzu_core::Result<usize>>,
     },
+    Workspaces {
+        respond_to: oneshot::Sender<juzu_core::Result<Vec<WorkspaceEntry>>>,
+    },
     Files {
         change_id: String,
         respond_to: oneshot::Sender<juzu_core::Result<Vec<FileEntry>>>,
@@ -691,6 +706,12 @@ fn handle_repo_request(backend: &NativeJjBackend, workspace_root: &Path, request
             let result = futures_executor::block_on(backend.node_count(NodeCountQuery {
                 cwd: workspace_root.to_path_buf(),
                 revset,
+            }));
+            let _ = respond_to.send(result);
+        }
+        RepoRequest::Workspaces { respond_to } => {
+            let result = futures_executor::block_on(backend.workspaces(WorkspaceQuery {
+                cwd: workspace_root.to_path_buf(),
             }));
             let _ = respond_to.send(result);
         }

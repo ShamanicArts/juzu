@@ -12,6 +12,8 @@ const elements = {
   graphLoading: $("#graph-loading"),
   graphEmpty: $("#graph-empty"),
   clearRevset: $("#clear-revset"),
+  workspaceDock: $("#workspace-dock"),
+  workspaceItems: $("#workspace-items"),
   zoomOut: $("#zoom-out"),
   zoomIn: $("#zoom-in"),
   focusSelection: $("#focus-selection"),
@@ -29,6 +31,8 @@ const elements = {
   commitId: $("#commit-id"),
   changeAuthor: $("#change-author"),
   changeTime: $("#change-time"),
+  workspacesRow: $("#workspaces-row"),
+  changeWorkspaces: $("#change-workspaces"),
   bookmarksRow: $("#bookmarks-row"),
   changeBookmarks: $("#change-bookmarks"),
   filesTab: $("#files-tab"),
@@ -44,8 +48,11 @@ const elements = {
 };
 
 const state = {
+  repo: null,
   layout: null,
+  workspaces: [],
   selectedId: null,
+  pendingWorkspaceId: null,
   activeTab: "files",
   viewport: { x: 18, y: 18, scale: 1 },
   didInitialFocus: false,
@@ -78,6 +85,14 @@ const colors = {
 
 function laneColor(lane) {
   return colors.lanes[(lane ?? 0) % colors.lanes.length];
+}
+
+function workspacesForNode(node) {
+  if (!node) return [];
+  return state.workspaces.filter(
+    (workspace) =>
+      workspace.changeId === node.changeId || workspace.commitId === node.commitId,
+  );
 }
 
 function shortId(value, length = 8) {
@@ -236,7 +251,8 @@ function drawGraph() {
     const color = laneColor(node.lane);
     ctx.globalAlpha = node.isHidden ? 0.45 : 1;
 
-    if (node.isWorkingCopy) {
+    const nodeWorkspaces = workspacesForNode(node);
+    if (nodeWorkspaces.length || node.isWorkingCopy) {
       ctx.beginPath();
       ctx.arc(node.x, node.y, 10, 0, Math.PI * 2);
       ctx.strokeStyle = color;
@@ -277,10 +293,16 @@ function drawGraph() {
 
     ctx.font = `11px ${styles.getPropertyValue("--mono")}`;
     ctx.fillStyle = colors.muted;
-    const detail = node.isWorkingCopy ? "working copy" : node.author || "unknown author";
+    const detail = nodeWorkspaces.length
+      ? nodeWorkspaces
+          .map((workspace) => `@${workspace.name}${workspace.isCurrent ? " current" : ""}`)
+          .join("  ")
+      : node.isWorkingCopy
+        ? "working copy"
+        : node.author || "unknown author";
     ctx.fillText(detail.slice(0, 72), textX, node.y + 13);
 
-    let bookmarkX = textX + 78;
+    let bookmarkX = textX + Math.min(300, ctx.measureText(detail).width + 22);
     for (const bookmark of node.bookmarks.slice(0, 3)) {
       const width = Math.min(150, ctx.measureText(bookmark).width + 14);
       roundedRect(ctx, bookmarkX, node.y + 4, width, 19, 4);
@@ -333,9 +355,38 @@ function focusNode(node, center = true) {
   if (!node || !state.layout) return;
   const rect = elements.canvas.getBoundingClientRect();
   const targetX = Math.min(105, rect.width * 0.14);
-  const targetY = center ? rect.height * 0.42 : 64;
+  const targetY = center ? rect.height * 0.42 : state.workspaces.length ? 96 : 64;
   state.viewport.x = targetX - node.x * state.viewport.scale;
   state.viewport.y = targetY - node.y * state.viewport.scale;
+  scheduleRender();
+}
+
+function focusWorkspaceGroup(fallbackNode) {
+  if (!state.layout) return;
+  const nodes = state.workspaces
+    .map((workspace) =>
+      state.layout.nodes.find(
+        (node) =>
+          node.changeId === workspace.changeId || node.commitId === workspace.commitId,
+      ),
+    )
+    .filter(Boolean);
+  if (nodes.length < 2) {
+    focusNode(nodes[0] || fallbackNode, false);
+    return;
+  }
+
+  const rect = elements.canvas.getBoundingClientRect();
+  const minX = Math.min(...nodes.map((node) => node.x));
+  const minY = Math.min(...nodes.map((node) => node.y));
+  const maxY = Math.max(...nodes.map((node) => node.y));
+  const top = 82;
+  const bottom = Math.max(top + 120, rect.height - 54);
+  const scale = Math.min(1, Math.max(0.55, (bottom - top) / Math.max(120, maxY - minY)));
+  state.viewport.scale = scale;
+  state.viewport.x = 72 - minX * scale;
+  state.viewport.y = top - minY * scale;
+  elements.zoomLevel.textContent = `${Math.round(scale * 100)}%`;
   scheduleRender();
 }
 
@@ -345,6 +396,71 @@ function badge(label, kind) {
   item.dataset.kind = kind;
   item.textContent = label;
   return item;
+}
+
+function renderWorkspaceDock() {
+  elements.workspaceItems.replaceChildren();
+  elements.workspaceDock.hidden = state.workspaces.length === 0;
+  if (!state.workspaces.length) return;
+
+  const fragment = document.createDocumentFragment();
+  state.workspaces.forEach((workspace, index) => {
+    const node = state.layout?.nodes.find(
+      (item) =>
+        item.changeId === workspace.changeId || item.commitId === workspace.commitId,
+    );
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "workspace-button";
+    button.dataset.workspaceName = workspace.name;
+    button.setAttribute(
+      "aria-pressed",
+      String(workspace.changeId === state.selectedId),
+    );
+    button.setAttribute(
+      "aria-label",
+      `${workspace.name} workspace${workspace.isCurrent ? ", current" : ""}`,
+    );
+    button.title = node
+      ? `Focus @${workspace.name}`
+      : `Show @${workspace.name} outside the current filter`;
+    button.style.setProperty("--workspace-color", laneColor(node?.lane ?? index));
+
+    const mark = document.createElement("span");
+    mark.className = "workspace-mark";
+    mark.textContent = "@";
+    mark.setAttribute("aria-hidden", "true");
+    const name = document.createElement("span");
+    name.textContent = workspace.name;
+    button.append(mark, name);
+    if (workspace.isCurrent) {
+      const current = document.createElement("span");
+      current.className = "workspace-current";
+      current.textContent = "current";
+      button.append(current);
+    }
+
+    button.addEventListener("click", async () => {
+      const target = state.layout?.nodes.find(
+        (item) =>
+          item.changeId === workspace.changeId || item.commitId === workspace.commitId,
+      );
+      if (target) {
+        await selectNode(target, { focus: true });
+        elements.canvas.focus();
+        return;
+      }
+
+      state.pendingWorkspaceId = workspace.changeId;
+      if (elements.revsetInput.value.trim()) {
+        elements.revsetInput.value = "";
+        showToast(`Filter cleared to show @${workspace.name}`);
+      }
+      await loadRepository();
+    });
+    fragment.append(button);
+  });
+  elements.workspaceItems.append(fragment);
 }
 
 function renderInspector(node) {
@@ -368,8 +484,20 @@ function renderInspector(node) {
   elements.changeTime.textContent = displayTime(node.time);
   elements.changeTime.title = node.time || "";
 
+  const nodeWorkspaces = workspacesForNode(node);
+  elements.workspacesRow.hidden = nodeWorkspaces.length === 0;
+  elements.changeWorkspaces.replaceChildren();
+  for (const workspace of nodeWorkspaces) {
+    const item = document.createElement("span");
+    item.className = "workspace-token";
+    item.textContent = `@${workspace.name}${workspace.isCurrent ? " · current" : ""}`;
+    elements.changeWorkspaces.append(item);
+  }
+
   elements.stateBadges.replaceChildren();
-  if (node.isWorkingCopy) elements.stateBadges.append(badge("Working copy", "working-copy"));
+  if (nodeWorkspaces.length || node.isWorkingCopy) {
+    elements.stateBadges.append(badge("Working copy", "working-copy"));
+  }
   if (node.isConflict) elements.stateBadges.append(badge("Conflict", "conflict"));
   if (node.isEmpty) elements.stateBadges.append(badge("Empty", "empty"));
   if (node.isHidden) elements.stateBadges.append(badge("Hidden", "hidden"));
@@ -389,6 +517,7 @@ function renderInspector(node) {
 async function selectNode(node, options = {}) {
   if (!node) return;
   state.selectedId = node.changeId;
+  renderWorkspaceDock();
   renderInspector(node);
   scheduleRender();
   if (options.focus) focusNode(node);
@@ -543,29 +672,48 @@ async function loadRepository(options = {}) {
   elements.refreshButton.disabled = true;
 
   try {
-    const [repo, layout, count] = await Promise.all([
+    const [repo, workspaces, layout, count] = await Promise.all([
       requestJson("/repo"),
+      requestJson("/workspaces"),
       requestJson("/layout", currentParams()),
       requestJson("/node-count", { revset: elements.revsetInput.value.trim() }),
     ]);
+    state.repo = repo;
+    state.workspaces = workspaces;
     state.layout = layout;
     elements.repoName.textContent = repo.workspaceName;
     elements.repoName.title = repo.workspaceRoot;
     const shown = layout.nodes.length;
     elements.graphCount.textContent = `${shown.toLocaleString()} of ${count.count.toLocaleString()} changes`;
     elements.graphEmpty.hidden = shown !== 0;
+    renderWorkspaceDock();
 
     if (!shown) {
       state.selectedId = null;
       renderInspector(null);
     } else {
+      const preferredWorkspace = workspaces.find(
+        (workspace) => workspace.changeId === state.pendingWorkspaceId,
+      );
+      const currentWorkspace = workspaces.find((workspace) => workspace.isCurrent);
       const selected =
+        layout.nodes.find(
+          (node) =>
+            node.changeId === preferredWorkspace?.changeId ||
+            node.commitId === preferredWorkspace?.commitId,
+        ) ||
         layout.nodes.find((node) => node.changeId === previousSelected) ||
+        layout.nodes.find(
+          (node) =>
+            node.changeId === currentWorkspace?.changeId ||
+            node.commitId === currentWorkspace?.commitId,
+        ) ||
         layout.nodes.find((node) => node.isWorkingCopy) ||
         layout.nodes[0];
+      state.pendingWorkspaceId = null;
       await selectNode(selected);
       if (!preserveViewport || !state.didInitialFocus) {
-        focusNode(selected, false);
+        focusWorkspaceGroup(selected);
         state.didInitialFocus = true;
       }
     }

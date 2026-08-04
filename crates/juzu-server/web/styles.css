@@ -223,6 +223,78 @@ select:hover,
 
 #graph-canvas[data-dragging="true"] { cursor: grabbing; }
 
+.workspace-dock {
+  position: absolute;
+  z-index: 3;
+  top: 12px;
+  left: 14px;
+  display: flex;
+  max-width: calc(100% - 28px);
+  align-items: center;
+  gap: 9px;
+  min-height: 36px;
+  padding: 4px 5px 4px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 7px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px oklch(0.08 0.01 255 / 28%);
+}
+
+.workspace-dock-label {
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.59rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.workspace-items {
+  display: flex;
+  min-width: 0;
+  gap: 3px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.workspace-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  height: 27px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  padding: 0 7px;
+  color: var(--text-soft);
+  font-family: var(--mono);
+  font-size: 0.66rem;
+}
+
+.workspace-button:hover {
+  border-color: var(--border-soft);
+  background: var(--bg-2);
+  color: var(--text);
+}
+
+.workspace-button[aria-pressed="true"] {
+  border-color: color-mix(in oklch, var(--workspace-color) 58%, var(--border-soft));
+  background: color-mix(in oklch, var(--workspace-color) 11%, var(--bg-2));
+  color: var(--text);
+}
+
+.workspace-mark {
+  color: var(--workspace-color);
+  font-weight: 750;
+}
+
+.workspace-current {
+  color: var(--text-muted);
+  font-size: 0.55rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .graph-loading,
 .graph-empty {
   position: absolute;
@@ -432,6 +504,28 @@ select:hover,
   white-space: nowrap;
 }
 
+#change-workspaces,
+#change-bookmarks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  overflow: visible;
+  white-space: normal;
+}
+
+.workspace-token,
+.bookmark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 19px;
+  padding: 2px 6px;
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  background: var(--bg-2);
+}
+
+.workspace-token { color: var(--success); }
+
 .inspector-tabs {
   position: sticky;
   top: 0;
@@ -565,6 +659,8 @@ select:hover,
   #layout-mode { display: none; }
   .workspace { grid-template-columns: 1fr; grid-template-rows: minmax(360px, 56%) minmax(260px, 44%); }
   .inspector { border-inline-start: 0; border-top: 1px solid var(--border-soft); }
+  .workspace-dock { right: 12px; left: 12px; max-width: none; }
+  .workspace-dock-label { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
