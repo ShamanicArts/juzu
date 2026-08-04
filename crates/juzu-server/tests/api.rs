@@ -5,7 +5,9 @@ use axum::{
     Router,
 };
 use http_body_util::BodyExt;
-use juzu_core::{layout::LayoutResult, CommitNode, FileEntry, ObslogEntry, OpLogEntry};
+use juzu_core::{
+    layout::LayoutResult, CommitNode, FileEntry, ObslogEntry, OpLogEntry, WorkspaceEntry,
+};
 use juzu_server::{router, ServerState};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -37,6 +39,35 @@ fn fixture_repo() -> TempDir {
         .expect("fixture file should be written");
     run_jj(repo.path(), &["describe", "-m", "web fixture"]);
     repo
+}
+
+struct MultiWorkspaceFixture {
+    _container: TempDir,
+    primary: std::path::PathBuf,
+}
+
+fn multi_workspace_fixture() -> MultiWorkspaceFixture {
+    let container = tempfile::tempdir().expect("temporary directory should be created");
+    let primary = container.path().join("main");
+    let review = container.path().join("review");
+    fs::create_dir_all(&primary).expect("primary workspace should be created");
+    run_jj(&primary, &["git", "init", "."]);
+    run_jj(
+        &primary,
+        &[
+            "workspace",
+            "add",
+            review.to_str().expect("review path should be utf-8"),
+            "--name",
+            "review",
+            "--message",
+            "review workspace",
+        ],
+    );
+    MultiWorkspaceFixture {
+        _container: container,
+        primary,
+    }
 }
 
 async fn get(app: &Router, uri: &str) -> Response {
@@ -87,7 +118,9 @@ async fn serves_embedded_page_health_and_repository_info() {
         response.headers().get(header::CONTENT_TYPE).unwrap(),
         "text/javascript; charset=utf-8"
     );
-    assert!(body_text(response).await.contains("new EventSource"));
+    let script = body_text(response).await;
+    assert!(script.contains("new EventSource"));
+    assert!(script.contains("renderWorkspaceDock"));
 
     let response = get(&app, "/assets/styles.css").await;
     assert_eq!(response.status(), StatusCode::OK);
@@ -186,6 +219,39 @@ async fn lays_out_history_and_rejects_unknown_modes() {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     let error: Value = body_json(response).await;
     assert!(error["error"].as_str().unwrap().contains("radial"));
+}
+
+#[tokio::test]
+async fn exposes_all_jj_workspaces_with_the_current_workspace_marked() {
+    let fixture = multi_workspace_fixture();
+    let state =
+        ServerState::new(&fixture.primary).expect("server state should open fixture workspace");
+    let app = router(state);
+
+    let response = get(&app, "/api/v1/workspaces").await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let workspaces: Vec<WorkspaceEntry> = body_json(response).await;
+    assert_eq!(
+        workspaces
+            .iter()
+            .map(|workspace| workspace.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["default", "review"]
+    );
+    assert!(
+        workspaces
+            .iter()
+            .find(|workspace| workspace.name == "default")
+            .unwrap()
+            .is_current
+    );
+    assert!(
+        !workspaces
+            .iter()
+            .find(|workspace| workspace.name == "review")
+            .unwrap()
+            .is_current
+    );
 }
 
 #[tokio::test]

@@ -35,6 +35,12 @@ embeds a native ES module and CSS at compile time; the client renders the Rust
 layout result on a canvas and loads files and diffs on demand. There is no Bun,
 Node, or bundler dependency.
 
+JJ workspace identities are exposed separately from filtered history. The
+backend reads the repository view's workspace-to-working-copy mapping and the
+browser uses those stable names for its workspace dock. This identity layer is
+also the future attachment point for explicit agent-presence heartbeats; repo
+updates and browser connectivity are not treated as agent presence.
+
 Because `JjBackend` futures are intentionally non-`Send`, handlers submit typed
 commands to a dedicated repository executor thread. That thread owns backend
 execution and provides the serialization point required by future mutation

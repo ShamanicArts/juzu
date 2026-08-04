@@ -27,7 +27,8 @@ use jj_lib::working_copy::SnapshotOptions;
 use jj_lib::workspace::{default_working_copy_factories, Workspace};
 use juzu_core::{
     ChangeQuery, CommitNode, FileEntry, JjBackend, JuzuError, LogQuery, Mutation, MutationResult,
-    NodeCountQuery, ObslogEntry, ObslogQuery, OpLogEntry, OpLogQuery, Result,
+    NodeCountQuery, ObslogEntry, ObslogQuery, OpLogEntry, OpLogQuery, Result, WorkspaceEntry,
+    WorkspaceQuery,
 };
 use serde::{Deserialize, Serialize};
 use similar::TextDiff;
@@ -755,6 +756,38 @@ impl JjBackend for NativeJjBackend {
             .len())
     }
 
+    async fn workspaces(&self, query: WorkspaceQuery) -> Result<Vec<WorkspaceEntry>> {
+        let workspace_root = self
+            .find_root_blocking(&query.cwd)
+            .ok_or_else(|| JuzuError::RepoNotFound(query.cwd.clone()))?;
+        let workspace = self.open_workspace(&workspace_root)?;
+        let current_name = workspace.workspace_name().as_str();
+        let repo = workspace
+            .repo_loader()
+            .load_at_head()
+            .await
+            .map_err(|err| JuzuError::Backend(format!("failed to load jj repo head: {err}")))?;
+
+        repo.view()
+            .wc_commit_ids()
+            .iter()
+            .map(|(name, commit_id)| {
+                let commit = repo.store().get_commit(commit_id).map_err(|err| {
+                    JuzuError::Backend(format!(
+                        "failed to load working-copy commit for workspace {}: {err}",
+                        name.as_str()
+                    ))
+                })?;
+                Ok(WorkspaceEntry {
+                    name: name.as_str().to_string(),
+                    change_id: commit.change_id().reverse_hex(),
+                    commit_id: commit.id().hex(),
+                    is_current: name.as_str() == current_name,
+                })
+            })
+            .collect()
+    }
+
     async fn description(&self, _query: ChangeQuery) -> Result<String> {
         Err(JuzuError::Unsupported(
             "native jj description is not wired yet",
@@ -1178,6 +1211,59 @@ mod tests {
             .unwrap();
         assert!(info.workspace_root.ends_with("juzu"));
         assert!(info.repo_path.ends_with(".jj/repo"));
+    }
+
+    #[test]
+    fn native_workspace_listing_maps_names_to_working_copy_changes() {
+        let fixture = unique_test_dir("workspace-listing");
+        let primary = fixture.join("main");
+        let review = fixture.join("review");
+        fs::create_dir_all(&primary).expect("primary workspace should be created");
+        run_jj(&primary, &["git", "init", "."]);
+        run_jj(
+            &primary,
+            &[
+                "workspace",
+                "add",
+                review.to_str().expect("review path should be utf-8"),
+                "--name",
+                "review",
+                "--message",
+                "review workspace",
+            ],
+        );
+
+        let entries =
+            futures::executor::block_on(NativeJjBackend::new().workspaces(WorkspaceQuery {
+                cwd: primary.clone(),
+            }))
+            .expect("workspace listing should load");
+
+        assert_eq!(
+            entries
+                .iter()
+                .map(|entry| entry.name.as_str())
+                .collect::<Vec<_>>(),
+            vec!["default", "review"]
+        );
+        assert!(
+            entries
+                .iter()
+                .find(|entry| entry.name == "default")
+                .unwrap()
+                .is_current
+        );
+        assert!(
+            !entries
+                .iter()
+                .find(|entry| entry.name == "review")
+                .unwrap()
+                .is_current
+        );
+        assert!(entries.iter().all(|entry| !entry.change_id.is_empty()));
+        assert!(entries.iter().all(|entry| !entry.commit_id.is_empty()));
+
+        fs::remove_dir_all(fixture).expect("workspace fixture should be removed");
     }
 
     #[test]

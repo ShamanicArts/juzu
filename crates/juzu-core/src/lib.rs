@@ -19,6 +19,7 @@ pub mod prelude {
         layout::{calculate_default_layout, calculate_layout, GraphLayoutConfig, LayoutResult},
         ChangeQuery, CommitNode, FileEntry, JjBackend, JuzuError, LayoutMode, LogQuery, Mutation,
         MutationResult, NodeCountQuery, ObslogEntry, ObslogQuery, OpLogEntry, OpLogQuery, Result,
+        WorkspaceEntry, WorkspaceQuery,
     };
 }
 
@@ -74,6 +75,15 @@ pub struct CommitNode {
 pub struct FileEntry {
     pub r#type: String,
     pub path: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceEntry {
+    pub name: String,
+    pub change_id: String,
+    pub commit_id: String,
+    pub is_current: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -147,6 +157,12 @@ pub struct ObslogQuery {
     pub cwd: PathBuf,
     pub change_id: String,
     pub limit: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceQuery {
+    pub cwd: PathBuf,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -239,6 +255,9 @@ pub trait JjBackend: Send + Sync {
     async fn diff(&self, query: ChangeQuery) -> Result<String>;
     async fn op_log(&self, query: OpLogQuery) -> Result<Vec<OpLogEntry>>;
     async fn obslog(&self, query: ObslogQuery) -> Result<Vec<ObslogEntry>>;
+    async fn workspaces(&self, _query: WorkspaceQuery) -> Result<Vec<WorkspaceEntry>> {
+        Err(JuzuError::Unsupported("workspace listing is not wired"))
+    }
     async fn mutate(&self, mutation: Mutation) -> Result<MutationResult>;
 }
 
