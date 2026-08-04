@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Juzu Web</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        background: #111318;
+        color: #d8dee8;
+      }
+      body { margin: 0; padding: 3rem; }
+      main { max-width: 64rem; margin: 0 auto; }
+      h1 { color: #7f9fbf; margin-bottom: .4rem; }
+      .muted { color: #8a95a7; }
+      .panel {
+        margin-top: 1.5rem;
+        padding: 1rem 1.25rem;
+        border: 1px solid #2a3442;
+        border-radius: .6rem;
+        background: #1a2029;
+      }
+      code { color: #74b88c; }
+      li { margin: .45rem 0; }
+      a { color: #7f9fbf; }
+      #status[data-state="error"] { color: #ce6f7c; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Juzu Web</h1>
+      <p class="muted">Rust server foundation · read-only API</p>
+      <section class="panel">
+        <strong id="status">Connecting…</strong>
+        <p id="repo" class="muted"></p>
+        <p id="count"></p>
+      </section>
+      <section class="panel">
+        <strong>Recent changes</strong>
+        <ol id="changes"><li class="muted">Loading…</li></ol>
+      </section>
+      <section class="panel">
+        <strong>API</strong>
+        <p class="muted">Versioned endpoints are available under <code>/api/v1</code>.</p>
+        <a href="/api/v1/repo">Repository information</a>
+      </section>
+    </main>
+    <script type="module">
+      const status = document.querySelector("#status");
+      const repo = document.querySelector("#repo");
+      const count = document.querySelector("#count");
+      const changes = document.querySelector("#changes");
+
+      async function refresh() {
+        try {
+          const [repoInfo, nodes, nodeCount] = await Promise.all([
+            fetch("/api/v1/repo").then(response => response.json()),
+            fetch("/api/v1/log?limit=12").then(response => response.json()),
+            fetch("/api/v1/node-count").then(response => response.json()),
+          ]);
+          status.textContent = "Connected";
+          status.dataset.state = "ready";
+          repo.textContent = repoInfo.workspaceRoot;
+          count.textContent = `${nodeCount.count} visible revisions`;
+          changes.replaceChildren(...nodes.map(node => {
+            const item = document.createElement("li");
+            const id = node.changeId.slice(0, 8);
+            item.textContent = `${id}  ${node.descriptionTitle || "(no description)"}`;
+            return item;
+          }));
+        } catch (error) {
+          status.textContent = `Connection failed: ${error}`;
+          status.dataset.state = "error";
+        }
+      }
+
+      await refresh();
+      const events = new EventSource("/api/v1/events");
+      events.addEventListener("repo-updated", refresh);
+    </script>
+  </body>
+</html>
