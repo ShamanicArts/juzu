@@ -10,9 +10,9 @@ use std::path::PathBuf;
 
 fn print_help() {
     println!(
-        "juzu-cli (Rust scaffold)\n\n\
+        "juzu-cli\n\n\
 Usage:\n  juzu-cli --version\n  juzu-cli repo [--path <path>]\n  juzu-cli snapshot [--path <path>] [--limit <n>]\n  juzu-cli layout [--path <path>] [--limit <n>] [--mode <mode>]\n  juzu-cli files [--path <path>] --change <id>\n  juzu-cli diff [--path <path>] --change <id>\n  juzu-cli diff-model [--path <path>] --change <id>\n\n\
-Commands:\n  repo        Resolve the JJ repo root using the scaffold backend.\n  snapshot    Emit Rust/native snapshot parity JSON.\n  layout      Emit Rust/core graph layout parity JSON.\n  files       Emit native jj diff --summary-style files for one change.\n  diff        Emit native jj git-style diff for one change.\n  diff-model  Parse native diff text into the Pierre-style Rust diff model.\n"
+Commands:\n  repo        Resolve JJ workspace information.\n  snapshot    Emit the native log snapshot as JSON.\n  layout      Emit graph layout data as JSON.\n  files       Emit file-summary data for one change.\n  diff        Emit a git-style diff for one change.\n  diff-model  Emit the parsed structured diff model.\n"
     );
 }
 

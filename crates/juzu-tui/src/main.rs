@@ -423,8 +423,26 @@ struct App {
     diff_viewport_rows: usize,
 }
 
+fn print_help() {
+    println!(
+        "juzu {}\n\n\
+Terminal interface for Jujutsu version control.\n\n\
+Usage:\n  juzu [OPTIONS]\n\n\
+Options:\n  --path <PATH>           JJ workspace to open (default: current directory)\n  --limit <COUNT>         Maximum visible revisions (default: 500)\n  --mode <MODE>           chronological, mainline, bookmark-centric, wc-focused, or topological\n  --select-prefix <ID>    Initially select a change or commit prefix\n  --diff-scaffold         Show additional patch structure in diff view\n  -h, --help              Print help\n  -V, --version           Print version",
+        env!("CARGO_PKG_VERSION")
+    );
+}
+
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if args.iter().any(|arg| arg == "--help" || arg == "-h") {
+        print_help();
+        return Ok(());
+    }
+    if args.iter().any(|arg| arg == "--version" || arg == "-V") {
+        println!("juzu {}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
     let path = arg_value(&args, "--path")
         .map(PathBuf::from)
         .unwrap_or(std::env::current_dir()?);
@@ -686,10 +704,7 @@ fn handle_key_with_backend<B: JjBackend>(
         }
     }
     // Convenience shortcut: direct `f` in the main log view toggles the files
-    // section without forcing the user through the View leader. Old JUZU only
-    // exposed this through `Ctrl+V`, then `f`, but the sidebar copy literally
-    // says `Files (f collapse)` and the user reasonably expects plain `f` to
-    // work. Keep the leader binding too; this is additive, not a parity break.
+    // section without forcing the user through the View leader.
     if app.view_mode == ViewMode::Log
         && app.active_leader_mode.is_none()
         && modifiers == KeyModifiers::NONE
@@ -2953,7 +2968,7 @@ fn sidebar_selected_text_style(tokens: &UiTokens) -> Style {
         .add_modifier(Modifier::BOLD)
 }
 
-fn truncate_bun_text(s: &str, max_len: usize) -> String {
+fn truncate_middle_text(s: &str, max_len: usize) -> String {
     let char_count = s.chars().count();
     if char_count <= max_len {
         return s.to_string();
@@ -2978,7 +2993,7 @@ fn sidebar_file_line(
     let selector = if is_selected_diff_file { "▶ " } else { "" };
     let type_part = format!("{} ", file.r#type);
     let prefix_width = selector.chars().count() + type_part.chars().count();
-    let path = truncate_bun_text(&file.path, max_width.saturating_sub(prefix_width));
+    let path = truncate_middle_text(&file.path, max_width.saturating_sub(prefix_width));
     let mut spans = Vec::new();
     if is_selected_diff_file {
         spans.push(Span::styled(
@@ -4172,6 +4187,7 @@ fn render_diff_anchor_label(
 }
 
 #[cfg(test)]
+#[allow(clippy::items_after_test_module)]
 mod tests {
     use super::*;
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -4220,7 +4236,7 @@ mod tests {
     }
 
     #[test]
-    fn rust_ui_tokens_match_old_juzu_defaults() {
+    fn ui_tokens_match_default_palette() {
         assert_eq!(UI_TOKENS.slate_bg0, Color::Rgb(0x11, 0x13, 0x18));
         assert_eq!(UI_TOKENS.slate_panel, Color::Rgb(0x1a, 0x20, 0x29));
         assert_eq!(UI_TOKENS.slate_bg2, Color::Rgb(0x1d, 0x25, 0x30));
@@ -4230,7 +4246,7 @@ mod tests {
     }
 
     #[test]
-    fn rust_graph_lane_colors_match_old_juzu_defaults() {
+    fn graph_lane_colors_match_default_palette() {
         let expected = [
             Color::Rgb(0x00, 0xf0, 0xff),
             Color::Rgb(0xff, 0x00, 0x55),
@@ -4255,7 +4271,7 @@ mod tests {
     }
 
     #[test]
-    fn rust_file_badge_colors_match_old_juzu_defaults() {
+    fn file_badge_colors_match_default_palette() {
         assert_eq!(
             file_type_color(&UI_TOKENS, "A"),
             Color::Rgb(0x74, 0xb8, 0x8c)
@@ -4279,7 +4295,7 @@ mod tests {
     }
 
     #[test]
-    fn selected_row_colors_brighten_like_old_bun_graph_view() {
+    fn selected_row_colors_are_brightened() {
         assert_eq!(
             brighten_color(UI_TOKENS.slate_text, 60),
             Color::Rgb(0xff, 0xff, 0xff)
@@ -4316,7 +4332,7 @@ mod tests {
     }
 
     #[test]
-    fn sidebar_label_style_matches_bun_dim_to_text_mix() {
+    fn sidebar_label_style_uses_muted_text_mix() {
         assert_eq!(
             sidebar_label_style(&UI_TOKENS).fg,
             Some(Color::Rgb(0xbd, 0xc4, 0xd1))
@@ -4324,7 +4340,7 @@ mod tests {
     }
 
     #[test]
-    fn sidebar_file_rows_match_bun_padding_and_truncation() {
+    fn sidebar_file_rows_apply_padding_and_truncation() {
         let file = FileEntry {
             path: "crates/juzu-tui/src/some/really/deep/file/that/needs/truncation.rs".to_string(),
             r#type: "M".to_string(),
@@ -4373,7 +4389,7 @@ mod tests {
     }
 
     #[test]
-    fn sidebar_file_preview_limit_matches_old_expand_collapse_behavior() {
+    fn sidebar_file_preview_limit_matches_expand_collapse_behavior() {
         assert_eq!(sidebar_file_preview_limit(true, 0), 0);
         assert_eq!(sidebar_file_preview_limit(true, 3), 3);
         assert_eq!(sidebar_file_preview_limit(true, 25), 25);
@@ -4404,7 +4420,7 @@ mod tests {
     }
 
     #[test]
-    fn sidebar_diff_preview_visible_count_scales_with_height_like_old_juzu() {
+    fn sidebar_diff_preview_visible_count_scales_with_height() {
         assert_eq!(sidebar_diff_preview_visible_count(0), 6);
         assert_eq!(sidebar_diff_preview_visible_count(10), 6);
         assert_eq!(sidebar_diff_preview_visible_count(18), 6);
@@ -4496,15 +4512,15 @@ mod tests {
     }
 
     #[test]
-    fn compact_home_path_matches_old_footer_bar() {
-        let home = std::env::var("HOME").expect("HOME is set in parity environment");
+    fn compact_home_path_is_used_in_footer() {
+        let home = std::env::var("HOME").expect("HOME is set in the test environment");
         let path = PathBuf::from(format!("{home}/dev/juzu"));
         assert_eq!(compact_home_path(&path), "~/dev/juzu");
     }
 
     #[test]
-    fn footer_segments_match_old_bun_footer_bar_layers() {
-        let home = std::env::var("HOME").expect("HOME is set in parity environment");
+    fn footer_segments_preserve_visual_layers() {
+        let home = std::env::var("HOME").expect("HOME is set in the test environment");
         let path = PathBuf::from(format!("{home}/dev/juzu"));
         let nodes = vec![juzu_core::CommitNode {
             change_id: "abc123456789".to_string(),
@@ -4552,7 +4568,7 @@ mod tests {
     }
 
     #[test]
-    fn bun_parity_default_chrome_is_smooth_not_boxed() {
+    fn default_chrome_is_smooth_not_boxed() {
         assert_eq!(default_chrome_borders(false), Borders::NONE);
     }
 
@@ -4567,7 +4583,7 @@ mod tests {
     }
 
     #[test]
-    fn status_buttons_use_bun_slate_colored_segments() {
+    fn status_buttons_use_slate_colored_segments() {
         let style = status_item_style(&UI_TOKENS, LeaderMode::Action);
         assert_eq!(style.bg, Some(Color::Rgb(0x65, 0x5c, 0x48)));
         assert_eq!(style.fg, Some(Color::Rgb(0xd1, 0xc5, 0xae)));
@@ -4686,7 +4702,7 @@ mod tests {
     }
 
     #[test]
-    fn diff_status_bar_matches_bun_chrome_labels() {
+    fn diff_status_bar_uses_expected_labels() {
         let line = diff_status_bar_line(
             status_mode_style(&UI_TOKENS, None),
             status_key_style(&UI_TOKENS),
@@ -4705,7 +4721,7 @@ mod tests {
     }
 
     #[test]
-    fn status_mode_badge_uses_bun_mode_tint_mix() {
+    fn status_mode_badge_uses_mode_tint_mix() {
         let style = status_mode_style(&UI_TOKENS, None);
         assert_eq!(style.bg, Some(Color::Rgb(0x82, 0x98, 0xb8)));
         assert_eq!(style.fg, Some(UI_TOKENS.slate_bg0));
@@ -4793,7 +4809,7 @@ mod tests {
     }
 
     #[test]
-    fn full_diff_pane_hides_patch_scaffold_like_bun_diffview() {
+    fn full_diff_pane_hides_patch_scaffold_by_default() {
         let diff = DiffPreview {
             raw_line_count: 7,
             file_count: 1,
@@ -4934,7 +4950,7 @@ mod tests {
                     hunk_index: None,
                     old_line: None,
                     new_line: None,
-                    text: "Added bench/results/rust-port/action-leader/report.json".to_string(),
+                    text: "Added generated/reports/action-leader.json".to_string(),
                 },
                 DiffRow {
                     kind: DiffRowKind::Add,
@@ -4966,7 +4982,7 @@ mod tests {
                     hunk_index: None,
                     old_line: None,
                     new_line: None,
-                    text: "Modified docs/rust-port/read-only-tui.md".to_string(),
+                    text: "Modified docs/architecture.md".to_string(),
                 },
                 DiffRow {
                     kind: DiffRowKind::Add,
@@ -5001,7 +5017,7 @@ mod tests {
                     hunk_index: None,
                     old_line: None,
                     new_line: None,
-                    text: "Added bench/results/rust-port/action-leader/report.json".to_string(),
+                    text: "Added generated/reports/action-leader.json".to_string(),
                 },
                 DiffRow {
                     kind: DiffRowKind::Add,
@@ -5033,7 +5049,7 @@ mod tests {
                     hunk_index: None,
                     old_line: None,
                     new_line: None,
-                    text: "Modified scripts/rust-port-tui-modal-parity.py".to_string(),
+                    text: "Modified generated/review/report.py".to_string(),
                 },
                 DiffRow {
                     kind: DiffRowKind::Add,
@@ -5067,7 +5083,7 @@ mod tests {
                     hunk_index: None,
                     old_line: None,
                     new_line: None,
-                    text: "Added bench/results/rust-port/action-leader/report.json".to_string(),
+                    text: "Added generated/reports/action-leader.json".to_string(),
                 },
                 DiffRow {
                     kind: DiffRowKind::Add,
@@ -5099,7 +5115,7 @@ mod tests {
                     hunk_index: None,
                     old_line: None,
                     new_line: None,
-                    text: "Modified scripts/rust-port-tui-modal-parity.py".to_string(),
+                    text: "Modified generated/review/report.py".to_string(),
                 },
                 DiffRow {
                     kind: DiffRowKind::Context,
@@ -5128,7 +5144,7 @@ mod tests {
     }
 
     #[test]
-    fn full_diff_rows_share_larger_bun_line_number_gutter() {
+    fn full_diff_rows_share_larger_line_number_gutter() {
         let rows = vec![
             DiffRow {
                 kind: DiffRowKind::Add,
@@ -5163,7 +5179,7 @@ mod tests {
     }
 
     #[test]
-    fn diff_mode_sidebar_hides_inline_diff_preview_like_bun() {
+    fn diff_mode_sidebar_hides_inline_diff_preview() {
         let mut app = App {
             path: PathBuf::from("/tmp"),
             mode: LayoutMode::Mainline,
@@ -5210,7 +5226,7 @@ mod tests {
     }
 
     #[test]
-    fn sidebar_diff_rows_share_larger_bun_line_number_gutter() {
+    fn sidebar_diff_rows_share_larger_line_number_gutter() {
         let rows = vec![
             DiffRow {
                 kind: DiffRowKind::Add,
@@ -5381,7 +5397,7 @@ mod tests {
     }
 
     #[test]
-    fn full_diff_pane_preserves_no_newline_marker_like_bun_diffview() {
+    fn full_diff_pane_preserves_no_newline_marker() {
         let diff = DiffPreview {
             raw_line_count: 7,
             file_count: 1,
@@ -5431,7 +5447,7 @@ mod tests {
     }
 
     #[test]
-    fn diff_code_rows_match_bun_diffview_gutter_order_and_palette() {
+    fn diff_code_rows_use_expected_gutter_order_and_palette() {
         let add_bg = mix_color(UI_TOKENS.slate_bg0, UI_TOKENS.semantic_file_add, 0.48);
         let remove_bg = mix_color(UI_TOKENS.slate_bg0, UI_TOKENS.semantic_file_del, 0.48);
         assert_eq!(add_bg, Color::Rgb(25, 104, 58));
@@ -5452,7 +5468,7 @@ mod tests {
             .map(|span| span.content.as_ref())
             .collect::<String>();
         assert!(rendered.starts_with(" 12 + added"), "{rendered:?}");
-        assert!(!rendered.contains("▌+"), "Bun DiffView uses line-number gutter signs, not a custom left mutation band: {rendered:?}");
+        assert!(!rendered.contains("▌+"), "the diff view uses line-number gutter signs, not a custom left mutation band: {rendered:?}");
         assert_eq!(line.spans[0].style.bg, Some(UI_TOKENS.slate_bg1));
         assert_eq!(line.spans[1].style.fg, Some(UI_TOKENS.semantic_file_add));
         assert_eq!(line.spans[2].style.bg, Some(add_bg));
@@ -5478,7 +5494,7 @@ mod tests {
     }
 
     #[test]
-    fn full_diff_code_rows_wrap_like_bun_char_mode() {
+    fn full_diff_code_rows_wrap_by_character() {
         let row = DiffRow {
             kind: DiffRowKind::Add,
             file_index: 0,
@@ -5500,7 +5516,7 @@ mod tests {
         assert_eq!(
             rendered.len(),
             3,
-            "Bun DiffView wraps long code rows instead of truncating: {rendered:?}"
+            "the diff view wraps long code rows instead of truncating: {rendered:?}"
         );
         assert_eq!(rendered[0], "  4 + abcdef");
         assert_eq!(rendered[1], "      ghijkl");
@@ -5508,7 +5524,7 @@ mod tests {
     }
 
     #[test]
-    fn full_diff_code_rows_wrap_with_large_bun_line_number_gutters() {
+    fn full_diff_code_rows_wrap_with_large_line_number_gutters() {
         let row = DiffRow {
             kind: DiffRowKind::Add,
             file_index: 0,
@@ -5538,7 +5554,7 @@ mod tests {
     }
 
     #[test]
-    fn diff_code_rows_fill_remaining_width_like_bun_diffview() {
+    fn diff_code_rows_fill_remaining_width() {
         let add_bg = mix_color(UI_TOKENS.slate_bg0, UI_TOKENS.semantic_file_add, 0.48);
         let row = DiffRow {
             kind: DiffRowKind::Add,
@@ -5950,7 +5966,7 @@ mod tests {
     }
 
     #[test]
-    fn direct_action_and_view_keys_match_bun_parity_triggers() {
+    fn direct_action_and_view_keys_use_expected_triggers() {
         let backend = BookmarkTestBackend {
             mutate_calls: Mutex::new(Vec::new()),
             before_nodes: vec![test_commit("abcd1234rest", "selected node")],
@@ -5995,7 +6011,7 @@ mod tests {
     }
 
     #[test]
-    fn visible_status_and_help_triggers_match_old_ctrl_x_ctrl_l_strip() {
+    fn visible_status_and_help_triggers_match_ctrl_x_ctrl_l_strip() {
         let source = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/main.rs"))
             .expect("read source");
         assert!(source.contains("Span::styled(\"^X\", key_style)"));

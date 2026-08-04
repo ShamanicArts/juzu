@@ -53,16 +53,16 @@ fn layout_chronological(nodes: &mut [CommitNode], index: &HashMap<String, usize>
     let mut node_lanes: HashMap<String, usize> = HashMap::new();
     let mut next_free_lane = 0usize;
 
-    for idx in 0..nodes.len() {
-        let change_id = nodes[idx].change_id.clone();
+    for node in nodes.iter_mut() {
+        let change_id = node.change_id.clone();
         if !node_lanes.contains_key(&change_id) {
             node_lanes.insert(change_id.clone(), next_free_lane);
             next_free_lane += 1;
         }
         let my_lane = node_lanes[&change_id];
-        nodes[idx].lane = Some(my_lane);
+        node.lane = Some(my_lane);
 
-        for (parent_idx, parent_id) in nodes[idx].parents.iter().enumerate() {
+        for (parent_idx, parent_id) in node.parents.iter().enumerate() {
             if !index.contains_key(parent_id) || node_lanes.contains_key(parent_id) {
                 continue;
             }
@@ -469,7 +469,7 @@ mod tests {
     }
 
     #[test]
-    fn chronological_matches_old_coordinate_defaults() {
+    fn chronological_uses_expected_coordinate_defaults() {
         let nodes = vec![node("c3", &["c2"]), node("c2", &["c1"]), node("c1", &[])];
         let out = calculate_default_layout(LayoutMode::Chronological, &nodes);
         assert_eq!(out.max_lane, 0);

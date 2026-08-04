@@ -16,20 +16,15 @@ pub struct DiffFile {
     pub hunks: Vec<DiffHunk>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum DiffFileKind {
+    #[default]
     Modified,
     Added,
     Deleted,
     Renamed,
     Copied,
-}
-
-impl Default for DiffFileKind {
-    fn default() -> Self {
-        Self::Modified
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
