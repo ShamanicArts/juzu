@@ -7,8 +7,8 @@ are not yet exposed through the native backend.
 
 ## Features
 
-- Interactive commit graph with chronological, mainline, bookmark-centric,
-  working-copy-focused, and topological layouts
+- Interactive commit graph with named JJ workspace markers and chronological,
+  mainline, bookmark-centric, working-copy-focused, and topological layouts
 - File summaries, structured diffs, hunk navigation, and working-copy previews
 - New, edit, describe, rebase, insert, abandon, squash, duplicate, restore, and
   merge workflows
@@ -59,7 +59,9 @@ Options:
 ### Keyboard controls
 
 Use `j`/`k` or the arrow keys to move through revisions. `q` or `Esc` exits the
-current view and then the application.
+current view and then the application. Use `w`/`W` to focus the next or previous
+JJ workspace working copy; workspace names are shown on graph rows, in the
+sidebar, and in the footer.
 
 | Keys | Mode | Common actions |
 | --- | --- | --- |

@@ -6,7 +6,7 @@ use juzu_core::{
     diff::{collapsed_diff_rows, iter_diff_rows, parse_git_patch, DiffRow, DiffRowKind},
     layout::calculate_default_layout,
     ChangeQuery, FileEntry, JjBackend, LayoutMode, LogQuery, Mutation, NodeCountQuery, ObslogEntry,
-    ObslogQuery, OpLogEntry, OpLogQuery,
+    ObslogQuery, OpLogEntry, OpLogQuery, WorkspaceEntry, WorkspaceQuery,
 };
 use juzu_jj::NativeJjBackend;
 use ratatui::{
@@ -407,6 +407,9 @@ struct App {
     merge_mode: bool,
     merge_selected_ids: HashSet<String>,
     nodes: Vec<juzu_core::CommitNode>,
+    workspaces: Vec<WorkspaceEntry>,
+    focused_workspace_name: Option<String>,
+    workspace_error: Option<String>,
     total_node_count: usize,
     files_by_change: HashMap<String, Vec<FileEntry>>,
     diffs_by_change: HashMap<String, DiffPreview>,
@@ -460,6 +463,8 @@ fn main() -> Result<()> {
         cwd: path.clone(),
         revset: None,
     }))?;
+    let workspaces =
+        futures_executor::block_on(backend.workspaces(WorkspaceQuery { cwd: path.clone() }))?;
     let mut files_by_change = HashMap::new();
     let diffs_by_change = HashMap::new();
     for node in &nodes {
@@ -470,10 +475,25 @@ fn main() -> Result<()> {
         .unwrap_or_default();
         files_by_change.insert(node.change_id.clone(), files);
     }
+    let focused_workspace_name = workspaces
+        .iter()
+        .find(|workspace| workspace.is_current)
+        .or_else(|| workspaces.first())
+        .map(|workspace| workspace.name.clone());
     let selected = arg_value(&args, "--select-prefix")
         .and_then(|prefix| {
             nodes.iter().position(|node| {
                 node.change_id.starts_with(&prefix) || node.commit_id.starts_with(&prefix)
+            })
+        })
+        .or_else(|| {
+            focused_workspace_name.as_ref().and_then(|name| {
+                let workspace = workspaces
+                    .iter()
+                    .find(|workspace| &workspace.name == name)?;
+                nodes.iter().position(|node| {
+                    node.change_id == workspace.change_id || node.commit_id == workspace.commit_id
+                })
             })
         })
         .or_else(|| nodes.iter().position(|node| node.is_working_copy))
@@ -515,6 +535,9 @@ fn main() -> Result<()> {
         merge_mode: false,
         merge_selected_ids: HashSet::new(),
         nodes,
+        workspaces,
+        focused_workspace_name,
+        workspace_error: None,
         total_node_count,
         files_by_change,
         diffs_by_change,
@@ -711,6 +734,21 @@ fn handle_key_with_backend<B: JjBackend>(
         && matches!(code, KeyCode::Char('f'))
     {
         app.files_expanded = !app.files_expanded;
+        return false;
+    }
+    if app.view_mode == ViewMode::Log
+        && app.active_leader_mode.is_none()
+        && modifiers == KeyModifiers::NONE
+        && matches!(code, KeyCode::Char('w') | KeyCode::Char('W'))
+    {
+        let direction = if matches!(code, KeyCode::Char('W')) {
+            -1
+        } else {
+            1
+        };
+        app.workspace_error = cycle_workspace_with_backend(app, backend, direction)
+            .err()
+            .map(|error| format!("workspace focus failed: {error:#}"));
         return false;
     }
     if app.active_leader_mode == Some(LeaderMode::Action) {
@@ -1072,6 +1110,13 @@ fn emit_debug_state(app: &mut App, keys: Option<String>) -> Result<()> {
         "selectedIndex": app.selected,
         "selectedChange": selected.map(|node| node.change_id.as_str()).unwrap_or(""),
         "selectedCommit": selected.map(|node| node.commit_id.as_str()).unwrap_or(""),
+        "focusedWorkspace": app.focused_workspace_name.as_deref().unwrap_or(""),
+        "workspaceError": app.workspace_error.as_deref().unwrap_or(""),
+        "workspaces": app.workspaces.iter().map(|workspace| serde_json::json!({
+            "name": workspace.name,
+            "changeId": workspace.change_id,
+            "isCurrent": workspace.is_current,
+        })).collect::<Vec<_>>(),
         "opLogEntryCount": app.op_log_entries.len(),
         "opLogSelected": app.op_log_entries.get(app.op_log_selected).map(|entry| entry.id.as_str()).unwrap_or(""),
         "obslogEntryCount": app.obslog_entries.len(),
@@ -1305,6 +1350,91 @@ fn normalize_revset_query(query: &str) -> Option<String> {
     }
 }
 
+fn workspaces_for_node<'a>(
+    workspaces: &'a [WorkspaceEntry],
+    node: &juzu_core::CommitNode,
+) -> Vec<&'a WorkspaceEntry> {
+    workspaces
+        .iter()
+        .filter(|workspace| {
+            workspace.change_id == node.change_id || workspace.commit_id == node.commit_id
+        })
+        .collect()
+}
+
+fn workspace_marker_label(workspaces: &[WorkspaceEntry], node: &juzu_core::CommitNode) -> String {
+    workspaces_for_node(workspaces, node)
+        .into_iter()
+        .map(|workspace| {
+            if workspace.is_current {
+                format!("@{}*", workspace.name)
+            } else {
+                format!("@{}", workspace.name)
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn focused_workspace(app: &App) -> Option<&WorkspaceEntry> {
+    app.focused_workspace_name
+        .as_deref()
+        .and_then(|name| {
+            app.workspaces
+                .iter()
+                .find(|workspace| workspace.name == name)
+        })
+        .or_else(|| app.workspaces.iter().find(|workspace| workspace.is_current))
+        .or_else(|| app.workspaces.first())
+}
+
+fn select_workspace_change(app: &mut App, workspace_name: &str) -> bool {
+    let Some(workspace) = app
+        .workspaces
+        .iter()
+        .find(|workspace| workspace.name == workspace_name)
+    else {
+        return false;
+    };
+    let Some(index) = app.nodes.iter().position(|node| {
+        node.change_id == workspace.change_id || node.commit_id == workspace.commit_id
+    }) else {
+        return false;
+    };
+    app.focused_workspace_name = Some(workspace.name.clone());
+    app.selected = index;
+    app.diff_scroll = 0;
+    app.diff_file_index = 0;
+    ensure_selected_diff(app, false);
+    true
+}
+
+fn cycle_workspace_with_backend<B: JjBackend>(
+    app: &mut App,
+    backend: &B,
+    direction: isize,
+) -> Result<()> {
+    if app.workspaces.is_empty() {
+        return Ok(());
+    }
+    let current = focused_workspace(app)
+        .and_then(|focused| {
+            app.workspaces
+                .iter()
+                .position(|workspace| workspace.name == focused.name)
+        })
+        .unwrap_or(0);
+    let next = (current as isize + direction).rem_euclid(app.workspaces.len() as isize) as usize;
+    let target_name = app.workspaces[next].name.clone();
+    if !select_workspace_change(app, &target_name) {
+        app.revset_query.clear();
+        app.revset_value.clear();
+        reload_app_nodes_with_backend(app, backend)?;
+        select_workspace_change(app, &target_name);
+    }
+    Ok(())
+}
+
 fn reload_app_nodes_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Result<()> {
     let previous_selected_change = app
         .nodes
@@ -1320,6 +1450,14 @@ fn reload_app_nodes_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Re
         cwd: app.path.clone(),
         revset,
     }))?;
+    let workspaces = match futures_executor::block_on(backend.workspaces(WorkspaceQuery {
+        cwd: app.path.clone(),
+    })) {
+        Ok(workspaces) => workspaces,
+        Err(juzu_core::JuzuError::Unsupported(_)) => app.workspaces.clone(),
+        Err(error) => return Err(error.into()),
+    };
+    let previous_focused_workspace = app.focused_workspace_name.clone();
     let mut files_by_change = HashMap::new();
     for node in &nodes {
         let files = futures_executor::block_on(backend.files(ChangeQuery {
@@ -1330,6 +1468,20 @@ fn reload_app_nodes_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Re
         files_by_change.insert(node.change_id.clone(), files);
     }
     app.nodes = nodes;
+    app.workspaces = workspaces;
+    app.focused_workspace_name = previous_focused_workspace
+        .filter(|name| {
+            app.workspaces
+                .iter()
+                .any(|workspace| &workspace.name == name)
+        })
+        .or_else(|| {
+            app.workspaces
+                .iter()
+                .find(|workspace| workspace.is_current)
+                .or_else(|| app.workspaces.first())
+                .map(|workspace| workspace.name.clone())
+        });
     app.total_node_count = total_node_count;
     app.files_by_change = files_by_change;
     app.diffs_by_change.clear();
@@ -1338,6 +1490,13 @@ fn reload_app_nodes_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Re
             app.nodes
                 .iter()
                 .position(|node| node.change_id == change_id)
+        })
+        .or_else(|| {
+            focused_workspace(app).and_then(|workspace| {
+                app.nodes.iter().position(|node| {
+                    node.change_id == workspace.change_id || node.commit_id == workspace.commit_id
+                })
+            })
         })
         .or_else(|| app.nodes.iter().position(|node| node.is_working_copy))
         .unwrap_or(0);
@@ -1785,6 +1944,21 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             Span::styled("h/q/Esc", key_style),
             Span::styled(" Close ", item_style),
         ])]
+    } else if let Some(error) = &app.workspace_error {
+        vec![Line::from(vec![
+            Span::styled(
+                " WORKSPACE ",
+                Style::default()
+                    .fg(t.slate_bg0)
+                    .bg(t.semantic_error)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::raw("  "),
+            Span::styled(
+                truncate(error, area.width.saturating_sub(15) as usize),
+                item_style,
+            ),
+        ])]
     } else if app.view_mode == ViewMode::Diff {
         vec![diff_status_bar_line(mode_style, key_style, item_style)]
     } else if app.view_mode == ViewMode::OpLog {
@@ -1914,6 +2088,9 @@ fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             Span::raw(" "),
             Span::styled("^B", key_style),
             Span::styled(" Book ", status_item_style(t, LeaderMode::Bookmarks)),
+            Span::raw(" "),
+            Span::styled("w/W", key_style),
+            Span::styled(" Workspace ", status_item_style(t, LeaderMode::View)),
         ])]
     };
     frame.render_widget(
@@ -2773,6 +2950,16 @@ fn render_graph_table(
                 t.graph_commit_id
             },
         );
+        let workspace_label = workspace_marker_label(&app.workspaces, node);
+        if !workspace_label.is_empty() {
+            put_text(
+                &mut cells,
+                text_x + 18,
+                y,
+                &truncate(&workspace_label, width.saturating_sub(text_x + 19)),
+                t.semantic_success,
+            );
+        }
         put_text(
             &mut cells,
             text_x,
@@ -3335,6 +3522,7 @@ fn render_sidebar(
             vec![
                 Line::from(Span::styled("Navigation", sidebar_heading_style(t))),
                 Line::from("j/k or ↑/↓  Navigate"),
+                Line::from("w/W           Next/previous workspace"),
                 Line::from("PgUp/PgDn   Scroll"),
                 Line::from(""),
                 Line::from(Span::styled("Leader Modes", sidebar_heading_style(t))),
@@ -3582,13 +3770,22 @@ fn render_sidebar(
     let Some(node) = layout.nodes.get(selected) else {
         return;
     };
+    let node_workspaces = workspaces_for_node(&app.workspaces, node);
+    let workspace_suffix = if node_workspaces.is_empty() {
+        String::new()
+    } else {
+        format!(
+            " ({})",
+            node_workspaces
+                .iter()
+                .map(|workspace| format!("@{}", workspace.name))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    };
     let mut lines = vec![
         Line::from(Span::styled(
-            format!(
-                "Change: {}{}",
-                node.change_id,
-                if node.is_working_copy { " (@)" } else { "" }
-            ),
+            format!("Change: {}{}", node.change_id, workspace_suffix),
             if node.is_working_copy {
                 Style::default().fg(t.semantic_success)
             } else {
@@ -3609,6 +3806,28 @@ fn render_sidebar(
         )),
         Line::from(""),
     ];
+    if !node_workspaces.is_empty() {
+        lines.push(Line::from(Span::styled(
+            "Workspaces:",
+            sidebar_label_style(t),
+        )));
+        for workspace in node_workspaces {
+            let focused = app.focused_workspace_name.as_deref() == Some(workspace.name.as_str());
+            let cursor = if focused { ">" } else { " " };
+            let current = if workspace.is_current { " current" } else { "" };
+            lines.push(Line::from(Span::styled(
+                format!("{cursor} @{}{current}", workspace.name),
+                if focused {
+                    Style::default()
+                        .fg(t.semantic_success)
+                        .add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(t.semantic_success)
+                },
+            )));
+        }
+        lines.push(Line::from(""));
+    }
     if !node.bookmarks.is_empty() {
         lines.push(Line::from(Span::styled(
             "Bookmarks:",
@@ -4548,7 +4767,24 @@ mod tests {
             is_pinned: false,
         }];
 
-        let line = footer_line(&UI_TOKENS, &path, LayoutMode::Mainline, &nodes, 42, 80);
+        let workspaces = vec![WorkspaceEntry {
+            name: "default".to_string(),
+            change_id: "abc123456789".to_string(),
+            commit_id: "def123456789".to_string(),
+            is_current: true,
+        }];
+        let line = footer_line(
+            &UI_TOKENS,
+            &path,
+            LayoutMode::Mainline,
+            &nodes,
+            FooterWorkspaceContext {
+                entries: &workspaces,
+                focused_name: Some("default"),
+            },
+            42,
+            80,
+        );
         let spans = line.spans;
         assert_eq!(spans[0].content.as_ref(), " ~/dev/juzu ");
         assert_eq!(spans[0].style.bg, Some(UI_TOKENS.slate_bg2));
@@ -4556,7 +4792,7 @@ mod tests {
         assert_eq!(spans[1].content.as_ref(), "main+2");
         assert_eq!(spans[1].style.bg, Some(UI_TOKENS.slate_panel));
         assert_eq!(spans[1].style.fg, Some(UI_TOKENS.semantic_info));
-        assert_eq!(spans[2].content.as_ref(), " @abc12345");
+        assert_eq!(spans[2].content.as_ref(), " @default:abc12345");
         assert_eq!(spans[2].style.bg, Some(UI_TOKENS.slate_panel));
         assert_eq!(spans[2].style.fg, Some(UI_TOKENS.semantic_success));
         assert_eq!(spans[4].content.as_ref(), "mainline");
@@ -4669,6 +4905,9 @@ mod tests {
                 extra_height: None,
                 is_pinned: false,
             }],
+            workspaces: Vec::new(),
+            focused_workspace_name: None,
+            workspace_error: None,
             total_node_count: 1,
             files_by_change: HashMap::new(),
             diffs_by_change,
@@ -4919,6 +5158,9 @@ mod tests {
                 extra_height: None,
                 is_pinned: false,
             }],
+            workspaces: Vec::new(),
+            focused_workspace_name: None,
+            workspace_error: None,
             total_node_count: 1,
             files_by_change: HashMap::new(),
             diffs_by_change,
@@ -5205,6 +5447,9 @@ mod tests {
             merge_mode: false,
             merge_selected_ids: HashSet::new(),
             nodes: vec![],
+            workspaces: Vec::new(),
+            focused_workspace_name: None,
+            workspace_error: None,
             total_node_count: 0,
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
@@ -5735,6 +5980,133 @@ mod tests {
         }
     }
 
+    struct WorkspaceTestBackend {
+        nodes: Vec<juzu_core::CommitNode>,
+        workspaces: Vec<WorkspaceEntry>,
+    }
+
+    #[async_trait::async_trait(?Send)]
+    impl JjBackend for WorkspaceTestBackend {
+        async fn find_root(&self, _start: &std::path::Path) -> juzu_core::Result<Option<PathBuf>> {
+            Ok(None)
+        }
+
+        async fn log(&self, _query: LogQuery) -> juzu_core::Result<Vec<juzu_core::CommitNode>> {
+            Ok(self.nodes.clone())
+        }
+
+        async fn node_count(&self, _query: NodeCountQuery) -> juzu_core::Result<usize> {
+            Ok(self.nodes.len())
+        }
+
+        async fn description(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn files(&self, _query: ChangeQuery) -> juzu_core::Result<Vec<FileEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn diff(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
+            Ok(String::new())
+        }
+
+        async fn op_log(&self, _query: OpLogQuery) -> juzu_core::Result<Vec<OpLogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn obslog(&self, _query: ObslogQuery) -> juzu_core::Result<Vec<ObslogEntry>> {
+            Ok(Vec::new())
+        }
+
+        async fn workspaces(
+            &self,
+            _query: WorkspaceQuery,
+        ) -> juzu_core::Result<Vec<WorkspaceEntry>> {
+            Ok(self.workspaces.clone())
+        }
+
+        async fn mutate(
+            &self,
+            _mutation: Mutation,
+        ) -> juzu_core::Result<juzu_core::MutationResult> {
+            Err(juzu_core::JuzuError::Unsupported(
+                "workspace test backend is read-only",
+            ))
+        }
+    }
+
+    #[test]
+    fn workspace_markers_name_each_working_copy_and_mark_current() {
+        let node = test_commit("shared", "shared working copy");
+        let workspaces = vec![
+            WorkspaceEntry {
+                name: "default".to_string(),
+                change_id: node.change_id.clone(),
+                commit_id: node.commit_id.clone(),
+                is_current: true,
+            },
+            WorkspaceEntry {
+                name: "review".to_string(),
+                change_id: node.change_id.clone(),
+                commit_id: node.commit_id.clone(),
+                is_current: false,
+            },
+        ];
+
+        assert_eq!(
+            workspace_marker_label(&workspaces, &node),
+            "@default* @review"
+        );
+    }
+
+    #[test]
+    fn workspace_keys_focus_working_copies_and_reveal_filtered_targets() {
+        let default_node = test_commit("default-change", "default workspace");
+        let review_node = test_commit("review-change", "review workspace");
+        let workspaces = vec![
+            WorkspaceEntry {
+                name: "default".to_string(),
+                change_id: default_node.change_id.clone(),
+                commit_id: default_node.commit_id.clone(),
+                is_current: true,
+            },
+            WorkspaceEntry {
+                name: "review".to_string(),
+                change_id: review_node.change_id.clone(),
+                commit_id: review_node.commit_id.clone(),
+                is_current: false,
+            },
+        ];
+        let backend = WorkspaceTestBackend {
+            nodes: vec![default_node.clone(), review_node.clone()],
+            workspaces: workspaces.clone(),
+        };
+        let mut app = test_app_with_diff(DiffPreview {
+            raw_line_count: 0,
+            file_count: 0,
+            row_count: 0,
+            full_rows: None,
+            preview_rows: Vec::new(),
+            parse_error: None,
+        });
+        app.nodes = vec![default_node];
+        app.workspaces = workspaces;
+        app.focused_workspace_name = Some("default".to_string());
+        app.revset_query = "@".to_string();
+        app.selected = 0;
+
+        handle_key_with_backend(&mut app, &backend, KeyCode::Char('w'), KeyModifiers::NONE);
+        assert_eq!(app.focused_workspace_name.as_deref(), Some("review"));
+        assert_eq!(app.nodes[app.selected].change_id, review_node.change_id);
+        assert!(app.revset_query.is_empty());
+        assert!(app.workspace_error.is_none());
+
+        handle_key_with_backend(&mut app, &backend, KeyCode::Char('W'), KeyModifiers::NONE);
+        assert_eq!(app.focused_workspace_name.as_deref(), Some("default"));
+        assert_eq!(app.nodes[app.selected].change_id, "default-change");
+    }
+
     fn test_oplog_entry(id: &str, title: &str, is_current: bool) -> OpLogEntry {
         OpLogEntry {
             id: id.to_string(),
@@ -5775,6 +6147,9 @@ mod tests {
             merge_mode: false,
             merge_selected_ids: HashSet::new(),
             nodes: vec![test_commit("change-before", "before restore")],
+            workspaces: Vec::new(),
+            focused_workspace_name: None,
+            workspace_error: None,
             total_node_count: 1,
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
@@ -5948,6 +6323,9 @@ mod tests {
             merge_mode: false,
             merge_selected_ids: HashSet::new(),
             nodes: vec![node],
+            workspaces: Vec::new(),
+            focused_workspace_name: None,
+            workspace_error: None,
             total_node_count: 1,
             files_by_change: HashMap::new(),
             diffs_by_change: HashMap::new(),
@@ -7516,16 +7894,43 @@ fn compact_home_path(path: &std::path::Path) -> String {
     }
 }
 
+struct FooterWorkspaceContext<'a> {
+    entries: &'a [WorkspaceEntry],
+    focused_name: Option<&'a str>,
+}
+
 fn footer_line<'a>(
     t: &UiTokens,
     path: &std::path::Path,
     mode: LayoutMode,
     nodes: &[juzu_core::CommitNode],
+    workspace_context: FooterWorkspaceContext<'_>,
     total_node_count: usize,
     width: usize,
 ) -> Line<'a> {
     let repo = compact_home_path(path);
-    let working_copy = nodes.iter().find(|node| node.is_working_copy);
+    let workspace = workspace_context
+        .focused_name
+        .and_then(|name| {
+            workspace_context
+                .entries
+                .iter()
+                .find(|workspace| workspace.name == name)
+        })
+        .or_else(|| {
+            workspace_context
+                .entries
+                .iter()
+                .find(|workspace| workspace.is_current)
+        })
+        .or_else(|| workspace_context.entries.first());
+    let working_copy = workspace
+        .and_then(|workspace| {
+            nodes.iter().find(|node| {
+                node.change_id == workspace.change_id || node.commit_id == workspace.commit_id
+            })
+        })
+        .or_else(|| nodes.iter().find(|node| node.is_working_copy));
     let bookmark = working_copy
         .and_then(|node| {
             node.bookmarks.first().map(|first| {
@@ -7538,8 +7943,18 @@ fn footer_line<'a>(
             })
         })
         .unwrap_or_default();
-    let wc = working_copy
-        .map(|node| format!(" @{}", node.change_id.chars().take(8).collect::<String>()))
+    let wc = workspace
+        .map(|workspace| {
+            format!(
+                " @{}:{}",
+                workspace.name,
+                workspace.change_id.chars().take(8).collect::<String>()
+            )
+        })
+        .or_else(|| {
+            working_copy
+                .map(|node| format!(" @{}", node.change_id.chars().take(8).collect::<String>()))
+        })
         .unwrap_or_default();
     let mode = format!("{:?}", mode).to_lowercase();
     let repo_segment = format!(" {repo} ");
@@ -7578,6 +7993,10 @@ fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
         &app.path,
         app.mode,
         &app.nodes,
+        FooterWorkspaceContext {
+            entries: &app.workspaces,
+            focused_name: app.focused_workspace_name.as_deref(),
+        },
         app.total_node_count,
         area.width as usize,
     );
