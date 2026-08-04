@@ -30,12 +30,17 @@ user interface.
 
 ### `juzu-server`
 
-Provides a local read-only HTTP adapter with Axum. Because `JjBackend` futures
-are intentionally non-`Send`, handlers submit typed commands to a dedicated
-repository executor thread. That thread owns backend execution and provides the
-serialization point required by future mutation endpoints. A lightweight
-watcher fingerprints JJ operation heads and working-copy state, then broadcasts
-repository invalidations through Server-Sent Events.
+Provides a local read-only browser interface and HTTP adapter with Axum. It
+embeds a native ES module and CSS at compile time; the client renders the Rust
+layout result on a canvas and loads files and diffs on demand. There is no Bun,
+Node, or bundler dependency.
+
+Because `JjBackend` futures are intentionally non-`Send`, handlers submit typed
+commands to a dedicated repository executor thread. That thread owns backend
+execution and provides the serialization point required by future mutation
+endpoints. A lightweight watcher fingerprints JJ operation heads and
+working-copy state, then broadcasts repository invalidations through
+Server-Sent Events.
 
 ## Data flow
 
@@ -50,11 +55,12 @@ terminal input
 
 ```text
 browser request
+    -> embedded canvas client
     -> Axum route and web DTO
     -> repository executor channel
     -> JjBackend trait
     -> juzu-jj
-    -> JSON, text diff, or SSE invalidation
+    -> Rust layout JSON, text diff, or SSE invalidation
 ```
 
 Keep repository-specific details out of `juzu-core` and rendering concerns out

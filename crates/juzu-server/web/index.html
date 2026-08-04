@@ -3,82 +3,129 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Juzu Web</title>
-    <style>
-      :root {
-        color-scheme: dark;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        background: #111318;
-        color: #d8dee8;
-      }
-      body { margin: 0; padding: 3rem; }
-      main { max-width: 64rem; margin: 0 auto; }
-      h1 { color: #7f9fbf; margin-bottom: .4rem; }
-      .muted { color: #8a95a7; }
-      .panel {
-        margin-top: 1.5rem;
-        padding: 1rem 1.25rem;
-        border: 1px solid #2a3442;
-        border-radius: .6rem;
-        background: #1a2029;
-      }
-      code { color: #74b88c; }
-      li { margin: .45rem 0; }
-      a { color: #7f9fbf; }
-      #status[data-state="error"] { color: #ce6f7c; }
-    </style>
+    <meta name="color-scheme" content="dark">
+    <title>Juzu</title>
+    <link rel="stylesheet" href="/assets/styles.css">
   </head>
   <body>
-    <main>
-      <h1>Juzu Web</h1>
-      <p class="muted">Rust server foundation · read-only API</p>
-      <section class="panel">
-        <strong id="status">Connecting…</strong>
-        <p id="repo" class="muted"></p>
-        <p id="count"></p>
-      </section>
-      <section class="panel">
-        <strong>Recent changes</strong>
-        <ol id="changes"><li class="muted">Loading…</li></ol>
-      </section>
-      <section class="panel">
-        <strong>API</strong>
-        <p class="muted">Versioned endpoints are available under <code>/api/v1</code>.</p>
-        <a href="/api/v1/repo">Repository information</a>
-      </section>
-    </main>
-    <script type="module">
-      const status = document.querySelector("#status");
-      const repo = document.querySelector("#repo");
-      const count = document.querySelector("#count");
-      const changes = document.querySelector("#changes");
+    <div class="app-shell" id="app" aria-busy="true">
+      <header class="topbar">
+        <div class="identity">
+          <strong class="wordmark">JUZU</strong>
+          <span class="repo-name" id="repo-name">Opening workspace…</span>
+        </div>
 
-      async function refresh() {
-        try {
-          const [repoInfo, nodes, nodeCount] = await Promise.all([
-            fetch("/api/v1/repo").then(response => response.json()),
-            fetch("/api/v1/log?limit=12").then(response => response.json()),
-            fetch("/api/v1/node-count").then(response => response.json()),
-          ]);
-          status.textContent = "Connected";
-          status.dataset.state = "ready";
-          repo.textContent = repoInfo.workspaceRoot;
-          count.textContent = `${nodeCount.count} visible revisions`;
-          changes.replaceChildren(...nodes.map(node => {
-            const item = document.createElement("li");
-            const id = node.changeId.slice(0, 8);
-            item.textContent = `${id}  ${node.descriptionTitle || "(no description)"}`;
-            return item;
-          }));
-        } catch (error) {
-          status.textContent = `Connection failed: ${error}`;
-          status.dataset.state = "error";
-        }
-      }
+        <form class="revset-form" id="revset-form" role="search">
+          <label class="sr-only" for="revset-input">Revset</label>
+          <span class="search-glyph" aria-hidden="true">/</span>
+          <input
+            id="revset-input"
+            name="revset"
+            type="search"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Filter with a revset"
+          >
+        </form>
 
-      await refresh();
-      const events = new EventSource("/api/v1/events");
-      events.addEventListener("repo-updated", refresh);
-    </script>
+        <div class="topbar-controls">
+          <label class="sr-only" for="layout-mode">Layout</label>
+          <select id="layout-mode" title="Graph layout">
+            <option value="mainline">Mainline</option>
+            <option value="chronological">Chronological</option>
+            <option value="bookmark-centric">Bookmarks</option>
+            <option value="wc-focused">Working copy</option>
+            <option value="topological">Topological</option>
+          </select>
+
+          <label class="sr-only" for="history-limit">History limit</label>
+          <select id="history-limit" title="History limit">
+            <option value="100">100 changes</option>
+            <option value="250" selected>250 changes</option>
+            <option value="500">500 changes</option>
+            <option value="1000">1,000 changes</option>
+          </select>
+
+          <button class="icon-button" id="refresh-button" type="button" title="Refresh" aria-label="Refresh repository">
+            <span aria-hidden="true">↻</span>
+          </button>
+          <span class="safety-chip">Read only</span>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="graph-surface" aria-label="Commit graph">
+          <canvas id="graph-canvas" tabindex="0" aria-label="Interactive commit graph. Use J and K or arrow keys to change selection."></canvas>
+
+          <div class="graph-loading" id="graph-loading" role="status">
+            <span class="loading-line"></span>
+            <span>Loading history</span>
+          </div>
+
+          <div class="graph-empty" id="graph-empty" hidden>
+            <strong>No changes match this revset</strong>
+            <button type="button" id="clear-revset">Clear filter</button>
+          </div>
+
+          <div class="viewport-controls" aria-label="Graph viewport controls">
+            <button class="icon-button" id="zoom-out" type="button" aria-label="Zoom out" title="Zoom out">−</button>
+            <button class="icon-button" id="focus-selection" type="button" aria-label="Focus selected change" title="Focus selected change">◎</button>
+            <button class="icon-button" id="zoom-in" type="button" aria-label="Zoom in" title="Zoom in">+</button>
+          </div>
+
+          <footer class="graph-status">
+            <span><span class="live-dot" id="live-dot"></span><span id="connection-status">Connecting</span></span>
+            <span id="graph-count"></span>
+            <span id="zoom-level">100%</span>
+          </footer>
+        </section>
+
+        <aside class="inspector" aria-label="Selected change details">
+          <div class="inspector-empty" id="inspector-empty">
+            <strong>Select a change</strong>
+            <span>Click a graph row or use J and K.</span>
+          </div>
+
+          <div class="inspector-content" id="inspector-content" hidden>
+            <header class="change-header">
+              <div class="change-kicker">
+                <button class="copy-id" id="copy-change-id" type="button" title="Copy change ID">
+                  <span id="change-id"></span>
+                  <span aria-hidden="true">⌘</span>
+                </button>
+                <div class="state-badges" id="state-badges"></div>
+              </div>
+              <h1 id="change-title"></h1>
+              <p class="change-description" id="change-description"></p>
+            </header>
+
+            <dl class="metadata">
+              <div><dt>Commit</dt><dd id="commit-id"></dd></div>
+              <div><dt>Author</dt><dd id="change-author"></dd></div>
+              <div><dt>Time</dt><dd id="change-time"></dd></div>
+              <div id="bookmarks-row" hidden><dt>Bookmarks</dt><dd id="change-bookmarks"></dd></div>
+            </dl>
+
+            <div class="inspector-tabs" role="tablist" aria-label="Change content">
+              <button id="files-tab" type="button" role="tab" aria-selected="true" aria-controls="files-panel">Files <span id="file-count"></span></button>
+              <button id="diff-tab" type="button" role="tab" aria-selected="false" aria-controls="diff-panel">Diff</button>
+            </div>
+
+            <section id="files-panel" class="tab-panel" role="tabpanel" aria-labelledby="files-tab">
+              <div class="panel-loading" id="files-loading">Loading files…</div>
+              <div class="file-list" id="file-list"></div>
+            </section>
+
+            <section id="diff-panel" class="tab-panel diff-panel" role="tabpanel" aria-labelledby="diff-tab" hidden>
+              <div class="panel-loading" id="diff-loading">Loading diff…</div>
+              <div class="diff-view" id="diff-view"></div>
+            </section>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <script type="module" src="/assets/app.js"></script>
   </body>
 </html>

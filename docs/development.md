@@ -34,6 +34,11 @@ Run the local read-only web server:
 cargo run -p juzu-server -- --path /path/to/workspace --port 3000
 ```
 
+Open `http://127.0.0.1:3000` to exercise the graph. Browser assets live in
+`crates/juzu-server/web/` and are embedded with `include_str!`, so editing them
+requires rebuilding or restarting `juzu-server`; no frontend install or build
+step is required.
+
 Install the canonical `juzu` binary from the checkout:
 
 ```bash
@@ -72,5 +77,7 @@ python3 scripts/restart-tui-window.py --repo /path/to/workspace
 `crates/juzu-server/tests/api.rs` creates real temporary JJ repositories and
 drives the Axum router in memory. Keep API tests at that boundary so they cover
 request extraction, executor dispatch, backend serialization, response types,
-and errors together. Watcher tests must prove a JJ operation produces a
-`repo-updated` event instead of only testing the broadcast channel directly.
+embedded asset delivery, and errors together. Layout tests should deserialize
+`LayoutResult` so API field drift is caught. Watcher tests must prove a JJ
+operation produces a `repo-updated` event instead of only testing the broadcast
+channel directly.

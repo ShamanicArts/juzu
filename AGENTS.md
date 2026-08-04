@@ -41,7 +41,8 @@ cargo run -p juzu-cli -- diff --path . --change @
 - `crates/juzu-jj/`: native JJ repository backend and mutation fallbacks
 - `crates/juzu-tui/`: canonical Ratatui application (`juzu` binary)
 - `crates/juzu-cli/`: JSON diagnostics for backend and layout inspection
-- `crates/juzu-server/`: local Axum server, repository executor, and web API
+- `crates/juzu-server/`: local Axum server, repository executor, web API, and
+  embedded browser assets in `web/` (native ES modules; no frontend build step)
 - `themes/`: TOML themes embedded in the TUI at compile time
 - `docs/`: current architecture and development documentation
 

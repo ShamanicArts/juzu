@@ -5,7 +5,7 @@ use axum::{
     Router,
 };
 use http_body_util::BodyExt;
-use juzu_core::{CommitNode, FileEntry, ObslogEntry, OpLogEntry};
+use juzu_core::{layout::LayoutResult, CommitNode, FileEntry, ObslogEntry, OpLogEntry};
 use juzu_server::{router, ServerState};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -77,7 +77,25 @@ async fn serves_embedded_page_health_and_repository_info() {
         response.headers().get(header::CONTENT_TYPE).unwrap(),
         "text/html; charset=utf-8"
     );
-    assert!(body_text(response).await.contains("Juzu Web"));
+    assert!(body_text(response)
+        .await
+        .contains("Interactive commit graph"));
+
+    let response = get(&app, "/assets/app.js").await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response.headers().get(header::CONTENT_TYPE).unwrap(),
+        "text/javascript; charset=utf-8"
+    );
+    assert!(body_text(response).await.contains("new EventSource"));
+
+    let response = get(&app, "/assets/styles.css").await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response.headers().get(header::CONTENT_TYPE).unwrap(),
+        "text/css; charset=utf-8"
+    );
+    assert!(body_text(response).await.contains(".graph-surface"));
 
     let response = get(&app, "/healthz").await;
     assert_eq!(response.status(), StatusCode::OK);
@@ -147,6 +165,27 @@ async fn exposes_log_count_files_diff_and_operation_views() {
     assert_eq!(response.status(), StatusCode::OK);
     let evolution: Vec<ObslogEntry> = body_json(response).await;
     assert!(!evolution.is_empty());
+}
+
+#[tokio::test]
+async fn lays_out_history_and_rejects_unknown_modes() {
+    let repo = fixture_repo();
+    let state = ServerState::new(repo.path()).expect("server state should open fixture repo");
+    let app = router(state);
+
+    let response = get(&app, "/api/v1/layout?mode=mainline&limit=20").await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let layout: LayoutResult = body_json(response).await;
+    assert!(!layout.nodes.is_empty());
+    assert!(layout.nodes.iter().all(|node| node.x.is_some()));
+    assert!(layout.nodes.iter().all(|node| node.y.is_some()));
+    assert!(layout.text_column_x > 0);
+    assert!(layout.total_height > 0);
+
+    let response = get(&app, "/api/v1/layout?mode=radial").await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let error: Value = body_json(response).await;
+    assert!(error["error"].as_str().unwrap().contains("radial"));
 }
 
 #[tokio::test]

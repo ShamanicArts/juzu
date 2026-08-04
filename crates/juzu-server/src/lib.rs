@@ -11,7 +11,8 @@ use axum::{
 };
 use futures_util::{stream, Stream, StreamExt};
 use juzu_core::{
-    ChangeQuery, CommitNode, FileEntry, JjBackend, JuzuError, LogQuery, NodeCountQuery,
+    layout::{calculate_default_layout, LayoutResult},
+    ChangeQuery, CommitNode, FileEntry, JjBackend, JuzuError, LayoutMode, LogQuery, NodeCountQuery,
     ObslogEntry, ObslogQuery, OpLogEntry, OpLogQuery,
 };
 use juzu_jj::NativeJjBackend;
@@ -29,6 +30,8 @@ use std::{
 use tokio::sync::{broadcast, mpsc, oneshot, watch};
 
 const INDEX_HTML: &str = include_str!("../web/index.html");
+const APP_JS: &str = include_str!("../web/app.js");
+const STYLES_CSS: &str = include_str!("../web/styles.css");
 const DEFAULT_LOG_LIMIT: usize = 500;
 const MAX_LOG_LIMIT: usize = 2_000;
 
@@ -111,6 +114,7 @@ pub fn router(state: ServerState) -> Router {
     let api = Router::new()
         .route("/repo", get(repository_info))
         .route("/log", get(log))
+        .route("/layout", get(layout))
         .route("/node-count", get(node_count))
         .route("/changes/{change_id}/files", get(files))
         .route("/changes/{change_id}/diff", get(diff))
@@ -121,6 +125,8 @@ pub fn router(state: ServerState) -> Router {
 
     Router::new()
         .route("/", get(index))
+        .route("/assets/app.js", get(app_js))
+        .route("/assets/styles.css", get(styles_css))
         .route("/healthz", get(health))
         .nest("/api/v1", api)
         .fallback(not_found)
@@ -137,6 +143,26 @@ async fn no_store(request: Request<axum::body::Body>, next: Next) -> Response {
 
 async fn index() -> Html<&'static str> {
     Html(INDEX_HTML)
+}
+
+async fn app_js() -> impl IntoResponse {
+    (
+        [
+            (header::CONTENT_TYPE, "text/javascript; charset=utf-8"),
+            (header::CACHE_CONTROL, "no-store"),
+        ],
+        APP_JS,
+    )
+}
+
+async fn styles_css() -> impl IntoResponse {
+    (
+        [
+            (header::CONTENT_TYPE, "text/css; charset=utf-8"),
+            (header::CACHE_CONTROL, "no-store"),
+        ],
+        STYLES_CSS,
+    )
 }
 
 async fn health() -> Json<HealthResponse> {
@@ -168,6 +194,19 @@ async fn log(
         .log(params.limit(), params.revset())
         .await?;
     Ok(Json(nodes))
+}
+
+async fn layout(
+    State(state): State<ServerState>,
+    Query(params): Query<LayoutParams>,
+) -> Result<Json<LayoutResult>, ApiError> {
+    let mode = params.mode()?;
+    let nodes = state
+        .inner
+        .executor
+        .log(params.limit(), params.revset())
+        .await?;
+    Ok(Json(calculate_default_layout(mode, &nodes)))
 }
 
 async fn node_count(
@@ -275,6 +314,39 @@ fn validate_change_id(change_id: &str) -> Result<(), ApiError> {
 struct LogParams {
     limit: Option<usize>,
     revset: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct LayoutParams {
+    limit: Option<usize>,
+    revset: Option<String>,
+    mode: Option<String>,
+}
+
+impl LayoutParams {
+    fn limit(&self) -> usize {
+        self.limit
+            .unwrap_or(DEFAULT_LOG_LIMIT)
+            .clamp(1, MAX_LOG_LIMIT)
+    }
+
+    fn revset(&self) -> Option<String> {
+        normalize_revset(self.revset.clone())
+    }
+
+    fn mode(&self) -> Result<LayoutMode, ApiError> {
+        match self.mode.as_deref().unwrap_or("mainline") {
+            "chronological" => Ok(LayoutMode::Chronological),
+            "mainline" => Ok(LayoutMode::Mainline),
+            "bookmark-centric" => Ok(LayoutMode::BookmarkCentric),
+            "wc-focused" => Ok(LayoutMode::WcFocused),
+            "topological" => Ok(LayoutMode::Topological),
+            other => Err(ApiError::new(
+                StatusCode::BAD_REQUEST,
+                format!("unknown layout mode: {other}"),
+            )),
+        }
+    }
 }
 
 impl LogParams {
@@ -691,5 +763,15 @@ mod tests {
             Some("@".to_string())
         );
         assert_eq!(normalize_revset(Some("   ".to_string())), None);
+        assert_eq!(
+            LayoutParams::default().mode().unwrap(),
+            LayoutMode::Mainline
+        );
+        assert!(LayoutParams {
+            mode: Some("sideways".to_string()),
+            ..LayoutParams::default()
+        }
+        .mode()
+        .is_err());
     }
 }
