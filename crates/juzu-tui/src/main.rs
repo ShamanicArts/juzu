@@ -465,16 +465,8 @@ fn main() -> Result<()> {
     }))?;
     let workspaces =
         futures_executor::block_on(backend.workspaces(WorkspaceQuery { cwd: path.clone() }))?;
-    let mut files_by_change = HashMap::new();
+    let files_by_change = HashMap::new();
     let diffs_by_change = HashMap::new();
-    for node in &nodes {
-        let files = futures_executor::block_on(backend.files(ChangeQuery {
-            cwd: path.clone(),
-            change_id: node.change_id.clone(),
-        }))
-        .unwrap_or_default();
-        files_by_change.insert(node.change_id.clone(), files);
-    }
     let focused_workspace_name = workspaces
         .iter()
         .find(|workspace| workspace.is_current)
@@ -553,8 +545,6 @@ fn main() -> Result<()> {
         diff_file_index: 0,
         diff_viewport_rows: 1,
     };
-    ensure_selected_diff(&mut app, false);
-
     if args.iter().any(|arg| arg == "--debug-state") {
         emit_debug_state(&mut app, arg_value(&args, "--keys"))?;
         return Ok(());
@@ -567,8 +557,13 @@ fn main() -> Result<()> {
 }
 
 fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
+    let backend = NativeJjBackend::new();
     loop {
         terminal.draw(|frame| render(frame, app))?;
+        // The first frame should never wait on repository hydration. A cache
+        // miss is rendered as a loading state, then populated here for the
+        // selected change only. Full diff content remains on demand.
+        ensure_selected_files_with_backend(app, &backend);
         if event::poll(Duration::from_millis(250))? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Release {
@@ -984,12 +979,10 @@ fn handle_key_with_backend<B: JjBackend>(
         KeyCode::Char('j') | KeyCode::Down => {
             app.selected = (app.selected + 1).min(app.nodes.len().saturating_sub(1));
             app.diff_scroll = 0;
-            ensure_selected_diff(app, false);
         }
         KeyCode::Char('k') | KeyCode::Up => {
             app.selected = app.selected.saturating_sub(1);
             app.diff_scroll = 0;
-            ensure_selected_diff(app, false);
         }
         KeyCode::PageDown if app.view_mode == ViewMode::Diff => {
             clamp_diff_scroll_to_viewport(app);
@@ -1185,7 +1178,26 @@ fn diff_sticky_context_text(rows: &[DiffRow], scroll: usize) -> Option<String> {
     }
 }
 
-fn ensure_selected_diff(app: &mut App, include_full_rows: bool) {
+fn ensure_selected_files_with_backend<B: JjBackend>(app: &mut App, backend: &B) {
+    let Some(node) = app.nodes.get(app.selected) else {
+        return;
+    };
+    if app.files_by_change.contains_key(&node.change_id) {
+        return;
+    }
+    let files = futures_executor::block_on(backend.files(ChangeQuery {
+        cwd: app.path.clone(),
+        change_id: node.change_id.clone(),
+    }))
+    .unwrap_or_default();
+    app.files_by_change.insert(node.change_id.clone(), files);
+}
+
+fn ensure_selected_diff_with_backend<B: JjBackend>(
+    app: &mut App,
+    backend: &B,
+    include_full_rows: bool,
+) {
     let Some(node) = app.nodes.get(app.selected) else {
         return;
     };
@@ -1198,7 +1210,6 @@ fn ensure_selected_diff(app: &mut App, include_full_rows: bool) {
     {
         return;
     }
-    let backend = NativeJjBackend::new();
     let diff = futures_executor::block_on(backend.diff(ChangeQuery {
         cwd: app.path.clone(),
         change_id: node.change_id.clone(),
@@ -1228,6 +1239,11 @@ fn ensure_selected_diff(app: &mut App, include_full_rows: bool) {
             parse_error: Some(err.to_string()),
         });
     app.diffs_by_change.insert(node.change_id.clone(), preview);
+}
+
+fn ensure_selected_diff(app: &mut App, include_full_rows: bool) {
+    let backend = NativeJjBackend::new();
+    ensure_selected_diff_with_backend(app, &backend, include_full_rows);
 }
 
 struct DiffPreview {
@@ -1405,7 +1421,6 @@ fn select_workspace_change(app: &mut App, workspace_name: &str) -> bool {
     app.selected = index;
     app.diff_scroll = 0;
     app.diff_file_index = 0;
-    ensure_selected_diff(app, false);
     true
 }
 
@@ -1458,15 +1473,6 @@ fn reload_app_nodes_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Re
         Err(error) => return Err(error.into()),
     };
     let previous_focused_workspace = app.focused_workspace_name.clone();
-    let mut files_by_change = HashMap::new();
-    for node in &nodes {
-        let files = futures_executor::block_on(backend.files(ChangeQuery {
-            cwd: app.path.clone(),
-            change_id: node.change_id.clone(),
-        }))
-        .unwrap_or_default();
-        files_by_change.insert(node.change_id.clone(), files);
-    }
     app.nodes = nodes;
     app.workspaces = workspaces;
     app.focused_workspace_name = previous_focused_workspace
@@ -1483,7 +1489,7 @@ fn reload_app_nodes_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Re
                 .map(|workspace| workspace.name.clone())
         });
     app.total_node_count = total_node_count;
-    app.files_by_change = files_by_change;
+    app.files_by_change.clear();
     app.diffs_by_change.clear();
     app.selected = previous_selected_change
         .and_then(|change_id| {
@@ -1502,7 +1508,9 @@ fn reload_app_nodes_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> Re
         .unwrap_or(0);
     app.diff_scroll = 0;
     app.diff_file_index = 0;
-    ensure_selected_diff(app, app.view_mode == ViewMode::Diff);
+    if app.view_mode == ViewMode::Diff {
+        ensure_selected_diff_with_backend(app, backend, true);
+    }
     Ok(())
 }
 
@@ -2990,16 +2998,11 @@ fn render_graph_table(
                 },
             );
         }
-        let files = app
-            .files_by_change
-            .get(&node.change_id)
-            .map(Vec::as_slice)
-            .unwrap_or(&[]);
         put_graph_file_summary(
             &mut cells,
             text_x,
             y + 2,
-            files,
+            app.files_by_change.get(&node.change_id).map(Vec::as_slice),
             width.saturating_sub(text_x + 1),
             is_selected,
             t,
@@ -3211,7 +3214,7 @@ fn put_graph_file_summary(
     cells: &mut [Vec<GraphCell>],
     x: usize,
     y: isize,
-    files: &[FileEntry],
+    files: Option<&[FileEntry]>,
     max_len: usize,
     is_selected: bool,
     tokens: &UiTokens,
@@ -3219,6 +3222,18 @@ fn put_graph_file_summary(
     if max_len == 0 {
         return;
     }
+    let Some(files) = files else {
+        if is_selected {
+            put_text(
+                cells,
+                x,
+                y,
+                "loading file changes…",
+                brighten_color(tokens.graph_text_muted, 40),
+            );
+        }
+        return;
+    };
     if files.is_empty() {
         put_text(
             cells,
@@ -3869,14 +3884,11 @@ fn render_sidebar(
         },
         sidebar_label_style(t),
     )));
-    let files = app
-        .files_by_change
-        .get(&node.change_id)
-        .map(Vec::as_slice)
-        .unwrap_or(&[]);
-    if files.is_empty() {
-        lines.push(Line::from("—"));
-    } else {
+    let files = app.files_by_change.get(&node.change_id).map(Vec::as_slice);
+    if let Some(files) = files {
+        if files.is_empty() {
+            lines.push(Line::from("—"));
+        }
         let file_preview_limit = sidebar_file_preview_limit(app.files_expanded, files.len());
         let selected_file_index = if app.view_mode == ViewMode::Diff {
             Some(app.diff_file_index.min(files.len().saturating_sub(1)))
@@ -3912,6 +3924,11 @@ fn render_sidebar(
         if files.len() > file_end {
             lines.push(Line::from(format!("… {} more", files.len() - file_end)));
         }
+    } else {
+        lines.push(Line::from(Span::styled(
+            "loading file changes…",
+            sidebar_muted_style(t),
+        )));
     }
     if sidebar_shows_inline_diff_preview(app) {
         lines.push(Line::from(""));
@@ -3946,7 +3963,7 @@ fn render_diff_preview_lines(
 ) {
     let Some(diff) = app.diffs_by_change.get(&node.change_id) else {
         lines.push(Line::from(Span::styled(
-            "  waiting for native diff",
+            "  open diff to load preview",
             sidebar_muted_style(t),
         )));
         return;
@@ -5983,6 +6000,8 @@ mod tests {
     struct WorkspaceTestBackend {
         nodes: Vec<juzu_core::CommitNode>,
         workspaces: Vec<WorkspaceEntry>,
+        files: Vec<FileEntry>,
+        file_calls: AtomicU64,
     }
 
     #[async_trait::async_trait(?Send)]
@@ -6004,7 +6023,8 @@ mod tests {
         }
 
         async fn files(&self, _query: ChangeQuery) -> juzu_core::Result<Vec<FileEntry>> {
-            Ok(Vec::new())
+            self.file_calls.fetch_add(1, Ordering::SeqCst);
+            Ok(self.files.clone())
         }
 
         async fn diff(&self, _query: ChangeQuery) -> juzu_core::Result<String> {
@@ -6081,6 +6101,8 @@ mod tests {
         let backend = WorkspaceTestBackend {
             nodes: vec![default_node.clone(), review_node.clone()],
             workspaces: workspaces.clone(),
+            files: Vec::new(),
+            file_calls: AtomicU64::new(0),
         };
         let mut app = test_app_with_diff(DiffPreview {
             raw_line_count: 0,
@@ -6105,6 +6127,38 @@ mod tests {
         handle_key_with_backend(&mut app, &backend, KeyCode::Char('W'), KeyModifiers::NONE);
         assert_eq!(app.focused_workspace_name.as_deref(), Some("default"));
         assert_eq!(app.nodes[app.selected].change_id, "default-change");
+    }
+
+    #[test]
+    fn selected_files_load_once_and_then_use_the_cache() {
+        let node = test_commit("lazy-change", "lazy files");
+        let expected = vec![FileEntry {
+            r#type: "M".to_string(),
+            path: "src/main.rs".to_string(),
+        }];
+        let backend = WorkspaceTestBackend {
+            nodes: vec![node.clone()],
+            workspaces: Vec::new(),
+            files: expected.clone(),
+            file_calls: AtomicU64::new(0),
+        };
+        let mut app = test_app_with_diff(DiffPreview {
+            raw_line_count: 0,
+            file_count: 0,
+            row_count: 0,
+            full_rows: None,
+            preview_rows: Vec::new(),
+            parse_error: None,
+        });
+        app.nodes = vec![node.clone()];
+        app.files_by_change.clear();
+        app.selected = 0;
+
+        ensure_selected_files_with_backend(&mut app, &backend);
+        ensure_selected_files_with_backend(&mut app, &backend);
+
+        assert_eq!(backend.file_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(app.files_by_change.get(&node.change_id), Some(&expected));
     }
 
     fn test_oplog_entry(id: &str, title: &str, is_current: bool) -> OpLogEntry {
