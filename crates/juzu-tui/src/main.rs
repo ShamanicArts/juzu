@@ -7,6 +7,7 @@ use crossterm::{
         MouseEventKind,
     },
     execute,
+    terminal::{Clear, ClearType},
 };
 use juzu_core::{
     diff::{collapsed_diff_rows, iter_diff_rows, parse_git_patch, DiffRow, DiffRowKind},
@@ -573,6 +574,11 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
     let backend = NativeJjBackend::new();
     loop {
         terminal.draw(|frame| render(frame, app))?;
+        // Some embedded terminals keep scrollback active even in the
+        // alternate screen and ignore application mouse tracking. Erase saved
+        // lines after each frame so wheel gestures cannot expose raw ANSI
+        // render fragments above the TUI.
+        purge_terminal_scrollback()?;
         // The first frame should never wait on repository hydration. A cache
         // miss is rendered as a loading state, then populated here for the
         // selected change only. Full diff content remains on demand.
@@ -597,6 +603,10 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn purge_terminal_scrollback() -> std::io::Result<()> {
+    execute!(stdout(), Clear(ClearType::Purge))
 }
 
 fn mouse_scroll_key(kind: MouseEventKind) -> Option<KeyCode> {
@@ -4500,6 +4510,8 @@ mod tests {
         );
         assert!(production_source.contains("execute!(stdout(), EnableMouseCapture)"));
         assert!(production_source.contains("execute!(stdout(), DisableMouseCapture)"));
+        assert!(production_source.contains("purge_terminal_scrollback()?;"));
+        assert!(production_source.contains("Clear(ClearType::Purge)"));
     }
 
     #[test]
