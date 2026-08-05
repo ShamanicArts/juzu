@@ -1,7 +1,15 @@
 mod config;
 
 use anyhow::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
+use crossterm::{
+    event::{
+        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind, KeyModifiers,
+        MouseEventKind,
+    },
+    execute,
+    style::Print,
+    terminal::{BeginSynchronizedUpdate, EndSynchronizedUpdate, EnterAlternateScreen},
+};
 use juzu_core::{
     diff::{collapsed_diff_rows, iter_diff_rows, parse_git_patch, DiffRow, DiffRowKind},
     layout::calculate_default_layout,
@@ -18,12 +26,13 @@ use ratatui::{
 };
 use std::{
     collections::{HashMap, HashSet},
+    io::stdout,
     path::PathBuf,
-    time::Duration,
 };
 
 const DIFF_PREVIEW_ROW_CAP: usize = 420;
 const DEFAULT_LOG_LIMIT: usize = 500;
+const REPLAY_CHECKPOINT_INTERVAL: usize = 32;
 
 #[derive(Clone, Copy)]
 struct UiTokens {
@@ -272,6 +281,18 @@ fn theme_picker_window(selected: usize, total: usize, capacity: usize) -> (usize
     if start + capacity > total {
         start = total.saturating_sub(capacity);
     }
+    (start, start + capacity)
+}
+
+fn graph_window(selected: usize, total: usize, capacity: usize) -> (usize, usize) {
+    if total == 0 || capacity == 0 {
+        return (0, 0);
+    }
+    let capacity = capacity.min(total);
+    let selected = selected.min(total - 1);
+    let step = (capacity / 2).max(1);
+    let centered_start = selected.saturating_sub(capacity / 2);
+    let start = ((centered_start / step) * step).min(total - capacity);
     (start, start + capacity)
 }
 
@@ -551,31 +572,94 @@ fn main() -> Result<()> {
     }
 
     let terminal = ratatui::init();
+    if let Err(error) = execute!(stdout(), EnableMouseCapture) {
+        ratatui::restore();
+        return Err(error.into());
+    }
     let result = run(terminal, &mut app);
+    let mouse_result = execute!(stdout(), DisableMouseCapture);
     ratatui::restore();
+    mouse_result?;
     result
 }
 
 fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
     let backend = NativeJjBackend::new();
-    loop {
+    let mut events_since_checkpoint = 0usize;
+
+    draw_replay_checkpoint(&mut terminal, app)?;
+    if ensure_selected_files_with_backend(app, &backend) {
         terminal.draw(|frame| render(frame, app))?;
-        // The first frame should never wait on repository hydration. A cache
-        // miss is rendered as a loading state, then populated here for the
-        // selected change only. Full diff content remains on demand.
-        ensure_selected_files_with_backend(app, &backend);
-        if event::poll(Duration::from_millis(250))? {
-            if let Event::Key(key) = event::read()? {
+    }
+
+    loop {
+        let should_draw = match event::read()? {
+            Event::Key(key) => {
                 if key.kind == KeyEventKind::Release {
                     continue;
                 }
                 if handle_key(app, key.code, key.modifiers) {
                     break;
                 }
+                true
             }
+            Event::Mouse(mouse) => mouse_scroll_key(mouse.kind).is_some_and(|code| {
+                handle_key(app, code, KeyModifiers::NONE);
+                true
+            }),
+            Event::Resize(_, _) => true,
+            _ => false,
+        };
+        if !should_draw {
+            continue;
+        }
+
+        events_since_checkpoint += 1;
+        if events_since_checkpoint >= REPLAY_CHECKPOINT_INTERVAL {
+            draw_replay_checkpoint(&mut terminal, app)?;
+            events_since_checkpoint = 0;
+        } else {
+            terminal.draw(|frame| render(frame, app))?;
+        }
+
+        // Hydrate only the selected change after its loading frame is visible.
+        // Full diff content remains on demand.
+        if ensure_selected_files_with_backend(app, &backend) {
+            terminal.draw(|frame| render(frame, app))?;
         }
     }
     Ok(())
+}
+
+fn draw_replay_checkpoint(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
+    // Embedded terminals retain and replay process output when their view is
+    // reattached. The newline gives that history a safe trim boundary; the
+    // mode assertions and forced full redraw make everything after it a
+    // self-contained terminal state rather than a fragment of an ANSI update.
+    execute!(
+        stdout(),
+        BeginSynchronizedUpdate,
+        Print("\r\n"),
+        EnterAlternateScreen,
+        EnableMouseCapture
+    )?;
+    let draw_result = (|| -> std::io::Result<()> {
+        terminal.clear()?;
+        terminal.draw(|frame| render(frame, app))?;
+        Ok(())
+    })();
+    let sync_result = execute!(stdout(), EndSynchronizedUpdate);
+    sync_result?;
+    draw_result?;
+    Ok(())
+}
+
+fn mouse_scroll_key(kind: MouseEventKind) -> Option<KeyCode> {
+    match kind {
+        MouseEventKind::ScrollUp => Some(KeyCode::Up),
+        MouseEventKind::ScrollDown => Some(KeyCode::Down),
+        _ => None,
+    }
 }
 
 fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
@@ -1178,12 +1262,12 @@ fn diff_sticky_context_text(rows: &[DiffRow], scroll: usize) -> Option<String> {
     }
 }
 
-fn ensure_selected_files_with_backend<B: JjBackend>(app: &mut App, backend: &B) {
+fn ensure_selected_files_with_backend<B: JjBackend>(app: &mut App, backend: &B) -> bool {
     let Some(node) = app.nodes.get(app.selected) else {
-        return;
+        return false;
     };
     if app.files_by_change.contains_key(&node.change_id) {
-        return;
+        return false;
     }
     let files = futures_executor::block_on(backend.files(ChangeQuery {
         cwd: app.path.clone(),
@@ -1191,6 +1275,7 @@ fn ensure_selected_files_with_backend<B: JjBackend>(app: &mut App, backend: &B) 
     }))
     .unwrap_or_default();
     app.files_by_change.insert(node.change_id.clone(), files);
+    true
 }
 
 fn ensure_selected_diff_with_backend<B: JjBackend>(
@@ -2729,8 +2814,7 @@ fn render_graph_table(
     let selected = app.selected.min(layout.nodes.len().saturating_sub(1));
     let row_stride = 4usize;
     let visible_rows = ((height.saturating_sub(2)) / row_stride).max(1);
-    let start = selected.saturating_sub(visible_rows / 2);
-    let end = (start + visible_rows).min(layout.nodes.len());
+    let (start, end) = graph_window(selected, layout.nodes.len(), visible_rows);
 
     let mut cells = vec![vec![GraphCell::default(); width]; height.max(1)];
     let all_index: std::collections::HashMap<_, _> = layout
@@ -4469,6 +4553,40 @@ mod tests {
             !production_source.contains("disable_raw_mode()?;"),
             "manual raw-mode teardown regressed and can wedge tmux panes"
         );
+        assert!(production_source.contains("execute!(stdout(), EnableMouseCapture)"));
+        assert!(production_source.contains("execute!(stdout(), DisableMouseCapture)"));
+        assert!(production_source.contains("fn draw_replay_checkpoint("));
+        assert!(production_source.contains("BeginSynchronizedUpdate"));
+        assert!(production_source.contains("EndSynchronizedUpdate"));
+        assert!(production_source.contains("Print(\"\\r\\n\")"));
+        assert!(production_source.contains("terminal.clear()?;"));
+        assert!(production_source.contains("let should_draw = match event::read()?"));
+        assert!(!production_source.contains("event::poll("));
+        assert!(!production_source.contains("ClearType::Purge"));
+    }
+
+    #[test]
+    fn graph_window_moves_in_stable_half_page_steps() {
+        assert_eq!(graph_window(0, 20, 6), (0, 6));
+        assert_eq!(graph_window(2, 20, 6), (0, 6));
+        assert_eq!(graph_window(5, 20, 6), (0, 6));
+        assert_eq!(graph_window(6, 20, 6), (3, 9));
+        assert_eq!(graph_window(9, 20, 6), (6, 12));
+        assert_eq!(graph_window(19, 20, 6), (14, 20));
+        assert_eq!(graph_window(0, 0, 6), (0, 0));
+    }
+
+    #[test]
+    fn mouse_wheel_maps_to_existing_vertical_navigation() {
+        assert_eq!(
+            mouse_scroll_key(MouseEventKind::ScrollUp),
+            Some(KeyCode::Up)
+        );
+        assert_eq!(
+            mouse_scroll_key(MouseEventKind::ScrollDown),
+            Some(KeyCode::Down)
+        );
+        assert_eq!(mouse_scroll_key(MouseEventKind::Moved), None);
     }
 
     #[test]
