@@ -35,6 +35,9 @@ use similar::TextDiff;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+const MAX_RENAME_SIMILARITY_PAIRS: usize = 64;
+const MAX_RENAME_SIMILARITY_FILE_BYTES: usize = 256 * 1024;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NativeWorkspaceInfo {
@@ -255,6 +258,11 @@ impl NativeJjBackend {
         let (Some(before), Some(after)) = (before, after) else {
             return 0.0;
         };
+        if before.len() > MAX_RENAME_SIMILARITY_FILE_BYTES
+            || after.len() > MAX_RENAME_SIMILARITY_FILE_BYTES
+        {
+            return 0.0;
+        }
         if Self::is_binary_content(Some(before)) || Self::is_binary_content(Some(after)) {
             return 0.0;
         }
@@ -277,6 +285,7 @@ impl NativeJjBackend {
         repo: &Arc<ReadonlyRepo>,
         before_tree: &MergedTree,
         after_tree: &MergedTree,
+        include_contents: bool,
     ) -> Result<Vec<NativeTreeDiffEntry>> {
         let mut stream = before_tree.diff_stream(after_tree, &EverythingMatcher);
         let mut entries = Vec::new();
@@ -292,12 +301,18 @@ impl NativeJjBackend {
                 after_present: values.after.is_present(),
                 before_signature: Self::tree_value_signature(before_value),
                 after_signature: Self::tree_value_signature(after_value),
-                before_bytes: self
-                    .read_tree_value_bytes(repo, entry.path.as_ref(), before_value)
-                    .await?,
-                after_bytes: self
-                    .read_tree_value_bytes(repo, entry.path.as_ref(), after_value)
-                    .await?,
+                before_bytes: if include_contents {
+                    self.read_tree_value_bytes(repo, entry.path.as_ref(), before_value)
+                        .await?
+                } else {
+                    None
+                },
+                after_bytes: if include_contents {
+                    self.read_tree_value_bytes(repo, entry.path.as_ref(), after_value)
+                        .await?
+                } else {
+                    None
+                },
             });
         }
         Ok(entries)
@@ -351,52 +366,62 @@ impl NativeJjBackend {
             .filter(|(idx, entry)| !consumed[*idx] && entry.before_present && !entry.after_present)
             .map(|(idx, _)| idx)
             .collect();
-        for delete_idx in delete_indices {
-            if consumed[delete_idx] {
-                continue;
-            }
-            let delete_entry = &entries[delete_idx];
-            let Some((add_idx, _ratio)) = entries
-                .iter()
-                .enumerate()
-                .filter(|(add_idx, add_entry)| {
-                    !consumed[*add_idx]
-                        && !add_entry.before_present
-                        && add_entry.after_present
-                        && add_entry.path != delete_entry.path
-                })
-                .map(|(add_idx, add_entry)| {
-                    (
-                        add_idx,
-                        Self::content_similarity_ratio(
-                            delete_entry.before_bytes.as_deref(),
-                            add_entry.after_bytes.as_deref(),
-                        ),
-                    )
-                })
-                .filter(|(_, ratio)| *ratio >= RENAME_SIMILARITY_THRESHOLD)
-                .max_by(|left, right| {
-                    left.1
-                        .partial_cmp(&right.1)
-                        .unwrap_or(std::cmp::Ordering::Equal)
-                })
-            else {
-                continue;
-            };
-            consumed[delete_idx] = true;
-            consumed[add_idx] = true;
-            let add_entry = &entries[add_idx];
-            display.push(NativeDisplayDiff {
-                order_key: delete_idx.min(add_idx),
-                old_path: delete_entry.path.clone(),
-                new_path: add_entry.path.clone(),
-                kind: NativeDisplayDiffKind::Renamed {
+        let add_count = entries
+            .iter()
+            .enumerate()
+            .filter(|(idx, entry)| !consumed[*idx] && !entry.before_present && entry.after_present)
+            .count();
+        // Textual rename detection is quadratic in the number of unmatched
+        // deletes and additions. Large migrations are more useful as prompt
+        // add/delete summaries than as an unbounded all-pairs CPU workload.
+        if delete_indices.len().saturating_mul(add_count) <= MAX_RENAME_SIMILARITY_PAIRS {
+            for delete_idx in delete_indices {
+                if consumed[delete_idx] {
+                    continue;
+                }
+                let delete_entry = &entries[delete_idx];
+                let Some((add_idx, _ratio)) = entries
+                    .iter()
+                    .enumerate()
+                    .filter(|(add_idx, add_entry)| {
+                        !consumed[*add_idx]
+                            && !add_entry.before_present
+                            && add_entry.after_present
+                            && add_entry.path != delete_entry.path
+                    })
+                    .map(|(add_idx, add_entry)| {
+                        (
+                            add_idx,
+                            Self::content_similarity_ratio(
+                                delete_entry.before_bytes.as_deref(),
+                                add_entry.after_bytes.as_deref(),
+                            ),
+                        )
+                    })
+                    .filter(|(_, ratio)| *ratio >= RENAME_SIMILARITY_THRESHOLD)
+                    .max_by(|left, right| {
+                        left.1
+                            .partial_cmp(&right.1)
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    })
+                else {
+                    continue;
+                };
+                consumed[delete_idx] = true;
+                consumed[add_idx] = true;
+                let add_entry = &entries[add_idx];
+                display.push(NativeDisplayDiff {
+                    order_key: delete_idx.min(add_idx),
                     old_path: delete_entry.path.clone(),
                     new_path: add_entry.path.clone(),
-                },
-                before_bytes: delete_entry.before_bytes.clone(),
-                after_bytes: add_entry.after_bytes.clone(),
-            });
+                    kind: NativeDisplayDiffKind::Renamed {
+                        old_path: delete_entry.path.clone(),
+                        new_path: add_entry.path.clone(),
+                    },
+                    before_bytes: delete_entry.before_bytes.clone(),
+                    after_bytes: add_entry.after_bytes.clone(),
+                });
+            }
         }
 
         for (idx, entry) in entries.into_iter().enumerate() {
@@ -528,7 +553,7 @@ impl NativeJjBackend {
         };
         let parent_tree = parent.tree();
         let entries = self
-            .collect_native_diff_entries(&repo, &parent_tree, &commit_tree)
+            .collect_native_diff_entries(&repo, &parent_tree, &commit_tree, true)
             .await?;
         let mut output = String::new();
         let mut line_count = 0usize;
@@ -807,9 +832,28 @@ impl JjBackend for NativeJjBackend {
             return Ok(Vec::new());
         };
         let parent_tree = parent.tree();
-        let entries = self
-            .collect_native_diff_entries(&repo, &parent_tree, &commit_tree)
+        let mut entries = self
+            .collect_native_diff_entries(&repo, &parent_tree, &commit_tree, false)
             .await?;
+        let delete_count = entries
+            .iter()
+            .filter(|entry| entry.before_present && !entry.after_present)
+            .count();
+        let add_count = entries
+            .iter()
+            .filter(|entry| !entry.before_present && entry.after_present)
+            .count();
+        if delete_count > 0
+            && add_count > 0
+            && delete_count.saturating_mul(add_count) <= MAX_RENAME_SIMILARITY_PAIRS
+        {
+            // Small rename candidate sets retain modified-rename detection.
+            // Large file summaries stay metadata-only so merely browsing
+            // history never hydrates every deleted artifact into memory.
+            entries = self
+                .collect_native_diff_entries(&repo, &parent_tree, &commit_tree, true)
+                .await?;
+        }
         let mut files = Vec::new();
         for display in Self::build_display_diffs(entries) {
             let (file_type, path) = match display.kind {
@@ -1204,12 +1248,82 @@ mod tests {
     }
 
     #[test]
+    fn similarity_rename_detection_skips_quadratic_migrations() {
+        let mut entries = Vec::new();
+        for index in 0..9 {
+            entries.push(NativeTreeDiffEntry {
+                path: format!("old-{index}.txt"),
+                before_present: true,
+                after_present: false,
+                before_signature: None,
+                after_signature: None,
+                before_bytes: Some(b"shared content\n".to_vec()),
+                after_bytes: None,
+            });
+        }
+        for index in 0..9 {
+            entries.push(NativeTreeDiffEntry {
+                path: format!("new-{index}.txt"),
+                before_present: false,
+                after_present: true,
+                before_signature: None,
+                after_signature: None,
+                before_bytes: None,
+                after_bytes: Some(b"shared content with a change\n".to_vec()),
+            });
+        }
+
+        let display = NativeJjBackend::build_display_diffs(entries);
+
+        assert_eq!(display.len(), 18);
+        assert!(display
+            .iter()
+            .all(|entry| !matches!(entry.kind, NativeDisplayDiffKind::Renamed { .. })));
+    }
+
+    #[test]
+    fn similarity_rename_detection_skips_oversized_files() {
+        let oversized = vec![b'a'; MAX_RENAME_SIMILARITY_FILE_BYTES + 1];
+        let entries = vec![
+            NativeTreeDiffEntry {
+                path: "old.txt".to_string(),
+                before_present: true,
+                after_present: false,
+                before_signature: None,
+                after_signature: None,
+                before_bytes: Some(oversized.clone()),
+                after_bytes: None,
+            },
+            NativeTreeDiffEntry {
+                path: "new.txt".to_string(),
+                before_present: false,
+                after_present: true,
+                before_signature: None,
+                after_signature: None,
+                before_bytes: None,
+                after_bytes: Some(oversized),
+            },
+        ];
+
+        let display = NativeJjBackend::build_display_diffs(entries);
+
+        assert_eq!(display.len(), 2);
+        assert!(display
+            .iter()
+            .all(|entry| !matches!(entry.kind, NativeDisplayDiffKind::Renamed { .. })));
+    }
+
+    #[test]
     fn opens_current_workspace_with_jj_lib() {
         let backend = NativeJjBackend::new();
         let info = backend
             .open_workspace_info(Path::new(env!("CARGO_MANIFEST_DIR")))
             .unwrap();
-        assert!(info.workspace_root.ends_with("juzu"));
+        let expected_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .and_then(Path::parent)
+            .expect("crate should live under the Cargo workspace root");
+        assert_eq!(info.workspace_root, expected_root);
         assert!(info.repo_path.ends_with(".jj/repo"));
     }
 
