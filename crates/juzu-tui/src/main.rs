@@ -1,7 +1,13 @@
 mod config;
 
 use anyhow::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
+use crossterm::{
+    event::{
+        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind, KeyModifiers,
+        MouseEventKind,
+    },
+    execute,
+};
 use juzu_core::{
     diff::{collapsed_diff_rows, iter_diff_rows, parse_git_patch, DiffRow, DiffRowKind},
     layout::calculate_default_layout,
@@ -18,6 +24,7 @@ use ratatui::{
 };
 use std::{
     collections::{HashMap, HashSet},
+    io::stdout,
     path::PathBuf,
     time::Duration,
 };
@@ -551,8 +558,14 @@ fn main() -> Result<()> {
     }
 
     let terminal = ratatui::init();
+    if let Err(error) = execute!(stdout(), EnableMouseCapture) {
+        ratatui::restore();
+        return Err(error.into());
+    }
     let result = run(terminal, &mut app);
+    let mouse_result = execute!(stdout(), DisableMouseCapture);
     ratatui::restore();
+    mouse_result?;
     result
 }
 
@@ -565,17 +578,33 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
         // selected change only. Full diff content remains on demand.
         ensure_selected_files_with_backend(app, &backend);
         if event::poll(Duration::from_millis(250))? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Release {
-                    continue;
+            match event::read()? {
+                Event::Key(key) => {
+                    if key.kind == KeyEventKind::Release {
+                        continue;
+                    }
+                    if handle_key(app, key.code, key.modifiers) {
+                        break;
+                    }
                 }
-                if handle_key(app, key.code, key.modifiers) {
-                    break;
+                Event::Mouse(mouse) => {
+                    if let Some(code) = mouse_scroll_key(mouse.kind) {
+                        handle_key(app, code, KeyModifiers::NONE);
+                    }
                 }
+                _ => {}
             }
         }
     }
     Ok(())
+}
+
+fn mouse_scroll_key(kind: MouseEventKind) -> Option<KeyCode> {
+    match kind {
+        MouseEventKind::ScrollUp => Some(KeyCode::Up),
+        MouseEventKind::ScrollDown => Some(KeyCode::Down),
+        _ => None,
+    }
 }
 
 fn handle_key(app: &mut App, code: KeyCode, modifiers: KeyModifiers) -> bool {
@@ -4469,6 +4498,21 @@ mod tests {
             !production_source.contains("disable_raw_mode()?;"),
             "manual raw-mode teardown regressed and can wedge tmux panes"
         );
+        assert!(production_source.contains("execute!(stdout(), EnableMouseCapture)"));
+        assert!(production_source.contains("execute!(stdout(), DisableMouseCapture)"));
+    }
+
+    #[test]
+    fn mouse_wheel_maps_to_existing_vertical_navigation() {
+        assert_eq!(
+            mouse_scroll_key(MouseEventKind::ScrollUp),
+            Some(KeyCode::Up)
+        );
+        assert_eq!(
+            mouse_scroll_key(MouseEventKind::ScrollDown),
+            Some(KeyCode::Down)
+        );
+        assert_eq!(mouse_scroll_key(MouseEventKind::Moved), None);
     }
 
     #[test]
